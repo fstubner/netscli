@@ -1,0 +1,33 @@
+[workspace]
+members = [
+    "crates/netscli-core",
+    "crates/netscli-mcp",
+    "apps/netscli-cli",
+    "apps/netscli-gui/src-tauri",
+]
+exclude = ["scripts"]
+resolver = "2"
+
+[workspace.package]
+authors = ["Felix Stubner"]
+license = "MIT"
+repository = "https://github.com/fstubner/netscli"
+homepage = "https://github.com/fstubner/netscli"
+documentation = "https://docs.rs/netscli"
+keywords = ["networking", "scanner", "tui", "cli", "mcp"]
+categories = ["command-line-utilities", "network-programming"]
+edition = "2021"
+rust-version = "1.92.0"
+
+[workspace.dependencies]
+# Shared across all workspace members — pinned here to guarantee a single version.
+tokio = { version = "1.36", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1.0"
+thiserror = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+ipnet = { version = "2.11", features = ["serde"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+

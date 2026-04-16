@@ -1,0 +1,44 @@
+name: Deploy GitHub Pages
+
+# Deploys the static site in `site/` to GitHub Pages on every push to main.
+# Also re-runs on manual trigger (e.g. after updating analytics config).
+#
+# Prerequisite: in the repo Settings → Pages, set "Source" to
+# "GitHub Actions" (NOT "Deploy from a branch"). This workflow expects
+# that mode.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one deploy in flight at a time; if a newer push comes in while we're
+# mid-deploy, queue it and skip the one in progress.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - name: Upload site/
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

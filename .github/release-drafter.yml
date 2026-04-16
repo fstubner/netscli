@@ -1,0 +1,50 @@
+# Config for release-drafter. Each merged PR's label determines which
+# section its entry goes into; unlabelled PRs land in "Other changes".
+#
+# See https://github.com/release-drafter/release-drafter for the full
+# schema. To auto-label incoming PRs, add a `.github/labeler.yml` and
+# the `actions/labeler` workflow (not configured yet — happy to add
+# when there's enough PR volume to make it worth it).
+
+name-template: "v$RESOLVED_VERSION"
+tag-template: "v$RESOLVED_VERSION"
+
+categories:
+  - title: "Features"
+    labels:
+      - feature
+      - enhancement
+  - title: "Bug fixes"
+    labels:
+      - fix
+      - bugfix
+      - bug
+  - title: "Documentation"
+    labels:
+      - documentation
+      - docs
+  - title: "Maintenance"
+    labels:
+      - chore
+      - dependencies
+      - refactor
+
+change-template: "- $TITLE (#$NUMBER) @$AUTHOR"
+change-title-escapes: '\<*_&'
+
+version-resolver:
+  major:
+    labels: ["major", "breaking"]
+  minor:
+    labels: ["minor", "feature", "enhancement"]
+  patch:
+    labels: ["patch", "fix", "bug", "bugfix", "chore"]
+  default: patch
+
+template: |
+  ## What's new in $RESOLVED_VERSION
+
+  $CHANGES
+
+  ---
+  **Full changelog:** https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION

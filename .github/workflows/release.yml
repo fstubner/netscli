@@ -1,0 +1,150 @@
+name: Release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  release:
+    name: Build and Release
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            binary_name: netscli
+            asset_name: netscli-linux-x86_64
+            build_flags: ""
+            pcap: false
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            binary_name: netscli
+            asset_name: netscli-linux-x86_64-pcap
+            build_flags: --features pcap
+            pcap: true
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            binary_name: netscli
+            asset_name: netscli-linux-x86_64-musl
+            build_flags: ""
+            pcap: false
+          - os: ubuntu-24.04-arm64
+            target: aarch64-unknown-linux-gnu
+            binary_name: netscli
+            asset_name: netscli-linux-aarch64
+            build_flags: ""
+            pcap: false
+          - os: ubuntu-24.04-arm64
+            target: aarch64-unknown-linux-gnu
+            binary_name: netscli
+            asset_name: netscli-linux-aarch64-pcap
+            build_flags: --features pcap
+            pcap: true
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            binary_name: netscli.exe
+            asset_name: netscli-windows-x86_64.exe
+            build_flags: ""
+            pcap: false
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            binary_name: netscli.exe
+            asset_name: netscli-windows-x86_64-pcap.exe
+            build_flags: --features pcap
+            pcap: true
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            binary_name: netscli
+            asset_name: netscli-macos-x86_64
+            build_flags: ""
+            pcap: false
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            binary_name: netscli
+            asset_name: netscli-macos-x86_64-pcap
+            build_flags: --features pcap
+            pcap: true
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            binary_name: netscli
+            asset_name: netscli-macos-aarch64
+            build_flags: ""
+            pcap: false
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            binary_name: netscli
+            asset_name: netscli-macos-aarch64-pcap
+            build_flags: --features pcap
+            pcap: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.92.0
+          targets: ${{ matrix.target }}
+
+      - name: Install libpcap (Linux, pcap)
+        if: runner.os == 'Linux' && matrix.pcap
+        run: sudo apt-get update && sudo apt-get install -y libpcap-dev pkg-config
+
+      - name: Install musl toolchain (Linux)
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+
+      - name: Install Npcap SDK (Windows, pcap)
+        if: runner.os == 'Windows' && matrix.pcap
+        shell: pwsh
+        run: |
+          $sdkUrl = "https://npcap.com/dist/npcap-sdk-1.13.zip"
+          $zipPath = Join-Path $env:RUNNER_TEMP "npcap-sdk.zip"
+          $destPath = Join-Path $env:RUNNER_TEMP "npcap-sdk"
+          Invoke-WebRequest -Uri $sdkUrl -OutFile $zipPath
+          Expand-Archive -Path $zipPath -DestinationPath $destPath -Force
+          $sdkRoot = Join-Path $destPath "npcap-sdk"
+          $libPath = Join-Path $sdkRoot "Lib\\x64"
+          $includePath = Join-Path $sdkRoot "Include"
+          "LIB=$libPath;$env:LIB" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "INCLUDE=$includePath;$env:INCLUDE" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Build CLI
+        run: cargo build --locked --release -p netscli --target ${{ matrix.target }} ${{ matrix.build_flags }}
+
+      - name: Prepare release asset (rename)
+        shell: bash
+        run: cp target/${{ matrix.target }}/release/${{ matrix.binary_name }} target/${{ matrix.target }}/release/${{ matrix.asset_name }}
+
+      - name: Generate SHA256 (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if command -v sha256sum >/dev/null 2>&1; then
+            sha256sum "${{ matrix.asset_name }}" > "${{ matrix.asset_name }}.sha256"
+          else
+            shasum -a 256 "${{ matrix.asset_name }}" > "${{ matrix.asset_name }}.sha256"
+          fi
+        working-directory: target/${{ matrix.target }}/release
+
+      - name: Generate SHA256 (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $asset = "target/${{ matrix.target }}/release/${{ matrix.asset_name }}"
+          $hash = (Get-FileHash -Algorithm SHA256 -Path $asset).Hash.ToLowerInvariant()
+          "$hash  ${{ matrix.asset_name }}" | Out-File -FilePath "${asset}.sha256" -Encoding ascii
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            target/${{ matrix.target }}/release/${{ matrix.asset_name }}
+            target/${{ matrix.target }}/release/${{ matrix.asset_name }}.sha256
+          tag_name: ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

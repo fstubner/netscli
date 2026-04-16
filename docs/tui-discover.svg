@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="680" viewBox="0 0 1200 680" role="img" aria-label="NETSCLI TUI preview (/discover)">
+  <defs>
+    <linearGradient id="netscliGradient" x1="0" y1="0" x2="1200" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#005a1e"/>
+      <stop offset="45%" stop-color="#0aae7a"/>
+      <stop offset="100%" stop-color="#1edcff"/>
+    </linearGradient>
+    <style>
+      .mono { font-family: ui-monospace, "Cascadia Mono", SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+      .label { fill: #3c404a; }
+      .value { fill: #c8cdd6; }
+      .text { fill: #d7dbe1; }
+      .stroke { stroke: #3a3f46; }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="680" fill="#0b0d0e"/>
+
+  <!-- Header -->
+  <g class="mono" fill="url(#netscliGradient)" font-size="20" text-anchor="middle">
+    <text x="600" y="86" xml:space="preserve">███╗   ██╗███████╗████████╗███████╗ ██████╗██╗     ██╗</text>
+    <text x="600" y="112" xml:space="preserve">████╗  ██║██╔════╝╚══██╔══╝██╔════╝██╔════╝██║     ██║</text>
+    <text x="600" y="138" xml:space="preserve">██╔██╗ ██║█████╗     ██║   ███████╗██║     ██║     ██║</text>
+    <text x="600" y="164" xml:space="preserve">██║╚██╗██║██╔══╝     ██║   ╚════██║██║     ██║     ██║</text>
+    <text x="600" y="190" xml:space="preserve">██║ ╚████║███████╗   ██║   ███████║╚██████╗███████╗██║</text>
+    <text x="600" y="216" xml:space="preserve">╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚══════╝ ╚═════╝╚══════╝╚═╝</text>
+  </g>
+
+  <!-- Single subtitle line: tagline + version together, centered -->
+  <text x="600" y="250" class="mono text" font-size="16" text-anchor="middle">
+    <tspan>A modern network scanner</tspan>
+    <tspan class="label">  ·  v0.1.0</tspan>
+  </text>
+
+  <!-- Command output container -->
+  <rect x="170" y="300" width="860" height="220" rx="12" fill="none" class="stroke" stroke-width="2"/>
+  <text x="195" y="334" class="mono" font-size="16">
+    <tspan class="label">&gt; </tspan>
+    <tspan fill="#1edcff">/discover</tspan>
+    <tspan class="label"> 192.168.1.0/24</tspan>
+  </text>
+
+  <!--
+    Fixed-width columns, positioned by absolute x so row lengths don't
+    affect alignment. Column x values chosen for the largest value in
+    each column (IP = 13 chars, MAC = 17 chars, Vendor = 12 chars).
+  -->
+  <g class="mono" font-size="14">
+    <text y="372">
+      <tspan x="195" class="label">IP Address</tspan>
+      <tspan x="350" class="label">MAC Address</tspan>
+      <tspan x="535" class="label">Vendor</tspan>
+      <tspan x="700" class="label">Hostname</tspan>
+    </text>
+    <text y="402">
+      <tspan x="195" fill="#0aae7a">192.168.1.10</tspan>
+      <tspan x="350" fill="#f5c84c">00:17:8B:6E:6C:5C</tspan>
+      <tspan x="535" class="value">Dell Inc.</tspan>
+      <tspan x="700" class="value">workstation</tspan>
+    </text>
+    <text y="426">
+      <tspan x="195" fill="#0aae7a">192.168.1.21</tspan>
+      <tspan x="350" fill="#f5c84c">7E:6B:4E:32:0D:3E</tspan>
+      <tspan x="535" class="value">Apple, Inc.</tspan>
+      <tspan x="700" class="value">iphone</tspan>
+    </text>
+    <text y="450">
+      <tspan x="195" fill="#0aae7a">192.168.1.57</tspan>
+      <tspan x="350" fill="#f5c84c">94:C9:8B:92:49:83</tspan>
+      <tspan x="535" class="value">Raspberry Pi</tspan>
+      <tspan x="700" class="value">pi</tspan>
+    </text>
+    <text y="474">
+      <tspan x="195" fill="#0aae7a">192.168.1.125</tspan>
+      <tspan x="350" fill="#f5c84c">00:17:8B:6E:6C:5C</tspan>
+      <tspan x="535" class="value">Dell Inc.</tspan>
+      <tspan x="700" class="value">nas</tspan>
+    </text>
+  </g>
+
+  <!-- Input container -->
+  <rect x="170" y="530" width="860" height="120" rx="12" fill="none" class="stroke" stroke-width="2"/>
+  <rect x="195" y="550" width="810" height="40" rx="8" fill="none" stroke="url(#netscliGradient)" stroke-width="2"/>
+  <text x="215" y="576" class="mono" font-size="16">
+    <tspan class="label">&gt;</tspan>
+    <tspan class="label"> </tspan>
+    <tspan class="label">Type /help for commands</tspan>
+  </text>
+
+  <!-- Stats line -->
+  <text x="195" y="630" class="mono" font-size="14">
+    <tspan class="label">host </tspan><tspan class="value">workstation</tspan>
+    <tspan class="label"> · </tspan>
+    <tspan class="label">ip </tspan><tspan class="value">192.168.1.10</tspan>
+  </text>
+  <text x="1005" y="630" class="mono" font-size="14" text-anchor="end">
+    <tspan fill="#1edcff">↑ </tspan><tspan class="value">0.03</tspan><tspan class="label"> Mbps</tspan>
+    <tspan class="label"> · </tspan>
+    <tspan fill="#1edcff">↓ </tspan><tspan class="value">0.08</tspan><tspan class="label"> Mbps</tspan>
+  </text>
+</svg>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="240" viewBox="0 0 1200 240" role="img" aria-label="NETSCLI">
+  <defs>
+    <linearGradient id="netscliGradient" x1="0" y1="0" x2="1200" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#005a1e" />
+      <stop offset="45%" stop-color="#0aae7a" />
+      <stop offset="100%" stop-color="#1edcff" />
+    </linearGradient>
+    <style>
+      .wordmark {
+        font-family: ui-monospace, "Cascadia Mono", SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 32px;
+        font-weight: 400;
+      }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="240" fill="transparent" />
+  <g fill="url(#netscliGradient)" class="wordmark">
+    <text x="50%" y="48" text-anchor="middle" xml:space="preserve">███╗   ██╗███████╗████████╗███████╗ ██████╗██╗     ██╗</text>
+    <text x="50%" y="80" text-anchor="middle" xml:space="preserve">████╗  ██║██╔════╝╚══██╔══╝██╔════╝██╔════╝██║     ██║</text>
+    <text x="50%" y="112" text-anchor="middle" xml:space="preserve">██╔██╗ ██║█████╗     ██║   ███████╗██║     ██║     ██║</text>
+    <text x="50%" y="144" text-anchor="middle" xml:space="preserve">██║╚██╗██║██╔══╝     ██║   ╚════██║██║     ██║     ██║</text>
+    <text x="50%" y="176" text-anchor="middle" xml:space="preserve">██║ ╚████║███████╗   ██║   ███████║╚██████╗███████╗██║</text>
+    <text x="50%" y="208" text-anchor="middle" xml:space="preserve">╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚══════╝ ╚═════╝╚══════╝╚═╝</text>
+  </g>
+</svg>
+

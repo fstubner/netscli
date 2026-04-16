@@ -1,0 +1,64 @@
+# Rust
+target/
+**/*.rs.bk
+
+# TypeScript/Bun/Node
+node_modules/
+*.tsbuildinfo
+dist/
+build/
+.cache/
+.archive/
+
+# Tauri
+apps/netscli-gui/src-tauri/target/
+apps/netscli-gui/dist/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+bun-debug.log*
+
+# Test outputs
+*.csv
+*.tgz
+*.pcap
+
+# IDEs / editors
+.DS_Store
+.idea/
+.vscode/
+.cursor/
+*.swp
+*.swo
+*~
+
+# Tauri auto-generated schemas (regenerated on `tauri build`)
+apps/netscli-gui/src-tauri/gen/
+
+# Stray scratch files
+**/.tmp.txt
+**/*.tmp
+
+# Python (if any scripts use it)
+.venv/
+__pycache__/
+*.pyc
+
+# OS
+Thumbs.db
+nul
+
+# User data
+.netscli/
+*.db
+
+# Claude Code
+.claude/
+
+# Temp scripts / screenshots (root-level only)
+/*.ps1
+/*.png
+!apps/netscli-gui/src-tauri/icons/*.png

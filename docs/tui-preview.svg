@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="680" viewBox="0 0 1200 680" role="img" aria-label="NETSCLI TUI preview (idle)">
+  <defs>
+    <linearGradient id="netscliGradient" x1="0" y1="0" x2="1200" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#005a1e"/>
+      <stop offset="45%" stop-color="#0aae7a"/>
+      <stop offset="100%" stop-color="#1edcff"/>
+    </linearGradient>
+    <style>
+      .mono { font-family: ui-monospace, "Cascadia Mono", SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+      .label { fill: #3c404a; }
+      .value { fill: #c8cdd6; }
+      .text { fill: #d7dbe1; }
+      .stroke { stroke: #3a3f46; }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="680" fill="#0b0d0e"/>
+
+  <!-- Header -->
+  <g class="mono" fill="url(#netscliGradient)" font-size="20" text-anchor="middle">
+    <text x="600" y="86" xml:space="preserve">███╗   ██╗███████╗████████╗███████╗ ██████╗██╗     ██╗</text>
+    <text x="600" y="112" xml:space="preserve">████╗  ██║██╔════╝╚══██╔══╝██╔════╝██╔════╝██║     ██║</text>
+    <text x="600" y="138" xml:space="preserve">██╔██╗ ██║█████╗     ██║   ███████╗██║     ██║     ██║</text>
+    <text x="600" y="164" xml:space="preserve">██║╚██╗██║██╔══╝     ██║   ╚════██║██║     ██║     ██║</text>
+    <text x="600" y="190" xml:space="preserve">██║ ╚████║███████╗   ██║   ███████║╚██████╗███████╗██║</text>
+    <text x="600" y="216" xml:space="preserve">╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚══════╝ ╚═════╝╚══════╝╚═╝</text>
+  </g>
+
+  <!-- Single subtitle line: tagline + version together, centered -->
+  <text x="600" y="252" class="mono text" font-size="16" text-anchor="middle">
+    <tspan>A modern network scanner</tspan>
+    <tspan class="label">  ·  v0.1.0</tspan>
+  </text>
+
+  <!-- Tip -->
+  <rect x="170" y="400" width="860" height="50" rx="10" fill="none" class="stroke" stroke-width="2"/>
+  <text x="195" y="432" class="mono" font-size="16">
+    <tspan fill="#f5c84c">TIP</tspan>
+    <tspan class="label"> · </tspan>
+    <tspan class="value">Type /help for the full command list.</tspan>
+  </text>
+
+  <!-- Input container -->
+  <rect x="170" y="470" width="860" height="150" rx="12" fill="none" class="stroke" stroke-width="2"/>
+  <!-- Inner textbox -->
+  <rect x="195" y="490" width="810" height="40" rx="8" fill="none" stroke="url(#netscliGradient)" stroke-width="2"/>
+  <text x="215" y="516" class="mono" font-size="16">
+    <tspan class="label">&gt;</tspan>
+    <tspan class="label"> </tspan>
+    <tspan class="label">Type /help for commands</tspan>
+  </text>
+
+  <!-- Stats line -->
+  <text x="195" y="590" class="mono" font-size="14">
+    <tspan class="label">host </tspan><tspan class="value">workstation</tspan>
+    <tspan class="label"> · </tspan>
+    <tspan class="label">ip </tspan><tspan class="value">192.168.1.10</tspan>
+  </text>
+  <text x="1005" y="590" class="mono" font-size="14" text-anchor="end">
+    <tspan fill="#1edcff">↑ </tspan><tspan class="value">0.07</tspan><tspan class="label"> Mbps</tspan>
+    <tspan class="label"> · </tspan>
+    <tspan fill="#1edcff">↓ </tspan><tspan class="value">0.12</tspan><tspan class="label"> Mbps</tspan>
+  </text>
+</svg>

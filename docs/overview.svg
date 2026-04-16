@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" role="img" aria-label="netscli architecture overview">
+  <defs>
+    <style>
+      .bg    { fill: #0b0d0e; }
+      .box   { fill: none; stroke: #3a3f46; stroke-width: 1.5; }
+      .core  { fill: none; stroke: #0aae7a; stroke-width: 2; }
+      .link  { stroke: #3a3f46; stroke-width: 1.25; fill: none; }
+
+      .title { fill: #d7dbe1; font: 600 15px ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+      .sub   { fill: #6a6f78; font: 12px ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+      .note  { fill: #6a6f78; font: italic 12px ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+      .core-title { fill: #c8cdd6; font: 700 17px ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+      .core-sub   { fill: #6a6f78; font: 12px ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="960" height="560"/>
+
+  <!-- Three entry points along the top, one core in the middle, three
+       dep groups at the bottom. Plain lines, no gradients, no badges. -->
+
+  <!-- top row -->
+  <rect class="box" x="100" y="60" width="220" height="62" rx="8"/>
+  <text class="title" x="210" y="92"  text-anchor="middle">CLI  ·  TUI</text>
+  <text class="sub"   x="210" y="110" text-anchor="middle">apps/netscli-cli</text>
+
+  <rect class="box" x="370" y="60" width="220" height="62" rx="8"/>
+  <text class="title" x="480" y="92"  text-anchor="middle">Desktop app</text>
+  <text class="sub"   x="480" y="110" text-anchor="middle">apps/netscli-gui  (Tauri)</text>
+
+  <rect class="box" x="640" y="60" width="220" height="62" rx="8"/>
+  <text class="title" x="750" y="92"  text-anchor="middle">MCP server</text>
+  <text class="sub"   x="750" y="110" text-anchor="middle">crates/netscli-mcp</text>
+
+  <!-- center hub -->
+  <rect class="core" x="260" y="220" width="440" height="110" rx="10"/>
+  <text class="core-title" x="480" y="256" text-anchor="middle">netscli-core</text>
+  <text class="core-sub"   x="480" y="278" text-anchor="middle">discover · scan · ping · dns · arp · pcap</text>
+  <text class="core-sub"   x="480" y="298" text-anchor="middle">inspect · sweep · stats · db · oui</text>
+  <text class="note"       x="480" y="319" text-anchor="middle">one async library, shared by every surface above</text>
+
+  <!-- arrows from entry points down to core -->
+  <path class="link" d="M210 124 L 420 218"/>
+  <path class="link" d="M480 124 L 480 218"/>
+  <path class="link" d="M750 124 L 540 218"/>
+
+  <!-- bottom row: what the core talks to -->
+  <text class="sub" x="70"  y="395">Network</text>
+  <line x1="70"  y1="405" x2="300" y2="405" stroke="#3a3f46" stroke-width="1"/>
+  <text class="sub" x="70"  y="425" style="fill:#c8cdd6">raw ICMPv4, TCP connect</text>
+  <text class="sub" x="70"  y="445" style="fill:#c8cdd6">hickory-resolver</text>
+  <text class="sub" x="70"  y="465" style="fill:#c8cdd6">libpcap / Npcap (optional)</text>
+
+  <text class="sub" x="340" y="395">Per-OS adapters</text>
+  <line x1="340" y1="405" x2="620" y2="405" stroke="#3a3f46" stroke-width="1"/>
+  <text class="sub" x="340" y="425" style="fill:#c8cdd6">Linux — /proc/net/arp, iproute2</text>
+  <text class="sub" x="340" y="445" style="fill:#c8cdd6">macOS — arp -an, pnet_datalink</text>
+  <text class="sub" x="340" y="465" style="fill:#c8cdd6">Windows — ipconfig, arp -a</text>
+
+  <text class="sub" x="660" y="395">On-disk state</text>
+  <line x1="660" y1="405" x2="890" y2="405" stroke="#3a3f46" stroke-width="1"/>
+  <text class="sub" x="660" y="425" style="fill:#c8cdd6">~/.netscli/netscli.db</text>
+  <text class="sub" x="660" y="445" style="fill:#c8cdd6">~/.netscli/tui-settings.json</text>
+  <text class="sub" x="660" y="465" style="fill:#c8cdd6">data/oui.min.json.gz</text>
+
+  <!-- arrows from core down to its three dep groups -->
+  <path class="link" d="M360 335 L 200 380"/>
+  <path class="link" d="M480 335 L 480 380"/>
+  <path class="link" d="M600 335 L 760 380"/>
+
+  <text class="note" x="480" y="530" text-anchor="middle">
+    The whole library is pure Rust and async. Each surface wires its own I/O on top.
+  </text>
+</svg>

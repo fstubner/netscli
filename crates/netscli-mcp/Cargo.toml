@@ -1,0 +1,24 @@
+[package]
+name = "netscli-mcp"
+version = "0.1.0"
+description = "Model Context Protocol (MCP) server exposing netscli-core tools to LLM agents"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+ipnet.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+netscli-core = { path = "../netscli-core", version = "0.1.0", default-features = false }
+
+[features]
+default = []
+pcap = ["netscli-core/pcap"]

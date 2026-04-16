@@ -1,0 +1,127 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # Let me run CI manually from the Actions tab, useful for re-running a
+  # cache-warm build after tweaking the workflow without having to push.
+  workflow_dispatch:
+
+# A new push to the same PR cancels any still-running job from that PR.
+# Saves runner minutes and gives fresher feedback on force-pushes.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least-privilege by default; individual jobs can opt into more.
+permissions:
+  contents: read
+
+jobs:
+  # Fast lint + format gate. Runs first because if `cargo fmt --check` is
+  # going to fail there's no point firing up the matrix below.
+  lint:
+    name: Format + Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpcap-dev pkg-config
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@1.92.0
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: lint
+      - name: cargo fmt --check
+        run: cargo fmt --check
+      - name: cargo clippy (default features)
+        run: cargo clippy --all-targets -- -D warnings
+      - name: cargo clippy (pcap feature)
+        run: cargo clippy --all-targets --features pcap -- -D warnings
+
+  test:
+    name: Test (${{ matrix.os }})
+    needs: lint
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpcap-dev pkg-config
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@1.92.0
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: test-${{ matrix.os }}
+
+      - name: cargo test --all
+        run: cargo test --all --no-fail-fast
+
+  gui-build:
+    name: GUI Build (TypeScript + Vite)
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/netscli-gui/package-lock.json
+      - name: npm ci
+        run: npm ci
+        working-directory: apps/netscli-gui
+      - name: tsc + vite build
+        run: npm run build
+        working-directory: apps/netscli-gui
+
+  # Release-config binary build. This catches regressions that only show
+  # up under optimizations / lto that debug builds miss, and the artifact
+  # upload makes it possible to grab a "tip of main" binary straight from
+  # the Actions run for quick smoke testing without cutting a release.
+  release-build:
+    name: Release build (${{ matrix.os }})
+    needs: test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpcap-dev pkg-config
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@1.92.0
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: release-${{ matrix.os }}
+      - name: cargo build --release -p netscli
+        run: cargo build --release -p netscli
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: netscli-${{ matrix.os }}
+          path: |
+            target/release/netscli
+            target/release/netscli.exe
+          if-no-files-found: ignore
+          retention-days: 14

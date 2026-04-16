@@ -1,0 +1,7 @@
+# Ensure Unix line endings for shell scripts and JS binaries
+bin/*.js text eol=lf
+*.sh text eol=lf
+
+# Let git handle line endings for other files
+* text=auto
+

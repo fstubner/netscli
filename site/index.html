@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>netscli — network scanner</title>
+<meta name="description" content="A network scanner written in Rust. CLI, TUI, desktop app, and MCP server.">
+<meta property="og:title" content="netscli">
+<meta property="og:description" content="Discover hosts, scan ports, resolve DNS. Four interfaces, one Rust library.">
+<meta property="og:url" content="https://netscli.com">
+<link rel="canonical" href="https://netscli.com">
+
+<!-- Cloudflare Web Analytics -->
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "c03201f65f6d41aa843c81f259a1ac06"}'></script>
+<!-- End Cloudflare Web Analytics -->
+
+<style>
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  background:#111;color:#d4d4d4;line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit}
+code{
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.85em;
+  background:rgba(255,255,255,.07);padding:2px 6px;border-radius:4px;
+}
+
+/* layout */
+.w{max-width:1060px;margin:0 auto;padding:0 24px}
+
+/* nav */
+nav{
+  position:sticky;top:0;z-index:10;
+  background:rgba(17,17,17,.85);backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(255,255,255,.06);
+  padding:12px 24px;display:flex;align-items:center;justify-content:space-between;
+}
+.mark{
+  font-family:ui-monospace,"SF Mono","Cascadia Code",Menlo,monospace;
+  font-weight:700;font-size:3.5px;letter-spacing:0;text-decoration:none;
+  line-height:1.05;white-space:pre;
+  background:linear-gradient(90deg,#059669,#0aae7a 50%,#1edcff);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.nlinks{display:flex;gap:20px;font-size:.8125rem}
+.nlinks a{color:#999;text-decoration:none}
+.nlinks a:hover{color:#e5e5e5}
+@media(max-width:600px){.nlinks{display:none}}
+
+/* buttons */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:10px 20px;border-radius:8px;font-size:.875rem;font-weight:600;
+  text-decoration:none;transition:all 120ms;
+}
+.btn-w{background:#e5e5e5;color:#111;border:1px solid #e5e5e5}
+.btn-w:hover{background:#fff;border-color:#fff}
+.btn-o{background:transparent;color:#999;border:1px solid rgba(255,255,255,.15)}
+.btn-o:hover{color:#e5e5e5;border-color:rgba(255,255,255,.3);text-decoration:none}
+.gh-icon{width:16px;height:16px;fill:currentColor;flex-shrink:0}
+
+/* ─── HERO ─── */
+.hero{padding:72px 24px 0;text-align:center}
+.hero .badge{
+  display:inline-block;font-size:.6875rem;font-weight:600;
+  letter-spacing:.06em;text-transform:uppercase;color:#777;margin-bottom:16px;
+}
+.hero h1{
+  font-size:clamp(1.75rem,4vw,2.75rem);font-weight:700;color:#f5f5f5;
+  letter-spacing:-.02em;margin:0;line-height:1.2;
+}
+.hero .sub{font-size:1.0625rem;color:#888;max-width:500px;margin:14px auto 0}
+.hero .quick-install{
+  margin:28px auto 0;max-width:520px;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
+  border-radius:10px;padding:12px 16px;
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.8125rem;
+  color:#ccc;display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+.hero .quick-install span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hero .links{display:flex;gap:12px;justify-content:center;margin-top:16px}
+.hero .links a{font-size:.8125rem;color:#888;text-decoration:none}
+.hero .links a:hover{color:#e5e5e5}
+
+/* ─── PRODUCT SHOT ─── */
+.bigshot{
+  margin:48px auto 0;max-width:980px;
+  border-radius:10px;overflow:hidden;
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 32px 80px rgba(0,0,0,.6);
+}
+.bigshot img{width:100%;display:block}
+
+/* ─── SECTIONS ─── */
+section{padding:72px 0}
+section h2{font-size:1.5rem;font-weight:700;color:#f5f5f5;margin:0 0 6px}
+section .lead{color:#888;font-size:.9375rem;margin:0 0 28px}
+section .lead a{color:#ccc;text-decoration:underline;text-underline-offset:3px}
+
+/* ─── SURFACE CARDS ─── */
+.surfaces{display:grid;gap:48px}
+.surface{
+  display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;
+}
+.surface.flip{direction:rtl}
+.surface.flip>*{direction:ltr}
+.surface-text h3{font-size:1.125rem;font-weight:700;color:#f5f5f5;margin:0 0 8px}
+.surface-text p{font-size:.875rem;color:#999;margin:0;line-height:1.6}
+.surface-text code{font-size:.75rem}
+.surface-visual img{
+  width:100%;border-radius:10px;
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 12px 40px rgba(0,0,0,.4);
+}
+.surface-visual .codeblock{
+  background:#0b0d0e;border:1px solid rgba(255,255,255,.08);
+  border-radius:10px;padding:16px 20px;
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;
+  font-size:.75rem;line-height:1.7;white-space:pre;overflow-x:auto;color:#ccc;
+  box-shadow:0 12px 40px rgba(0,0,0,.4);
+  position:relative;
+}
+@media(max-width:720px){
+  .surface{grid-template-columns:1fr}
+  .surface.flip{direction:ltr}
+}
+
+/* ─── GET STARTED ─── */
+.install-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:8px;
+}
+.install-grid>*{min-width:0}
+@media(max-width:860px){.install-grid{grid-template-columns:1fr}}
+.install-card{margin-bottom:16px;overflow:hidden}
+.install-card:last-child{margin-bottom:0}
+.install-label{font-size:.8125rem;font-weight:600;color:#e5e5e5;margin:0 0 6px}
+.install-hint{font-size:.6875rem;color:#666;margin:4px 0 0}
+.cmd{
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  border-radius:8px;padding:12px 16px;
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;
+  font-size:clamp(.6875rem,1.4vw,.8125rem);
+  overflow-x:auto;white-space:pre;color:#ccc;
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.15) transparent;
+  position:relative;
+}
+.tryblock{
+  background:#0b0d0e;border:1px solid rgba(255,255,255,.08);
+  border-radius:10px;padding:16px 20px;height:100%;
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;
+  font-size:clamp(.6875rem,1.4vw,.8125rem);
+  line-height:1.9;white-space:pre;overflow-x:auto;color:#ccc;
+  position:relative;
+}
+.tryblock .c{color:#555}
+
+/* ─── COPY BUTTON ─── */
+.has-copy{position:relative}
+.copy-btn{
+  position:absolute;top:8px;right:8px;
+  /* Opaque background so text behind the button isn't visible through it */
+  background:#222;border:1px solid rgba(255,255,255,.18);
+  border-radius:6px;color:#999;font-size:.6875rem;font-weight:600;
+  padding:5px 12px;cursor:pointer;opacity:0;
+  transition:opacity 150ms,background 120ms,color 120ms;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+}
+.has-copy:hover .copy-btn,.has-copy:focus-within .copy-btn{opacity:1}
+.copy-btn:hover{background:#333;color:#eee}
+.copy-btn.copied{color:#3fb950;border-color:rgba(63,185,80,.4)}
+
+/* ─── FOOTER ─── */
+footer{
+  border-top:1px solid rgba(255,255,255,.06);padding:28px 24px;
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:12px;font-size:.75rem;color:#555;
+}
+footer a{color:#777;text-decoration:none}
+footer a:hover{color:#ccc}
+.flinks{display:flex;gap:16px}
+
+/* ─── RESPONSIVE ─── */
+@media(max-width:600px){
+  .hero h1{font-size:1.625rem}
+  .hero .sub{font-size:.9375rem}
+  section{padding:48px 0}
+  section h2{font-size:1.25rem}
+  .hero .quick-install{font-size:.75rem;padding:10px 12px}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="mark" href="/" aria-label="NETSCLI">███╗   ██╗███████╗████████╗███████╗ ██████╗██╗     ██╗
+████╗  ██║██╔════╝╚══██╔══╝██╔════╝██╔════╝██║     ██║
+██╔██╗ ██║█████╗     ██║   ███████╗██║     ██║     ██║
+██║╚██╗██║██╔══╝     ██║   ╚════██║██║     ██║     ██║
+██║ ╚████║███████╗   ██║   ███████║╚██████╗███████╗██║
+╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚══════╝ ╚═════╝╚══════╝╚═╝</a>
+  <div class="nlinks">
+    <a href="#surfaces">Features</a>
+    <a href="#install">Install</a>
+    <a href="https://github.com/fstubner/netscli">GitHub</a>
+  </div>
+</nav>
+
+<!-- ━━━ HERO ━━━ -->
+<div class="hero">
+  <div class="badge">Open source · MIT · Rust · Windows, Linux, macOS</div>
+  <h1>A network scanner you<br>can talk to</h1>
+  <p class="sub">
+    Discover hosts, scan ports, resolve DNS, capture packets.
+    Use it from a terminal, a desktop app, or let your AI agent
+    call the MCP server — or the CLI directly.
+  </p>
+
+  <!-- Install command right in the hero — don't make people scroll for it -->
+  <div class="quick-install has-copy">
+    <span>curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash</span>
+  </div>
+  <div class="links">
+    <a href="#install">Windows &amp; Cargo options</a>
+    <a href="https://github.com/fstubner/netscli">
+      <svg class="gh-icon" viewBox="0 0 16 16" fill="currentColor" style="vertical-align:-2px;margin-right:3px"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      View source
+    </a>
+  </div>
+</div>
+
+<!-- Big hero screenshot — the desktop app dashboard -->
+<div class="w">
+  <div class="bigshot">
+    <img src="gui-dashboard.png" alt="netscli desktop app dashboard">
+  </div>
+</div>
+
+<!-- ━━━ SURFACES ━━━ -->
+<section id="surfaces">
+  <div class="w">
+    <h2>Four interfaces, one library</h2>
+    <p class="lead">Every surface calls the same <code>netscli-core</code>. <a href="https://github.com/fstubner/netscli#usage">Full docs →</a></p>
+
+    <div class="surfaces">
+
+      <!-- Desktop app -->
+      <div class="surface">
+        <div class="surface-text">
+          <h3>Desktop app</h3>
+          <p>
+            A standalone desktop application for when you'd rather not open a
+            terminal. Scan ports, discover hosts, look up DNS records, inspect
+            your ARP table. Available for Windows, Linux, and macOS.
+          </p>
+        </div>
+        <div class="surface-visual">
+          <img src="gui-scan.png" alt="Port scan results in the desktop app">
+        </div>
+      </div>
+
+      <!-- Terminal UI -->
+      <div class="surface flip">
+        <div class="surface-text">
+          <h3>Terminal UI</h3>
+          <p>
+            An interactive terminal interface. Type <code>/</code> to see
+            available commands, use tab to autocomplete, arrow keys to browse
+            history. The status bar shows your IP and live traffic rates.
+          </p>
+        </div>
+        <div class="surface-visual">
+          <img src="tui-discover.svg" alt="TUI showing /discover results">
+        </div>
+      </div>
+
+      <!-- CLI -->
+      <div class="surface">
+        <div class="surface-text">
+          <h3>Command line</h3>
+          <p>
+            Every scan ships as a standalone subcommand with
+            <code>--json</code> and <code>--yaml</code> output. Pipe results
+            into jq, call it from a shell script, or have an agent invoke
+            it directly without the full MCP server.
+          </p>
+        </div>
+        <div class="surface-visual">
+          <div class="codeblock has-copy">
+<span style="color:#888">$</span> netscli scan 1.1.1.1 -p 80,443 --json
+<span style="color:#555">[</span>
+  <span style="color:#555">{</span> <span style="color:#7c9fc7">"port"</span>: 80,  <span style="color:#7c9fc7">"open"</span>: true, <span style="color:#7c9fc7">"service"</span>: <span style="color:#8fbc7f">"http"</span>  <span style="color:#555">}</span>,
+  <span style="color:#555">{</span> <span style="color:#7c9fc7">"port"</span>: 443, <span style="color:#7c9fc7">"open"</span>: true, <span style="color:#7c9fc7">"service"</span>: <span style="color:#8fbc7f">"https"</span> <span style="color:#555">}</span>
+<span style="color:#555">]</span>
+
+<span style="color:#888">$</span> netscli discover --json | jq '.[].ip'
+<span style="color:#8fbc7f">"192.168.1.10"</span>
+<span style="color:#8fbc7f">"192.168.1.21"</span>
+<span style="color:#8fbc7f">"192.168.1.57"</span></div>
+        </div>
+      </div>
+
+      <!-- MCP server -->
+      <div class="surface flip">
+        <div class="surface-text">
+          <h3>MCP server</h3>
+          <p>
+            Run <code>netscli serve</code> and point Claude Desktop or Cursor
+            at it. Your agent gets 9 tools — host discovery, port scanning,
+            DNS, ARP, and more — over standard JSON-RPC.
+          </p>
+        </div>
+        <div class="surface-visual">
+          <div class="codeblock has-copy">
+<span style="color:#888">// claude_desktop_config.json</span>
+<span style="color:#555">{</span>
+  <span style="color:#7c9fc7">"mcpServers"</span>: <span style="color:#555">{</span>
+    <span style="color:#7c9fc7">"netscli"</span>: <span style="color:#555">{</span>
+      <span style="color:#7c9fc7">"command"</span>: <span style="color:#8fbc7f">"netscli"</span>,
+      <span style="color:#7c9fc7">"args"</span>: [<span style="color:#8fbc7f">"serve"</span>]
+    <span style="color:#555">}</span>
+  <span style="color:#555">}</span>
+<span style="color:#555">}</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ━━━ GET STARTED ━━━ -->
+<section id="install">
+  <div class="w">
+    <h2>Get started</h2>
+    <p class="lead">Install, then run. <a href="https://github.com/fstubner/netscli#readme">Full README →</a></p>
+
+    <div class="install-grid">
+      <div>
+        <div class="install-card">
+          <div class="install-label">Linux / macOS</div>
+          <div class="cmd has-copy">curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash</div>
+          <div class="install-hint">Add <code>NETSCLI_PCAP=1</code> for packet capture.</div>
+        </div>
+        <div class="install-card">
+          <div class="install-label">Windows</div>
+          <div class="cmd has-copy">iwr -useb https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.ps1 | iex</div>
+        </div>
+        <div class="install-card">
+          <div class="install-label">Cargo</div>
+          <div class="cmd has-copy">cargo install netscli</div>
+        </div>
+        <p style="margin:12px 0 0;font-size:.8125rem;color:#666">
+          Or grab binaries from
+          <a href="https://github.com/fstubner/netscli/releases/latest" style="color:#ccc;text-decoration:underline;text-underline-offset:3px">the latest release</a>.
+        </p>
+      </div>
+
+      <div>
+        <div class="install-label">Then try</div>
+        <div class="tryblock">
+<span style="color:#888">$</span> netscli discover
+<span style="color:#888">$</span> netscli scan 192.168.1.1 -p 22,80,443
+<span style="color:#888">$</span> netscli dns google.com
+<span style="color:#888">$</span> netscli serve
+<span style="color:#888">$</span> netscli --help</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+  <div>© <span id="y"></span> Felix Stubner · MIT</div>
+  <div class="flinks">
+    <a href="https://github.com/fstubner/netscli">GitHub</a>
+    <a href="https://github.com/fstubner/netscli/releases">Releases</a>
+    <a href="https://github.com/fstubner/netscli#readme">Docs</a>
+  </div>
+</footer>
+
+<script>
+document.getElementById("y").textContent=new Date().getFullYear();
+
+// Copy buttons on every .has-copy block
+document.querySelectorAll('.has-copy').forEach(el=>{
+  const btn=document.createElement('button');
+  btn.className='copy-btn';btn.textContent='Copy';
+  btn.addEventListener('click',()=>{
+    let t=el.textContent.replace(/Copy$|Copied!$/,'').trim();
+    // Strip $ prompts and // comments for cleaner paste
+    if(el.classList.contains('codeblock')||el.classList.contains('tryblock')){
+      t=t.split('\n').map(l=>l.replace(/^\$\s*/,'').replace(/\s*\/\/.*$/,'').trim()).filter(l=>l).join('\n');
+    }
+    navigator.clipboard.writeText(t).then(()=>{
+      btn.textContent='Copied!';btn.classList.add('copied');
+      setTimeout(()=>{btn.textContent='Copy';btn.classList.remove('copied')},1500);
+    });
+  });
+  el.appendChild(btn);
+});
+</script>
+</body>
+</html>
