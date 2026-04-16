@@ -27,10 +27,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # libpcap-dev: netscli-core pcap feature. GTK/WebKit: netscli-gui
+      # (Tauri 2) — clippy --all-targets compiles the Tauri shell, which
+      # won't link without these even when we only intend to lint Rust.
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libpcap-dev pkg-config
+          sudo apt-get install -y \
+            libpcap-dev pkg-config \
+            libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev \
+            librsvg2-dev libsoup-3.0-dev libjavascriptcoregtk-4.1-dev
       - name: Install Rust
         uses: dtolnay/rust-toolchain@1.92.0
         with:
@@ -56,11 +62,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Linux needs libpcap for netscli-core's pcap feature and GTK/WebKit
+      # for netscli-gui (Tauri 2). `cargo test --all` compiles the whole
+      # workspace including the GUI, so both are required to link.
       - name: Install system dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libpcap-dev pkg-config
+          sudo apt-get install -y \
+            libpcap-dev pkg-config \
+            libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev \
+            librsvg2-dev libsoup-3.0-dev libjavascriptcoregtk-4.1-dev
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@1.92.0
