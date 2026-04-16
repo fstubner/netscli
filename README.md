@@ -35,38 +35,26 @@
 
 ## Why this exists
 
-I wanted to give an AI agent a clean way to answer questions about my local
-network — things like "what's the IP of the device that just joined" or "is
-port 22 open on 192.168.1.42". Existing tools work but they're not great to
-drive from an agent: half a dozen CLI invocations, brittle output parsing,
-and no shared context between calls. So the **MCP server** came first —
-`netscli serve`, nine tools, JSON-RPC over stdio, structured results. That's
-still the main reason this project exists.
+I wanted my AI agent to answer questions about my local network. Things
+like "what's the IP of the device that just joined" or "is port 22 open
+on 192.168.1.42". Existing tools work but they aren't great to drive from
+an agent. Half a dozen CLI invocations, brittle output parsing, no shared
+context. So I built an MCP server first. `netscli serve`, nine tools,
+JSON-RPC over stdio, structured results.
 
-The **TUI** came second, as an excuse to see how people are actually
-building good terminal UX in 2026. Coding agents like Claude Code have put
-real work into autocomplete, command history, in-place progress, and mouse
-selection that doesn't fight the scrollback — I wanted to understand how
-that's done and where the limits are. So netscli has a proper ratatui TUI
-with those affordances. It's not strictly better than the CLI for
-scripting; it exists because it's a good testbed and a nicer way to poke
-around your network interactively.
+Then the TUI. Coding agents like Claude Code have put real work into
+autocomplete, command history, in-place progress, and mouse selection
+that doesn't fight the scrollback. I wanted to see how they do it. So
+netscli has a proper ratatui TUI with those affordances.
 
-The **CLI** is the simplest surface. It exists because sometimes you just
-want `netscli scan host --json | jq`, and spinning up a full MCP server for
-that is overkill. It's also what cron jobs and CI scripts tend to want.
+The CLI is simpler. Sometimes you just want `netscli scan host --json | jq`
+and running a full MCP server for that is overkill. Cron jobs and CI
+scripts want the same thing.
 
-The **desktop GUI** exists because sometimes I don't want to open a
-terminal. I want to click an app icon, see what's on my network, and close
-it. The CLI/TUI/MCP covers everything the GUI does functionally, but for
-quick "what's up" checks a regular desktop window is the lowest-friction
-thing. Because everything else already talked to `netscli-core`, the GUI
-was mostly a Tauri window over the same Rust calls.
-
-The one-core-many-surfaces shape isn't incidental. It's the thing the
-project is actually about: the surfaces drift apart easily if you let them,
-and keeping parity across all four has been a useful forcing function for
-the API design of `netscli-core`.
+The desktop app is for when I don't want to open a terminal. Click an
+icon, see what's on my network, close it. Because every other surface
+already talked to `netscli-core`, the GUI was mostly a Tauri window over
+the same Rust calls.
 
 ## Features
 
