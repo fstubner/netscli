@@ -1,0 +1,111 @@
+# Dependabot config. Groups updates so the PR flood is manageable, and
+# tones down the noise from transitive advisories that can't be fixed
+# without upstream moving.
+
+version: 2
+updates:
+  # Rust workspace at repo root (crates/ + apps/netscli-cli).
+  - package-ecosystem: cargo
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies
+      - rust
+    groups:
+      # Patch bumps rarely need individual review — batch them.
+      rust-patch:
+        update-types:
+          - patch
+      # Minor bumps for non-critical deps go together too.
+      rust-minor:
+        update-types:
+          - minor
+        exclude-patterns:
+          - tauri*
+          - sqlx*
+          - tokio
+          - hickory-*
+      # Anything in the first-tier surface stays as its own PR so
+      # breaking changes get individual attention.
+      tauri:
+        patterns:
+          - tauri*
+      sqlx:
+        patterns:
+          - sqlx*
+      tokio:
+        patterns:
+          - tokio
+      hickory:
+        patterns:
+          - hickory-*
+
+  # netscli-gui frontend (React/Vite/TS).
+  - package-ecosystem: npm
+    directory: "/apps/netscli-gui"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies
+      - javascript
+    groups:
+      # Bundler stack (vite + rollup + their transitive friends) moves
+      # often; batch the boring stuff.
+      vite-rollup:
+        patterns:
+          - vite
+          - "@vitejs/*"
+          - rollup
+          - "*rollup*"
+      react:
+        patterns:
+          - react
+          - react-*
+          - "@types/react*"
+      typescript-tooling:
+        patterns:
+          - typescript
+          - "@typescript-eslint/*"
+          - eslint*
+      tauri-js:
+        patterns:
+          - "@tauri-apps/*"
+
+  # scripts/ has its own Cargo project.
+  - package-ecosystem: cargo
+    directory: "/scripts"
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - rust
+      - scripts
+    groups:
+      scripts-deps:
+        update-types:
+          - patch
+          - minor
+
+  # GitHub Actions workflow pins.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - ci
+    groups:
+      actions:
+        patterns:
+          - "*"
