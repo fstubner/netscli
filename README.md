@@ -2,7 +2,7 @@
 
 <img src="docs/netscli-wordmark.svg" width="420" alt="NETSCLI" />
 
-*A network scanner written in Rust. Ships as a CLI, a terminal UI, a desktop app, and an MCP server — one library behind all four.*
+*A network scanner written in Rust. CLI, terminal UI, desktop app, and MCP server. One library behind all four.*
 
 [![CI](https://github.com/fstubner/netscli/actions/workflows/ci.yml/badge.svg)](https://github.com/fstubner/netscli/actions/workflows/ci.yml)
 [![Rust 1.92.0](https://img.shields.io/badge/rust-1.92.0-blue.svg)](https://www.rust-lang.org/)
@@ -121,7 +121,7 @@ NETSCLI_PCAP=1 curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/mai
 
 The single `NETSCLI_PCAP=1` flag does two things: it downloads the pcap-enabled binary variant *and* installs the `libpcap` system library via your package manager. If you already have libpcap installed and don't want the installer touching it, add `NETSCLI_SKIP_LIBPCAP=1`.
 
-Windows PowerShell (same idea — `NETSCLI_PCAP=1` downloads the pcap binary and runs the Npcap installer):
+Windows PowerShell (same idea; `NETSCLI_PCAP=1` downloads the pcap binary and runs the Npcap installer):
 
 ```powershell
 iwr -useb https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.ps1 | iex
@@ -183,10 +183,10 @@ This will interactively guide you through installing:
 
 PCAP capture is optional and disabled in the default builds for portability. To enable it:
 
-- **Via installer (recommended)**: `NETSCLI_PCAP=1` does everything — picks the pcap-enabled binary variant *and* installs the system library (`libpcap` on Linux/macOS, Npcap on Windows).
+- **Via installer (recommended)**: `NETSCLI_PCAP=1` does everything. It picks the pcap-enabled binary variant *and* installs the system library (`libpcap` on Linux/macOS, Npcap on Windows).
   - Add `NETSCLI_SKIP_LIBPCAP=1` (POSIX) or `NETSCLI_SKIP_NPCAP=1` (Windows) if you manage the system library yourself.
 - **From source**: `cargo build --features pcap` (see [Building](#building) for the full command with OS-specific deps).
-- **On Windows**: ensure `wpcap.dll` is on PATH — Npcap installs it to `C:\Windows\System32\Npcap\` which isn't on PATH by default. Add that directory to your PATH, or the installer does it for you when you set `NETSCLI_PCAP=1`.
+- **On Windows**: ensure `wpcap.dll` is on PATH. Npcap installs it to `C:\Windows\System32\Npcap\` which isn't on PATH by default. Add that directory to your PATH, or the installer does it for you when you set `NETSCLI_PCAP=1`.
 
 ## Usage
 
