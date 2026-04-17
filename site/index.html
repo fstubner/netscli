@@ -3,11 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>netscli — network scanner</title>
+<meta name="theme-color" content="#111">
+<title>netscli — A modern network scanner</title>
 <meta name="description" content="A network scanner written in Rust. CLI, TUI, desktop app, and MCP server.">
-<meta property="og:title" content="netscli">
+<meta property="og:type" content="website">
+<meta property="og:title" content="netscli — A modern network scanner">
 <meta property="og:description" content="Discover hosts, scan ports, resolve DNS. Four interfaces, one Rust library.">
 <meta property="og:url" content="https://netscli.com">
+<meta property="og:image" content="https://netscli.com/gui-dashboard.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="netscli — A modern network scanner">
+<meta name="twitter:description" content="Discover hosts, scan ports, resolve DNS. Four interfaces, one Rust library.">
+<meta name="twitter:image" content="https://netscli.com/gui-dashboard.png">
 <link rel="canonical" href="https://netscli.com">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="apple-touch-icon" href="/favicon.svg">
@@ -43,7 +50,7 @@ nav{
 }
 .mark{
   font-family:ui-monospace,"SF Mono","Cascadia Code",Menlo,monospace;
-  font-weight:700;font-size:3.5px;letter-spacing:0;text-decoration:none;
+  font-weight:700;font-size:5.5px;letter-spacing:0;text-decoration:none;
   line-height:1.05;white-space:pre;
   background:linear-gradient(90deg,#059669,#0aae7a 50%,#1edcff);
   -webkit-background-clip:text;background-clip:text;color:transparent;
@@ -73,13 +80,16 @@ nav{
 }
 .hero h1{
   font-size:clamp(1.75rem,4vw,2.75rem);font-weight:700;color:#f5f5f5;
-  letter-spacing:-.02em;margin:0;line-height:1.2;
+  letter-spacing:-.02em;margin:0 auto;line-height:1.2;
+  max-width:15ch;
 }
 .hero .sub{font-size:1.0625rem;color:#888;max-width:500px;margin:14px auto 0}
 .hero .quick-install{
   margin:28px auto 0;max-width:520px;
   background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
   border-radius:10px;padding:12px 16px;
+  /* Soft green ring outside the element, matching the wordmark gradient */
+  box-shadow:0 0 0 1px rgba(10,174,122,.45),0 0 24px rgba(10,174,122,.15);
   font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.8125rem;
   color:#ccc;display:flex;align-items:center;justify-content:space-between;gap:12px;
 }
@@ -140,7 +150,7 @@ section .lead a{color:#ccc;text-decoration:underline;text-underline-offset:3px}
 .install-card{margin-bottom:16px;overflow:hidden}
 .install-card:last-child{margin-bottom:0}
 .install-label{font-size:.8125rem;font-weight:600;color:#e5e5e5;margin:0 0 6px}
-.install-hint{font-size:.6875rem;color:#666;margin:4px 0 0}
+.install-hint{font-size:.6875rem;color:#8a8a8a;margin:4px 0 0}
 .cmd{
   background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
   border-radius:8px;padding:12px 16px;
@@ -214,7 +224,7 @@ footer a:hover{color:#ccc}
 <!-- ━━━ HERO ━━━ -->
 <div class="hero">
   <div class="badge">Open source · MIT · Rust · Windows, Linux, macOS</div>
-  <h1>A network scanner you<br>can talk to</h1>
+  <h1>A network scanner you can talk to</h1>
   <p class="sub">
     Discover hosts, scan ports, resolve DNS, capture packets.
     Use it from a terminal, a desktop app, or let your AI agent
@@ -342,6 +352,11 @@ footer a:hover{color:#ccc}
     <div class="install-grid">
       <div>
         <div class="install-card">
+          <div class="install-label">Cargo</div>
+          <div class="cmd has-copy">cargo install netscli</div>
+          <div class="install-hint">Simplest path if you have the Rust toolchain. Reproducible and easy to update.</div>
+        </div>
+        <div class="install-card">
           <div class="install-label">Linux / macOS</div>
           <div class="cmd has-copy">curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash</div>
           <div class="install-hint">Add <code>NETSCLI_PCAP=1</code> for packet capture.</div>
@@ -349,12 +364,9 @@ footer a:hover{color:#ccc}
         <div class="install-card">
           <div class="install-label">Windows</div>
           <div class="cmd has-copy">iwr -useb https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.ps1 | iex</div>
+          <div class="install-hint">Add <code>$env:NETSCLI_PCAP=1</code> for packet capture.</div>
         </div>
-        <div class="install-card">
-          <div class="install-label">Cargo</div>
-          <div class="cmd has-copy">cargo install netscli</div>
-        </div>
-        <p style="margin:12px 0 0;font-size:.8125rem;color:#666">
+        <p style="margin:12px 0 0;font-size:.8125rem;color:#8a8a8a">
           Or grab binaries from
           <a href="https://github.com/fstubner/netscli/releases/latest" style="color:#ccc;text-decoration:underline;text-underline-offset:3px">the latest release</a>.
         </p>
