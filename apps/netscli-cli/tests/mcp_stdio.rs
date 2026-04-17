@@ -127,7 +127,10 @@ async fn mcp_tools_call_rejects_large_subnet() {
         )
         .await
         .expect("write tools/call discover_network");
-    stdin.flush().await.expect("flush tools/call discover_network");
+    stdin
+        .flush()
+        .await
+        .expect("flush tools/call discover_network");
 
     let resp = read_json_line(&mut lines).await;
     assert_eq!(resp["id"], 2);
