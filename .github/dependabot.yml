@@ -105,6 +105,12 @@ updates:
     labels:
       - dependencies
       - ci
+    # dtolnay/rust-toolchain's numeric refs are Rust toolchain versions
+    # (1.92.0, not the action's release). We pin to @stable with an
+    # explicit `toolchain` input everywhere, so Dependabot has nothing
+    # to bump here, but keep this ignore as a belt-and-braces guard.
+    ignore:
+      - dependency-name: "dtolnay/rust-toolchain"
     groups:
       actions:
         patterns:
