@@ -2,7 +2,16 @@ name: Release
 
 on:
   release:
-    types: [created]
+    # `published` fires when a draft transitions to public. `created` only
+    # fires on initial draft creation, which happens via release-drafter
+    # (a GITHUB_TOKEN-driven action) so wouldn't trigger us anyway.
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to build and upload assets for (e.g. v0.1.0)'
+        required: true
+        type: string
 
 jobs:
   release:
@@ -81,7 +90,11 @@ jobs:
             build_flags: --features pcap
             pcap: true
     steps:
+      # On workflow_dispatch we need the tag ref explicitly. On release
+      # events the default ref is already the tag.
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -145,6 +158,6 @@ jobs:
           files: |
             target/${{ matrix.target }}/release/${{ matrix.asset_name }}
             target/${{ matrix.target }}/release/${{ matrix.asset_name }}.sha256
-          tag_name: ${{ github.ref_name }}
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
