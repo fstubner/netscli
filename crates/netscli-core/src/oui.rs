@@ -40,15 +40,6 @@ fn load_oui() -> HashMap<String, String> {
         }
     }
 
-    // Dev-build fallback: when running `cargo run` from the workspace root
-    // without `data/` alongside the binary, resolve relative to the crate.
-    #[cfg(debug_assertions)]
-    {
-        let manifest_dir = env!("CARGO_MANIFEST_DIR");
-        candidates.push(PathBuf::from(manifest_dir).join("../../data/oui.min.json.gz"));
-        candidates.push(PathBuf::from(manifest_dir).join("../../data/oui.json"));
-    }
-
     candidates.push(PathBuf::from("data/oui.min.json.gz"));
     candidates.push(PathBuf::from("data/oui.json"));
 

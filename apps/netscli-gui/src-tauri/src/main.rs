@@ -389,13 +389,16 @@ async fn get_default_interface() -> Result<serde_json::Value, String> {
 }
 
 fn main() {
-    // Set OUI database path for dev builds so vendor lookup works
+    // Set OUI database path for dev builds so vendor lookup works.
+    // Release builds pick up the bundled resource via Tauri and the
+    // library's include_bytes! fallback handles cargo install users,
+    // so this is only for `npm run tauri dev` from the crate dir.
     #[cfg(debug_assertions)]
     if std::env::var("NETSCLI_OUI_PATH").is_err() {
         let candidates = [
             "data/oui.min.json.gz",
-            "../../../data/oui.min.json.gz",
-            "../../data/oui.min.json.gz",
+            "../../../crates/netscli-core/data/oui.min.json.gz",
+            "../../crates/netscli-core/data/oui.min.json.gz",
         ];
         for cand in candidates {
             if std::path::Path::new(cand).exists() {

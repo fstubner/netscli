@@ -1,22 +1,16 @@
 <div align="center">
 
-<img src="docs/netscli-wordmark.svg" width="420" alt="NETSCLI" />
+<img src="docs/assets/netscli-wordmark.svg" width="420" alt="NETSCLI" />
 
 *A network scanner written in Rust. CLI, terminal UI, desktop app, and MCP server. One library behind all four.*
 
 [![CI](https://github.com/fstubner/netscli/actions/workflows/ci.yml/badge.svg)](https://github.com/fstubner/netscli/actions/workflows/ci.yml)
+[![crates.io](https://img.shields.io/crates/v/netscli.svg)](https://crates.io/crates/netscli)
+[![Release](https://img.shields.io/github/v/release/fstubner/netscli)](https://github.com/fstubner/netscli/releases)
+[![Downloads](https://img.shields.io/github/downloads/fstubner/netscli/total)](https://github.com/fstubner/netscli/releases)
 [![Rust 1.92.0](https://img.shields.io/badge/rust-1.92.0-blue.svg)](https://www.rust-lang.org/)
 [![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-informational)](#installation)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
-<!--
-  Post-release badges to add once things exist on the relevant registries:
-
-  [![crates.io](https://img.shields.io/crates/v/netscli.svg)](https://crates.io/crates/netscli)
-  [![docs.rs](https://img.shields.io/docsrs/netscli)](https://docs.rs/netscli)
-  [![Release](https://img.shields.io/github/v/release/fstubner/netscli)](https://github.com/fstubner/netscli/releases)
-  [![Downloads](https://img.shields.io/github/downloads/fstubner/netscli/total)](https://github.com/fstubner/netscli/releases)
--->
 
 </div>
 
@@ -69,27 +63,27 @@ the same Rust calls.
 ### Terminal UI
 
 <div align="center">
-  <img src="docs/tui-preview.svg" alt="NETSCLI TUI preview (idle)" width="820" />
+  <img src="docs/screenshots/tui-preview.svg" alt="NETSCLI TUI preview (idle)" width="820" />
   <br/>
-  <img src="docs/tui-discover.svg" alt="NETSCLI TUI running /discover" width="820" />
+  <img src="docs/screenshots/tui-discover.svg" alt="NETSCLI TUI running /discover" width="820" />
 </div>
 
 ### Desktop GUI
 
 <div align="center">
-  <img src="docs/gui-dashboard.png" alt="Desktop app: Dashboard" width="820" />
+  <img src="docs/screenshots/gui-dashboard.png" alt="Desktop app: Dashboard" width="820" />
   <br/>
   <em>Dashboard: default interface, live up/down rates, all interfaces at a glance.</em>
   <br/><br/>
-  <img src="docs/gui-scan.png" alt="Desktop app: port scan results" width="820" />
+  <img src="docs/screenshots/gui-scan.png" alt="Desktop app: port scan results" width="820" />
   <br/>
   <em>Port scan. Results show service names for well-known ports.</em>
   <br/><br/>
-  <img src="docs/gui-dns.png" alt="Desktop app: DNS lookup" width="820" />
+  <img src="docs/screenshots/gui-dns.png" alt="Desktop app: DNS lookup" width="820" />
   <br/>
   <em>DNS lookup. Type and value per row, supports every standard record type.</em>
   <br/><br/>
-  <img src="docs/gui-interfaces.png" alt="Desktop app: interfaces" width="820" />
+  <img src="docs/screenshots/gui-interfaces.png" alt="Desktop app: interfaces" width="820" />
   <br/>
   <em>Interfaces. Each row shows state, MAC, and every assigned address.</em>
 </div>
@@ -97,7 +91,7 @@ the same Rust calls.
 ## Architecture
 
 <div align="center">
-  <img src="docs/overview.svg" alt="NetsCLI architecture overview" width="720" />
+  <img src="docs/assets/overview.svg" alt="NetsCLI architecture overview" width="720" />
 </div>
 
 ## Installation
@@ -145,6 +139,12 @@ sudo cp target/release/netscli /usr/local/bin/
 ```
 
 ### Using Cargo
+
+```bash
+cargo install netscli
+```
+
+Or install directly from the git tip:
 
 ```bash
 cargo install --git https://github.com/fstubner/netscli netscli
@@ -346,7 +346,7 @@ cd scripts
 cargo run --bin generate-oui
 ```
 
-This fetches data from IEEE and Wireshark sources and generates `data/oui.min.json.gz`.
+This fetches data from IEEE and Wireshark sources and generates `crates/netscli-core/data/oui.min.json.gz`, which ships embedded in the `netscli-core` crate.
 
 ## MCP Server
 

@@ -41,7 +41,7 @@
       "icons/icon.ico"
     ],
     "resources": {
-      "../../../data/oui.min.json.gz": "data/oui.min.json.gz"
+      "../../../crates/netscli-core/data/oui.min.json.gz": "data/oui.min.json.gz"
     }
   }
 }

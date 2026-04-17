@@ -1,5 +1,5 @@
-// Generate OUI vendor map from IEEE and Wireshark sources
-// Outputs: data/oui.min.json.gz
+// Generate OUI vendor map from IEEE and Wireshark sources.
+// Outputs: crates/netscli-core/data/oui.min.json.gz
 
 use flate2::write::GzEncoder;
 use flate2::Compression;
@@ -176,10 +176,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .collect();
     let json = serde_json::to_string(&json_map)?;
 
-    // Write gzipped output
+    // Write gzipped output. The canonical location is inside
+    // netscli-core so the crate ships with a current dataset.
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let repo_root = manifest_dir.parent().unwrap_or(&manifest_dir);
-    let out_path = repo_root.join("data").join("oui.min.json.gz");
+    let out_path = repo_root
+        .join("crates")
+        .join("netscli-core")
+        .join("data")
+        .join("oui.min.json.gz");
     std::fs::create_dir_all(out_path.parent().unwrap_or(repo_root))?;
     let file = File::create(&out_path)?;
     let mut encoder = GzEncoder::new(file, Compression::default());

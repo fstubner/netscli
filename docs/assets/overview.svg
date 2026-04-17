@@ -62,7 +62,7 @@
   <line x1="660" y1="405" x2="890" y2="405" stroke="#3a3f46" stroke-width="1"/>
   <text class="sub" x="660" y="425" style="fill:#c8cdd6">~/.netscli/netscli.db</text>
   <text class="sub" x="660" y="445" style="fill:#c8cdd6">~/.netscli/tui-settings.json</text>
-  <text class="sub" x="660" y="465" style="fill:#c8cdd6">data/oui.min.json.gz</text>
+  <text class="sub" x="660" y="465" style="fill:#c8cdd6">oui.min.json.gz (embedded)</text>
 
   <!-- arrows from core down to its three dep groups -->
   <path class="link" d="M360 335 L 200 380"/>

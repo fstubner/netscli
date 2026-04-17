@@ -27,7 +27,7 @@ This will:
 1. Fetch OUI data from IEEE (3 CSV files)
 2. Fetch Wireshark manuf database
 3. Merge all sources
-4. Output `data/oui.min.json.gz`
+4. Output `crates/netscli-core/data/oui.min.json.gz`
 
 ## Updating
 
