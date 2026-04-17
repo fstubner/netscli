@@ -9,7 +9,7 @@
     <style>
       .n {
         font-family: ui-monospace, "Cascadia Mono", SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-        font-size: 9px;
+        font-size: 7px;
         font-weight: 400;
       }
     </style>
@@ -19,13 +19,14 @@
 
   <!-- The "N" block from the ANSI Shadow wordmark, 10 chars wide x 6 rows
        tall. Same font stack and gradient as docs/assets/netscli-wordmark.svg
-       so the favicon reads as a zoomed-in slice of the header logo. -->
+       so the favicon reads as a zoomed-in slice of the header logo.
+       Sized so ~10px padding surrounds the glyph on all sides. -->
   <g fill="url(#g)" class="n" text-anchor="middle">
-    <text x="32" y="14" xml:space="preserve">███╗   ██╗</text>
-    <text x="32" y="23" xml:space="preserve">████╗  ██║</text>
+    <text x="32" y="18" xml:space="preserve">███╗   ██╗</text>
+    <text x="32" y="25" xml:space="preserve">████╗  ██║</text>
     <text x="32" y="32" xml:space="preserve">██╔██╗ ██║</text>
-    <text x="32" y="41" xml:space="preserve">██║╚██╗██║</text>
-    <text x="32" y="50" xml:space="preserve">██║ ╚████║</text>
-    <text x="32" y="59" xml:space="preserve">╚═╝  ╚═══╝</text>
+    <text x="32" y="39" xml:space="preserve">██║╚██╗██║</text>
+    <text x="32" y="46" xml:space="preserve">██║ ╚████║</text>
+    <text x="32" y="53" xml:space="preserve">╚═╝  ╚═══╝</text>
   </g>
 </svg>
