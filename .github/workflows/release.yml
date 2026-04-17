@@ -155,7 +155,7 @@ jobs:
           "$hash  ${{ matrix.asset_name }}" | Out-File -FilePath "${asset}.sha256" -Encoding ascii
 
       - name: Upload Release Asset
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             target/${{ matrix.target }}/release/${{ matrix.asset_name }}
