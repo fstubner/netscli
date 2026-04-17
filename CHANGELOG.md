@@ -10,6 +10,11 @@ version and release together.
 ## [Unreleased]
 
 ### Changed
+- Bumped `sqlx` dep in `netscli-core` from 0.7 to 0.8. No source
+  changes needed; our usage is entirely `query()` / `query_as::<_, T>()`
+  / `FromRow`, and the 0.8 breaking changes affected other paths. This
+  drops GHSA-xmrp-424f-vfpx from the advisory noise even though it was
+  never reachable with our `sqlite`-only feature set.
 - Consolidated the OUI vendor dataset under
   `crates/netscli-core/data/oui.min.json.gz`. It used to live at the
   workspace root and wasn't bundled in the published crate.

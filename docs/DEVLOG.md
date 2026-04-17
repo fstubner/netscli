@@ -136,13 +136,23 @@ A bunch of small yak-shaves between "first commit" and "crates.io live":
 
 ### What's left for v0.1.1
 
-- `sqlx 0.7` → `0.8` hygiene bump. The CVE in the advisory feed
-  (GHSA-xmrp-424f-vfpx) is a PostgreSQL binary protocol issue and we
-  only enable the `sqlite` feature, so nothing is reachable, but
-  keeping a CVE-flagged version of a direct dep in the tree is noise I
-  don't want in the weekly Dependabot email.
 - Dependabot PRs on `rollup`, `vite`, `picomatch` still need merging.
   Dev-only deps, but fixing the HIGH advisories now means a smaller
   weekly diff later.
 - Per-crate `README.md` for netscli-core and netscli-mcp so crates.io
   pages show more than just the description line.
+
+### Addendum same-day: sqlx 0.7 → 0.8
+
+Done after the initial v0.1.0 release landed. The CVE in the advisory
+feed (GHSA-xmrp-424f-vfpx) is a PostgreSQL binary protocol issue and
+we only enable the `sqlite` feature, so nothing was ever reachable,
+but keeping a CVE-flagged version of a direct dep in the tree is noise
+in the weekly Dependabot email.
+
+Expected this to be painful. It wasn't. Zero source changes, all tests
+pass, clippy clean. That's because our sqlx usage is entirely the stable
+runtime API — `query()`, `query_as::<_, T>()`, `FromRow` — and the
+breaking changes in 0.8 hit the compile-time query macros and non-
+SQLite paths we don't use. A good reminder that which APIs you pick
+against a library matters as much as which library you pick.
