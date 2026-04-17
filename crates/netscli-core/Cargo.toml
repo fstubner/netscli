@@ -1,6 +1,6 @@
 [package]
 name = "netscli-core"
-version = "0.1.0"
+version = "0.1.1"
 description = "Core networking library: discovery, scanning, DNS, ARP, PCAP, and OUI resolution"
 authors.workspace = true
 license.workspace = true
@@ -14,6 +14,7 @@ include = [
     "tests/**/*.rs",
     "data/oui.min.json.gz",
     "Cargo.toml",
+    "README.md",
 ]
 
 [dependencies]

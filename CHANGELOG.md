@@ -9,6 +9,18 @@ version and release together.
 
 ## [Unreleased]
 
+## [0.1.1] — 2026-04-17
+
+### Added
+- Per-crate `README.md` for `netscli-core`, `netscli-mcp`, and
+  `netscli` so their crates.io pages have real content rather than
+  just the one-line description.
+- `CHANGELOG.md`, `SECURITY.md`, and `docs/DEVLOG.md`.
+- `.github/dependabot.yml` replacing the inherited default. Groups
+  patch/minor bumps, keeps first-tier deps (tauri, sqlx, tokio,
+  hickory) as individual PRs, gives the frontend bundler stack its
+  own grouped PR.
+
 ### Changed
 - Bumped `sqlx` dep in `netscli-core` from 0.7 to 0.8. No source
   changes needed; our usage is entirely `query()` / `query_as::<_, T>()`
@@ -19,18 +31,27 @@ version and release together.
   `crates/netscli-core/data/oui.min.json.gz`. It used to live at the
   workspace root and wasn't bundled in the published crate.
 - Reorganised `docs/` into `docs/screenshots/` and `docs/assets/`.
+- `README.md`: primary install instruction is now
+  `cargo install netscli` (was git-URL form). crates.io / Release /
+  Downloads badges are live.
 
 ### Fixed
 - Release build workflow now triggers on `release: [published]` and
   supports `workflow_dispatch` with a tag input. Previously it listened
   on `[created]`, which GitHub's anti-loop protection suppresses when
   release-drafter creates the draft, so no platform binaries were ever
-  built automatically.
+  built automatically for v0.1.0.
 - Npcap SDK install step in the release workflow was pointing `LIB` at
   the wrong path (the 1.13 zip has `Lib/` at its root, no wrapping
   `npcap-sdk/` folder). Windows pcap variant now builds.
 - `ubuntu-24.04-arm64` runner label corrected to `ubuntu-24.04-arm`;
   the ARM64 Linux matrix jobs no longer queue forever.
+
+### Security
+- Dropped CVE-flagged dep versions from the tree through transitive
+  patches (`bytes`, `time`, `rand`, `rsa`) and the `sqlx` major bump.
+  None of the CVEs were reachable under our feature flags, but
+  keeping flagged versions around cluttered the alert feed.
 
 ## [0.1.0] — 2026-04-17
 
@@ -68,5 +89,6 @@ backed by the same core library.
 - Desktop app needs the WebView2 runtime on Windows. Most Windows
   10/11 systems have it preinstalled.
 
-[Unreleased]: https://github.com/fstubner/netscli/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/fstubner/netscli/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/fstubner/netscli/releases/tag/v0.1.1
 [0.1.0]: https://github.com/fstubner/netscli/releases/tag/v0.1.0
