@@ -54,7 +54,9 @@ nav{
   line-height:1.05;white-space:pre;
   background:linear-gradient(90deg,#059669,#0aae7a 50%,#1edcff);
   -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:brightness(1);transition:filter 200ms;
 }
+.mark:hover{filter:brightness(1.25) drop-shadow(0 0 10px rgba(10,174,122,.35))}
 .nlinks{display:flex;gap:20px;font-size:.8125rem}
 .nlinks a{color:#999;text-decoration:none}
 .nlinks a:hover{color:#e5e5e5}
@@ -83,7 +85,15 @@ nav{
   letter-spacing:-.02em;margin:0 auto;line-height:1.2;
   max-width:15ch;
 }
-.hero .sub{font-size:1.0625rem;color:#888;max-width:500px;margin:14px auto 0}
+.hero .sub{font-size:1.0625rem;color:#888;max-width:640px;margin:14px auto 0}
+.hero .social-proof{
+  margin:12px auto 0;font-size:.75rem;color:#888;
+  display:flex;justify-content:center;align-items:center;gap:10px;
+  font-variant-numeric:tabular-nums;min-height:1em;
+}
+.hero .social-proof a{color:inherit;text-decoration:none}
+.hero .social-proof a:hover{color:#e5e5e5}
+.hero .social-proof .sep{color:#444}
 .hero .quick-install{
   margin:28px auto 0;max-width:520px;
   background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
@@ -94,9 +104,15 @@ nav{
   color:#ccc;display:flex;align-items:center;justify-content:space-between;gap:12px;
 }
 .hero .quick-install span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hero .links{display:flex;gap:12px;justify-content:center;margin-top:16px}
-.hero .links a{font-size:.8125rem;color:#888;text-decoration:none}
-.hero .links a:hover{color:#e5e5e5}
+.hero .links{display:flex;gap:16px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+.hero .links a{
+  font-size:.8125rem;color:#888;text-decoration:none;
+  border-bottom:1px dotted rgba(255,255,255,.2);padding-bottom:1px;
+  display:inline-flex;align-items:center;gap:4px;
+}
+.hero .links a:hover{color:#e5e5e5;border-bottom-color:rgba(255,255,255,.5)}
+.hero .links a.plain{border-bottom:0}
+.hero .links a.plain:hover{border-bottom:0}
 
 /* ─── PRODUCT SHOT ─── */
 .bigshot{
@@ -184,6 +200,11 @@ section .lead a{color:#ccc;text-decoration:underline;text-underline-offset:3px}
 .has-copy:hover .copy-btn,.has-copy:focus-within .copy-btn{opacity:1}
 .copy-btn:hover{background:#333;color:#eee}
 .copy-btn.copied{color:#3fb950;border-color:rgba(63,185,80,.4)}
+/* Touch devices don't have :hover; keep copy buttons visible so they're discoverable */
+@media (hover: none){
+  .copy-btn{opacity:.7}
+  .copy-btn:hover{opacity:1}
+}
 
 /* ─── FOOTER ─── */
 footer{
@@ -202,7 +223,24 @@ footer a:hover{color:#ccc}
   section{padding:48px 0}
   section h2{font-size:1.25rem}
   .hero .quick-install{font-size:.75rem;padding:10px 12px}
+  /* Let the curl | bash command wrap instead of being ellipsed — losing
+     the "| bash" at the end made the command unusable on phones. */
+  .hero .quick-install span{white-space:normal;overflow:visible;text-overflow:clip;word-break:break-all}
 }
+
+/* ─── TRY BLOCK TITLE ─── */
+.try-title{
+  font-size:.9375rem;font-weight:600;color:#e5e5e5;margin:0 0 8px;
+}
+.try-title + .tryblock{margin-top:0}
+
+/* ─── BUILT-WITH FOOTER ─── */
+.built-with{
+  width:100%;font-size:.75rem;color:#555;text-align:center;
+  padding-top:18px;border-top:1px solid rgba(255,255,255,.04);margin-top:12px;
+}
+.built-with a{color:#888;text-decoration:none}
+.built-with a:hover{color:#ccc}
 </style>
 </head>
 <body>
@@ -228,16 +266,22 @@ footer a:hover{color:#ccc}
   <p class="sub">
     Discover hosts, scan ports, resolve DNS, capture packets.
     Use it from a terminal, a desktop app, or let your AI agent
-    call the MCP server — or the CLI directly.
+    call the MCP server or the CLI directly.
   </p>
+
+  <div class="social-proof" id="social-proof" aria-live="polite">
+    <a href="https://github.com/fstubner/netscli/stargazers" id="stars">&mdash; stars</a>
+    <span class="sep">·</span>
+    <a href="https://github.com/fstubner/netscli/releases" id="downloads">&mdash; downloads</a>
+  </div>
 
   <!-- Install command right in the hero — don't make people scroll for it -->
   <div class="quick-install has-copy">
     <span>curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash</span>
   </div>
   <div class="links">
-    <a href="#install">Windows &amp; Cargo options</a>
-    <a href="https://github.com/fstubner/netscli">
+    <a href="#install">Windows &amp; Cargo options ↓</a>
+    <a class="plain" href="https://github.com/fstubner/netscli">
       <svg class="gh-icon" viewBox="0 0 16 16" fill="currentColor" style="vertical-align:-2px;margin-right:3px"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
       View source
     </a>
@@ -373,7 +417,7 @@ footer a:hover{color:#ccc}
       </div>
 
       <div>
-        <div class="install-label">Then try</div>
+        <h3 class="try-title">Try it</h3>
         <div class="tryblock">
 <span style="color:#888">$</span> netscli discover
 <span style="color:#888">$</span> netscli scan 192.168.1.1 -p 22,80,443
@@ -393,10 +437,41 @@ footer a:hover{color:#ccc}
     <a href="https://github.com/fstubner/netscli/releases">Releases</a>
     <a href="https://github.com/fstubner/netscli#readme">Docs</a>
   </div>
+  <div class="built-with">
+    Built with
+    <a href="https://www.rust-lang.org/">Rust</a>,
+    <a href="https://ratatui.rs/">ratatui</a>,
+    <a href="https://tauri.app/">Tauri</a>,
+    <a href="https://github.com/hickory-dns/hickory-dns">hickory</a>,
+    and <a href="https://github.com/launchbadge/sqlx">sqlx</a>.
+  </div>
 </footer>
 
 <script>
 document.getElementById("y").textContent=new Date().getFullYear();
+
+// Live social proof: GitHub stars + cumulative release asset downloads.
+// Unauthenticated GitHub API is rate-limited to 60/hour per IP; on failure
+// we leave the em-dash placeholders rather than show a zero that implies
+// nobody cares. The ?t=... cache-buster keeps the number fresh-ish while
+// still letting the browser cache respect server headers.
+(function(){
+  const repo='fstubner/netscli';
+  const fmt=n=>n.toLocaleString();
+  fetch(`https://api.github.com/repos/${repo}`)
+    .then(r=>r.ok?r.json():null)
+    .then(d=>{
+      if(!d||typeof d.stargazers_count!=='number')return;
+      document.getElementById('stars').textContent=`${fmt(d.stargazers_count)} ${d.stargazers_count===1?'star':'stars'}`;
+    }).catch(()=>{});
+  fetch(`https://api.github.com/repos/${repo}/releases?per_page=100`)
+    .then(r=>r.ok?r.json():null)
+    .then(rs=>{
+      if(!Array.isArray(rs))return;
+      const total=rs.reduce((sum,r)=>sum+(r.assets||[]).reduce((s,a)=>s+(a.download_count||0),0),0);
+      document.getElementById('downloads').textContent=`${fmt(total)} ${total===1?'download':'downloads'}`;
+    }).catch(()=>{});
+})();
 
 // Copy buttons on every .has-copy block
 document.querySelectorAll('.has-copy').forEach(el=>{
@@ -410,7 +485,7 @@ document.querySelectorAll('.has-copy').forEach(el=>{
     }
     navigator.clipboard.writeText(t).then(()=>{
       btn.textContent='Copied!';btn.classList.add('copied');
-      setTimeout(()=>{btn.textContent='Copy';btn.classList.remove('copied')},1500);
+      setTimeout(()=>{btn.textContent='Copy';btn.classList.remove('copied')},2500);
     });
   });
   el.appendChild(btn);
