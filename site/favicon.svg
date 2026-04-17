@@ -6,11 +6,26 @@
       <stop offset="45%" stop-color="#0aae7a"/>
       <stop offset="100%" stop-color="#1edcff"/>
     </linearGradient>
+    <style>
+      .n {
+        font-family: ui-monospace, "Cascadia Mono", SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 9px;
+        font-weight: 400;
+      }
+    </style>
   </defs>
+
   <rect width="64" height="64" rx="10" ry="10" fill="#111"/>
-  <!-- Bold lowercase 'n' in a monospace-ish geometric form. Matches the
-       ANSI Shadow wordmark's solid-block aesthetic without being an
-       illegible smush at 16x16. -->
-  <path d="M14 14 h7 v5 a14 14 0 0 1 22 11 v20 h-7 v-19 a8 8 0 0 0 -15 0 v19 h-7 z"
-        fill="url(#g)"/>
+
+  <!-- The "N" block from the ANSI Shadow wordmark, 10 chars wide x 6 rows
+       tall. Same font stack and gradient as docs/assets/netscli-wordmark.svg
+       so the favicon reads as a zoomed-in slice of the header logo. -->
+  <g fill="url(#g)" class="n" text-anchor="middle">
+    <text x="32" y="14" xml:space="preserve">███╗   ██╗</text>
+    <text x="32" y="23" xml:space="preserve">████╗  ██║</text>
+    <text x="32" y="32" xml:space="preserve">██╔██╗ ██║</text>
+    <text x="32" y="41" xml:space="preserve">██║╚██╗██║</text>
+    <text x="32" y="50" xml:space="preserve">██║ ╚████║</text>
+    <text x="32" y="59" xml:space="preserve">╚═╝  ╚═══╝</text>
+  </g>
 </svg>
