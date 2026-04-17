@@ -7,6 +7,12 @@ use std::path::{Path, PathBuf};
 
 static OUI_MAP: OnceCell<HashMap<String, String>> = OnceCell::new();
 
+// Embedded copy of the vendor DB that ships inside the crate, so
+// `cargo install netscli` and release binaries without a data/ dir
+// next to them still get working vendor lookups. Overridable via
+// NETSCLI_OUI_PATH or any of the on-disk candidates below.
+const EMBEDDED_OUI: &[u8] = include_bytes!("../data/oui.min.json.gz");
+
 pub fn lookup_vendor(mac: &str) -> Option<String> {
     let map = OUI_MAP.get_or_init(load_oui);
     let key = mac.to_ascii_uppercase().replace([':', '-'], "");
@@ -52,35 +58,35 @@ fn load_oui() -> HashMap<String, String> {
         }
     }
 
-    // Couldn't find the dataset anywhere — vendor lookups will silently
-    // return None forever. Surface a one-time warning so misconfigured
-    // deployments are debuggable instead of mysteriously missing vendors.
-    let searched: Vec<String> = candidates.iter().map(|p| p.display().to_string()).collect();
-    eprintln!(
-        "netscli: warning: OUI vendor database not found; MAC vendor lookups will be empty. \
-         Searched: {}. Set NETSCLI_OUI_PATH to override.",
-        searched.join(", ")
-    );
-    HashMap::new()
+    // No disk copy found. Fall through to the embedded copy so
+    // `cargo install` users still get working vendor lookups.
+    parse_gz(EMBEDDED_OUI).unwrap_or_default()
 }
 
 fn read_map(path: &Path) -> Option<HashMap<String, String>> {
-    let data = if path
+    let is_gz = path
         .extension()
         .and_then(|s| s.to_str())
-        .map(|ext| ext.eq_ignore_ascii_case("gz"))
-        .unwrap_or(false)
-    {
-        let file = fs::File::open(path).ok()?;
-        let mut decoder = flate2::read::GzDecoder::new(file);
-        let mut buf = String::new();
-        decoder.read_to_string(&mut buf).ok()?;
-        buf
-    } else {
-        fs::read_to_string(path).ok()?
-    };
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("gz"));
 
-    let json: Value = serde_json::from_str(&data).ok()?;
+    if is_gz {
+        let bytes = fs::read(path).ok()?;
+        parse_gz(&bytes)
+    } else {
+        let data = fs::read_to_string(path).ok()?;
+        parse_json(&data)
+    }
+}
+
+fn parse_gz(bytes: &[u8]) -> Option<HashMap<String, String>> {
+    let mut decoder = flate2::read::GzDecoder::new(bytes);
+    let mut buf = String::new();
+    decoder.read_to_string(&mut buf).ok()?;
+    parse_json(&buf)
+}
+
+fn parse_json(data: &str) -> Option<HashMap<String, String>> {
+    let json: Value = serde_json::from_str(data).ok()?;
     let mut map = HashMap::new();
     if let Some(obj) = json.as_object() {
         for (k, v) in obj {

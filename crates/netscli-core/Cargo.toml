@@ -7,6 +7,14 @@ license.workspace = true
 repository.workspace = true
 edition.workspace = true
 rust-version.workspace = true
+# The OUI vendor DB ships with the crate so vendor lookups work
+# out of the box on `cargo install`. ~400 KB gzipped.
+include = [
+    "src/**/*.rs",
+    "tests/**/*.rs",
+    "data/oui.min.json.gz",
+    "Cargo.toml",
+]
 
 [dependencies]
 tokio.workspace = true
