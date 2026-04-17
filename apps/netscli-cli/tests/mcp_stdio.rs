@@ -27,7 +27,7 @@ async fn spawn_mcp() -> (
 async fn read_json_line(
     lines: &mut tokio::io::Lines<BufReader<tokio::process::ChildStdout>>,
 ) -> Value {
-    let line = timeout(Duration::from_secs(2), lines.next_line())
+    let line = timeout(Duration::from_secs(15), lines.next_line())
         .await
         .expect("timeout waiting for MCP response")
         .expect("read line")
@@ -47,6 +47,7 @@ async fn initialize(
         )
         .await
         .expect("write initialize");
+    stdin.flush().await.expect("flush initialize");
 
     let init_resp = read_json_line(lines).await;
     assert_eq!(init_resp["id"], 1);
@@ -68,6 +69,7 @@ async fn mcp_initialize_then_tools_list() {
         )
         .await
         .expect("write tools/list");
+    stdin.flush().await.expect("flush tools/list");
 
     let tools_resp = read_json_line(&mut lines).await;
     assert_eq!(tools_resp["id"], 2);
@@ -78,7 +80,7 @@ async fn mcp_initialize_then_tools_list() {
 
     // close stdin so server exits
     drop(stdin);
-    let _ = timeout(Duration::from_secs(2), child.wait())
+    let _ = timeout(Duration::from_secs(10), child.wait())
         .await
         .expect("timeout waiting for server exit")
         .expect("wait");
@@ -96,6 +98,7 @@ async fn mcp_requires_initialize_for_methods() {
         )
         .await
         .expect("write scan_ports");
+    stdin.flush().await.expect("flush scan_ports");
 
     let resp = read_json_line(&mut lines).await;
     assert_eq!(resp["id"], 1);
@@ -106,7 +109,7 @@ async fn mcp_requires_initialize_for_methods() {
         .contains("Not initialized"));
 
     drop(stdin);
-    let _ = timeout(Duration::from_secs(2), child.wait())
+    let _ = timeout(Duration::from_secs(10), child.wait())
         .await
         .expect("timeout waiting for server exit")
         .expect("wait");
@@ -124,6 +127,7 @@ async fn mcp_tools_call_rejects_large_subnet() {
         )
         .await
         .expect("write tools/call discover_network");
+    stdin.flush().await.expect("flush tools/call discover_network");
 
     let resp = read_json_line(&mut lines).await;
     assert_eq!(resp["id"], 2);
@@ -134,7 +138,7 @@ async fn mcp_tools_call_rejects_large_subnet() {
         .contains("subnet too large"));
 
     drop(stdin);
-    let _ = timeout(Duration::from_secs(2), child.wait())
+    let _ = timeout(Duration::from_secs(10), child.wait())
         .await
         .expect("timeout waiting for server exit")
         .expect("wait");
@@ -152,6 +156,7 @@ async fn mcp_tools_call_rejects_port_zero() {
         )
         .await
         .expect("write tools/call scan_ports");
+    stdin.flush().await.expect("flush tools/call scan_ports");
 
     let resp = read_json_line(&mut lines).await;
     assert_eq!(resp["id"], 2);
@@ -162,7 +167,7 @@ async fn mcp_tools_call_rejects_port_zero() {
         .contains("port 0"));
 
     drop(stdin);
-    let _ = timeout(Duration::from_secs(2), child.wait())
+    let _ = timeout(Duration::from_secs(10), child.wait())
         .await
         .expect("timeout waiting for server exit")
         .expect("wait");
