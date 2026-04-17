@@ -92,7 +92,7 @@ jobs:
     steps:
       # On workflow_dispatch we need the tag ref explicitly. On release
       # events the default ref is already the tag.
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.inputs.tag || github.ref }}
 
@@ -155,7 +155,7 @@ jobs:
           "$hash  ${{ matrix.asset_name }}" | Out-File -FilePath "${asset}.sha256" -Encoding ascii
 
       - name: Upload Release Asset
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             target/${{ matrix.target }}/release/${{ matrix.asset_name }}
