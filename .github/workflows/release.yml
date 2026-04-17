@@ -41,13 +41,13 @@ jobs:
             asset_name: netscli-linux-x86_64-musl
             build_flags: ""
             pcap: false
-          - os: ubuntu-24.04-arm64
+          - os: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
             binary_name: netscli
             asset_name: netscli-linux-aarch64
             build_flags: ""
             pcap: false
-          - os: ubuntu-24.04-arm64
+          - os: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
             binary_name: netscli
             asset_name: netscli-linux-aarch64-pcap
@@ -119,9 +119,11 @@ jobs:
           $destPath = Join-Path $env:RUNNER_TEMP "npcap-sdk"
           Invoke-WebRequest -Uri $sdkUrl -OutFile $zipPath
           Expand-Archive -Path $zipPath -DestinationPath $destPath -Force
-          $sdkRoot = Join-Path $destPath "npcap-sdk"
-          $libPath = Join-Path $sdkRoot "Lib\\x64"
-          $includePath = Join-Path $sdkRoot "Include"
+          # The 1.13 zip has Lib/ and Include/ at the archive root, no
+          # wrapping npcap-sdk/ folder. Point LIB/INCLUDE at $destPath
+          # directly.
+          $libPath = Join-Path $destPath "Lib\x64"
+          $includePath = Join-Path $destPath "Include"
           "LIB=$libPath;$env:LIB" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "INCLUDE=$includePath;$env:INCLUDE" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
@@ -153,7 +155,7 @@ jobs:
           "$hash  ${{ matrix.asset_name }}" | Out-File -FilePath "${asset}.sha256" -Encoding ascii
 
       - name: Upload Release Asset
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             target/${{ matrix.target }}/release/${{ matrix.asset_name }}
