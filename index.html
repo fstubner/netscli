@@ -58,7 +58,7 @@ nav{
 }
 .mark:hover{filter:brightness(1.25) drop-shadow(0 0 10px rgba(10,174,122,.35))}
 .nlinks{display:flex;gap:20px;font-size:.8125rem}
-.nlinks a{color:#999;text-decoration:none}
+.nlinks a{color:#b0b0b0;text-decoration:none}
 .nlinks a:hover{color:#e5e5e5}
 @media(max-width:600px){.nlinks{display:none}}
 
@@ -78,22 +78,22 @@ nav{
 .hero{padding:72px 24px 0;text-align:center}
 .hero .badge{
   display:inline-block;font-size:.6875rem;font-weight:600;
-  letter-spacing:.06em;text-transform:uppercase;color:#777;margin-bottom:16px;
+  letter-spacing:.06em;text-transform:uppercase;color:#9a9a9a;margin-bottom:16px;
 }
 .hero h1{
   font-size:clamp(1.75rem,4vw,2.75rem);font-weight:700;color:#f5f5f5;
   letter-spacing:-.02em;margin:0 auto;line-height:1.2;
   max-width:15ch;
 }
-.hero .sub{font-size:1.0625rem;color:#888;max-width:640px;margin:14px auto 0}
+.hero .sub{font-size:1.0625rem;color:#a3a3a3;max-width:640px;margin:14px auto 0}
 .hero .social-proof{
-  margin:12px auto 0;font-size:.75rem;color:#888;
+  margin:12px auto 0;font-size:.75rem;color:#9a9a9a;
   display:flex;justify-content:center;align-items:center;gap:10px;
   font-variant-numeric:tabular-nums;min-height:1em;
 }
 .hero .social-proof a{color:inherit;text-decoration:none}
 .hero .social-proof a:hover{color:#e5e5e5}
-.hero .social-proof .sep{color:#444}
+.hero .social-proof .sep{color:#555}
 .hero .quick-install{
   margin:28px auto 0;max-width:520px;
   background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
@@ -106,8 +106,8 @@ nav{
 .hero .quick-install span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hero .links{display:flex;gap:16px;justify-content:center;margin-top:16px;flex-wrap:wrap}
 .hero .links a{
-  font-size:.8125rem;color:#888;text-decoration:none;
-  border-bottom:1px dotted rgba(255,255,255,.2);padding-bottom:1px;
+  font-size:.8125rem;color:#a3a3a3;text-decoration:none;
+  border-bottom:1px dotted rgba(255,255,255,.22);padding-bottom:1px;
   display:inline-flex;align-items:center;gap:4px;
 }
 .hero .links a:hover{color:#e5e5e5;border-bottom-color:rgba(255,255,255,.5)}
@@ -121,12 +121,12 @@ nav{
   border:1px solid rgba(255,255,255,.08);
   box-shadow:0 32px 80px rgba(0,0,0,.6);
 }
-.bigshot img{width:100%;display:block}
+.bigshot img{width:100%;height:auto;display:block}
 
 /* ─── SECTIONS ─── */
 section{padding:72px 0}
 section h2{font-size:1.5rem;font-weight:700;color:#f5f5f5;margin:0 0 6px}
-section .lead{color:#888;font-size:.9375rem;margin:0 0 28px}
+section .lead{color:#a3a3a3;font-size:.9375rem;margin:0 0 28px}
 section .lead a{color:#ccc;text-decoration:underline;text-underline-offset:3px}
 
 /* ─── SURFACE CARDS ─── */
@@ -137,10 +137,10 @@ section .lead a{color:#ccc;text-decoration:underline;text-underline-offset:3px}
 .surface.flip{direction:rtl}
 .surface.flip>*{direction:ltr}
 .surface-text h3{font-size:1.125rem;font-weight:700;color:#f5f5f5;margin:0 0 8px}
-.surface-text p{font-size:.875rem;color:#999;margin:0;line-height:1.6}
+.surface-text p{font-size:.875rem;color:#a8a8a8;margin:0;line-height:1.6}
 .surface-text code{font-size:.75rem}
 .surface-visual img{
-  width:100%;border-radius:10px;
+  width:100%;height:auto;border-radius:10px;
   border:1px solid rgba(255,255,255,.08);
   box-shadow:0 12px 40px rgba(0,0,0,.4);
 }
@@ -191,8 +191,8 @@ section .lead a{color:#ccc;text-decoration:underline;text-underline-offset:3px}
 .copy-btn{
   position:absolute;top:8px;right:8px;
   /* Opaque background so text behind the button isn't visible through it */
-  background:#222;border:1px solid rgba(255,255,255,.18);
-  border-radius:6px;color:#999;font-size:.6875rem;font-weight:600;
+  background:#222;border:1px solid rgba(255,255,255,.22);
+  border-radius:6px;color:#c8c8c8;font-size:.6875rem;font-weight:600;
   padding:5px 12px;cursor:pointer;opacity:0;
   transition:opacity 150ms,background 120ms,color 120ms;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
@@ -210,9 +210,9 @@ section .lead a{color:#ccc;text-decoration:underline;text-underline-offset:3px}
 footer{
   border-top:1px solid rgba(255,255,255,.06);padding:28px 24px;
   display:flex;justify-content:space-between;align-items:center;
-  flex-wrap:wrap;gap:12px;font-size:.75rem;color:#555;
+  flex-wrap:wrap;gap:12px;font-size:.75rem;color:#888;
 }
-footer a{color:#777;text-decoration:none}
+footer a{color:#9a9a9a;text-decoration:none}
 footer a:hover{color:#ccc}
 .flinks{display:flex;gap:16px}
 
@@ -236,10 +236,10 @@ footer a:hover{color:#ccc}
 
 /* ─── BUILT-WITH FOOTER ─── */
 .built-with{
-  width:100%;font-size:.75rem;color:#555;text-align:center;
+  width:100%;font-size:.75rem;color:#888;text-align:center;
   padding-top:18px;border-top:1px solid rgba(255,255,255,.04);margin-top:12px;
 }
-.built-with a{color:#888;text-decoration:none}
+.built-with a{color:#a8a8a8;text-decoration:none}
 .built-with a:hover{color:#ccc}
 </style>
 </head>
@@ -258,6 +258,8 @@ footer a:hover{color:#ccc}
     <a href="https://github.com/fstubner/netscli">GitHub</a>
   </div>
 </nav>
+
+<main>
 
 <!-- ━━━ HERO ━━━ -->
 <div class="hero">
@@ -291,7 +293,7 @@ footer a:hover{color:#ccc}
 <!-- Big hero screenshot — the desktop app dashboard -->
 <div class="w">
   <div class="bigshot">
-    <img src="gui-dashboard.png" alt="netscli desktop app dashboard">
+    <img src="gui-dashboard.png" alt="netscli desktop app dashboard" width="1375" height="1000" fetchpriority="high">
   </div>
 </div>
 
@@ -314,7 +316,7 @@ footer a:hover{color:#ccc}
           </p>
         </div>
         <div class="surface-visual">
-          <img src="gui-scan.png" alt="Port scan results in the desktop app">
+          <img src="gui-scan.png" alt="Port scan results in the desktop app" width="1375" height="1000" loading="lazy">
         </div>
       </div>
 
@@ -329,7 +331,7 @@ footer a:hover{color:#ccc}
           </p>
         </div>
         <div class="surface-visual">
-          <img src="tui-discover.svg" alt="TUI showing /discover results">
+          <img src="tui-discover.svg" alt="TUI showing /discover results" width="1200" height="680" loading="lazy">
         </div>
       </div>
 
@@ -429,6 +431,8 @@ footer a:hover{color:#ccc}
 
   </div>
 </section>
+
+</main>
 
 <footer>
   <div>© <span id="y"></span> Felix Stubner · MIT</div>
