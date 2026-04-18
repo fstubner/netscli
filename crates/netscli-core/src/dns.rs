@@ -1,4 +1,3 @@
-use anyhow::{Context, Result};
 use hickory_resolver::proto::rr::RecordType;
 use hickory_resolver::TokioAsyncResolver;
 use serde::Serialize;
@@ -10,6 +9,8 @@ use std::{process::Stdio, str::FromStr};
 #[cfg(windows)]
 use tokio::process::Command;
 use tokio::time::timeout;
+
+use crate::error::{Error, Result};
 
 #[derive(Debug, Serialize)]
 pub struct DnsRecord {
@@ -58,7 +59,9 @@ fn shared_resolver() -> Result<&'static TokioAsyncResolver> {
         .get_or_init(|| TokioAsyncResolver::tokio_from_system_conf().map_err(|e| e.to_string()));
     match cached {
         Ok(r) => Ok(r),
-        Err(e) => Err(anyhow::anyhow!("failed to load DNS resolver config: {e}")),
+        Err(e) => Err(Error::dns(format!(
+            "failed to load DNS resolver config: {e}"
+        ))),
     }
 }
 
@@ -90,12 +93,16 @@ pub async fn lookup_record_timeout(
     timeout_ms: u64,
 ) -> Result<Vec<DnsRecord>> {
     let resolver = shared_resolver()?;
-    let response = timeout(
+    let response = match timeout(
         Duration::from_millis(timeout_ms),
         resolver.lookup(host, record_type),
     )
     .await
-    .with_context(|| format!("DNS {record_type} lookup timed out after {timeout_ms}ms"))??;
+    {
+        Ok(Ok(resp)) => resp,
+        Ok(Err(e)) => return Err(Error::dns(format!("{record_type} lookup failed: {e}"))),
+        Err(_) => return Err(Error::Timeout(timeout_ms)),
+    };
 
     let mut records = Vec::new();
     for record in response.record_iter() {
@@ -126,7 +133,7 @@ pub async fn lookup_record_timeout(
 /// last error.
 pub async fn lookup_all_records_timeout(host: &str, timeout_ms: u64) -> Result<Vec<DnsRecord>> {
     let mut records = Vec::new();
-    let mut last_err: Option<anyhow::Error> = None;
+    let mut last_err: Option<Error> = None;
 
     for record_type in ALL_RECORD_TYPES {
         match lookup_record_timeout(host, *record_type, timeout_ms).await {
@@ -139,7 +146,7 @@ pub async fn lookup_all_records_timeout(host: &str, timeout_ms: u64) -> Result<V
         if let Some(err) = last_err {
             return Err(err);
         }
-        anyhow::bail!("no DNS records found for {host}");
+        return Err(Error::dns(format!("no DNS records found for {host}")));
     }
 
     Ok(records)
@@ -151,12 +158,16 @@ pub async fn resolve_a(host: &str) -> Result<Vec<String>> {
 
 pub async fn resolve_a_timeout(host: &str, timeout_ms: u64) -> Result<Vec<String>> {
     let resolver = shared_resolver()?;
-    let response = timeout(
+    let response = match timeout(
         Duration::from_millis(timeout_ms),
         resolver.ipv4_lookup(host),
     )
     .await
-    .with_context(|| format!("DNS A lookup timed out after {timeout_ms}ms"))??;
+    {
+        Ok(Ok(resp)) => resp,
+        Ok(Err(e)) => return Err(Error::dns(format!("A lookup failed: {e}"))),
+        Err(_) => return Err(Error::Timeout(timeout_ms)),
+    };
     Ok(response.iter().map(|ip| ip.to_string()).collect())
 }
 
@@ -166,23 +177,31 @@ pub async fn resolve_aaaa(host: &str) -> Result<Vec<String>> {
 
 pub async fn resolve_aaaa_timeout(host: &str, timeout_ms: u64) -> Result<Vec<String>> {
     let resolver = shared_resolver()?;
-    let response = timeout(
+    let response = match timeout(
         Duration::from_millis(timeout_ms),
         resolver.ipv6_lookup(host),
     )
     .await
-    .with_context(|| format!("DNS AAAA lookup timed out after {timeout_ms}ms"))??;
+    {
+        Ok(Ok(resp)) => resp,
+        Ok(Err(e)) => return Err(Error::dns(format!("AAAA lookup failed: {e}"))),
+        Err(_) => return Err(Error::Timeout(timeout_ms)),
+    };
     Ok(response.iter().map(|ip| ip.to_string()).collect())
 }
 
 pub async fn reverse_lookup_timeout(ip: IpAddr, timeout_ms: u64) -> Result<Option<String>> {
     let resolver = shared_resolver()?;
-    let resp = timeout(
+    let resp = match timeout(
         Duration::from_millis(timeout_ms),
         resolver.reverse_lookup(ip),
     )
     .await
-    .with_context(|| format!("DNS reverse lookup timed out after {timeout_ms}ms"))??;
+    {
+        Ok(Ok(r)) => r,
+        Ok(Err(e)) => return Err(Error::dns(format!("reverse lookup failed: {e}"))),
+        Err(_) => return Err(Error::Timeout(timeout_ms)),
+    };
     let name = resp.iter().next().map(|n| n.to_utf8());
     Ok(name.filter(|s| !s.is_empty()))
 }

@@ -1,6 +1,6 @@
+use crate::error::Result;
 use crate::ping::{PingResult, PingScanner};
 use crate::scan::{PortResult, PortScanner};
-use anyhow::Result;
 use serde::Serialize;
 use std::net::IpAddr;
 

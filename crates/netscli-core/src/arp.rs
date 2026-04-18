@@ -1,3 +1,4 @@
+use crate::error::{Error, Result};
 use crate::oui::lookup_vendor;
 use ipnet::IpNet;
 #[cfg(not(windows))]
@@ -92,7 +93,7 @@ impl NetworkManager {
     }
 
     #[cfg(target_os = "linux")]
-    pub fn get_arp_table() -> anyhow::Result<Vec<ArpEntry>> {
+    pub fn get_arp_table() -> Result<Vec<ArpEntry>> {
         use std::fs::File;
         use std::io::{BufRead, BufReader};
         use std::str::FromStr;
@@ -124,7 +125,7 @@ impl NetworkManager {
     }
 
     #[cfg(target_os = "windows")]
-    pub fn get_arp_table() -> anyhow::Result<Vec<ArpEntry>> {
+    pub fn get_arp_table() -> Result<Vec<ArpEntry>> {
         use std::process::Command;
         use std::str::FromStr;
         let output = Command::new("arp").arg("-a").output()?;
@@ -184,7 +185,7 @@ impl NetworkManager {
     }
 
     #[cfg(target_os = "macos")]
-    pub fn get_arp_table() -> anyhow::Result<Vec<ArpEntry>> {
+    pub fn get_arp_table() -> Result<Vec<ArpEntry>> {
         use std::process::Command;
         use std::str::FromStr;
         let output = Command::new("arp").arg("-an").output()?;
@@ -243,7 +244,7 @@ impl NetworkManager {
         Ok(entries)
     }
 
-    pub fn add_entry(ip: IpAddr, mac: MacAddress) -> anyhow::Result<()> {
+    pub fn add_entry(ip: IpAddr, mac: MacAddress) -> Result<()> {
         use std::process::Command;
         #[cfg(target_os = "windows")]
         {
@@ -251,7 +252,9 @@ impl NetworkManager {
                 .args(["-s", &ip.to_string(), &mac.to_string().replace(":", "-")])
                 .status()?;
             if !status.success() {
-                anyhow::bail!("Failed to add ARP entry (run as admin?)");
+                return Err(Error::Other(
+                    "Failed to add ARP entry (run as admin?)".into(),
+                ));
             }
         }
         #[cfg(not(target_os = "windows"))]
@@ -260,38 +263,46 @@ impl NetworkManager {
                 .args(["-s", &ip.to_string(), &mac.to_string()])
                 .status()?;
             if !status.success() {
-                anyhow::bail!("Failed to add ARP entry (requires root/admin privileges)");
+                return Err(Error::Other(
+                    "Failed to add ARP entry (requires root/admin privileges)".into(),
+                ));
             }
         }
         Ok(())
     }
 
-    pub fn delete_entry(ip: IpAddr) -> anyhow::Result<()> {
+    pub fn delete_entry(ip: IpAddr) -> Result<()> {
         use std::process::Command;
         #[cfg(target_os = "windows")]
         {
             let status = Command::new("arp").args(["-d", &ip.to_string()]).status()?;
             if !status.success() {
-                anyhow::bail!("Failed to delete ARP entry (run as admin?)");
+                return Err(Error::Other(
+                    "Failed to delete ARP entry (run as admin?)".into(),
+                ));
             }
         }
         #[cfg(not(target_os = "windows"))]
         {
             let status = Command::new("arp").args(["-d", &ip.to_string()]).status()?;
             if !status.success() {
-                anyhow::bail!("Failed to delete ARP entry (requires root/admin privileges)");
+                return Err(Error::Other(
+                    "Failed to delete ARP entry (requires root/admin privileges)".into(),
+                ));
             }
         }
         Ok(())
     }
 
-    pub fn clear_table() -> anyhow::Result<()> {
+    pub fn clear_table() -> Result<()> {
         use std::process::Command;
         #[cfg(target_os = "windows")]
         {
             let status = Command::new("arp").args(["-d", "*"]).status()?;
             if !status.success() {
-                anyhow::bail!("Failed to clear ARP table (run as admin?)");
+                return Err(Error::Other(
+                    "Failed to clear ARP table (run as admin?)".into(),
+                ));
             }
         }
         #[cfg(any(target_os = "linux", target_os = "macos"))]
@@ -304,7 +315,7 @@ impl NetworkManager {
             {
                 let status = Command::new("arp").args(["-d", "-a"]).status()?;
                 if !status.success() {
-                    anyhow::bail!("Failed to clear ARP table");
+                    return Err(Error::Other("Failed to clear ARP table".into()));
                 }
             }
             #[cfg(target_os = "linux")]
@@ -313,7 +324,9 @@ impl NetworkManager {
                     .args(["neigh", "flush", "all"])
                     .status()?;
                 if !status.success() {
-                    anyhow::bail!("Failed to clear ARP table (iproute2 required)");
+                    return Err(Error::Other(
+                        "Failed to clear ARP table (iproute2 required)".into(),
+                    ));
                 }
             }
         }

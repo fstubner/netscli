@@ -1,10 +1,10 @@
-use anyhow::{Context, Result};
 use ipnet::Ipv4Net;
 use serde::Serialize;
 use std::net::IpAddr;
 use std::str::FromStr;
 use std::sync::Arc;
 
+use crate::error::{Error, Result};
 use crate::{
     default_ipv4_subnet_string, default_ports, ArpEntry, DiscoverEngine, Host, InspectEngine,
     InspectResult, InterfaceInfo, NetworkManager, PcapCancelToken, PcapConfig, PcapEngine,
@@ -19,7 +19,9 @@ fn ensure_subnet_limit(net: &Ipv4Net, subnet_str: &str) -> Result<()> {
     let host_bits = 32u32.saturating_sub(prefix);
     let total = 1u64.checked_shl(host_bits).unwrap_or(u64::MAX);
     if total > MAX_SUBNET_ADDRESSES {
-        anyhow::bail!("subnet too large: {subnet_str} (max /16)");
+        return Err(Error::invalid_input(format!(
+            "subnet too large: {subnet_str} (max /16)"
+        )));
     }
     Ok(())
 }
@@ -83,9 +85,9 @@ impl Ops {
         progress: Option<Arc<dyn Fn(crate::discover::DiscoverProgress) + Send + Sync>>,
     ) -> Result<(String, Vec<Host>)> {
         let subnet_str = subnet.unwrap_or_else(default_ipv4_subnet_string);
-        let net: Ipv4Net = subnet_str
-            .parse()
-            .with_context(|| format!("Invalid subnet format: {subnet_str}"))?;
+        let net: Ipv4Net = subnet_str.parse().map_err(|e| {
+            Error::invalid_input(format!("Invalid subnet format '{subnet_str}': {e}"))
+        })?;
         ensure_subnet_limit(&net, &subnet_str)?;
         let engine = DiscoverEngine::new_with_timeouts(
             self.cfg.concurrency,
@@ -154,9 +156,9 @@ impl Ops {
         progress: Option<Arc<dyn Fn(crate::sweep::SweepProgress) + Send + Sync>>,
     ) -> Result<(String, Vec<SweepEntry>)> {
         let subnet_str = subnet.unwrap_or_else(default_ipv4_subnet_string);
-        let net: Ipv4Net = subnet_str
-            .parse()
-            .with_context(|| format!("Invalid subnet format: {subnet_str}"))?;
+        let net: Ipv4Net = subnet_str.parse().map_err(|e| {
+            Error::invalid_input(format!("Invalid subnet format '{subnet_str}': {e}"))
+        })?;
         ensure_subnet_limit(&net, &subnet_str)?;
         let ports = ports.unwrap_or_else(default_ports);
         let engine = SweepEngine::new_with_timeouts(
@@ -204,7 +206,9 @@ impl Ops {
 
         let record = record.unwrap_or_else(|| "A".to_string());
         let Some(parsed) = crate::dns::parse_record_type(&record) else {
-            anyhow::bail!("unsupported DNS record type '{record}'");
+            return Err(Error::invalid_input(format!(
+                "unsupported DNS record type '{record}'"
+            )));
         };
 
         crate::dns::lookup_record_timeout(host, parsed, self.cfg.dns_timeout_ms).await
@@ -289,7 +293,7 @@ impl Ops {
             tokio::task::spawn_blocking(move || PcapEngine::capture_with_cancel(cfg, cancel));
         match task.await {
             Ok(res) => Ok(res?),
-            Err(e) => Err(anyhow::anyhow!("pcap capture task failed: {e}")),
+            Err(e) => Err(Error::Other(format!("pcap capture task failed: {e}"))),
         }
     }
 }
@@ -348,14 +352,18 @@ pub async fn resolve_host_ip_with_timeout(host: &str, dns_timeout_ms: u64) -> Re
 
     if let Ok(v4s) = crate::dns::resolve_a_timeout(host, dns_timeout_ms).await {
         if let Some(first) = v4s.first() {
-            return IpAddr::from_str(first).context("invalid IPv4 address from resolver");
+            return IpAddr::from_str(first).map_err(|e| {
+                Error::dns(format!("invalid IPv4 address '{first}' from resolver: {e}"))
+            });
         }
     }
     if let Ok(v6s) = crate::dns::resolve_aaaa_timeout(host, dns_timeout_ms).await {
         if let Some(first) = v6s.first() {
-            return IpAddr::from_str(first).context("invalid IPv6 address from resolver");
+            return IpAddr::from_str(first).map_err(|e| {
+                Error::dns(format!("invalid IPv6 address '{first}' from resolver: {e}"))
+            });
         }
     }
 
-    Err(anyhow::anyhow!("unable to resolve host '{host}'"))
+    Err(Error::dns(format!("unable to resolve host '{host}'")))
 }

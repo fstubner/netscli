@@ -1,4 +1,3 @@
-use anyhow::{Context, Result};
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 use sqlx::{
@@ -6,6 +5,8 @@ use sqlx::{
     FromRow, Row,
 };
 use std::path::PathBuf;
+
+use crate::error::{Error, Result};
 
 #[derive(Debug, FromRow, Serialize)]
 pub struct HostRecord {
@@ -44,9 +45,7 @@ impl Database {
         let opts = SqliteConnectOptions::new()
             .filename(&db_path)
             .create_if_missing(true);
-        let pool = SqlitePool::connect_with(opts)
-            .await
-            .with_context(|| format!("opening sqlite db at {}", db_path.display()))?;
+        let pool = SqlitePool::connect_with(opts).await?;
 
         let db = Self { pool };
         db.migrate().await?;
@@ -68,13 +67,11 @@ impl Database {
             "#,
         )
         .execute(&self.pool)
-        .await
-        .context("creating schema_version table")?;
+        .await?;
 
         let current: i64 = sqlx::query("SELECT COALESCE(MAX(version), 0) AS v FROM schema_version")
             .fetch_one(&self.pool)
-            .await
-            .context("reading schema_version")?
+            .await?
             .get("v");
 
         if current >= CURRENT_SCHEMA_VERSION {
@@ -85,9 +82,7 @@ impl Database {
         // (`IF NOT EXISTS`) where possible so a partially-applied DB
         // re-converges on retry.
         for v in (current + 1)..=CURRENT_SCHEMA_VERSION {
-            self.migrate_to(v)
-                .await
-                .with_context(|| format!("applying schema migration v{v}"))?;
+            self.migrate_to(v).await?;
             sqlx::query("INSERT INTO schema_version (version) VALUES (?)")
                 .bind(v)
                 .execute(&self.pool)
@@ -136,7 +131,9 @@ impl Database {
                 tx.commit().await?;
                 Ok(())
             }
-            other => anyhow::bail!("unknown schema migration version: {other}"),
+            other => Err(Error::Other(format!(
+                "unknown schema migration version: {other}"
+            ))),
         }
     }
 

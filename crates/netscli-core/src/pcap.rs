@@ -2,6 +2,8 @@
 use pcap::{Capture, Device};
 use serde::Serialize;
 use std::path::PathBuf;
+
+use crate::error::{Error, Result};
 use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc,
@@ -57,26 +59,30 @@ pub struct PcapEngine;
 #[cfg(feature = "pcap")]
 impl PcapEngine {
     /// Check whether libpcap/npf is available and list interfaces.
-    pub fn check_support() -> anyhow::Result<Vec<String>> {
-        let devices = Device::list().map_err(|e| anyhow::anyhow!("pcap unavailable: {e}"))?;
+    pub fn check_support() -> Result<Vec<String>> {
+        let devices = Device::list()?;
         if devices.is_empty() {
-            anyhow::bail!("pcap available but no capture interfaces detected");
+            return Err(Error::unsupported(
+                "pcap available but no capture interfaces detected",
+            ));
         }
         Ok(devices.into_iter().map(|d| d.name).collect())
     }
 
-    pub fn capture(config: PcapConfig) -> anyhow::Result<PcapResult> {
+    pub fn capture(config: PcapConfig) -> Result<PcapResult> {
         Self::capture_with_cancel(config, None)
     }
 
     pub fn capture_with_cancel(
         config: PcapConfig,
         cancel: Option<PcapCancelToken>,
-    ) -> anyhow::Result<PcapResult> {
+    ) -> Result<PcapResult> {
         let device = Device::list()?
             .into_iter()
             .find(|d| d.name == config.interface)
-            .ok_or_else(|| anyhow::anyhow!("Interface not found"))?;
+            .ok_or_else(|| {
+                Error::invalid_input(format!("Interface not found: {}", config.interface))
+            })?;
 
         let mut cap = Capture::from_device(device)?
             .promisc(true)
@@ -122,7 +128,7 @@ impl PcapEngine {
                     if packets_captured % 128 == 0 {
                         savefile
                             .flush()
-                            .map_err(|e| anyhow::anyhow!("failed to flush savefile: {e}"))?;
+                            .map_err(|e| Error::Other(format!("failed to flush savefile: {e}")))?;
                     }
                 }
                 Err(pcap::Error::TimeoutExpired) => continue,
@@ -132,7 +138,7 @@ impl PcapEngine {
 
         savefile
             .flush()
-            .map_err(|e| anyhow::anyhow!("failed to flush savefile: {e}"))?;
+            .map_err(|e| Error::Other(format!("failed to flush savefile: {e}")))?;
 
         Ok(PcapResult {
             packets_captured,
@@ -145,18 +151,24 @@ impl PcapEngine {
 #[cfg(not(feature = "pcap"))]
 impl PcapEngine {
     /// Check whether libpcap/npf is available and list interfaces.
-    pub fn check_support() -> anyhow::Result<Vec<String>> {
-        anyhow::bail!("pcap support disabled at compile time (built without feature 'pcap')")
+    pub fn check_support() -> Result<Vec<String>> {
+        Err(Error::unsupported(
+            "pcap support disabled at compile time (built without feature 'pcap')",
+        ))
     }
 
-    pub fn capture(_config: PcapConfig) -> anyhow::Result<PcapResult> {
-        anyhow::bail!("pcap support disabled at compile time (built without feature 'pcap')")
+    pub fn capture(_config: PcapConfig) -> Result<PcapResult> {
+        Err(Error::unsupported(
+            "pcap support disabled at compile time (built without feature 'pcap')",
+        ))
     }
 
     pub fn capture_with_cancel(
         _config: PcapConfig,
         _cancel: Option<PcapCancelToken>,
-    ) -> anyhow::Result<PcapResult> {
-        anyhow::bail!("pcap support disabled at compile time (built without feature 'pcap')")
+    ) -> Result<PcapResult> {
+        Err(Error::unsupported(
+            "pcap support disabled at compile time (built without feature 'pcap')",
+        ))
     }
 }

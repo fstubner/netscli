@@ -5,10 +5,12 @@
 //! `#[non_exhaustive]` so new categories can be added without being
 //! breaking changes — match arms should use a trailing `_ =>` fallback.
 //!
-//! Internals still use `anyhow::Error` for ad-hoc propagation in many
-//! places; the boundary is gradually being converted module by module.
-//! The [`From<anyhow::Error>`](Error#impl-From<Error>-for-Error) bridge
-//! lets those conversions happen incrementally without a mass rewrite.
+//! All public functions in this crate return `Result<T, Error>`. A few
+//! private implementation helpers (e.g. ping's ICMP round-trip inside
+//! `PingScanner::ping`) still use `anyhow::Error` internally because
+//! they never leak their error type to consumers, and the
+//! [`From<anyhow::Error>`](Error) bridge would convert them to
+//! `Error::Other` anyway.
 
 use std::io;
 

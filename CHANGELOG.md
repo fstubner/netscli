@@ -26,12 +26,24 @@ version and release together.
   our feature set.
 
 ### Changed
-- `common::parse_ports_checked` and `common::parse_port_token` now
-  return `netscli_core::Result` with `Error::InvalidInput` variants.
-  First module converted from `anyhow::Error` to the typed-error type;
-  remaining modules will follow wave-by-wave without being breaking
-  changes to pattern-matching code (thanks to the `From<anyhow::Error>`
-  bridge).
+- **All public functions** in `netscli-core` now return
+  `netscli_core::Result<T>` with structured error variants instead of
+  `anyhow::Result<T>`. Covers: `common::parse_ports*`, the full `dns`
+  module, the `Ops` surface, `InspectEngine`, `SweepEngine`,
+  `NetworkManager::{get_arp_table, add_entry, delete_entry, clear_table}`,
+  `PcapEngine`, and `Database`.
+- `Error` variant mapping by module:
+  - `common`, `ops` subnet/record parsing → `InvalidInput`
+  - `dns` resolver failures → `Dns`; timeouts → `Timeout(ms)`
+  - `ops::resolve_host_ip_with_timeout` unresolved host → `Dns`
+  - `pcap` unsupported (build-time or no interfaces) → `Unsupported`
+  - `arp` process-exec failures and permissioned ops → `Other` (with
+    the permission hint in the message; a dedicated `PermissionDenied`
+    variant may land later)
+  - `Database` (sqlx) errors → `Database` variant via `#[from]`
+  - `pcap` runtime errors → `Pcap` variant via `#[from]`
+- A few private helpers in `ping.rs` (ICMP round-trip internals) keep
+  `anyhow::Error` because they never reach the public surface.
 
 ## [0.1.1] — 2026-04-17
 

@@ -1,6 +1,6 @@
 use crate::discover::{DiscoverEngine, Host};
+use crate::error::Result;
 use crate::scan::{PortResult, PortScanner};
-use anyhow::Result;
 use futures::stream::{self, StreamExt};
 use ipnet::Ipv4Net;
 use serde::Serialize;
