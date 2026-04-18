@@ -10,6 +10,25 @@ version and release together.
 ## [Unreleased]
 
 ### Added
+- **mDNS / DNS-SD service discovery.** New `netscli-core::mdns` module
+  (behind the `mdns` feature) with `MdnsEngine::discover` and
+  `discover_common` on top of the pure-Rust `mdns-sd` crate. Browses a
+  curated set of service types (`_http._tcp`, `_ssh._tcp`,
+  `_airplay._tcp`, `_googlecast._tcp`, `_ipp._tcp`, …) in parallel and
+  returns devices with hostname, resolved IPv4/IPv6 addresses, port,
+  service type, and full TXT record properties.
+- New CLI subcommand `netscli mdns [--timeout-ms N] [-t <service_type>]`
+  with text, JSON, and YAML output. Text output is device-centric:
+  one block per hostname with its addresses and announced services.
+- New TUI slash command `/mdns [--timeout <ms>]`.
+- New MCP tool `discover_mdns` accepting `timeout_ms` (default 3000,
+  clamped 100–30000) and optional `service_types`. Returns the same
+  structured payload as the CLI `--json`, so agents can filter by
+  model (`properties.md`), friendly name (`properties.fn`), or service
+  type without an extra pass through text output.
+- The `netscli` binary and the `netscli-mcp` default feature both
+  include `mdns` so the capability ships by default in published
+  artifacts.
 - `netscli_core::Error` typed-error enum and `netscli_core::Result<T>`
   alias. Library consumers can now pattern-match on
   `InvalidInput` / `Dns` / `Network` / `Timeout` / `Unsupported` / `Io`

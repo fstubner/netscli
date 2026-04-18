@@ -161,6 +161,11 @@ const COMMAND_DEFS: &[CommandDef] = &[
         args: "",
     },
     CommandDef {
+        cmd: "/mdns",
+        desc: "Discover devices via mDNS/Bonjour",
+        args: "[--timeout <ms>]",
+    },
+    CommandDef {
         cmd: "/config",
         desc: "Configure TUI settings (interactive)",
         args: "",
@@ -238,6 +243,11 @@ const COMMAND_DEFS: &[CommandDef] = &[
         cmd: "/interfaces",
         desc: "List network interfaces",
         args: "",
+    },
+    CommandDef {
+        cmd: "/mdns",
+        desc: "Discover devices via mDNS/Bonjour",
+        args: "[--timeout <ms>]",
     },
     CommandDef {
         cmd: "/config",
@@ -1577,6 +1587,7 @@ fn running_message(command: &str) -> String {
         },
         "/arp" => "Reading ARP table...".to_string(),
         "/interfaces" => "Reading interfaces...".to_string(),
+        "/mdns" => "Browsing mDNS...".to_string(),
         "/pcap" => "Capturing packets...".to_string(),
         _ => "Working...".to_string(),
     }

@@ -52,7 +52,7 @@ the same Rust calls.
 
 ## Features
 
-- Ping, port scan, host discover, subnet sweep, DNS lookup (all record types), reverse DNS, traceroute, ARP table with vendor lookup, interface listing, optional packet capture.
+- Ping, port scan, host discover, subnet sweep, DNS lookup (all record types), reverse DNS, traceroute, ARP table with vendor lookup, mDNS/Bonjour device discovery, interface listing, optional packet capture.
 - Four interfaces for the same core: `netscli <cmd>` for scripts, `netscli` alone for a terminal UI with autocomplete and history, a Tauri desktop app for when you want a window, and `netscli serve` for Claude / Cursor / any MCP client.
 - `--json` and `--yaml` output on every non-interactive subcommand; pipe straight into jq.
 - Cross-platform. Windows / Linux / macOS binaries in the release matrix. Packet capture is feature-gated so the default binary has zero non-Rust runtime deps.
@@ -384,7 +384,7 @@ systemctl --user enable --now netscli-mcp.service
 
 ### Available Tools
 
-The MCP server exposes 9 tools:
+The MCP server exposes 10 tools:
 1. `discover_network` - Discover live hosts on a network subnet
 2. `scan_ports` - Scan TCP ports on a host
 3. `ping_host` - Ping a host with statistics
@@ -393,7 +393,8 @@ The MCP server exposes 9 tools:
 6. `inspect_host` - Comprehensive host inspection
 7. `sweep_network` - Sweep a network (discover hosts then scan ports)
 8. `list_network_interfaces` - List network interfaces with details
-9. `capture_pcap` - Capture network packets to PCAP file
+9. `discover_mdns` - Discover devices via mDNS/DNS-SD (Bonjour), returning hostnames + resolved IPs + service metadata
+10. `capture_pcap` - Capture network packets to PCAP file
 
 ## Contributing
 

@@ -270,6 +270,25 @@ pub enum Commands {
         yaml: bool,
     },
 
+    /// Discover devices on the local network via mDNS/DNS-SD (Bonjour)
+    Mdns {
+        /// Browse window in milliseconds. Longer = more devices found,
+        /// since many announce on a multi-second cadence.
+        #[arg(long, default_value_t = 3000)]
+        timeout_ms: u64,
+
+        /// Service types to browse (repeatable). Defaults to a curated set
+        /// of common types (_http._tcp, _ssh._tcp, _airplay._tcp, etc.).
+        #[arg(long = "type", short = 't')]
+        service_types: Vec<String>,
+
+        #[arg(long)]
+        json: bool,
+
+        #[arg(long)]
+        yaml: bool,
+    },
+
     /// Start MCP server for AI agents
     #[command(name = "serve")]
     McpServe,

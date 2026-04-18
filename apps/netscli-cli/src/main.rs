@@ -452,6 +452,53 @@ async fn main() -> Result<()> {
                     }
                 }
             }
+            Commands::Mdns {
+                timeout_ms,
+                service_types,
+                json,
+                yaml,
+            } => {
+                let format = output_format(*json, *yaml)?;
+                let services = ops
+                    .discover_mdns(service_types, std::time::Duration::from_millis(*timeout_ms))
+                    .await?;
+                match format {
+                    OutputFormat::Json | OutputFormat::Yaml => print_structured(format, &services)?,
+                    OutputFormat::Text => {
+                        if services.is_empty() {
+                            println!("No mDNS services found within {timeout_ms}ms.");
+                        } else {
+                            // Group by hostname for a device-centric view.
+                            let mut by_host: std::collections::BTreeMap<
+                                String,
+                                Vec<&netscli_core::MdnsService>,
+                            > = std::collections::BTreeMap::new();
+                            for svc in &services {
+                                by_host.entry(svc.hostname.clone()).or_default().push(svc);
+                            }
+                            for (host, svcs) in by_host {
+                                let addrs: std::collections::BTreeSet<String> = svcs
+                                    .iter()
+                                    .flat_map(|s| s.addresses.iter().map(|a| a.to_string()))
+                                    .collect();
+                                let addr_list = if addrs.is_empty() {
+                                    String::from("no resolved addresses")
+                                } else {
+                                    addrs.into_iter().collect::<Vec<_>>().join(", ")
+                                };
+                                println!("{host}  [{addr_list}]");
+                                for svc in svcs {
+                                    println!(
+                                        "  {} :{}",
+                                        svc.service_type.trim_end_matches('.'),
+                                        svc.port
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             Commands::McpServe => {
                 netscli_mcp::run_server().await?;
             }
@@ -1524,6 +1571,68 @@ async fn handle_tui_command(
         "/interfaces" => {
             let ifaces = ops.list_interfaces();
             out.extend(Formatter::format_interfaces(&ifaces));
+        }
+        "/mdns" => {
+            // Parse optional --timeout <ms>; defaults to 3000.
+            let mut timeout_ms: u64 = 3000;
+            let mut i = 1usize;
+            while i < parts.len() {
+                match parts[i] {
+                    "--timeout" | "-t" => {
+                        if let Some(v) = parts.get(i + 1).and_then(|s| s.parse::<u64>().ok()) {
+                            timeout_ms = v.clamp(100, 30_000);
+                            i += 2;
+                            continue;
+                        }
+                    }
+                    _ => {}
+                }
+                i += 1;
+            }
+            if let Some(tx) = &progress {
+                let _ = tx.send(format!("Browsing mDNS for {timeout_ms}ms..."));
+            }
+            match ops
+                .discover_mdns(&[], std::time::Duration::from_millis(timeout_ms))
+                .await
+            {
+                Ok(services) => {
+                    if services.is_empty() {
+                        out.push(Formatter::format_notice(&format!(
+                            "No mDNS services found within {timeout_ms}ms."
+                        )));
+                    } else {
+                        // Device-centric grouping: one header per host, service list below.
+                        let mut by_host: std::collections::BTreeMap<
+                            String,
+                            Vec<&netscli_core::MdnsService>,
+                        > = std::collections::BTreeMap::new();
+                        for svc in &services {
+                            by_host.entry(svc.hostname.clone()).or_default().push(svc);
+                        }
+                        for (host, svcs) in by_host {
+                            let addrs: std::collections::BTreeSet<String> = svcs
+                                .iter()
+                                .flat_map(|s| s.addresses.iter().map(|a| a.to_string()))
+                                .collect();
+                            let addr_list = if addrs.is_empty() {
+                                String::from("no resolved addresses")
+                            } else {
+                                addrs.into_iter().collect::<Vec<_>>().join(", ")
+                            };
+                            out.push(Line::from(format!("{host}  [{addr_list}]")));
+                            for svc in svcs {
+                                out.push(Line::from(format!(
+                                    "  {} :{}",
+                                    svc.service_type.trim_end_matches('.'),
+                                    svc.port
+                                )));
+                            }
+                        }
+                    }
+                }
+                Err(e) => out.push(Formatter::format_error(&format!("Error: {e}"))),
+            }
         }
         "/pcap" => {
             #[cfg(not(feature = "pcap"))]

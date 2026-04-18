@@ -39,6 +39,7 @@ flate2 = "1.0"
 chrono = { workspace = true, optional = true }
 sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "sqlite", "chrono", "macros", "migrate"], optional = true }
 pcap = { version = "1.1", optional = true }
+mdns-sd = { version = "0.13", optional = true }
 
 [target.'cfg(unix)'.dependencies]
 pnet_sys = "0.34"
@@ -59,6 +60,9 @@ db = ["dep:sqlx", "dep:chrono"]
 # Enables PcapEngine. Requires libpcap at runtime on Linux/macOS and
 # Npcap on Windows.
 pcap = ["dep:pcap"]
+# Enables MdnsEngine for discovering devices via DNS-SD/Bonjour/Avahi.
+# Pure-Rust via mdns-sd — no system dependency.
+mdns = ["dep:mdns-sd"]
 
 [dev-dependencies]
 tempfile = "3.8"

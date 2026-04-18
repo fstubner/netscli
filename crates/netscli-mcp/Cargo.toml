@@ -20,5 +20,6 @@ tracing-subscriber.workspace = true
 netscli-core = { path = "../netscli-core", version = "0.1.1", default-features = false }
 
 [features]
-default = []
+default = ["mdns"]
 pcap = ["netscli-core/pcap"]
+mdns = ["netscli-core/mdns"]

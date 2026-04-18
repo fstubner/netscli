@@ -192,6 +192,15 @@ struct PcapParams {
     max_packets: Option<u64>,
 }
 
+#[cfg(feature = "mdns")]
+#[derive(Deserialize, Default)]
+struct MdnsParams {
+    #[serde(default)]
+    timeout_ms: Option<u64>,
+    #[serde(default)]
+    service_types: Option<Vec<String>>,
+}
+
 /// Initialize a tracing subscriber that writes JSON to stderr.
 ///
 /// Uses `RUST_LOG` if set, otherwise defaults to `info`. Uses `try_init`
@@ -458,6 +467,31 @@ pub fn tools_list() -> serde_json::Value {
         tools
     };
 
+    #[cfg(feature = "mdns")]
+    let tools = {
+        let mut tools = tools;
+        tools.push(json!({
+            "name": "discover_mdns",
+            "description": "Discover devices on the local network via mDNS/DNS-SD (Bonjour). Returns services with their hostnames, resolved IPs, ports, and TXT properties. Much friendlier than IP-based discovery for named devices like printers, Chromecasts, or Homebridge accessories.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "timeout_ms": {
+                        "type": "number",
+                        "default": 3000,
+                        "description": "How long to browse for responses. 3000-5000ms is typical; many devices re-announce on a multi-second cadence."
+                    },
+                    "service_types": {
+                        "type": "array",
+                        "items": { "type": "string" },
+                        "description": "Explicit service types to browse (e.g. [\"_http._tcp.local.\", \"_airplay._tcp.local.\"]). Omit to use a curated default set."
+                    }
+                }
+            }
+        }));
+        tools
+    };
+
     json!({ "tools": tools })
 }
 
@@ -620,6 +654,18 @@ async fn op_capture_pcap(p: PcapParams) -> Result<netscli_core::PcapResult, RpcE
         .map_err(|e| RpcError::ToolError(e.to_string()))
 }
 
+#[cfg(feature = "mdns")]
+async fn op_discover_mdns(p: MdnsParams) -> Result<Vec<netscli_core::MdnsService>, RpcError> {
+    // Clamp timeout: no point waiting more than 30s for an interactive-like
+    // tool call, and 0/None means use the 3s default.
+    let timeout_ms = p.timeout_ms.unwrap_or(3000).clamp(100, 30_000);
+    let service_types = p.service_types.unwrap_or_default();
+    let ops = netscli_core::Ops::default();
+    ops.discover_mdns(&service_types, std::time::Duration::from_millis(timeout_ms))
+        .await
+        .map_err(|e| RpcError::ToolError(e.to_string()))
+}
+
 #[cfg(not(feature = "pcap"))]
 async fn op_capture_pcap(_p: PcapParams) -> Result<netscli_core::PcapResult, RpcError> {
     Err(RpcError::ToolError(
@@ -718,6 +764,12 @@ async fn handle_request_inner(
                     let res = op_capture_pcap(p).await?;
                     json!(res)
                 }
+                #[cfg(feature = "mdns")]
+                "discover_mdns" => {
+                    let p: MdnsParams = parse_params(args)?;
+                    let res = op_discover_mdns(p).await?;
+                    json!(res)
+                }
                 other => {
                     return Err(RpcError::InvalidParams(format!("Unknown tool: {other}")));
                 }
@@ -765,6 +817,12 @@ async fn handle_request_inner(
         "capture_pcap" => {
             let p: PcapParams = parse_params(params)?;
             let res = op_capture_pcap(p).await?;
+            serde_json::to_value(res).map_err(|e| RpcError::Internal(e.to_string()))
+        }
+        #[cfg(feature = "mdns")]
+        "discover_mdns" => {
+            let p: MdnsParams = parse_params(params)?;
+            let res = op_discover_mdns(p).await?;
             serde_json::to_value(res).map_err(|e| RpcError::Internal(e.to_string()))
         }
         _ => Err(RpcError::MethodNotFound),

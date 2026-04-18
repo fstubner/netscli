@@ -6,6 +6,8 @@ pub mod discover;
 pub mod dns;
 pub mod error;
 pub mod inspect;
+#[cfg(feature = "mdns")]
+pub mod mdns;
 pub mod ops;
 pub mod oui;
 pub mod pcap;
@@ -28,6 +30,8 @@ pub use db::{Database, HostRecord, ScanHistoryRecord};
 pub use discover::{DiscoverEngine, DiscoverPhase, DiscoverProgress, Host};
 pub use dns::{resolve_a, resolve_aaaa};
 pub use inspect::{InspectEngine, InspectResult};
+#[cfg(feature = "mdns")]
+pub use mdns::{MdnsEngine, MdnsService, COMMON_SERVICE_TYPES};
 pub use ops::{resolve_host_ip, Ops, OpsConfig, PingSummary};
 pub use oui::lookup_vendor;
 pub use pcap::{PcapCancelToken, PcapConfig, PcapEngine, PcapResult};
