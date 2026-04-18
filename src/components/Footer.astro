@@ -1,0 +1,23 @@
+---
+import { site } from '../data/site';
+const { meta, hero, builtWith } = site;
+---
+<footer>
+  <div>© <span id="y"></span> {meta.author.name} · MIT</div>
+  <div class="flinks">
+    <a href={hero.sourceUrl}>GitHub</a>
+    <a href={`${hero.sourceUrl}/releases`}>Releases</a>
+    <a href={`${hero.sourceUrl}#readme`}>Docs</a>
+  </div>
+  {builtWith.length > 0 && (
+    <div class="built-with">
+      Built with
+      {builtWith.map((b, i) => (
+        <>
+          {i === 0 ? ' ' : i === builtWith.length - 1 ? ', and ' : ', '}
+          <a href={b.url}>{b.name}</a>
+        </>
+      ))}.
+    </div>
+  )}
+</footer>

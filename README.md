@@ -1,77 +1,100 @@
 # Landing page
 
-Static site that GitHub Pages serves for this project. The deploy
+Astro site that GitHub Pages serves for this project. The deploy
 workflow lives at `.github/workflows/pages.yml`.
 
-## What's here
+Everything project-specific lives in `src/data/site.ts`. Fork the site
+into another repo and that's the one file you edit to retarget the
+landing at a different product — title, description, install commands,
+FAQ, surface cards, screenshots, built-with stack, version.
 
-- `index.html` — the landing page itself. Plain HTML, one `<style>` block,
-  one `<script>` block. No build step, no framework, no node_modules.
-  Opens directly in a browser if you double-click it during development.
+## Layout
+
+```
+site/
+├── astro.config.mjs          — canonical site URL
+├── package.json              — astro dep, npm scripts
+├── tsconfig.json             — extends astro/tsconfigs/strict
+├── public/                   — static passthrough (favicon, CNAME, images…)
+├── src/
+│   ├── data/site.ts          — all project-specific content
+│   ├── styles/global.css     — theme + layout + section styles
+│   ├── layouts/Page.astro    — meta, OG, JSON-LD schema
+│   ├── components/*.astro    — Nav, Hero, Surfaces, Install, Faq, Footer
+│   └── pages/index.astro     — page composition + client script
+└── dist/                     — build output (gitignored)
+```
+
+## Local development
+
+```bash
+cd site
+npm install
+npm run dev        # http://localhost:4321 with HMR
+npm run build      # static output into dist/
+npm run preview    # serve dist/
+```
+
+Node 18+ is required. Astro 5.
 
 ## How the download count works
 
-There's no backend. The stats at the top of the page are pulled from the
-public GitHub REST API at page load:
+There's no backend. The stats at the top of the page are pulled from
+the public GitHub REST API on page load:
 
-- `GET /repos/{owner}/{repo}/releases` → sums `download_count` across all
-  release assets.
 - `GET /repos/{owner}/{repo}` → reads `stargazers_count`.
+- `GET /repos/{owner}/{repo}/releases` → sums `download_count` across
+  all release assets.
+
+The repo slug comes from `site.social.repo` in `src/data/site.ts`.
 
 If the user is rate-limited (unauthenticated API calls get 60/hour per
-IP), the requests fail and the `—` placeholders stay visible. We never
-show "0 downloads" — it's always either a real number or a dash.
-
-For more accurate server-side stats, see the Analytics section below.
+IP), the requests fail silently and the em-dash placeholders stay
+visible. We never show "0 downloads" — it's always either a real
+number or a dash.
 
 ## Analytics
 
-The head of `index.html` ships with an active **Cloudflare Web
-Analytics** beacon. The token is safe to commit — it's an identifier,
-not a credential. View traffic at:
-
-<https://dash.cloudflare.com/?to=/:account/web-analytics>
+`src/data/site.ts` → `analytics.cloudflareToken` controls the
+Cloudflare Web Analytics beacon. Set to a string token to enable, or
+remove the property to disable.
 
 Cloudflare Web Analytics is free with unlimited pageviews, sets no
 cookies, and needs no consent banner in most jurisdictions.
 
-**To re-point the beacon at a different site** (e.g. if this landing
-page is forked into another project), create a new site in the
-Cloudflare dashboard and replace the `data-cf-beacon` token on the
-`<script>` tag near the top of `index.html`.
+### Other analytics options
 
-### Alternatives
+All of the following work the same way — single beacon, no build
+step. Swap the Cloudflare beacon in `src/layouts/Page.astro` for
+whichever you prefer:
 
-If you'd rather use something else, swap the `<script>` tag for one of
-these. They all work the same way — single beacon, no build step:
+| Option | Free tier |
+|---|---|
+| [Plausible](https://plausible.io) | 30-day trial, then paid |
+| [Umami](https://umami.is) | Cloud has free tier |
+| [GoatCounter](https://goatcounter.com) | Free for non-commercial |
+| [Fathom](https://usefathom.com) | 7-day trial, then paid |
 
-| Option | Hosting | Free tier |
-|---|---|---|
-| [Plausible](https://plausible.io) | SaaS (EU) | 30-day trial, then paid |
-| [Umami](https://umami.is) | Self-host or cloud | Cloud has free tier |
-| [GoatCounter](https://goatcounter.com) | SaaS | Free for non-commercial |
-| [Fathom](https://usefathom.com) | SaaS | 7-day trial, then paid |
-| [Vercel Analytics](https://vercel.com/analytics) | SaaS | Requires Vercel deploy |
-
-All of the above are cookie-free and don't need a consent banner. Google
-Analytics does and isn't listed — you can still drop in its `<script>`
-tag the same way if you insist.
+None of these set cookies or need a consent banner in most
+jurisdictions. Google Analytics does; it isn't listed for that
+reason.
 
 ## Using this as a template for other projects
 
-This was scaffolded to be trivially extractable. To reuse:
+The Astro scaffold was designed to be trivially retargetable:
 
-1. Copy `site/index.html` and `.github/workflows/pages.yml` to the new
-   repo.
-2. Search-and-replace the repo name (`fstubner/netscli`) and project name
-   (`netscli`) in `index.html`. There are ~6 places.
-3. Replace the tagline, install blocks, and "Try it" blocks with the new
-   project's content.
-4. In the new repo's **Settings → Pages**, set Source to "GitHub
-   Actions".
-5. Push to main; GitHub Actions deploys it.
+1. Copy the entire `site/` directory to the new repo.
+2. Edit `src/data/site.ts` — name, description, install commands,
+   FAQ items, surface cards, built-with list, GitHub repo slug.
+3. Replace images in `public/` (`gui-dashboard.png`, the screenshots,
+   and the wordmark at `public/assets/netscli-wordmark.png`).
+4. If the product isn't software, edit
+   `src/layouts/Page.astro` to swap the `SoftwareApplication`
+   schema for whatever's more appropriate (`Product`, `WebSite`, …).
+5. Copy `.github/workflows/pages.yml` and update the `Settings →
+   Pages` source to "GitHub Actions".
 
-If you find yourself doing this more than twice, convert this whole
-directory into a proper GitHub Template Repository (the button on the
-repo settings page). Then "Use this template" creates a new project with
-the scaffolding already in place.
+If you find yourself doing this more than twice, extract `site/` into
+its own GitHub Template Repository (the button on the repo settings
+page). Then "Use this template" creates a new project with the
+scaffolding already in place and no fork relationship to maintain.

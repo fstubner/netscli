@@ -1,0 +1,12 @@
+# Astro
+dist/
+.astro/
+node_modules/
+
+# IDE
+.vscode/
+.idea/
+
+# Misc
+.DS_Store
+*.log
