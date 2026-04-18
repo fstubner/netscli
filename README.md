@@ -96,6 +96,20 @@ the same Rust calls.
 
 ## Installation
 
+### Homebrew (macOS + Linux)
+
+```bash
+brew tap fstubner/tap
+brew install netscli
+```
+
+### Scoop (Windows)
+
+```powershell
+scoop bucket add fstubner https://github.com/fstubner/scoop-bucket
+scoop install netscli
+```
+
 ### Quick Install (One-line)
 
 ```bash
