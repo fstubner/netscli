@@ -1,0 +1,79 @@
+---
+import Page from '../layouts/Page.astro';
+import Nav from '../components/Nav.astro';
+import Hero from '../components/Hero.astro';
+import Surfaces from '../components/Surfaces.astro';
+import Install from '../components/Install.astro';
+import Faq from '../components/Faq.astro';
+import Footer from '../components/Footer.astro';
+import { site } from '../data/site';
+
+const { social } = site;
+---
+<Page>
+  <Nav />
+  <main>
+    <Hero />
+    <Surfaces />
+    <Install />
+    <Faq />
+  </main>
+  <Footer />
+
+  <script is:inline define:vars={{ repo: social.repo }}>
+    document.getElementById("y").textContent = new Date().getFullYear();
+
+    // Live social proof: GitHub stars + cumulative release asset downloads.
+    // Unauthenticated GitHub API is rate-limited to 60/hour per IP; on failure
+    // we leave the em-dash placeholders so visitors don't see a misleading 0.
+    (function () {
+      const fmt = (n) => n.toLocaleString();
+      fetch(`https://api.github.com/repos/${repo}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          if (!d || typeof d.stargazers_count !== "number") return;
+          const el = document.getElementById("stars");
+          if (el) el.textContent = `${fmt(d.stargazers_count)} ${d.stargazers_count === 1 ? "star" : "stars"}`;
+        })
+        .catch(() => {});
+      fetch(`https://api.github.com/repos/${repo}/releases?per_page=100`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((rs) => {
+          if (!Array.isArray(rs)) return;
+          const total = rs.reduce(
+            (sum, r) => sum + (r.assets || []).reduce((s, a) => s + (a.download_count || 0), 0),
+            0,
+          );
+          const el = document.getElementById("downloads");
+          if (el) el.textContent = `${fmt(total)} ${total === 1 ? "download" : "downloads"}`;
+        })
+        .catch(() => {});
+    })();
+
+    // Copy buttons on every .has-copy block.
+    document.querySelectorAll(".has-copy").forEach((el) => {
+      const btn = document.createElement("button");
+      btn.className = "copy-btn";
+      btn.textContent = "Copy";
+      btn.addEventListener("click", () => {
+        let t = el.textContent.replace(/Copy$|Copied!$/, "").trim();
+        if (el.classList.contains("codeblock") || el.classList.contains("tryblock")) {
+          t = t
+            .split("\n")
+            .map((l) => l.replace(/^\$\s*/, "").replace(/\s*\/\/.*$/, "").trim())
+            .filter((l) => l)
+            .join("\n");
+        }
+        navigator.clipboard.writeText(t).then(() => {
+          btn.textContent = "Copied!";
+          btn.classList.add("copied");
+          setTimeout(() => {
+            btn.textContent = "Copy";
+            btn.classList.remove("copied");
+          }, 2500);
+        });
+      });
+      el.appendChild(btn);
+    });
+  </script>
+</Page>

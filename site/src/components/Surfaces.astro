@@ -1,0 +1,40 @@
+---
+import { site } from '../data/site';
+const { surfaces } = site;
+---
+<section id="surfaces">
+  <div class="w">
+    <h2>Four interfaces, one library</h2>
+    <p class="lead">
+      Every surface calls the same <code>netscli-core</code>.
+      <a href="https://github.com/fstubner/netscli#usage">Full docs →</a>
+    </p>
+
+    <div class="surfaces">
+      {surfaces.map((s) => (
+        <div class={`surface${s.flip ? ' flip' : ''}`}>
+          <div class="surface-text">
+            <h3>{s.title}</h3>
+            <p set:html={s.body} />
+          </div>
+          <div class="surface-visual">
+            {s.image ? (
+              <picture>
+                {s.image.webp && <source type="image/webp" srcset={s.image.webp} />}
+                <img
+                  src={s.image.src}
+                  alt={s.image.alt}
+                  width={s.image.width}
+                  height={s.image.height}
+                  loading="lazy"
+                />
+              </picture>
+            ) : s.codeHtml ? (
+              <div class="codeblock has-copy" set:html={s.codeHtml} />
+            ) : null}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

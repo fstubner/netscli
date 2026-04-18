@@ -1,0 +1,250 @@
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  background:#111;color:#d4d4d4;line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit}
+code{
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.85em;
+  background:rgba(255,255,255,.07);padding:2px 6px;border-radius:4px;
+}
+
+/* layout */
+.w{max-width:1060px;margin:0 auto;padding:0 24px}
+
+/* nav */
+nav{
+  position:sticky;top:0;z-index:10;
+  background:rgba(17,17,17,.85);backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(255,255,255,.06);
+  padding:12px 24px;display:flex;align-items:center;justify-content:space-between;
+}
+.mark{
+  display:inline-block;line-height:0;text-decoration:none;
+  filter:brightness(1);transition:filter 200ms;
+}
+.mark img{
+  display:block;width:160px;height:auto;image-rendering:auto;
+}
+.mark:hover{filter:brightness(1.15) drop-shadow(0 0 10px rgba(10,174,122,.35))}
+@media(max-width:600px){
+  .mark img{width:132px}
+}
+.nlinks{display:flex;gap:20px;font-size:.8125rem}
+.nlinks a{color:#b0b0b0;text-decoration:none}
+.nlinks a:hover{color:#e5e5e5}
+@media(max-width:600px){.nlinks{display:none}}
+
+/* buttons */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:10px 20px;border-radius:8px;font-size:.875rem;font-weight:600;
+  text-decoration:none;transition:all 120ms;
+}
+.btn-w{background:#e5e5e5;color:#111;border:1px solid #e5e5e5}
+.btn-w:hover{background:#fff;border-color:#fff}
+.btn-o{background:transparent;color:#999;border:1px solid rgba(255,255,255,.15)}
+.btn-o:hover{color:#e5e5e5;border-color:rgba(255,255,255,.3);text-decoration:none}
+.gh-icon{width:16px;height:16px;fill:currentColor;flex-shrink:0}
+
+/* ─── HERO ─── */
+.hero{padding:72px 24px 0;text-align:center}
+.hero .badge{
+  display:inline-block;font-size:.6875rem;font-weight:600;
+  letter-spacing:.06em;text-transform:uppercase;color:#9a9a9a;margin-bottom:16px;
+}
+.hero h1{
+  font-size:clamp(1.75rem,4vw,2.75rem);font-weight:700;color:#f5f5f5;
+  letter-spacing:-.02em;margin:0 auto;line-height:1.2;
+  max-width:15ch;
+}
+.hero .sub{font-size:1.0625rem;color:#a3a3a3;max-width:640px;margin:14px auto 0}
+.hero .social-proof{
+  margin:12px auto 0;font-size:.75rem;color:#9a9a9a;
+  display:flex;justify-content:center;align-items:center;gap:10px;
+  font-variant-numeric:tabular-nums;min-height:1em;
+}
+.hero .social-proof a{color:inherit;text-decoration:none}
+.hero .social-proof a:hover{color:#e5e5e5}
+.hero .social-proof .sep{color:#555}
+.hero .quick-install{
+  margin:28px auto 0;max-width:520px;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
+  border-radius:10px;padding:12px 16px;
+  /* Soft green ring outside the element, matching the wordmark gradient */
+  box-shadow:0 0 0 1px rgba(10,174,122,.45),0 0 24px rgba(10,174,122,.15);
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.8125rem;
+  color:#ccc;display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+.hero .quick-install span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hero .links{display:flex;gap:16px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+.hero .links a{
+  font-size:.8125rem;color:#a3a3a3;text-decoration:none;
+  border-bottom:1px dotted rgba(255,255,255,.22);padding-bottom:1px;
+  display:inline-flex;align-items:center;gap:4px;
+}
+.hero .links a:hover{color:#e5e5e5;border-bottom-color:rgba(255,255,255,.5)}
+.hero .links a.plain{border-bottom:0}
+.hero .links a.plain:hover{border-bottom:0}
+
+/* ─── PRODUCT SHOT ─── */
+.bigshot{
+  margin:48px auto 0;max-width:980px;
+  border-radius:10px;overflow:hidden;
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 32px 80px rgba(0,0,0,.6);
+}
+.bigshot img{width:100%;height:auto;display:block}
+
+/* ─── SECTIONS ─── */
+section{padding:72px 0}
+section h2{font-size:1.5rem;font-weight:700;color:#f5f5f5;margin:0 0 6px}
+section .lead{color:#a3a3a3;font-size:.9375rem;margin:0 0 28px}
+section .lead a{color:#ccc;text-decoration:underline;text-underline-offset:3px}
+
+/* ─── SURFACE CARDS ─── */
+.surfaces{display:grid;gap:48px}
+.surface{
+  display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;
+}
+/* Grid children default to min-width:auto (content-based), which lets a
+   long <pre> codeblock force the grid wider than the viewport. Clamping
+   to 0 lets the codeblock's own overflow-x:auto contain the overflow. */
+.surface>*{min-width:0}
+.surface.flip{direction:rtl}
+.surface.flip>*{direction:ltr;min-width:0}
+.surface-text h3{font-size:1.125rem;font-weight:700;color:#f5f5f5;margin:0 0 8px}
+.surface-text p{font-size:.875rem;color:#a8a8a8;margin:0;line-height:1.6}
+.surface-text code{font-size:.75rem}
+.surface-visual img{
+  width:100%;height:auto;border-radius:10px;
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 12px 40px rgba(0,0,0,.4);
+}
+.surface-visual .codeblock{
+  background:#0b0d0e;border:1px solid rgba(255,255,255,.08);
+  border-radius:10px;padding:16px 20px;
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;
+  font-size:.75rem;line-height:1.7;white-space:pre;overflow-x:auto;color:#ccc;
+  box-shadow:0 12px 40px rgba(0,0,0,.4);
+  position:relative;
+}
+@media(max-width:720px){
+  .surface{grid-template-columns:1fr}
+  .surface.flip{direction:ltr}
+}
+
+/* ─── GET STARTED ─── */
+.install-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:8px;
+}
+.install-grid>*{min-width:0}
+@media(max-width:860px){.install-grid{grid-template-columns:1fr}}
+.install-card{margin-bottom:16px;overflow:hidden}
+.install-card:last-child{margin-bottom:0}
+.install-label{font-size:.8125rem;font-weight:600;color:#e5e5e5;margin:0 0 6px}
+.install-hint{font-size:.6875rem;color:#8a8a8a;margin:4px 0 0}
+.cmd{
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  border-radius:8px;padding:12px 16px;
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;
+  font-size:clamp(.6875rem,1.4vw,.8125rem);
+  overflow-x:auto;white-space:pre;color:#ccc;
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.15) transparent;
+  position:relative;
+}
+.tryblock{
+  background:#0b0d0e;border:1px solid rgba(255,255,255,.08);
+  border-radius:10px;padding:16px 20px;height:100%;
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;
+  font-size:clamp(.6875rem,1.4vw,.8125rem);
+  line-height:1.9;white-space:pre;overflow-x:auto;color:#ccc;
+  position:relative;
+}
+.tryblock .c{color:#555}
+
+/* ─── FAQ ─── */
+.faq{display:grid;gap:8px;margin-top:8px}
+.faq details{
+  background:rgba(255,255,255,.025);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:10px;padding:14px 18px;
+  transition:background 150ms,border-color 150ms;
+}
+.faq details[open]{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.14)}
+.faq summary{
+  cursor:pointer;font-size:.9375rem;font-weight:600;color:#e5e5e5;
+  list-style:none;display:flex;align-items:center;gap:10px;
+}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::before{
+  content:"+";font-family:ui-monospace,"SF Mono",Menlo,monospace;
+  color:#0aae7a;font-weight:700;width:14px;flex-shrink:0;
+  transition:transform 150ms;
+}
+.faq details[open] summary::before{content:"−"}
+.faq .answer{
+  color:#b0b0b0;font-size:.875rem;line-height:1.65;margin-top:12px;
+  padding-left:24px;
+}
+.faq .answer code{font-size:.8125rem}
+.faq .answer a{color:#ccc;text-decoration:underline;text-underline-offset:3px}
+
+/* ─── COPY BUTTON ─── */
+.has-copy{position:relative}
+.copy-btn{
+  position:absolute;top:8px;right:8px;
+  /* Opaque background so text behind the button isn't visible through it */
+  background:#222;border:1px solid rgba(255,255,255,.22);
+  border-radius:6px;color:#c8c8c8;font-size:.6875rem;font-weight:600;
+  padding:5px 12px;cursor:pointer;opacity:0;
+  transition:opacity 150ms,background 120ms,color 120ms;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+}
+.has-copy:hover .copy-btn,.has-copy:focus-within .copy-btn{opacity:1}
+.copy-btn:hover{background:#333;color:#eee}
+.copy-btn.copied{color:#3fb950;border-color:rgba(63,185,80,.4)}
+/* Touch devices don't have :hover; keep copy buttons visible so they're discoverable */
+@media (hover: none){
+  .copy-btn{opacity:.7}
+  .copy-btn:hover{opacity:1}
+}
+
+/* ─── FOOTER ─── */
+footer{
+  border-top:1px solid rgba(255,255,255,.06);padding:28px 24px;
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:12px;font-size:.75rem;color:#888;
+}
+footer a{color:#9a9a9a;text-decoration:none}
+footer a:hover{color:#ccc}
+.flinks{display:flex;gap:16px}
+
+/* ─── RESPONSIVE ─── */
+@media(max-width:600px){
+  .hero h1{font-size:1.625rem}
+  .hero .sub{font-size:.9375rem}
+  section{padding:48px 0}
+  section h2{font-size:1.25rem}
+  .hero .quick-install{font-size:.75rem;padding:10px 12px}
+  /* Let the curl | bash command wrap instead of being ellipsed — losing
+     the "| bash" at the end made the command unusable on phones. */
+  .hero .quick-install span{white-space:normal;overflow:visible;text-overflow:clip;word-break:break-all}
+}
+
+/* ─── TRY BLOCK TITLE ─── */
+.try-title{
+  font-size:.9375rem;font-weight:600;color:#e5e5e5;margin:0 0 8px;
+}
+.try-title + .tryblock{margin-top:0}
+
+/* ─── BUILT-WITH FOOTER ─── */
+.built-with{
+  width:100%;font-size:.75rem;color:#888;text-align:center;
+  padding-top:18px;border-top:1px solid rgba(255,255,255,.04);margin-top:12px;
+}
+.built-with a{color:#a8a8a8;text-decoration:none}
+.built-with a:hover{color:#ccc}

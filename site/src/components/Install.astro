@@ -1,0 +1,39 @@
+---
+import { site } from '../data/site';
+const { install, hero } = site;
+---
+<section id="install">
+  <div class="w">
+    <h2>Get started</h2>
+    <p class="lead">
+      Install, then run.
+      <a href={`${hero.sourceUrl}#readme`}>Full README →</a>
+    </p>
+
+    <div class="install-grid">
+      <div>
+        {install.entries.map((e) => (
+          <div class="install-card">
+            <div class="install-label">{e.label}</div>
+            <div class="cmd has-copy">{e.command}</div>
+            {e.hint && <div class="install-hint" set:html={e.hint} />}
+          </div>
+        ))}
+        <p
+          style="margin:12px 0 0;font-size:.8125rem;color:#8a8a8a"
+          set:html={install.binariesNote}
+        />
+      </div>
+
+      <div>
+        <h3 class="try-title">Try it</h3>
+        <div
+          class="tryblock"
+          set:html={install.tryCommands
+            .map((c) => `<span style="color:#888">$</span> ${c}`)
+            .join('\n')}
+        />
+      </div>
+    </div>
+  </div>
+</section>

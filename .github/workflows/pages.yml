@@ -1,7 +1,8 @@
 name: Deploy GitHub Pages
 
-# Deploys the static site in `site/` to GitHub Pages on every push to main.
-# Also re-runs on manual trigger (e.g. after updating analytics config).
+# Builds the Astro site in `site/` and deploys the static output to
+# GitHub Pages on every push to main. Also re-runs on manual trigger
+# (e.g. after updating analytics config).
 #
 # Prerequisite: in the repo Settings → Pages, set "Source" to
 # "GitHub Actions" (NOT "Deploy from a branch"). This workflow expects
@@ -27,18 +28,34 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - name: npm ci
+        run: npm ci
+        working-directory: site
+      - name: astro build
+        run: npm run build
+        working-directory: site
+      - uses: actions/configure-pages@v6
+      - name: Upload site/dist/
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: site/dist
+
   deploy:
+    needs: build
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/configure-pages@v6
-      - name: Upload site/
-        uses: actions/upload-pages-artifact@v5
-        with:
-          path: site
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v5
