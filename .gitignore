@@ -41,6 +41,7 @@ apps/netscli-gui/src-tauri/gen/
 # Stray scratch files
 **/.tmp.txt
 **/*.tmp
+.tmp/
 
 # Python (if any scripts use it)
 .venv/

@@ -6,7 +6,7 @@
   "architecture": {
     "64bit": {
       "url": "https://github.com/fstubner/netscli/releases/download/v0.2.0/netscli-windows-x86_64.exe#/netscli.exe",
-      "hash": "VERSION_SHA256_WINDOWS_X86_64"
+      "hash": "790c0867ba035ad85704c7ebaba65ade23ff9c9f4327fbe5b3f5f2515cfe3002"
     }
   },
   "bin": "netscli.exe",
