@@ -23,7 +23,7 @@ clap = { version = "4.4", features = ["derive"] }
 ratatui = "0.29.0"
 crossterm = "0.27"
 tui-textarea = "0.4"
-netscli-core = { path = "../../crates/netscli-core", version = "0.1.1", default-features = false }
+netscli-core = { path = "../../crates/netscli-core", version = "0.1.1", default-features = false, features = ["db"] }
 netscli-mcp = { path = "../../crates/netscli-mcp", version = "0.1.1" }
 serde_yaml_ng = "0.10"
 dirs = "5.0"

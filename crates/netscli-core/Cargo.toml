@@ -23,19 +23,22 @@ serde.workspace = true
 serde_json.workspace = true
 anyhow.workspace = true
 thiserror.workspace = true
-chrono.workspace = true
 ipnet.workspace = true
 pnet_packet = "0.34"
 pnet_transport = "0.34"
 ipnetwork = "0.20"
 hickory-resolver = { version = "0.24", features = ["tokio-runtime"] }
 sysinfo = "0.30"
-pcap = { version = "1.1", optional = true }
-sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "sqlite", "chrono"] }
 mac_address = { version = "1.1", features = ["serde"] }
 futures = "0.3"
 once_cell = "1.19"
 flate2 = "1.0"
+
+# Optional — behind feature flags to keep the default crate slim for
+# library consumers who only want the scan / DNS / ARP primitives.
+chrono = { workspace = true, optional = true }
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "sqlite", "chrono", "macros", "migrate"], optional = true }
+pcap = { version = "1.1", optional = true }
 
 [target.'cfg(unix)'.dependencies]
 pnet_sys = "0.34"
@@ -46,7 +49,15 @@ ipconfig = "0.3"
 windows-sys = { version = "0.52", features = ["Win32_Networking_WinSock"] }
 
 [features]
+# Lean by default: scan, discover, DNS, ARP, OUI lookup, stats.
+# Consumers who want the SQLite persistence or packet capture opt in.
 default = []
+# Enables the `db` module and `Database` type (SQLite via sqlx + chrono).
+# Pulls sqlx and chrono; substantial build impact. Ship binaries built
+# from the `netscli` crate already enable this.
+db = ["dep:sqlx", "dep:chrono"]
+# Enables PcapEngine. Requires libpcap at runtime on Linux/macOS and
+# Npcap on Windows.
 pcap = ["dep:pcap"]
 
 [dev-dependencies]

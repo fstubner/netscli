@@ -1,5 +1,6 @@
 pub mod arp;
 pub mod common;
+#[cfg(feature = "db")]
 pub mod db;
 pub mod discover;
 pub mod dns;
@@ -19,6 +20,7 @@ pub use common::{
     DEFAULT_DNS_TIMEOUT_MS, DEFAULT_PING_TIMEOUT_MS, DEFAULT_PORTS, DEFAULT_SCAN_TIMEOUT_MS,
     DEFAULT_SUBNET,
 };
+#[cfg(feature = "db")]
 pub use db::{Database, HostRecord, ScanHistoryRecord};
 pub use discover::{DiscoverEngine, DiscoverPhase, DiscoverProgress, Host};
 pub use dns::{resolve_a, resolve_aaaa};

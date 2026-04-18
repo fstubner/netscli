@@ -46,7 +46,12 @@ async fn main() -> anyhow::Result<()> {
 
 | Feature | Default | Purpose |
 |---------|---------|---------|
+| `db`    | off     | Enables the `Database` type and SQLite persistence via sqlx + chrono. Pulls ~90 extra transitive crates, so library consumers who don't need scan history should leave this off. |
 | `pcap`  | off     | Enables `PcapEngine` packet capture. Needs libpcap/Npcap at runtime. |
+
+The `netscli` binary crate enables `db` by default (it uses `Database`
+for scan history). Library consumers who only want the scan / DNS /
+ARP primitives should add the dep with `default-features = false`.
 
 ## OUI vendor data
 
