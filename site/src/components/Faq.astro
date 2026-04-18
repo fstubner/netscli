@@ -1,11 +1,11 @@
 ---
 import { site } from '../data/site';
-const { faq } = site;
+const { faq, copy } = site;
 ---
 <section id="faq">
   <div class="w">
-    <h2>FAQ</h2>
-    <p class="lead">The questions people actually ask before installing.</p>
+    <h2>{copy.faq.heading}</h2>
+    <p class="lead" set:html={copy.faq.leadHtml} />
 
     <div class="faq">
       {faq.map((f) => (

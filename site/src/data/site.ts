@@ -106,10 +106,22 @@ export interface Analytics {
   cloudflareToken?: string;
 }
 
+export interface SectionCopy {
+  heading: string;
+  /** HTML allowed — typically short tagline with an anchor link. */
+  leadHtml: string;
+}
+
 export interface SiteData {
   meta: Meta;
   branding: Branding;
   hero: Hero;
+  /** Visible headings + leads for each main section. */
+  copy: {
+    surfaces: SectionCopy;
+    install: SectionCopy;
+    faq: SectionCopy;
+  };
   surfaces: SurfaceCard[];
   install: {
     entries: InstallEntry[];
@@ -165,6 +177,23 @@ export const site: SiteData = {
     heroImageWidth: 1375,
     heroImageHeight: 1000,
     sourceUrl: 'https://github.com/fstubner/netscli',
+  },
+
+  copy: {
+    surfaces: {
+      heading: 'Four interfaces, one library',
+      leadHtml:
+        'Every surface calls the same <code>netscli-core</code>. <a href="https://github.com/fstubner/netscli#usage">Full docs →</a>',
+    },
+    install: {
+      heading: 'Get started',
+      leadHtml:
+        'Install, then run. <a href="https://github.com/fstubner/netscli#readme">Full README →</a>',
+    },
+    faq: {
+      heading: 'FAQ',
+      leadHtml: 'The questions people actually ask before installing.',
+    },
   },
 
   surfaces: [
