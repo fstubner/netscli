@@ -189,9 +189,18 @@ section .lead a{color:#ccc;text-decoration:underline;text-underline-offset:3px}
 .faq .answer{
   color:#b0b0b0;font-size:.875rem;line-height:1.65;margin-top:12px;
   padding-left:24px;
+  /* Long URLs inside <code> spans don't break by default and force the
+     details card wider than the viewport. Allow breaks at any char so
+     FAQ answers respect the mobile viewport width. */
+  overflow-wrap:anywhere;
+  word-break:break-word;
 }
-.faq .answer code{font-size:.8125rem}
-.faq .answer a{color:#ccc;text-decoration:underline;text-underline-offset:3px}
+.faq .answer code{
+  font-size:.8125rem;
+  overflow-wrap:anywhere;
+  word-break:break-all;
+}
+.faq .answer a{color:#ccc;text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere}
 
 /* ─── COPY BUTTON ─── */
 .has-copy{position:relative}
