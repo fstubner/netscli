@@ -4,20 +4,112 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#111">
-<title>netscli — A modern network scanner</title>
-<meta name="description" content="A network scanner written in Rust. CLI, TUI, desktop app, and MCP server.">
+<title>netscli — Rust network scanner with CLI, TUI, desktop app, and MCP server</title>
+<meta name="description" content="Open-source network scanner written in Rust. Discover hosts, scan ports, resolve DNS, and capture packets from a CLI, a terminal UI, a desktop app, or an MCP server that your AI agent can call directly. Free, MIT-licensed, runs on Windows, Linux, and macOS.">
+<meta name="author" content="Felix Stubner">
+<meta name="keywords" content="network scanner, rust, cli, tui, mcp server, model context protocol, port scan, host discovery, dns lookup, arp table, bonjour, mdns, packet capture, claude, cursor, ai agent, network tool, cross-platform">
 <meta property="og:type" content="website">
-<meta property="og:title" content="netscli — A modern network scanner">
-<meta property="og:description" content="Discover hosts, scan ports, resolve DNS. Four interfaces, one Rust library.">
+<meta property="og:title" content="netscli — Rust network scanner with CLI, TUI, desktop app, and MCP server">
+<meta property="og:description" content="Open-source network scanner. Discover hosts, scan ports, resolve DNS. Four interfaces, one Rust library. Includes an MCP server so AI agents can query your network directly.">
 <meta property="og:url" content="https://netscli.com">
 <meta property="og:image" content="https://netscli.com/gui-dashboard.png">
+<meta property="og:site_name" content="netscli">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="netscli — A modern network scanner">
-<meta name="twitter:description" content="Discover hosts, scan ports, resolve DNS. Four interfaces, one Rust library.">
+<meta name="twitter:title" content="netscli — Rust network scanner with CLI, TUI, desktop app, and MCP server">
+<meta name="twitter:description" content="Open-source network scanner. Discover hosts, scan ports, resolve DNS. Four interfaces, one Rust library. Includes an MCP server so AI agents can query your network directly.">
 <meta name="twitter:image" content="https://netscli.com/gui-dashboard.png">
 <link rel="canonical" href="https://netscli.com">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="apple-touch-icon" href="/favicon.svg">
+
+<!-- Structured data: SoftwareApplication (tells search engines + AI agents
+     this is a software product, with install details and platforms) and
+     FAQPage (AI answer engines cite these directly). -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "name": "netscli",
+      "url": "https://netscli.com",
+      "downloadUrl": "https://github.com/fstubner/netscli/releases/latest",
+      "description": "Open-source network scanner written in Rust. Host discovery, port scanning, DNS resolution, ARP inspection, mDNS/Bonjour discovery, and optional packet capture. Ships as a CLI, a terminal UI, a desktop app, and an MCP server so AI agents can query the local network directly.",
+      "applicationCategory": "DeveloperApplication",
+      "applicationSubCategory": "NetworkingApplication",
+      "operatingSystem": "Windows, macOS, Linux",
+      "softwareVersion": "0.1.1",
+      "license": "https://opensource.org/licenses/MIT",
+      "programmingLanguage": "Rust",
+      "codeRepository": "https://github.com/fstubner/netscli",
+      "author": {
+        "@type": "Person",
+        "name": "Felix Stubner",
+        "url": "https://github.com/fstubner"
+      },
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "screenshot": "https://netscli.com/gui-dashboard.png"
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is netscli?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "netscli is an open-source network scanner written in Rust. It discovers hosts on a subnet, scans TCP ports, resolves DNS (including mDNS/Bonjour), reads the ARP table with vendor lookup, and optionally captures packets via libpcap/Npcap. The same functionality is available from a command line, a terminal UI with autocomplete, a desktop app, or a Model Context Protocol (MCP) server that AI agents like Claude Code and Cursor can call directly."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I install netscli?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "On Linux or macOS run: curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash. On Windows run: iwr -useb https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.ps1 | iex. With Rust installed you can also run: cargo install netscli. Prebuilt binaries for Windows, Linux (x86_64/aarch64/musl), and macOS (x86_64/aarch64) are attached to every GitHub release."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I use netscli with Claude Code, Cursor, or another AI agent?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Running `netscli serve` starts a Model Context Protocol (MCP) server over stdio exposing ten tools: discover_network, scan_ports, ping_host, dns_lookup, get_arp_table, inspect_host, sweep_network, list_network_interfaces, discover_mdns, and capture_pcap. Point your MCP client at the netscli binary and your agent can query the local network with structured JSON responses, no parsing required."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does netscli work on Windows, macOS, and Linux?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Every release ships binaries for Windows x86_64, Linux x86_64 (glibc and musl), Linux aarch64, macOS x86_64, and macOS aarch64, with and without packet-capture support. The desktop app is built for Windows (.exe/.msi), macOS (.app bundle), and Linux (.AppImage/.deb)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is netscli open source?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. netscli is MIT-licensed. Source, issue tracker, and releases are at https://github.com/fstubner/netscli. The library (netscli-core) and MCP server (netscli-mcp) are published to crates.io so other Rust projects can build on them."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does netscli require libpcap or other system dependencies?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No, not for the default build. Host discovery, port scan, DNS, and ARP inspection all work with zero non-Rust runtime dependencies. Packet capture is a feature-gated extra that requires libpcap (Linux/macOS) or Npcap (Windows) at runtime. The install script installs the right library for you when you pass NETSCLI_PCAP=1."
+          }
+        }
+      ]
+    }
+  ]
+}
+</script>
 
 <!-- Cloudflare Web Analytics -->
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "c03201f65f6d41aa843c81f259a1ac06"}'></script>
@@ -315,7 +407,7 @@ footer a:hover{color:#ccc}
   <div class="bigshot">
     <picture>
       <source type="image/webp" srcset="gui-dashboard.webp">
-      <img src="gui-dashboard.png" alt="netscli desktop app dashboard" width="1375" height="1000" fetchpriority="high">
+      <img src="gui-dashboard.png" alt="netscli desktop app dashboard on Windows showing the default network interface, live traffic rates, and a table of detected network interfaces" width="1375" height="1000" fetchpriority="high">
     </picture>
   </div>
 </div>
@@ -341,7 +433,7 @@ footer a:hover{color:#ccc}
         <div class="surface-visual">
           <picture>
             <source type="image/webp" srcset="gui-scan.webp">
-            <img src="gui-scan.png" alt="Port scan results in the desktop app" width="1375" height="1000" loading="lazy">
+            <img src="gui-scan.png" alt="netscli desktop app port scan view: scanning 1.1.1.1 for ports 80 and 443 returns both as open with http and https service labels" width="1375" height="1000" loading="lazy">
           </picture>
         </div>
       </div>
@@ -357,7 +449,7 @@ footer a:hover{color:#ccc}
           </p>
         </div>
         <div class="surface-visual">
-          <img src="tui-discover.svg" alt="TUI showing /discover results" width="1200" height="680" loading="lazy">
+          <img src="tui-discover.svg" alt="netscli terminal UI running /discover: list of live hosts on the local subnet with IP addresses, hostnames, and response times" width="1200" height="680" loading="lazy">
         </div>
       </div>
 
