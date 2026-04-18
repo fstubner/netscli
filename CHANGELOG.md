@@ -9,6 +9,30 @@ version and release together.
 
 ## [Unreleased]
 
+### Added
+- `netscli_core::Error` typed-error enum and `netscli_core::Result<T>`
+  alias. Library consumers can now pattern-match on
+  `InvalidInput` / `Dns` / `Network` / `Timeout` / `Unsupported` / `Io`
+  / `Database` / `Pcap` / `Other` instead of passing around an opaque
+  `anyhow::Error`. The enum is `#[non_exhaustive]` so new variants
+  can land without being breaking changes.
+- `netscli-core` feature `db` gating the SQLite `Database` type (and
+  its sqlx + chrono deps). Default build is ~35% smaller transitive
+  crate graph (256 → 167). The `netscli` binary opts in to `db`;
+  library consumers can stay lean with `default-features = false`.
+- `cargo-audit` CI workflow (`.github/workflows/audit.yml`) running on
+  push / PR / weekly schedule, with a documented `.cargo/audit.toml`
+  ignore list for transitive advisories that aren't reachable under
+  our feature set.
+
+### Changed
+- `common::parse_ports_checked` and `common::parse_port_token` now
+  return `netscli_core::Result` with `Error::InvalidInput` variants.
+  First module converted from `anyhow::Error` to the typed-error type;
+  remaining modules will follow wave-by-wave without being breaking
+  changes to pattern-matching code (thanks to the `From<anyhow::Error>`
+  bridge).
+
 ## [0.1.1] — 2026-04-17
 
 ### Added

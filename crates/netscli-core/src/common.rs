@@ -1,7 +1,8 @@
-use anyhow::{anyhow, Context, Result};
 use ipnet::Ipv4Net;
 #[cfg(not(windows))]
 use ipnetwork::IpNetwork;
+
+use crate::error::{Error, Result};
 
 pub const DEFAULT_SUBNET: &str = "192.168.1.0/24";
 pub const DEFAULT_PORTS: &[u16] = &[22, 80, 443];
@@ -32,25 +33,28 @@ fn parse_port_token(part: &str) -> Result<Vec<u16>> {
         let end_trim = end.trim();
         let s: u16 = start_trim
             .parse()
-            .map_err(|_| anyhow!("invalid port in range: '{start_trim}'"))?;
+            .map_err(|_| Error::invalid_input(format!("invalid port in range: '{start_trim}'")))?;
         let e: u16 = end_trim
             .parse()
-            .map_err(|_| anyhow!("invalid port in range: '{end_trim}'"))?;
+            .map_err(|_| Error::invalid_input(format!("invalid port in range: '{end_trim}'")))?;
         if s > e {
-            return Err(anyhow!("inverted port range: {s}-{e}"));
+            return Err(Error::invalid_input(format!(
+                "inverted port range: {s}-{e}"
+            )));
         }
         Ok((s..=e).collect())
     } else {
         let port: u16 = part
             .parse()
-            .map_err(|_| anyhow!("invalid port: '{part}'"))?;
+            .map_err(|_| Error::invalid_input(format!("invalid port: '{part}'")))?;
         Ok(vec![port])
     }
 }
 
 /// Strict parser for user input — rejects any malformed token instead of
 /// silently discarding it. `Some(None)` means the input was absent/empty;
-/// `Err` means the user typed something that couldn't be interpreted.
+/// `Err(Error::InvalidInput(..))` means the user typed something that
+/// couldn't be interpreted.
 pub fn parse_ports_checked(input: Option<&str>) -> Result<Option<Vec<u16>>> {
     let Some(raw) = input else {
         return Ok(None);
@@ -63,12 +67,15 @@ pub fn parse_ports_checked(input: Option<&str>) -> Result<Option<Vec<u16>>> {
 
     let mut ports = Vec::new();
     for part in raw.split(',') {
-        let mut expanded =
-            parse_port_token(part).with_context(|| format!("Invalid port list: {raw}"))?;
+        let mut expanded = parse_port_token(part).map_err(|e| {
+            // Wrap the inner parser's per-token message with the caller's
+            // context so consumers see both "why" and "where" in one Error.
+            Error::invalid_input(format!("Invalid port list '{raw}': {e}"))
+        })?;
         ports.append(&mut expanded);
     }
     if ports.is_empty() {
-        return Err(anyhow!("Invalid port list: {raw}"));
+        return Err(Error::invalid_input(format!("Invalid port list: {raw}")));
     }
     // Sort + dedup so downstream scanners don't probe the same port twice.
     ports.sort_unstable();

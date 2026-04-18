@@ -4,6 +4,7 @@ pub mod common;
 pub mod db;
 pub mod discover;
 pub mod dns;
+pub mod error;
 pub mod inspect;
 pub mod ops;
 pub mod oui;
@@ -12,6 +13,8 @@ pub mod ping;
 pub mod scan;
 pub mod stats;
 pub mod sweep;
+
+pub use error::{Error, Result};
 
 pub use arp::{ArpEntry, InterfaceInfo, NetworkManager};
 pub use common::{
