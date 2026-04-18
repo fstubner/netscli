@@ -1,0 +1,58 @@
+name: Audit
+
+on:
+  # Weekly catch for advisories we've already shipped against.
+  schedule:
+    - cron: '0 6 * * 1'  # Mondays 06:00 UTC
+  # Re-run when deps change or the audit config itself changes.
+  push:
+    paths:
+      - 'Cargo.lock'
+      - '**/Cargo.toml'
+      - '.cargo/audit.toml'
+      - '.github/workflows/audit.yml'
+  pull_request:
+    paths:
+      - 'Cargo.lock'
+      - '**/Cargo.toml'
+      - '.cargo/audit.toml'
+  # Let us kick it off manually from the Actions tab.
+  workflow_dispatch:
+
+concurrency:
+  group: audit-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: cargo audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.92.0"
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: audit
+
+      # Cache cargo-audit itself so we don't reinstall every run.
+      - name: Cache cargo-audit
+        id: cache-cargo-audit
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/bin/cargo-audit
+          key: cargo-audit-v1
+
+      - name: Install cargo-audit
+        if: steps.cache-cargo-audit.outputs.cache-hit != 'true'
+        run: cargo install cargo-audit --locked
+
+      - name: Run cargo audit
+        run: cargo audit

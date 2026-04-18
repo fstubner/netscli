@@ -1,0 +1,68 @@
+# cargo-audit configuration. Advisories listed here are acknowledged
+# as unreachable or unactionable for this workspace. Every entry has
+# a rationale so future reviewers can reassess rather than rubber-stamp.
+#
+# Reassess when a new netscli release is cut, or when Dependabot opens
+# a PR bumping the parent crate that pulls the advisory in.
+
+[advisories]
+ignore = [
+  # -- Active vulnerabilities (none reachable) ---------------------------
+
+  # Marvin timing side-channel in the `rsa` crate. Pulled by `sqlx-mysql`
+  # which is never compiled (we enable sqlx's `sqlite` feature only).
+  "RUSTSEC-2023-0071",
+
+  # -- Soundness warnings (transitive, not reachable via our usage) -----
+
+  # rand 0.7.3 unsoundness with a custom logger calling rand::rng().
+  # Transitive via Tauri's kuchikiki/selectors path; never invoked with
+  # a custom logger in our binaries.
+  "RUSTSEC-2026-0097",
+
+  # lru IterMut stacked-borrows violation. Transitive via ratatui; we
+  # don't touch IterMut on lru caches in application code.
+  "RUSTSEC-2026-0002",
+
+  # glib VariantStrIter Iterator/DoubleEndedIterator unsoundness.
+  # Transitive via Tauri 2; upstream Tauri is migrating to GTK4 which
+  # replaces this binding stack.
+  "RUSTSEC-2024-0429",
+
+  # -- Unmaintained: gtk-rs GTK3 bindings --------------------------------
+  # Entire transitive stack from Tauri 2's GTK3 backend. Tauri is
+  # migrating to GTK4. Clears itself as Tauri releases bump.
+  "RUSTSEC-2024-0411", # gdkwayland-sys
+  "RUSTSEC-2024-0412", # gdk
+  "RUSTSEC-2024-0413", # atk
+  "RUSTSEC-2024-0414", # gdkx11-sys
+  "RUSTSEC-2024-0415", # gtk
+  "RUSTSEC-2024-0416", # atk-sys
+  "RUSTSEC-2024-0417", # gdkx11
+  "RUSTSEC-2024-0418", # gdk-sys
+  "RUSTSEC-2024-0419", # gtk3-macros
+  "RUSTSEC-2024-0420", # gtk-sys
+
+  # -- Unmaintained: other transitive ------------------------------------
+
+  # proc-macro-error: transitive via dialoguer and other proc-macro
+  # consumers. A maintained fork (proc-macro-error2) exists but not every
+  # upstream has migrated. No exploitable surface.
+  "RUSTSEC-2024-0370",
+
+  # paste: unmaintained but still widely used. Transitive via several
+  # crates; a fork exists. No runtime surface beyond compile-time macros.
+  "RUSTSEC-2024-0436",
+
+  # fxhash: transitive. rustc-hash is the maintained replacement but
+  # upstream deps still pin fxhash.
+  "RUSTSEC-2025-0057",
+
+  # unic-* crates: transitive via idna via url via ipnet and hickory.
+  # Unmaintained for years; idna is migrating off the unic- stack.
+  "RUSTSEC-2025-0075", # unic-char-range
+  "RUSTSEC-2025-0080", # unic-common
+  "RUSTSEC-2025-0081", # unic-char-property
+  "RUSTSEC-2025-0098", # unic-ucd-version
+  "RUSTSEC-2025-0100", # unic-ucd-ident
+]
