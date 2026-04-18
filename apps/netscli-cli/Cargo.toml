@@ -3,7 +3,7 @@
 # consistency, but the published crate is just `netscli` so users can
 # `cargo install netscli` (matching the produced binary name).
 name = "netscli"
-version = "0.1.1"
+version = "0.2.0"
 description = "Interactive TUI and CLI for network discovery, scanning, and diagnostics"
 authors.workspace = true
 license.workspace = true
@@ -25,8 +25,8 @@ clap_mangen = "0.2"
 ratatui = "0.29.0"
 crossterm = "0.27"
 tui-textarea = "0.4"
-netscli-core = { path = "../../crates/netscli-core", version = "0.1.1", default-features = false, features = ["db", "mdns"] }
-netscli-mcp = { path = "../../crates/netscli-mcp", version = "0.1.1", features = ["mdns"] }
+netscli-core = { path = "../../crates/netscli-core", version = "0.2.0", default-features = false, features = ["db", "mdns"] }
+netscli-mcp = { path = "../../crates/netscli-mcp", version = "0.2.0", features = ["mdns"] }
 serde_yaml_ng = "0.10"
 dirs = "5.0"
 mac_address = "1.1.8"

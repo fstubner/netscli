@@ -13,7 +13,7 @@
 class Netscli < Formula
   desc "Network scanner with CLI, TUI, desktop app, and MCP server"
   homepage "https://netscli.com"
-  version "0.1.1"
+  version "0.2.0"
   license "MIT"
 
   on_macos do

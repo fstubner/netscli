@@ -9,7 +9,26 @@ version and release together.
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-04-18
+
 ### Added
+- `netscli completions <bash|zsh|fish|powershell|elvish>` subcommand that
+  writes a shell-completion script to stdout. Package managers
+  regenerate completions at install time by shelling out to the
+  installed binary, so they never drift from the CLI surface.
+- `netscli man` subcommand that renders the roff-format man page from
+  the clap command tree to stdout.
+- Sigstore keyless signing in `.github/workflows/release.yml`. Every
+  release asset now ships with a `.sig` + `.pem` alongside the `.sha256`,
+  verifiable by anyone with `cosign verify-blob`. No paid cert, no
+  long-lived secrets; uses the GitHub Actions OIDC token exchanged via
+  Fulcio for a short-lived signing cert bound to the workflow + commit +
+  tag.
+- `packaging/` directory with submission templates for Homebrew (tap),
+  Scoop (bucket), Winget (microsoft/winget-pkgs via wingetcreate), and
+  Arch AUR (`netscli-bin`). Each has a README with the submission flow
+  and VERSION_SHA256_* placeholders that get stamped with real
+  checksums on release day.
 - **mDNS / DNS-SD service discovery.** New `netscli-core::mdns` module
   (behind the `mdns` feature) with `MdnsEngine::discover` and
   `discover_common` on top of the pure-Rust `mdns-sd` crate. Browses a
@@ -63,6 +82,8 @@ version and release together.
   - `pcap` runtime errors → `Pcap` variant via `#[from]`
 - A few private helpers in `ping.rs` (ICMP round-trip internals) keep
   `anyhow::Error` because they never reach the public surface.
+- Extracted section headings + leads into `site.copy` so the landing
+  page is 100% data-driven; no per-project strings in components.
 
 ## [0.1.1] — 2026-04-17
 
@@ -144,6 +165,7 @@ backed by the same core library.
 - Desktop app needs the WebView2 runtime on Windows. Most Windows
   10/11 systems have it preinstalled.
 
-[Unreleased]: https://github.com/fstubner/netscli/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/fstubner/netscli/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/fstubner/netscli/releases/tag/v0.2.0
 [0.1.1]: https://github.com/fstubner/netscli/releases/tag/v0.1.1
 [0.1.0]: https://github.com/fstubner/netscli/releases/tag/v0.1.0

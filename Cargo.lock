@@ -2553,7 +2553,7 @@ dependencies = [
 
 [[package]]
 name = "netscli"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -2580,7 +2580,7 @@ dependencies = [
 
 [[package]]
 name = "netscli-core"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -2610,7 +2610,7 @@ dependencies = [
 
 [[package]]
 name = "netscli-gui"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "ipnet",
  "netscli-core",
@@ -2623,7 +2623,7 @@ dependencies = [
 
 [[package]]
 name = "netscli-mcp"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "ipnet",

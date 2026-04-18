@@ -2,7 +2,7 @@
 
 pkgname=netscli-bin
 _binname=netscli
-pkgver=0.1.1
+pkgver=0.2.0
 pkgrel=1
 pkgdesc="Network scanner with CLI, TUI, desktop app, and MCP server"
 arch=('x86_64' 'aarch64')

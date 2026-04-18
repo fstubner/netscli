@@ -1,11 +1,11 @@
 {
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Network scanner with CLI, TUI, desktop app, and MCP server. Written in Rust.",
   "homepage": "https://netscli.com",
   "license": "MIT",
   "architecture": {
     "64bit": {
-      "url": "https://github.com/fstubner/netscli/releases/download/v0.1.1/netscli-windows-x86_64.exe#/netscli.exe",
+      "url": "https://github.com/fstubner/netscli/releases/download/v0.2.0/netscli-windows-x86_64.exe#/netscli.exe",
       "hash": "VERSION_SHA256_WINDOWS_X86_64"
     }
   },

@@ -341,5 +341,5 @@ export const site: SiteData = {
     cloudflareToken: 'c03201f65f6d41aa843c81f259a1ac06',
   },
 
-  version: '0.1.1',
+  version: '0.2.0',
 };
