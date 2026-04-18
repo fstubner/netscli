@@ -1,14 +1,11 @@
 ---
 import { site } from '../data/site';
-const { install, hero } = site;
+const { install, copy } = site;
 ---
 <section id="install">
   <div class="w">
-    <h2>Get started</h2>
-    <p class="lead">
-      Install, then run.
-      <a href={`${hero.sourceUrl}#readme`}>Full README →</a>
-    </p>
+    <h2>{copy.install.heading}</h2>
+    <p class="lead" set:html={copy.install.leadHtml} />
 
     <div class="install-grid">
       <div>

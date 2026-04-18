@@ -1,14 +1,11 @@
 ---
 import { site } from '../data/site';
-const { surfaces } = site;
+const { surfaces, copy } = site;
 ---
 <section id="surfaces">
   <div class="w">
-    <h2>Four interfaces, one library</h2>
-    <p class="lead">
-      Every surface calls the same <code>netscli-core</code>.
-      <a href="https://github.com/fstubner/netscli#usage">Full docs →</a>
-    </p>
+    <h2>{copy.surfaces.heading}</h2>
+    <p class="lead" set:html={copy.surfaces.leadHtml} />
 
     <div class="surfaces">
       {surfaces.map((s) => (
