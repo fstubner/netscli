@@ -259,19 +259,31 @@ export const site: SiteData = {
   install: {
     entries: [
       {
+        label: 'Homebrew (macOS + Linux)',
+        command: 'brew tap fstubner/tap && brew install netscli',
+        hint:
+          'Installs the prebuilt binary, shell completions, and man page in one step.',
+      },
+      {
+        label: 'Scoop (Windows)',
+        command:
+          'scoop bucket add fstubner https://github.com/fstubner/scoop-bucket && scoop install netscli',
+        hint: 'Auto-updates on <code>scoop update</code>.',
+      },
+      {
         label: 'Cargo',
         command: 'cargo install netscli',
         hint:
-          'Simplest path if you have the Rust toolchain. Reproducible and easy to update.',
+          "Cross-platform if you have the Rust toolchain. Reproducible and easy to update.",
       },
       {
-        label: 'Linux / macOS',
+        label: 'Linux / macOS script',
         command:
           'curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash',
         hint: 'Add <code>NETSCLI_PCAP=1</code> for packet capture.',
       },
       {
-        label: 'Windows',
+        label: 'Windows PowerShell script',
         command:
           'iwr -useb https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.ps1 | iex',
         hint: 'Add <code>$env:NETSCLI_PCAP=1</code> for packet capture.',
