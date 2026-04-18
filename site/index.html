@@ -141,28 +141,15 @@ nav{
   padding:12px 24px;display:flex;align-items:center;justify-content:space-between;
 }
 .mark{
-  font-family:ui-monospace,"SF Mono","Cascadia Code",Menlo,monospace;
-  font-weight:700;font-size:5.5px;letter-spacing:0;text-decoration:none;
-  line-height:1.05;white-space:pre;
-  background:linear-gradient(90deg,#059669,#0aae7a 50%,#1edcff);
-  -webkit-background-clip:text;background-clip:text;color:transparent;
+  display:inline-block;line-height:0;text-decoration:none;
   filter:brightness(1);transition:filter 200ms;
 }
-.mark:hover{filter:brightness(1.25) drop-shadow(0 0 10px rgba(10,174,122,.35))}
-/* Mobile fallback: box-drawing glyphs render inconsistently in Android's
-   system monospace stack at small sizes, so below 600px we swap the ANSI
-   art for a clean bold 'netscli' in the same gradient. */
-.mark-plain{display:none}
+.mark img{
+  display:block;width:160px;height:auto;image-rendering:auto;
+}
+.mark:hover{filter:brightness(1.15) drop-shadow(0 0 10px rgba(10,174,122,.35))}
 @media(max-width:600px){
-  .mark{display:none}
-  .mark-plain{
-    display:inline-block;
-    font-family:ui-monospace,"SF Mono","Cascadia Code",Menlo,monospace;
-    font-weight:800;font-size:17px;letter-spacing:.02em;text-decoration:none;
-    background:linear-gradient(90deg,#059669,#0aae7a 50%,#1edcff);
-    -webkit-background-clip:text;background-clip:text;color:transparent;
-  }
-  .mark-plain:hover{filter:brightness(1.15)}
+  .mark img{width:132px}
 }
 .nlinks{display:flex;gap:20px;font-size:.8125rem}
 .nlinks a{color:#b0b0b0;text-decoration:none}
@@ -297,6 +284,33 @@ section .lead a{color:#ccc;text-decoration:underline;text-underline-offset:3px}
 }
 .tryblock .c{color:#555}
 
+/* ─── FAQ ─── */
+.faq{display:grid;gap:8px;margin-top:8px}
+.faq details{
+  background:rgba(255,255,255,.025);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:10px;padding:14px 18px;
+  transition:background 150ms,border-color 150ms;
+}
+.faq details[open]{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.14)}
+.faq summary{
+  cursor:pointer;font-size:.9375rem;font-weight:600;color:#e5e5e5;
+  list-style:none;display:flex;align-items:center;gap:10px;
+}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::before{
+  content:"+";font-family:ui-monospace,"SF Mono",Menlo,monospace;
+  color:#0aae7a;font-weight:700;width:14px;flex-shrink:0;
+  transition:transform 150ms;
+}
+.faq details[open] summary::before{content:"−"}
+.faq .answer{
+  color:#b0b0b0;font-size:.875rem;line-height:1.65;margin-top:12px;
+  padding-left:24px;
+}
+.faq .answer code{font-size:.8125rem}
+.faq .answer a{color:#ccc;text-decoration:underline;text-underline-offset:3px}
+
 /* ─── COPY BUTTON ─── */
 .has-copy{position:relative}
 .copy-btn{
@@ -357,16 +371,13 @@ footer a:hover{color:#ccc}
 <body>
 
 <nav>
-  <a class="mark" href="/" aria-label="netscli">███╗   ██╗███████╗████████╗███████╗ ██████╗██╗     ██╗
-████╗  ██║██╔════╝╚══██╔══╝██╔════╝██╔════╝██║     ██║
-██╔██╗ ██║█████╗     ██║   ███████╗██║     ██║     ██║
-██║╚██╗██║██╔══╝     ██║   ╚════██║██║     ██║     ██║
-██║ ╚████║███████╗   ██║   ███████║╚██████╗███████╗██║
-╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚══════╝ ╚═════╝╚══════╝╚═╝</a>
-  <a class="mark-plain" href="/" aria-label="netscli">netscli</a>
+  <a class="mark" href="/" aria-label="netscli">
+    <img src="assets/netscli-wordmark.png" alt="netscli" width="160" height="32">
+  </a>
   <div class="nlinks">
     <a href="#surfaces">Features</a>
     <a href="#install">Install</a>
+    <a href="#faq">FAQ</a>
     <a href="https://github.com/fstubner/netscli">GitHub</a>
   </div>
 </nav>
@@ -449,7 +460,10 @@ footer a:hover{color:#ccc}
           </p>
         </div>
         <div class="surface-visual">
-          <img src="tui-discover.svg" alt="netscli terminal UI running /discover: list of live hosts on the local subnet with IP addresses, hostnames, and response times" width="1200" height="680" loading="lazy">
+          <picture>
+            <source type="image/webp" srcset="assets/tui-discover.webp">
+            <img src="assets/tui-discover.png" alt="netscli terminal UI running /discover: list of live hosts on the local subnet with IP addresses, hostnames, and response times" width="1200" height="680" loading="lazy">
+          </picture>
         </div>
       </div>
 
@@ -547,6 +561,58 @@ footer a:hover{color:#ccc}
       </div>
     </div>
 
+  </div>
+</section>
+
+<!-- ━━━ FAQ ━━━ -->
+<section id="faq">
+  <div class="w">
+    <h2>FAQ</h2>
+    <p class="lead">The questions people actually ask before installing.</p>
+
+    <div class="faq">
+      <details>
+        <summary>What is netscli?</summary>
+        <div class="answer">
+          netscli is an open-source network scanner written in Rust. It discovers hosts on a subnet, scans TCP ports, resolves DNS (including mDNS/Bonjour), reads the ARP table with vendor lookup, and optionally captures packets via libpcap or Npcap. The same functionality is available from a command line, a <a href="#surfaces">terminal UI</a> with autocomplete, a desktop app, or a Model Context Protocol (MCP) server that AI agents like Claude Code and Cursor can call directly.
+        </div>
+      </details>
+
+      <details>
+        <summary>How do I install netscli?</summary>
+        <div class="answer">
+          On Linux or macOS: <code>curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash</code>. On Windows: <code>iwr -useb https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.ps1 | iex</code>. With Rust installed you can also run <code>cargo install netscli</code>. Prebuilt binaries for Windows, Linux (x86_64/aarch64/musl), and macOS (x86_64/aarch64) are attached to every <a href="https://github.com/fstubner/netscli/releases/latest">GitHub release</a>.
+        </div>
+      </details>
+
+      <details>
+        <summary>Can I use netscli with Claude Code, Cursor, or another AI agent?</summary>
+        <div class="answer">
+          Yes. Running <code>netscli serve</code> starts a Model Context Protocol (MCP) server over stdio, exposing ten tools: <code>discover_network</code>, <code>scan_ports</code>, <code>ping_host</code>, <code>dns_lookup</code>, <code>get_arp_table</code>, <code>inspect_host</code>, <code>sweep_network</code>, <code>list_network_interfaces</code>, <code>discover_mdns</code>, and <code>capture_pcap</code>. Point your MCP client at the <code>netscli</code> binary and your agent can query the local network with structured JSON responses, no parsing required.
+        </div>
+      </details>
+
+      <details>
+        <summary>Does netscli work on Windows, macOS, and Linux?</summary>
+        <div class="answer">
+          Yes. Every release ships binaries for Windows <code>x86_64</code>, Linux <code>x86_64</code> (glibc and musl), Linux <code>aarch64</code>, macOS <code>x86_64</code>, and macOS <code>aarch64</code>, with and without packet-capture support. The desktop app is built for Windows (<code>.exe</code>/<code>.msi</code>), macOS (<code>.app</code> bundle), and Linux (<code>.AppImage</code>/<code>.deb</code>).
+        </div>
+      </details>
+
+      <details>
+        <summary>Is netscli open source?</summary>
+        <div class="answer">
+          Yes. netscli is MIT-licensed. Source, issue tracker, and releases are at <a href="https://github.com/fstubner/netscli">github.com/fstubner/netscli</a>. The library (<a href="https://crates.io/crates/netscli-core">netscli-core</a>) and MCP server (<a href="https://crates.io/crates/netscli-mcp">netscli-mcp</a>) are published to crates.io so other Rust projects can build on them.
+        </div>
+      </details>
+
+      <details>
+        <summary>Does netscli require libpcap or other system dependencies?</summary>
+        <div class="answer">
+          Not for the default build. Host discovery, port scan, DNS, ARP, and mDNS discovery all work with zero non-Rust runtime dependencies. Packet capture is a feature-gated extra that needs libpcap (Linux/macOS) or Npcap (Windows) at runtime. The install script installs the right library for you when you pass <code>NETSCLI_PCAP=1</code>.
+        </div>
+      </details>
+    </div>
   </div>
 </section>
 
