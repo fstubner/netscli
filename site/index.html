@@ -57,6 +57,21 @@ nav{
   filter:brightness(1);transition:filter 200ms;
 }
 .mark:hover{filter:brightness(1.25) drop-shadow(0 0 10px rgba(10,174,122,.35))}
+/* Mobile fallback: box-drawing glyphs render inconsistently in Android's
+   system monospace stack at small sizes, so below 600px we swap the ANSI
+   art for a clean bold 'netscli' in the same gradient. */
+.mark-plain{display:none}
+@media(max-width:600px){
+  .mark{display:none}
+  .mark-plain{
+    display:inline-block;
+    font-family:ui-monospace,"SF Mono","Cascadia Code",Menlo,monospace;
+    font-weight:800;font-size:17px;letter-spacing:.02em;text-decoration:none;
+    background:linear-gradient(90deg,#059669,#0aae7a 50%,#1edcff);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .mark-plain:hover{filter:brightness(1.15)}
+}
 .nlinks{display:flex;gap:20px;font-size:.8125rem}
 .nlinks a{color:#b0b0b0;text-decoration:none}
 .nlinks a:hover{color:#e5e5e5}
@@ -134,8 +149,12 @@ section .lead a{color:#ccc;text-decoration:underline;text-underline-offset:3px}
 .surface{
   display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;
 }
+/* Grid children default to min-width:auto (content-based), which lets a
+   long <pre> codeblock force the grid wider than the viewport. Clamping
+   to 0 lets the codeblock's own overflow-x:auto contain the overflow. */
+.surface>*{min-width:0}
 .surface.flip{direction:rtl}
-.surface.flip>*{direction:ltr}
+.surface.flip>*{direction:ltr;min-width:0}
 .surface-text h3{font-size:1.125rem;font-weight:700;color:#f5f5f5;margin:0 0 8px}
 .surface-text p{font-size:.875rem;color:#a8a8a8;margin:0;line-height:1.6}
 .surface-text code{font-size:.75rem}
@@ -246,12 +265,13 @@ footer a:hover{color:#ccc}
 <body>
 
 <nav>
-  <a class="mark" href="/" aria-label="NETSCLI">███╗   ██╗███████╗████████╗███████╗ ██████╗██╗     ██╗
+  <a class="mark" href="/" aria-label="netscli">███╗   ██╗███████╗████████╗███████╗ ██████╗██╗     ██╗
 ████╗  ██║██╔════╝╚══██╔══╝██╔════╝██╔════╝██║     ██║
 ██╔██╗ ██║█████╗     ██║   ███████╗██║     ██║     ██║
 ██║╚██╗██║██╔══╝     ██║   ╚════██║██║     ██║     ██║
 ██║ ╚████║███████╗   ██║   ███████║╚██████╗███████╗██║
 ╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚══════╝ ╚═════╝╚══════╝╚═╝</a>
+  <a class="mark-plain" href="/" aria-label="netscli">netscli</a>
   <div class="nlinks">
     <a href="#surfaces">Features</a>
     <a href="#install">Install</a>
