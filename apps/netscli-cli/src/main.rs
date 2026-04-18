@@ -499,6 +499,21 @@ async fn main() -> Result<()> {
                     }
                 }
             }
+            Commands::Completions { shell } => {
+                use clap::CommandFactory;
+                let mut cmd = Cli::command();
+                let name = cmd.get_name().to_string();
+                clap_complete::generate(*shell, &mut cmd, name, &mut io::stdout());
+                return Ok(());
+            }
+            Commands::Man => {
+                use clap::CommandFactory;
+                let cmd = Cli::command();
+                let man = clap_mangen::Man::new(cmd);
+                man.render(&mut io::stdout())
+                    .context("rendering man page")?;
+                return Ok(());
+            }
             Commands::McpServe => {
                 netscli_mcp::run_server().await?;
             }

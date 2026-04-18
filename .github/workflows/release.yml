@@ -19,6 +19,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     permissions:
       contents: write
+      # id-token: write is required for sigstore keyless signing. Cosign
+      # exchanges the OIDC token issued by GitHub Actions for a short-lived
+      # certificate from Fulcio bound to this workflow + commit + tag. No
+      # long-lived secrets to manage.
+      id-token: write
     strategy:
       fail-fast: false
       matrix:
@@ -154,12 +159,33 @@ jobs:
           $hash = (Get-FileHash -Algorithm SHA256 -Path $asset).Hash.ToLowerInvariant()
           "$hash  ${{ matrix.asset_name }}" | Out-File -FilePath "${asset}.sha256" -Encoding ascii
 
+      # Sigstore keyless signing via the GitHub Actions OIDC token. Produces
+      # a .sig and .pem alongside each binary; verifiable by anyone with:
+      #   cosign verify-blob --signature <asset>.sig --certificate <asset>.pem \
+      #     --certificate-identity-regexp 'https://github.com/fstubner/netscli/.*' \
+      #     --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+      #     <asset>
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+      - name: Sign release asset (sigstore keyless)
+        shell: bash
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+        run: |
+          cd target/${{ matrix.target }}/release
+          cosign sign-blob --yes \
+            --output-signature "${{ matrix.asset_name }}.sig" \
+            --output-certificate "${{ matrix.asset_name }}.pem" \
+            "${{ matrix.asset_name }}"
+
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v3
         with:
           files: |
             target/${{ matrix.target }}/release/${{ matrix.asset_name }}
             target/${{ matrix.target }}/release/${{ matrix.asset_name }}.sha256
+            target/${{ matrix.target }}/release/${{ matrix.asset_name }}.sig
+            target/${{ matrix.target }}/release/${{ matrix.asset_name }}.pem
           tag_name: ${{ github.event.inputs.tag || github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

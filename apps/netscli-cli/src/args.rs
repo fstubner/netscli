@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use clap_complete::Shell;
 
 #[derive(Parser)]
 #[command(name = "netscli", version, about = "Modern network scanner", long_about = None)]
@@ -292,6 +293,22 @@ pub enum Commands {
     /// Start MCP server for AI agents
     #[command(name = "serve")]
     McpServe,
+
+    /// Print shell-completion script for the requested shell.
+    ///
+    /// Typical usage:
+    ///   bash:       netscli completions bash       > ~/.local/share/bash-completion/completions/netscli
+    ///   zsh:        netscli completions zsh        > ~/.zsh/completions/_netscli
+    ///   fish:       netscli completions fish       > ~/.config/fish/completions/netscli.fish
+    ///   powershell: netscli completions powershell > $PROFILE/netscli.ps1
+    #[command(name = "completions")]
+    Completions { shell: Shell },
+
+    /// Print the roff-format man page to stdout.
+    ///
+    /// Typical usage: netscli man | gzip > /usr/share/man/man1/netscli.1.gz
+    #[command(name = "man")]
+    Man,
 
     /// Manage MCP server auto-start (systemd service)
     McpService {

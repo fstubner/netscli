@@ -1,0 +1,32 @@
+{
+  "version": "0.1.1",
+  "description": "Network scanner with CLI, TUI, desktop app, and MCP server. Written in Rust.",
+  "homepage": "https://netscli.com",
+  "license": "MIT",
+  "architecture": {
+    "64bit": {
+      "url": "https://github.com/fstubner/netscli/releases/download/v0.1.1/netscli-windows-x86_64.exe#/netscli.exe",
+      "hash": "VERSION_SHA256_WINDOWS_X86_64"
+    }
+  },
+  "bin": "netscli.exe",
+  "post_install": [
+    "# Shell completions. PowerShell profile path varies; wire the snippet in on first install.",
+    "$script = \"$dir\\netscli-completions.ps1\"",
+    "& \"$dir\\netscli.exe\" completions powershell | Set-Content -Encoding UTF8 $script",
+    "Write-Host \"Shell completions written to $script. Add '. $script' to your PowerShell profile to enable tab completion.\""
+  ],
+  "checkver": {
+    "github": "https://github.com/fstubner/netscli"
+  },
+  "autoupdate": {
+    "architecture": {
+      "64bit": {
+        "url": "https://github.com/fstubner/netscli/releases/download/v$version/netscli-windows-x86_64.exe#/netscli.exe"
+      }
+    },
+    "hash": {
+      "url": "$url.sha256"
+    }
+  }
+}
