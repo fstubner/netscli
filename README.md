@@ -110,6 +110,14 @@ scoop bucket add fstubner https://github.com/fstubner/scoop-bucket
 scoop install netscli
 ```
 
+### AUR (Arch Linux)
+
+```bash
+yay -S netscli-bin       # or paru -S netscli-bin
+```
+
+Source: [`aur.archlinux.org/packages/netscli-bin`](https://aur.archlinux.org/packages/netscli-bin).
+
 ### Quick Install (One-line)
 
 ```bash
