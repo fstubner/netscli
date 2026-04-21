@@ -271,6 +271,12 @@ export const site: SiteData = {
         hint: 'Auto-updates on <code>scoop update</code>.',
       },
       {
+        label: 'AUR (Arch Linux)',
+        command: 'yay -S netscli-bin',
+        hint:
+          'Or <code>paru -S netscli-bin</code>. Same prebuilt binary as the GitHub release, packaged with shell completions and man page.',
+      },
+      {
         label: 'Cargo',
         command: 'cargo install netscli',
         hint:
