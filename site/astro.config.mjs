@@ -5,8 +5,11 @@ import { defineConfig } from 'astro/config';
 // generated HTML via the built-in `Astro.site` global.
 export default defineConfig({
   site: 'https://netscli.com',
-  // Minify the output. Default in Astro 5 but explicit here for clarity.
   build: {
-    inlineStylesheets: 'auto',
+    // Force-inline the Astro-generated CSS. Our full stylesheet is ~3 KiB
+    // gzipped — smaller than the round-trip cost of a render-blocking
+    // <link rel="stylesheet">. Lighthouse flagged this as a LCP cost;
+    // 'always' replaces the <link> with a <style> in <head>.
+    inlineStylesheets: 'always',
   },
 });
