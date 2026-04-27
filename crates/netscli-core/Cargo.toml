@@ -43,7 +43,7 @@ mdns-sd = { version = "0.13", optional = true }
 
 [target.'cfg(unix)'.dependencies]
 pnet_sys = "0.34"
-pnet_datalink = "0.34"
+pnet_datalink = "0.35"
 
 [target.'cfg(windows)'.dependencies]
 ipconfig = "0.3"
