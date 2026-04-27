@@ -26,7 +26,7 @@ thiserror.workspace = true
 ipnet.workspace = true
 pnet_packet = "0.34"
 pnet_transport = "0.34"
-ipnetwork = "0.20"
+ipnetwork = "0.21"
 hickory-resolver = { version = "0.24", features = ["tokio-runtime"] }
 sysinfo = "0.30"
 mac_address = { version = "1.1", features = ["serde"] }
