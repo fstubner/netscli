@@ -265,6 +265,12 @@ export const site: SiteData = {
           'Installs the prebuilt binary, shell completions, and man page in one step.',
       },
       {
+        label: 'Winget (Windows)',
+        command: 'winget install fstubner.netscli',
+        hint:
+          'Resolves from the official <a href="https://github.com/microsoft/winget-pkgs/tree/master/manifests/f/fstubner/netscli">microsoft/winget-pkgs</a> repo. Ships preinstalled on Windows 10/11.',
+      },
+      {
         label: 'Scoop (Windows)',
         command:
           'scoop bucket add fstubner https://github.com/fstubner/scoop-bucket && scoop install netscli',
