@@ -75,11 +75,14 @@ export interface SurfaceCard {
   flip?: boolean;
 }
 
+export type Platform = 'windows' | 'macos' | 'linux';
+
 export interface InstallEntry {
   label: string;
   /** Shell command(s) shown monospace with copy button. */
   command: string;
-  /** Optional small hint under the command. HTML allowed. */
+  /** Optional small hint. NOT rendered in the current OS-tabbed design;
+   *  kept on the type for possible future variants or SEO copy. */
   hint?: string;
 }
 
@@ -124,7 +127,9 @@ export interface SiteData {
   };
   surfaces: SurfaceCard[];
   install: {
-    entries: InstallEntry[];
+    /** Per-OS arrays. Position 0 is the recommended (hero) entry; the
+     *  rest render as alternative rows below it in array order. */
+    byPlatform: Record<Platform, InstallEntry[]>;
     tryCommands: string[];
     binariesNote: string;
   };
@@ -257,50 +262,62 @@ export const site: SiteData = {
   ],
 
   install: {
-    entries: [
-      {
-        label: 'Homebrew (macOS + Linux)',
-        command: 'brew tap fstubner/tap && brew install netscli',
-        hint:
-          'Installs the prebuilt binary, shell completions, and man page in one step.',
-      },
-      {
-        label: 'Winget (Windows)',
-        command: 'winget install fstubner.netscli',
-        hint:
-          'Resolves from the official <a href="https://github.com/microsoft/winget-pkgs/tree/master/manifests/f/fstubner/netscli">microsoft/winget-pkgs</a> repo. Ships preinstalled on Windows 10/11.',
-      },
-      {
-        label: 'Scoop (Windows)',
-        command:
-          'scoop bucket add fstubner https://github.com/fstubner/scoop-bucket && scoop install netscli',
-        hint: 'Auto-updates on <code>scoop update</code>.',
-      },
-      {
-        label: 'AUR (Arch Linux)',
-        command: 'yay -S netscli-bin',
-        hint:
-          'Or <code>paru -S netscli-bin</code>. Same prebuilt binary as the GitHub release, packaged with shell completions and man page.',
-      },
-      {
-        label: 'Cargo',
-        command: 'cargo install netscli',
-        hint:
-          "Cross-platform if you have the Rust toolchain. Reproducible and easy to update.",
-      },
-      {
-        label: 'Linux / macOS script',
-        command:
-          'curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash',
-        hint: 'Add <code>NETSCLI_PCAP=1</code> for packet capture.',
-      },
-      {
-        label: 'Windows PowerShell script',
-        command:
-          'iwr -useb https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.ps1 | iex',
-        hint: 'Add <code>$env:NETSCLI_PCAP=1</code> for packet capture.',
-      },
-    ],
+    byPlatform: {
+      windows: [
+        {
+          label: 'Winget',
+          command: 'winget install netscli',
+        },
+        {
+          label: 'Scoop',
+          command:
+            'scoop bucket add fstubner https://github.com/fstubner/scoop-bucket && scoop install netscli',
+        },
+        {
+          label: 'PowerShell script',
+          command:
+            'iwr -useb https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.ps1 | iex',
+        },
+        {
+          label: 'Cargo',
+          command: 'cargo install netscli',
+        },
+      ],
+      macos: [
+        {
+          label: 'Homebrew',
+          command: 'brew tap fstubner/tap && brew install netscli',
+        },
+        {
+          label: 'Install script',
+          command:
+            'curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash',
+        },
+        {
+          label: 'Cargo',
+          command: 'cargo install netscli',
+        },
+      ],
+      linux: [
+        {
+          label: 'Install script',
+          command:
+            'curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash',
+        },
+        {
+          label: 'AUR (Arch)',
+          command: 'yay -S netscli-bin',
+        },
+        {
+          label: 'Homebrew',
+          command: 'brew tap fstubner/tap && brew install netscli',
+        },
+        {
+          label: 'Cargo',
+          command: 'cargo install netscli',
+        },
+      ],
+    },
     tryCommands: [
       'netscli discover',
       'netscli scan 192.168.1.1 -p 22,80,443',

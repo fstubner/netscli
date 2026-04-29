@@ -1,6 +1,9 @@
 ---
 import { site } from '../data/site';
 const { install, copy } = site;
+const { byPlatform, tryCommands, binariesNote } = install;
+const oses = ['windows', 'macos', 'linux'] as const;
+const labels = { windows: 'Windows', macos: 'macOS', linux: 'Linux' };
 ---
 <section id="install">
   <div class="w">
@@ -8,28 +11,45 @@ const { install, copy } = site;
     <p class="lead" set:html={copy.install.leadHtml} />
 
     <div class="install-grid">
-      <div>
-        {install.entries.map((e) => (
-          <div class="install-card">
-            <div class="install-label">{e.label}</div>
-            <div class="cmd has-copy">{e.command}</div>
-            {e.hint && <div class="install-hint" set:html={e.hint} />}
-          </div>
+      <div class="os-tabs" role="tablist">
+        {oses.map((os) => (
+          <button
+            class={`os-tab ${os === 'macos' ? 'active' : ''}`}
+            role="tab"
+            data-os={os}
+          >{labels[os]}</button>
         ))}
-        <p
-          style="margin:12px 0 0;font-size:.8125rem;color:#8a8a8a"
-          set:html={install.binariesNote}
-        />
       </div>
 
-      <div>
+      <div class="install-content">
+        {oses.map((os) => (
+          <div class={`os-panel ${os === 'macos' ? 'active' : ''}`} data-os={os}>
+            <div class="reco">
+              <div class="reco-meta">{byPlatform[os][0].label}</div>
+              <div class="cmd big has-copy always-show">{byPlatform[os][0].command}</div>
+            </div>
+            {byPlatform[os].length > 1 && (
+              <div class="alts">
+                {byPlatform[os].slice(1).map((e) => (
+                  <div class="alt has-copy">
+                    <div class="alt-label">{e.label}</div>
+                    <div class="alt-cmd">{e.command}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+        <p class="footer-note" set:html={binariesNote} />
+      </div>
+
+      <div class="try">
         <h3 class="try-title">Try it</h3>
-        <div
-          class="tryblock"
-          set:html={install.tryCommands
-            .map((c) => `<span style="color:#888">$</span> ${c}`)
-            .join('\n')}
-        />
+        {tryCommands.map((c) => (
+          <div class="try-cmd has-copy">
+            <span class="p">$</span><span class="t">{c}</span>
+          </div>
+        ))}
       </div>
     </div>
   </div>
