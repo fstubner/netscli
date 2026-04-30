@@ -63,3 +63,6 @@ nul
 /*.ps1
 /*.png
 !apps/netscli-gui/src-tauri/icons/*.png
+
+# Brainstorming companion (superpowers skill)
+.superpowers/
