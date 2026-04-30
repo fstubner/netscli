@@ -25,7 +25,7 @@ anyhow.workspace = true
 thiserror.workspace = true
 ipnet.workspace = true
 pnet_packet = "0.34"
-pnet_transport = "0.34"
+pnet_transport = "0.35"
 ipnetwork = "0.20"
 hickory-resolver = { version = "0.24", features = ["tokio-runtime"] }
 sysinfo = "0.38"
