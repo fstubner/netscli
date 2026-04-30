@@ -214,6 +214,7 @@ export const site: SiteData = {
         width: 1640,
         height: 930,
       },
+      flip: true,
     },
     {
       title: 'Command line',
