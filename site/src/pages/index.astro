@@ -75,5 +75,31 @@ const { social } = site;
       });
       el.appendChild(btn);
     });
+
+    // OS tab swap. Buttons toggle .active on themselves and the matching
+    // .os-panel. Bound below to onclick.
+    function setOS(os) {
+      document.querySelectorAll(".os-tab").forEach((b) =>
+        b.classList.toggle("active", b.dataset.os === os));
+      document.querySelectorAll(".os-panel").forEach((p) =>
+        p.classList.toggle("active", p.dataset.os === os));
+    }
+    document.querySelectorAll(".os-tab").forEach((b) => {
+      b.addEventListener("click", () => setOS(b.dataset.os));
+    });
+
+    // Auto-detect visitor OS on load. UA-CH preferred; falls back to the
+    // deprecated navigator.platform; final fallback is macOS for unknowns.
+    {
+      const ua =
+        (navigator.userAgentData && navigator.userAgentData.platform) ||
+        navigator.platform ||
+        "";
+      const detected = /win/i.test(ua) ? "windows"
+        : /mac/i.test(ua) ? "macos"
+        : /linux/i.test(ua) ? "linux"
+        : "macos";
+      setOS(detected);
+    }
   </script>
 </Page>

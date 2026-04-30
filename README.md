@@ -103,6 +103,14 @@ brew tap fstubner/tap
 brew install netscli
 ```
 
+### Winget (Windows)
+
+```powershell
+winget install fstubner.netscli
+```
+
+Ships preinstalled on Windows 10/11. Source: [`microsoft/winget-pkgs`](https://github.com/microsoft/winget-pkgs/tree/master/manifests/f/fstubner/netscli).
+
 ### Scoop (Windows)
 
 ```powershell

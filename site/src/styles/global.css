@@ -257,3 +257,84 @@ footer a:hover{color:#ccc}
 }
 .built-with a{color:#a8a8a8;text-decoration:none}
 .built-with a:hover{color:#ccc}
+
+/* ─── INSTALL SECTION: OS-tabbed redesign ───
+   Two-row grid: OS tabs span row 1 col 1 only; install panels and Try it
+   sit in row 2 so the Try it card is level with the recommended card. */
+.install-grid{
+  grid-template-columns:1fr 360px;gap:0 32px;align-items:start;
+}
+.os-tabs{
+  grid-column:1;grid-row:1;display:flex;gap:0;
+  border-bottom:1px solid #222;margin-bottom:20px;
+}
+.install-content{grid-column:1;grid-row:2}
+.try{grid-column:2;grid-row:2}
+.os-tab{
+  padding:12px 22px;color:#888;font-size:.9rem;cursor:pointer;user-select:none;
+  border:none;background:transparent;font-family:inherit;
+  border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s;
+}
+.os-tab:hover{color:#ccc}
+.os-tab.active{color:#fafafa;border-bottom-color:#0aae7a;font-weight:500}
+.os-panel{display:none}
+.os-panel.active{display:block}
+.reco{
+  background:#0d0d0d;border:1px solid #2a2a2a;border-radius:10px;
+  padding:14px 18px;margin-bottom:16px;
+}
+.reco-meta{font-size:.85rem;font-weight:500;color:#e0e0e0;margin-bottom:8px}
+.cmd.big{font-size:1.05rem;padding-right:74px}
+.alts{
+  display:flex;flex-direction:column;gap:1px;
+  background:#1a1a1a;border:1px solid #1a1a1a;border-radius:8px;overflow:hidden;
+}
+.alt{
+  display:grid;grid-template-columns:140px 1fr;gap:16px;align-items:center;
+  padding:11px 16px;background:#0c0c0c;transition:background .15s;position:relative;
+}
+.alt:hover{background:#0f0f0f}
+.alt-label{font-size:.85rem;color:#bcbcbc}
+.alt-cmd{
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.82rem;
+  color:#ccc;word-break:break-all;padding-right:50px;
+}
+.footer-note{margin-top:14px;font-size:.8125rem;color:#777}
+.footer-note a{color:#9a9a9a;text-decoration:underline;text-underline-offset:3px}
+
+/* Try it sidebar — one row per command, each row gets .has-copy so the
+   existing copy-button JS auto-attaches a button. */
+.try{
+  background:#0a0a0a;border:1px solid rgba(255,255,255,.08);border-radius:10px;
+  padding:18px;
+}
+.try .try-title{margin:0 0 12px}
+.try-cmd{
+  display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:5px;
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.83rem;
+  color:#bcbcbc;transition:background .15s;position:relative;
+}
+.try-cmd:hover{background:#101010}
+.try-cmd .p{color:#555;user-select:none}
+.try-cmd .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+
+/* Always-visible Copy variant for the recommended hero card.
+   Tinted with the site's brand-green accent rgba(10,174,122,*). */
+.has-copy.always-show .copy-btn{
+  opacity:1;
+  background:rgba(10,174,122,.12);
+  border-color:rgba(10,174,122,.45);
+  color:#0aae7a;
+}
+.has-copy.always-show .copy-btn:hover{
+  background:rgba(10,174,122,.20);
+  color:#1ec88c;
+}
+
+/* Mobile: stack the grid into one column, Try it drops below. */
+@media(max-width:800px){
+  .install-grid{grid-template-columns:1fr}
+  .os-tabs{grid-column:1;grid-row:auto}
+  .install-content{grid-column:1;grid-row:auto}
+  .try{grid-column:1;grid-row:auto;margin-top:24px}
+}
