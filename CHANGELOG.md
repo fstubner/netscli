@@ -9,6 +9,32 @@ version and release together.
 
 ## [Unreleased]
 
+## [0.2.1] — 2026-04-30
+
+### Added
+- Prebuilt desktop GUI installers attached to every release: `.msi`
+  (Windows x86_64), `.dmg` (macOS aarch64 + x86_64), `.deb` and
+  `.AppImage` (Linux x86_64). Each is sigstore-signed alongside the
+  CLI binaries. macOS `.dmg` ships unsigned for now; right-click →
+  Open to bypass Gatekeeper, or run
+  `xattr -dr com.apple.quarantine /Applications/NetsCLI.app`.
+- `--concurrency <N>` (alias `-j <N>`) global CLI flag for tuning
+  in-flight network operations. Default stays at 256; clamped to
+  [1, 1024]. Useful on fragile home gateways that can't keep up with
+  hundreds of simultaneous probes.
+
+### Changed
+- Bumped `pnet_packet`, `pnet_transport`, `pnet_datalink`, and
+  `pnet_sys` from 0.34 to 0.35.
+- Bumped `sysinfo` from 0.30 to 0.38. New `Networks::refresh(true)`
+  semantics drop hot-unplugged interfaces from the cached map rather
+  than retaining stale RX/TX stats.
+
+### Notes
+- `ipnetwork` stayed at 0.20 because `pnet_datalink 0.35` still pins
+  it transitively; will revisit when upstream pnet relaxes the
+  constraint.
+
 ## [0.2.0] — 2026-04-18
 
 ### Added
