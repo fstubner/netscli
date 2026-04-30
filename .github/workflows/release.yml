@@ -189,3 +189,155 @@ jobs:
           tag_name: ${{ github.event.inputs.tag || github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ─── Desktop GUI installers ───────────────────────────────────────────
+  # Builds the Tauri 2 desktop app on each native runner. .msi/.dmg/.deb/
+  # .AppImage outputs from `tauri.conf.json:bundle.targets = "all"` get
+  # renamed to `netscli-gui-{os}-{arch}.{ext}`, sigstore-signed, and
+  # uploaded alongside the CLI binaries on the same release.
+  #
+  # macOS .dmg ships UNSIGNED — users see "unverified developer" on first
+  # launch and must right-click → Open. Notarization (paid Apple Developer
+  # cert) is tracked separately. Linux ARM64 + Windows ARM64 GUI builds
+  # are out of matrix scope for v0.2.1 to keep CI budget reasonable.
+  gui:
+    name: Build GUI installer
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            asset_prefix: netscli-gui-linux-x86_64
+            bundle_dir: bundle
+            bundle_globs: "deb/*.deb appimage/*.AppImage"
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            asset_prefix: netscli-gui-macos-aarch64
+            bundle_dir: bundle
+            bundle_globs: "dmg/*.dmg"
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            asset_prefix: netscli-gui-macos-x86_64
+            bundle_dir: bundle
+            bundle_globs: "dmg/*.dmg"
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            asset_prefix: netscli-gui-windows-x86_64
+            bundle_dir: bundle
+            bundle_globs: "msi/*.msi"
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.92.0
+          targets: ${{ matrix.target }}
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/netscli-gui/package-lock.json
+
+      # Tauri 2 needs the same GTK/WebKit stack the lint job already
+      # installs in ci.yml. Mirror it here so the bundle step can link.
+      - name: Install Linux GUI dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev \
+            librsvg2-dev libsoup-3.0-dev libjavascriptcoregtk-4.1-dev
+
+      - name: npm ci
+        run: npm ci
+        working-directory: apps/netscli-gui
+
+      - name: tauri build
+        run: npm run tauri -- build --target ${{ matrix.target }}
+        working-directory: apps/netscli-gui
+
+      # Tauri puts bundles under apps/netscli-gui/src-tauri/target/<TARGET>/
+      # release/bundle/{deb,appimage,dmg,msi}/. Rename each artifact to a
+      # predictable name then sigstore-sign it.
+      - name: Collect, rename, and sign GUI artifacts
+        shell: bash
+        env:
+          ASSET_PREFIX: ${{ matrix.asset_prefix }}
+          BUNDLE_GLOBS: ${{ matrix.bundle_globs }}
+          TARGET: ${{ matrix.target }}
+        run: |
+          set -euo pipefail
+          BUNDLE_ROOT="apps/netscli-gui/src-tauri/target/${TARGET}/release/bundle"
+          OUT_DIR="${RUNNER_TEMP}/gui-out"
+          mkdir -p "${OUT_DIR}"
+          # Walk each glob, copy with the canonical asset name preserving
+          # the file extension. Tauri produces e.g. NetsCLI_0.2.1_amd64.deb;
+          # we want netscli-gui-linux-x86_64.deb.
+          for glob in ${BUNDLE_GLOBS}; do
+            for src in ${BUNDLE_ROOT}/${glob}; do
+              [ -e "${src}" ] || continue
+              ext="${src##*.}"
+              dst="${OUT_DIR}/${ASSET_PREFIX}.${ext}"
+              cp "${src}" "${dst}"
+              echo "Collected ${src} -> ${dst}"
+            done
+          done
+          ls -la "${OUT_DIR}"
+
+      - name: Generate SHA256
+        shell: bash
+        env:
+          ASSET_PREFIX: ${{ matrix.asset_prefix }}
+        run: |
+          set -euo pipefail
+          OUT_DIR="${RUNNER_TEMP}/gui-out"
+          cd "${OUT_DIR}"
+          for f in ${ASSET_PREFIX}.*; do
+            [ -f "$f" ] || continue
+            if command -v sha256sum >/dev/null 2>&1; then
+              sha256sum "$f" > "${f}.sha256"
+            else
+              shasum -a 256 "$f" > "${f}.sha256"
+            fi
+          done
+          ls -la
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+      - name: Sign GUI artifacts (sigstore keyless)
+        shell: bash
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+          ASSET_PREFIX: ${{ matrix.asset_prefix }}
+        run: |
+          set -euo pipefail
+          OUT_DIR="${RUNNER_TEMP}/gui-out"
+          cd "${OUT_DIR}"
+          for f in ${ASSET_PREFIX}.*; do
+            # Skip the sha256 + any pre-existing sig/pem on re-runs.
+            case "$f" in
+              *.sha256|*.sig|*.pem) continue ;;
+            esac
+            cosign sign-blob --yes \
+              --output-signature "${f}.sig" \
+              --output-certificate "${f}.pem" \
+              "$f"
+          done
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v3
+        with:
+          files: |
+            ${{ runner.temp }}/gui-out/${{ matrix.asset_prefix }}.*
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

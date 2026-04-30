@@ -182,7 +182,13 @@ cargo install --git https://github.com/fstubner/netscli netscli
 
 ### GUI Application
 
-> **Heads up:** the desktop app is currently build-from-source only. None of the package managers above (Homebrew / Winget / Scoop / AUR / install scripts) ship the GUI — they install the CLI/TUI binary. Prebuilt GUI installers (`.msi`, `.dmg`, `.AppImage`, `.deb`) are tracked for a future release.
+Prebuilt installers are attached to every [GitHub release](https://github.com/fstubner/netscli/releases/latest) as of v0.2.1:
+
+- **Windows**: `netscli-gui-windows-x86_64.msi` — double-click to install. WebView2 ships preinstalled on Windows 10/11; if the app fails to start, [install the Evergreen runtime](https://developer.microsoft.com/microsoft-edge/webview2/).
+- **macOS**: `netscli-gui-macos-aarch64.dmg` (Apple Silicon) or `netscli-gui-macos-x86_64.dmg` (Intel). Currently **unsigned** — first launch will show "unverified developer". Right-click → Open to bypass Gatekeeper, or run `xattr -dr com.apple.quarantine /Applications/NetsCLI.app`. Notarized build is tracked separately.
+- **Linux**: `netscli-gui-linux-x86_64.deb` (Debian/Ubuntu) or `netscli-gui-linux-x86_64.AppImage` (any distro; `chmod +x` and run).
+
+To build from source instead:
 
 ```bash
 cd apps/netscli-gui
@@ -190,9 +196,6 @@ npm install
 npm run tauri build
 # Installers created in src-tauri/target/release/bundle/
 ```
-
-**Windows note:** the desktop app requires the WebView2 runtime. Most Windows 10/11 systems already have it; if the app does not start, install the Evergreen runtime: https://developer.microsoft.com/microsoft-edge/webview2/.
-The CLI installer (`scripts/install.ps1`) does not install WebView2 because it is only required for the desktop GUI.
 
 **Output:**
 - **macOS**: `.app` bundle in `src-tauri/target/release/bundle/macos/`
