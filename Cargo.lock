@@ -2556,7 +2556,7 @@ dependencies = [
  "thiserror 1.0.69",
  "tokio",
  "tui-textarea",
- "unicode-width 0.1.14",
+ "unicode-width 0.2.0",
 ]
 
 [[package]]
