@@ -42,7 +42,7 @@ impl NetworkMonitor {
 
     pub fn new() -> Self {
         let mut networks = Networks::new_with_refreshed_list();
-        networks.refresh();
+        networks.refresh(true);
 
         let (rx, tx, _) = sum_traffic(&networks, None);
         let now = Instant::now();
@@ -69,7 +69,7 @@ impl NetworkMonitor {
     pub fn set_interface(&self, interface: Option<String>) {
         let mut s = self.lock();
         s.selected_interface = interface;
-        s.networks.refresh();
+        s.networks.refresh(true);
         let (rx, tx, _) = sum_traffic(&s.networks, s.selected_interface.as_deref());
 
         let now = Instant::now();
@@ -89,7 +89,7 @@ impl NetworkMonitor {
 
     pub fn available_interfaces(&self) -> Vec<String> {
         let mut s = self.lock();
-        s.networks.refresh();
+        s.networks.refresh(true);
         let mut names: Vec<String> = s.networks.keys().map(|n| n.to_string()).collect();
         names.sort_unstable();
         names
@@ -113,7 +113,7 @@ impl NetworkMonitor {
             };
         }
 
-        s.networks.refresh();
+        s.networks.refresh(true);
         let (current_rx, current_tx, available) =
             sum_traffic(&s.networks, s.selected_interface.as_deref());
         if !available {
