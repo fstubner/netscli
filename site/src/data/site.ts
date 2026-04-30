@@ -154,7 +154,7 @@ export const site: SiteData = {
       'network scanner, rust, cli, tui, mcp server, model context protocol, port scan, host discovery, dns lookup, arp table, bonjour, mdns, packet capture, claude, cursor, ai agent, network tool, cross-platform',
     siteName: 'netscli',
     author: { name: 'Felix Stubner', url: 'https://github.com/fstubner' },
-    ogImage: 'https://netscli.com/gui-dashboard.png',
+    ogImage: 'https://netscli.com/assets/tui-discover.png',
     faviconPath: '/favicon.svg',
     themeColor: '#111',
   },
@@ -171,16 +171,16 @@ export const site: SiteData = {
     badge: 'Open source · MIT · Rust · Windows, Linux, macOS',
     heading: 'A network scanner you can talk to',
     subhead:
-      'Discover hosts, scan ports, resolve DNS, capture packets. Use it from a terminal, a desktop app, or let your AI agent call the MCP server or the CLI directly.',
+      'Discover hosts, scan ports, resolve DNS, capture packets. Drive it from an interactive terminal UI with autocomplete, the command line, or let your AI agent call the MCP server directly.',
     quickInstall:
       'curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash',
     installLinkLabel: 'Windows & Cargo options ↓',
-    heroImage: '/gui-dashboard.png',
-    heroImageWebp: '/gui-dashboard.webp',
+    heroImage: '/assets/tui-discover.png',
+    heroImageWebp: '/assets/tui-discover.webp',
     heroImageAlt:
-      "netscli desktop app dashboard on Windows showing the default network interface, live traffic rates, and a table of detected network interfaces",
-    heroImageWidth: 1375,
-    heroImageHeight: 1000,
+      'netscli terminal UI running /discover: list of live hosts on the local subnet with IP addresses, hostnames, and response times',
+    heroImageWidth: 1640,
+    heroImageHeight: 930,
     sourceUrl: 'https://github.com/fstubner/netscli',
   },
 
@@ -203,19 +203,6 @@ export const site: SiteData = {
 
   surfaces: [
     {
-      title: 'Desktop app',
-      body:
-        "A standalone desktop application for when you'd rather not open a terminal. Scan ports, discover hosts, look up DNS records, inspect your ARP table. Available for Windows, Linux, and macOS.",
-      image: {
-        src: '/gui-scan.png',
-        webp: '/gui-scan.webp',
-        alt:
-          'netscli desktop app port scan view: scanning 1.1.1.1 for ports 80 and 443 returns both as open with http and https service labels',
-        width: 1375,
-        height: 1000,
-      },
-    },
-    {
       title: 'Terminal UI',
       body:
         'An interactive terminal interface. Type <code>/</code> to see available commands, use tab to autocomplete, arrow keys to browse history. The status bar shows your IP and live traffic rates.',
@@ -224,10 +211,9 @@ export const site: SiteData = {
         webp: '/assets/tui-discover.webp',
         alt:
           'netscli terminal UI running /discover: list of live hosts on the local subnet with IP addresses, hostnames, and response times',
-        width: 1200,
-        height: 680,
+        width: 1640,
+        height: 930,
       },
-      flip: true,
     },
     {
       title: 'Command line',
@@ -247,7 +233,7 @@ export const site: SiteData = {
     {
       title: 'MCP server',
       body:
-        'Run <code>netscli serve</code> and point Claude Desktop or Cursor at it. Your agent gets 10 tools — host discovery, port scanning, DNS, ARP, mDNS, and more — over standard JSON-RPC.',
+        'Run <code>netscli serve</code> and point Claude Desktop or Cursor at it. Your agent gets nine tools — host discovery, port scanning, DNS, ARP, mDNS, and more — over standard JSON-RPC. The pcap-enabled build adds a tenth tool for packet capture.',
       codeHtml: `<span style="color:#888">// claude_desktop_config.json</span>
 <span style="color:#555">{</span>
   <span style="color:#7c9fc7">"mcpServers"</span>: <span style="color:#555">{</span>
@@ -258,6 +244,19 @@ export const site: SiteData = {
   <span style="color:#555">}</span>
 <span style="color:#555">}</span>`,
       flip: true,
+    },
+    {
+      title: 'Desktop app',
+      body:
+        "A standalone desktop application for when you'd rather not open a terminal. Scan ports, discover hosts, look up DNS records, inspect your ARP table. <em>Currently build-from-source only — prebuilt installers (.msi / .dmg / .AppImage / .deb) are tracked for a future release; package managers above install the CLI/TUI binary.</em>",
+      image: {
+        src: '/gui-scan.png',
+        webp: '/gui-scan.webp',
+        alt:
+          'netscli desktop app port scan view: scanning 1.1.1.1 for ports 80 and 443 returns both as open with http and https service labels',
+        width: 1375,
+        height: 1000,
+      },
     },
   ],
 
