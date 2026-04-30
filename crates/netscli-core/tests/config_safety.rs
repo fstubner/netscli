@@ -20,6 +20,17 @@ fn ops_new_clamps_zero_values() {
     assert_eq!(cfg.dns_timeout_ms, 1);
 }
 
+#[test]
+fn ops_new_clamps_concurrency_upper_bound() {
+    let cfg = OpsConfig {
+        concurrency: 9999,
+        ..Default::default()
+    };
+
+    let ops = Ops::new(cfg);
+    assert_eq!(ops.config().concurrency, 1024);
+}
+
 #[tokio::test]
 async fn resolve_host_ip_with_timeout_accepts_literal_ip() {
     let ip = netscli_core::ops::resolve_host_ip_with_timeout("127.0.0.1", 1)

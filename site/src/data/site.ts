@@ -214,6 +214,7 @@ export const site: SiteData = {
         width: 1640,
         height: 930,
       },
+      flip: true,
     },
     {
       title: 'Command line',
@@ -365,6 +366,30 @@ export const site: SiteData = {
       aHtml:
         'Not for the default build. Host discovery, port scan, DNS, ARP, and mDNS discovery all work with zero non-Rust runtime dependencies. Packet capture is a feature-gated extra that needs libpcap (Linux/macOS) or Npcap (Windows) at runtime. The install script installs the right library for you when you pass <code>NETSCLI_PCAP=1</code>.',
     },
+    {
+      q: 'Is netscli an alternative to Angry IP Scanner or Advanced IP Scanner?',
+      a: 'Yes. netscli does the same core jobs as Angry IP Scanner (host discovery, port scan, hostname lookup) and Advanced IP Scanner (LAN device discovery with vendor lookup), and adds JSON/YAML output on every command, an MCP server for AI agents, and a scriptable terminal interface. Unlike Advanced IP Scanner, which is Windows-only and closed-source, netscli ships native binaries for Windows, macOS, and Linux under an MIT license. Unlike Angry IP Scanner, every subcommand outputs structured JSON so you can pipe results into jq, grep, or any other tool.',
+      aHtml:
+        'Yes. netscli does the same core jobs as Angry IP Scanner (host discovery, port scan, hostname lookup) and Advanced IP Scanner (LAN device discovery with vendor lookup), and adds <code>--json</code>/<code>--yaml</code> output on every command, an MCP server for AI agents, and a scriptable terminal interface. Unlike Advanced IP Scanner, which is Windows-only and closed-source, netscli ships native binaries for Windows, macOS, and Linux under an MIT license. Unlike Angry IP Scanner, every subcommand outputs structured JSON so you can pipe results into <code>jq</code>, <code>grep</code>, or any other tool.',
+    },
+    {
+      q: 'How do I find devices on my home network with netscli?',
+      a: 'Run `netscli discover` from any machine on the network. netscli auto-detects a sensible subnet from your default interface and pings every host in that range, then runs reverse DNS, ARP-table lookups for MAC addresses, and OUI vendor matching to identify devices like your router, NAS, smart TV, printer, and IoT gear. Override the subnet with `netscli discover 192.168.1.0/24`, or run `netscli serve` to let an AI agent answer questions about your LAN directly.',
+      aHtml:
+        'Run <code>netscli discover</code> from any machine on the network. netscli auto-detects a sensible subnet from your default interface and pings every host in that range, then runs reverse DNS, ARP-table lookups for MAC addresses, and OUI vendor matching to identify devices like your router, NAS, smart TV, printer, and IoT gear. Override the subnet with <code>netscli discover 192.168.1.0/24</code>, or run <code>netscli serve</code> to let an AI agent answer questions about your LAN directly.',
+    },
+    {
+      q: 'Is netscli a free network scanner for Windows, macOS, or Linux?',
+      a: 'Yes — same binary on all three. netscli is MIT-licensed and free for any use, including commercial. On Windows: `winget install netscli` (winget is preinstalled on Windows 10/11) or `scoop install netscli`. On macOS: `brew tap fstubner/tap && brew install netscli`. On Linux: the install script (`curl -fsSL ... | bash`), the AUR (`yay -S netscli-bin`), or Homebrew on Linux. The default build has no driver or installer dependencies — only the optional packet-capture feature uses libpcap (Linux/macOS) or Npcap (Windows), and only if you opt in with NETSCLI_PCAP=1.',
+      aHtml:
+        'Yes — same binary on all three. netscli is MIT-licensed and free for any use, including commercial. On Windows: <code>winget install netscli</code> (winget is preinstalled on Windows 10/11) or <code>scoop install netscli</code>. On macOS: <code>brew tap fstubner/tap &amp;&amp; brew install netscli</code>. On Linux: the <a href="https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh">install script</a>, the <a href="https://aur.archlinux.org/packages/netscli-bin">AUR</a> (<code>yay -S netscli-bin</code>), or Homebrew on Linux. The default build has no driver or installer dependencies — only the optional packet-capture feature uses libpcap (Linux/macOS) or Npcap (Windows), and only if you opt in with <code>NETSCLI_PCAP=1</code>.',
+    },
+    {
+      q: 'Can netscli replace nmap for simple network scans?',
+      a: 'For host discovery, basic TCP port scans, DNS lookups, and ARP-table inspection on a local network, yes. netscli is faster to learn (one subcommand per task — `netscli discover`, `netscli scan`, `netscli dns`), outputs JSON or YAML on every command, and ships with shell completions and a man page. For advanced workflows — service version detection, NSE scripts, OS fingerprinting, raw packet crafting — nmap remains the right tool. netscli focuses on the 80% of network-discovery tasks that do not need that depth.',
+      aHtml:
+        'For host discovery, basic TCP port scans, DNS lookups, and ARP-table inspection on a local network, yes. netscli is faster to learn (one subcommand per task — <code>netscli discover</code>, <code>netscli scan</code>, <code>netscli dns</code>), outputs JSON or YAML on every command, and ships with shell completions and a man page. For advanced workflows — service version detection, NSE scripts, OS fingerprinting, raw packet crafting — nmap remains the right tool. netscli focuses on the 80% of network-discovery tasks that don\'t need that depth.',
+    },
   ],
 
   builtWith: [
@@ -381,5 +406,5 @@ export const site: SiteData = {
     cloudflareToken: 'c03201f65f6d41aa843c81f259a1ac06',
   },
 
-  version: '0.2.0',
+  version: '0.2.1',
 };
