@@ -33,8 +33,8 @@ I wanted my AI agent to answer questions about my local network. Things
 like "what's the IP of the device that just joined" or "is port 22 open
 on 192.168.1.42". Existing tools work but they aren't great to drive from
 an agent. Half a dozen CLI invocations, brittle output parsing, no shared
-context. So I built an MCP server first. `netscli serve`, nine tools,
-JSON-RPC over stdio, structured results.
+context. So I built an MCP server first. `netscli serve`, nine tools by
+default (ten in the `-pcap` build), JSON-RPC over stdio, structured results.
 
 Then the TUI. Coding agents like Claude Code have put real work into
 autocomplete, command history, in-place progress, and mouse selection
@@ -106,10 +106,10 @@ brew install netscli
 ### Winget (Windows)
 
 ```powershell
-winget install fstubner.netscli
+winget install netscli
 ```
 
-Ships preinstalled on Windows 10/11. Source: [`microsoft/winget-pkgs`](https://github.com/microsoft/winget-pkgs/tree/master/manifests/f/fstubner/netscli).
+Resolves from the official [`microsoft/winget-pkgs`](https://github.com/microsoft/winget-pkgs/tree/master/manifests/f/fstubner/netscli) repo (winget ships preinstalled on Windows 10/11).
 
 ### Scoop (Windows)
 
@@ -182,6 +182,8 @@ cargo install --git https://github.com/fstubner/netscli netscli
 
 ### GUI Application
 
+> **Heads up:** the desktop app is currently build-from-source only. None of the package managers above (Homebrew / Winget / Scoop / AUR / install scripts) ship the GUI — they install the CLI/TUI binary. Prebuilt GUI installers (`.msi`, `.dmg`, `.AppImage`, `.deb`) are tracked for a future release.
+
 ```bash
 cd apps/netscli-gui
 npm install
@@ -250,6 +252,7 @@ netscli
 - `/reverse <ip>` - Reverse DNS (PTR) lookup
 - `/arp` - Show/manage ARP table with vendor information
 - `/interfaces` - List network interfaces
+- `/mdns` - Discover devices on the local network via mDNS/DNS-SD (Bonjour)
 - `/config` - Interactive TUI settings (saved to `~/.netscli/tui-settings.json`)
 - `/export [md|json] [--output <path>]` - Export the current session output
 - `/pcap ...` - Packet capture (pcap-enabled builds only; run `/pcap --check` to list interfaces)
@@ -414,7 +417,7 @@ systemctl --user enable --now netscli-mcp.service
 
 ### Available Tools
 
-The MCP server exposes 10 tools:
+The MCP server exposes 9 tools by default (10 in `-pcap` builds, where `capture_pcap` is also available):
 1. `discover_network` - Discover live hosts on a network subnet
 2. `scan_ports` - Scan TCP ports on a host
 3. `ping_host` - Ping a host with statistics
