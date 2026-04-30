@@ -24,7 +24,8 @@ use dirs::home_dir;
 use formatter::Formatter;
 use mac_address::MacAddress;
 use netscli_core::{
-    parse_ports_checked, Database, NetworkManager, Ops, PcapCancelToken, PingScanner,
+    parse_ports_checked, Database, NetworkManager, Ops, OpsConfig, PcapCancelToken, PingScanner,
+    DEFAULT_CONCURRENCY,
 };
 use ratatui::style::{Color, Style};
 use ratatui::text::{Line, Span};
@@ -92,7 +93,10 @@ async fn main() -> Result<()> {
     }
 
     let db = try_init_db().await;
-    let ops = Ops::default();
+    let ops = Ops::new(OpsConfig {
+        concurrency: cli.concurrency.unwrap_or(DEFAULT_CONCURRENCY),
+        ..Default::default()
+    });
     let local_addr = netscli_core::detect_default_ipv4_addr().map(|ip| ip.to_string());
 
     if let Some(command) = &cli.command {
@@ -534,7 +538,7 @@ async fn main() -> Result<()> {
             }
         }
     } else {
-        run_tui().await?;
+        run_tui(cli.concurrency.unwrap_or(DEFAULT_CONCURRENCY)).await?;
     }
 
     Ok(())
@@ -741,7 +745,7 @@ async fn init_db() -> Result<Database> {
     Ok(db)
 }
 
-async fn run_tui() -> Result<()> {
+async fn run_tui(concurrency: usize) -> Result<()> {
     let db = try_init_db().await.map(std::sync::Arc::new);
     enable_raw_mode()?;
     let stdout = io::stdout();
@@ -753,7 +757,10 @@ async fn run_tui() -> Result<()> {
     let mut app = TuiApp::new();
     app.settings = crate::tui_settings::load_settings();
     app.apply_settings();
-    let ops = Ops::default();
+    let ops = Ops::new(OpsConfig {
+        concurrency,
+        ..Default::default()
+    });
     let mut task: Option<tokio::task::JoinHandle<Vec<Line<'static>>>> = None;
     let tick_rate = std::time::Duration::from_millis(100);
     let mut last_nav_at: Option<Instant> = None;
