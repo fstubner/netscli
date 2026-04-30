@@ -4,6 +4,12 @@ use clap_complete::Shell;
 #[derive(Parser)]
 #[command(name = "netscli", version, about = "Modern network scanner", long_about = None)]
 pub struct Cli {
+    /// Max in-flight network operations (default 256; clamped to [1, 1024];
+    /// mDNS discovery sub-caps internally at 32). Lower this on fragile home
+    /// gateways that struggle with hundreds of simultaneous probes.
+    #[arg(short = 'j', long, global = true, value_name = "N")]
+    pub concurrency: Option<usize>,
+
     #[command(subcommand)]
     pub command: Option<Commands>,
 }
