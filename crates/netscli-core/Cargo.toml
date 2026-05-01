@@ -47,7 +47,7 @@ pnet_datalink = "0.35"
 
 [target.'cfg(windows)'.dependencies]
 ipconfig = "0.3"
-windows-sys = { version = "0.52", features = ["Win32_Networking_WinSock"] }
+windows-sys = { version = "0.61", features = ["Win32_Networking_WinSock"] }
 
 [features]
 # Lean by default: scan, discover, DNS, ARP, OUI lookup, stats.
