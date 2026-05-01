@@ -73,6 +73,20 @@ export interface SurfaceCard {
   codeHtml?: string;
   /** If true, flips text and visual sides for alternating rhythm. */
   flip?: boolean;
+  /** Optional per-platform download buttons rendered below the body.
+   *  Used by the Desktop card to surface .msi / .dmg / .deb / .AppImage
+   *  installers from the latest GitHub release. */
+  downloads?: SurfaceDownload[];
+}
+
+export interface SurfaceDownload {
+  /** Visible button label, e.g. "Windows (.msi)". */
+  label: string;
+  /** Direct download URL. Use the /releases/latest/download/ form so
+   *  the buttons auto-track the latest release without site updates. */
+  url: string;
+  /** Optional secondary line below the label, e.g. "Apple Silicon". */
+  hint?: string;
 }
 
 export type Platform = 'windows' | 'macos' | 'linux';
@@ -249,7 +263,7 @@ export const site: SiteData = {
     {
       title: 'Desktop app',
       body:
-        "A standalone desktop application for when you'd rather not open a terminal. Scan ports, discover hosts, look up DNS records, inspect your ARP table. <em>Currently build-from-source only — prebuilt installers (.msi / .dmg / .AppImage / .deb) are tracked for a future release; package managers above install the CLI/TUI binary.</em>",
+        "A standalone desktop application for when you'd rather not open a terminal. Scan ports, discover hosts, look up DNS records, inspect your ARP table. Prebuilt installers attached to every <a href=\"https://github.com/fstubner/netscli/releases/latest\">GitHub release</a> &mdash; sigstore-signed, no build-from-source needed.",
       image: {
         src: '/gui-scan.png',
         webp: '/gui-scan.webp',
@@ -258,6 +272,33 @@ export const site: SiteData = {
         width: 1375,
         height: 1000,
       },
+      downloads: [
+        {
+          label: 'Windows',
+          hint: '.msi',
+          url: 'https://github.com/fstubner/netscli/releases/latest/download/netscli-gui-windows-x86_64.msi',
+        },
+        {
+          label: 'macOS',
+          hint: 'Apple Silicon .dmg',
+          url: 'https://github.com/fstubner/netscli/releases/latest/download/netscli-gui-macos-aarch64.dmg',
+        },
+        {
+          label: 'macOS',
+          hint: 'Intel .dmg',
+          url: 'https://github.com/fstubner/netscli/releases/latest/download/netscli-gui-macos-x86_64.dmg',
+        },
+        {
+          label: 'Linux',
+          hint: '.deb',
+          url: 'https://github.com/fstubner/netscli/releases/latest/download/netscli-gui-linux-x86_64.deb',
+        },
+        {
+          label: 'Linux',
+          hint: '.AppImage',
+          url: 'https://github.com/fstubner/netscli/releases/latest/download/netscli-gui-linux-x86_64.AppImage',
+        },
+      ],
     },
   ],
 
