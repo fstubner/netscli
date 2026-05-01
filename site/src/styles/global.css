@@ -80,6 +80,20 @@ nav{
   color:#ccc;display:flex;align-items:center;justify-content:space-between;gap:12px;
 }
 .hero .quick-install span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Secondary install offer: desktop app downloads. Smaller, quieter row
+   so the curl install above keeps primary visual weight. */
+.hero .hero-desktop{
+  margin:14px auto 0;font-size:.8125rem;color:#9a9a9a;
+  display:flex;justify-content:center;align-items:center;gap:8px;
+  flex-wrap:wrap;
+}
+.hero .hero-desktop-label{color:#888}
+.hero .hero-desktop a{
+  color:#cfcfcf;text-decoration:none;
+  border-bottom:1px dotted rgba(255,255,255,.22);padding-bottom:1px;
+}
+.hero .hero-desktop a:hover{color:#fff;border-bottom-color:rgba(255,255,255,.5)}
+.hero .hero-desktop-sep{color:#555}
 .hero .links{display:flex;gap:16px;justify-content:center;margin-top:16px;flex-wrap:wrap}
 .hero .links a{
   font-size:.8125rem;color:#a3a3a3;text-decoration:none;
