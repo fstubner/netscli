@@ -367,7 +367,7 @@ export const site: SiteData = {
       'netscli --help',
     ],
     binariesNote:
-      'Or grab binaries from <a href="https://github.com/fstubner/netscli/releases/latest" style="color:#ccc;text-decoration:underline;text-underline-offset:3px">the latest release</a>.',
+      'Or grab CLI binaries and desktop installers (<code>.msi</code> / <code>.dmg</code> / <code>.deb</code> / <code>.AppImage</code>) from <a href="https://github.com/fstubner/netscli/releases/latest" style="color:#ccc;text-decoration:underline;text-underline-offset:3px">the latest release</a>.',
   },
 
   faq: [
