@@ -13,6 +13,16 @@ const { surfaces, copy } = site;
           <div class="surface-text">
             <h3>{s.title}</h3>
             <p set:html={s.body} />
+            {s.downloads && (
+              <div class="surface-downloads">
+                {s.downloads.map((d) => (
+                  <a class="surface-download-btn" href={d.url} download>
+                    <span class="dl-label">{d.label}</span>
+                    {d.hint && <span class="dl-hint">{d.hint}</span>}
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
           <div class="surface-visual">
             {s.image ? (
