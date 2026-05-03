@@ -1,0 +1,168 @@
+name: Publish to package managers
+
+# Fans out from a single GitHub release to every downstream registry:
+# crates.io, Homebrew tap, Scoop bucket, Winget (microsoft/winget-pkgs),
+# AUR (netscli-bin). Each job is independent — one failure doesn't block
+# the others, and each is re-runnable from the Actions tab.
+#
+# Triggers:
+#   - On `release: published` (canonical path: flip a draft to public).
+#   - On `workflow_dispatch` with a tag input (re-run a specific job
+#     after fixing a transient failure).
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to publish (e.g. v0.2.1). Must already exist as a published release with assets attached.'
+        required: true
+        type: string
+
+# Resolve the tag once at the workflow level so every job sees the same
+# version regardless of trigger.
+env:
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
+
+jobs:
+  # ─── crates.io ──────────────────────────────────────────────────────
+  # Bottom-up publish (netscli-core → netscli-mcp → netscli). Sleep
+  # between each to let the index update; downstream crates' resolvers
+  # otherwise can't see the just-published version.
+  crates-io:
+    name: crates.io
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.TAG }}
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.92.0
+
+      - name: Install libpcap (workspace builds need pkg-config + libpcap headers)
+        run: sudo apt-get update && sudo apt-get install -y libpcap-dev pkg-config
+
+      - name: cargo publish (netscli-core)
+        run: cargo publish -p netscli-core --token "$CARGO_TOKEN"
+        env:
+          CARGO_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+      - name: Wait for crates.io index (netscli-core)
+        run: sleep 90
+
+      - name: cargo publish (netscli-mcp)
+        run: cargo publish -p netscli-mcp --token "$CARGO_TOKEN"
+        env:
+          CARGO_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+      - name: Wait for crates.io index (netscli-mcp)
+        run: sleep 90
+
+      - name: cargo publish (netscli)
+        run: cargo publish -p netscli --token "$CARGO_TOKEN"
+        env:
+          CARGO_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  # ─── Homebrew tap ───────────────────────────────────────────────────
+  homebrew:
+    name: Homebrew tap
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.TAG }}
+      - name: Update fstubner/homebrew-tap
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: bash scripts/release/publish-homebrew.sh "$TAG"
+
+  # ─── Scoop bucket ───────────────────────────────────────────────────
+  scoop:
+    name: Scoop bucket
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.TAG }}
+      - name: Update fstubner/scoop-bucket
+        env:
+          GH_TOKEN: ${{ secrets.SCOOP_BUCKET_TOKEN }}
+        run: bash scripts/release/publish-scoop.sh "$TAG"
+
+  # ─── Winget (microsoft/winget-pkgs) ────────────────────────────────
+  # Forks microsoft/winget-pkgs under the user's account, generates a
+  # 0.X.Y/ manifest folder from the release, opens a PR. Moderator
+  # approval lands it on the public catalog.
+  winget:
+    name: Winget
+    runs-on: windows-latest
+    steps:
+      - name: Submit netscli to microsoft/winget-pkgs
+        uses: vedantmgoyal2009/winget-releaser@v2
+        with:
+          identifier: fstubner.netscli
+          version: ${{ env.TAG }}
+          installers-regex: 'netscli-windows-x86_64\.exe$'
+          token: ${{ secrets.WINGET_TOKEN }}
+
+  # ─── AUR (netscli-bin) ─────────────────────────────────────────────
+  # Pre-step computes SHA256s from release assets and renders a fresh
+  # PKGBUILD with the bumped version. The deploy action then SSH-pushes
+  # to aur.archlinux.org and regenerates .SRCINFO server-side.
+  aur:
+    name: AUR
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.TAG }}
+
+      - name: Wait for Linux release assets + compute SHA256s
+        id: shas
+        env:
+          TAG: ${{ env.TAG }}
+        run: |
+          set -euo pipefail
+          BASE="https://github.com/fstubner/netscli/releases/download/${TAG}"
+          for arch in x86_64 aarch64; do
+            url="${BASE}/netscli-linux-${arch}.sha256"
+            echo "→ ${url}"
+            for i in {1..30}; do
+              if curl -fsSL --head "$url" >/dev/null 2>&1; then break; fi
+              echo "  not yet; retry in 30s ($i/30)"
+              sleep 30
+            done
+            sha=$(curl -fsSL "$url" | awk '{print $1}')
+            echo "${arch}=${sha}" >> "$GITHUB_OUTPUT"
+          done
+
+      - name: Render bumped PKGBUILD
+        env:
+          TAG: ${{ env.TAG }}
+          SHA_X86_64: ${{ steps.shas.outputs.x86_64 }}
+          SHA_AARCH64: ${{ steps.shas.outputs.aarch64 }}
+        run: |
+          set -euo pipefail
+          version="${TAG#v}"
+          sed -E \
+            -e "s|^pkgver=.*|pkgver=${version}|" \
+            -e "s|^sha256sums_x86_64=.*|sha256sums_x86_64=('${SHA_X86_64}')|" \
+            -e "s|^sha256sums_aarch64=.*|sha256sums_aarch64=('${SHA_AARCH64}')|" \
+            packaging/aur/PKGBUILD > /tmp/PKGBUILD
+          echo "--- rendered ---"
+          cat /tmp/PKGBUILD
+
+      - name: Push to AUR
+        uses: KSXGitHub/github-actions-deploy-aur@v2.7.0
+        with:
+          pkgname: netscli-bin
+          pkgbuild: /tmp/PKGBUILD
+          commit_username: Felix Stubner
+          commit_email: felix.stubner@gmail.com
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: "netscli ${{ env.TAG }}"
+          updpkgsums: false
