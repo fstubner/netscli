@@ -66,3 +66,11 @@ nul
 
 # Brainstorming companion (superpowers skill)
 .superpowers/
+
+# Local-only docs:
+# - DEVLOG: rolling personal devlog, kept on disk but not part of public history
+# - docs/superpowers/{specs,plans}: brainstorm/plan artifacts that shouldn't
+#   leak into the repo's docs/ tree (the rendered design lives in CHANGELOG +
+#   PRs already)
+docs/DEVLOG.md
+docs/superpowers/
