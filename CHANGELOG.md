@@ -9,6 +9,26 @@ version and release together.
 
 ## [Unreleased]
 
+## [0.2.2] — 2026-05-03
+
+### Fixed
+- Cargo.lock was out of sync with Cargo.toml at the v0.2.1 tag —
+  `tokio 1.52.1` (bumped in #17) requires `socket2 >= 0.6.3`
+  transitively, but Dependabot only regenerated the direct-dep entries
+  in the lock. CI's lint paths use `cargo build` (no `--locked`) so
+  this slipped through; release.yml uses `--locked` to guarantee
+  reproducible builds, and all 17 release builds for v0.2.1 failed at
+  the lockfile check.
+- 0.2.2 regenerates the lockfile so `socket2 0.6.3` is recorded
+  alongside the existing `0.5.10`. No application code changes.
+
+### Notes on v0.2.1
+- Released to crates.io but the GitHub release page has no attached
+  binaries (release.yml never produced any). `cargo install netscli`
+  works because cargo regenerates the lockfile per-user; downloads
+  from the GitHub release / package managers should use 0.2.2.
+- 0.2.1 is left in place as crates.io history rather than yanked.
+
 ## [0.2.1] — 2026-04-30
 
 ### Added
