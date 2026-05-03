@@ -80,6 +80,20 @@ nav{
   color:#ccc;display:flex;align-items:center;justify-content:space-between;gap:12px;
 }
 .hero .quick-install span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Secondary install offer: desktop app downloads. Smaller, quieter row
+   so the curl install above keeps primary visual weight. */
+.hero .hero-desktop{
+  margin:14px auto 0;font-size:.8125rem;color:#9a9a9a;
+  display:flex;justify-content:center;align-items:center;gap:8px;
+  flex-wrap:wrap;
+}
+.hero .hero-desktop-label{color:#888}
+.hero .hero-desktop a{
+  color:#cfcfcf;text-decoration:none;
+  border-bottom:1px dotted rgba(255,255,255,.22);padding-bottom:1px;
+}
+.hero .hero-desktop a:hover{color:#fff;border-bottom-color:rgba(255,255,255,.5)}
+.hero .hero-desktop-sep{color:#555}
 .hero .links{display:flex;gap:16px;justify-content:center;margin-top:16px;flex-wrap:wrap}
 .hero .links a{
   font-size:.8125rem;color:#a3a3a3;text-decoration:none;
@@ -338,3 +352,27 @@ footer a:hover{color:#ccc}
   .install-content{grid-column:1;grid-row:auto}
   .try{grid-column:1;grid-row:auto;margin-top:24px}
 }
+
+/* Per-platform download buttons inside a surface card body. Used by the
+   Desktop card to surface .msi / .dmg / .deb / .AppImage installers from
+   the latest release without leaving the page. */
+.surface-downloads{
+  display:flex;flex-wrap:wrap;gap:8px;margin-top:18px;
+}
+.surface-download-btn{
+  display:inline-flex;flex-direction:column;align-items:flex-start;gap:2px;
+  padding:9px 14px;border-radius:8px;
+  background:rgba(10,174,122,.10);border:1px solid rgba(10,174,122,.45);
+  color:#0aae7a;font-size:.85rem;font-weight:500;text-decoration:none;
+  transition:background .15s,color .15s,border-color .15s;
+}
+.surface-download-btn:hover{
+  background:rgba(10,174,122,.20);
+  border-color:rgba(10,174,122,.6);
+  color:#1ec88c;
+}
+.surface-download-btn .dl-label{font-size:.85rem;line-height:1.2}
+.surface-download-btn .dl-hint{
+  font-size:.7rem;color:#7a7a7a;font-weight:400;line-height:1.2;
+}
+.surface-download-btn:hover .dl-hint{color:#9a9a9a}

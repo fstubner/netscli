@@ -18,6 +18,17 @@ const { hero, social } = site;
     <span>{hero.quickInstall}</span>
   </div>
 
+  <!-- Secondary path: desktop app downloads. Surfaced in the hero so
+       visitors who want a GUI don't have to scroll to discover it. -->
+  <div class="hero-desktop">
+    <span class="hero-desktop-label">Or get the desktop app:</span>
+    <a href="https://github.com/fstubner/netscli/releases/latest/download/netscli-gui-windows-x86_64.msi">Windows</a>
+    <span class="hero-desktop-sep">·</span>
+    <a href="https://github.com/fstubner/netscli/releases/latest/download/netscli-gui-macos-aarch64.dmg">macOS</a>
+    <span class="hero-desktop-sep">·</span>
+    <a href="https://github.com/fstubner/netscli/releases/latest/download/netscli-gui-linux-x86_64.AppImage">Linux</a>
+  </div>
+
   <div class="links">
     <a href="#install">{hero.installLinkLabel}</a>
     <a class="plain" href={hero.sourceUrl}>
