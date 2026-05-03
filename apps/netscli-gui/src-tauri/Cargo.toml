@@ -1,6 +1,6 @@
 [package]
 name = "netscli-gui"
-version = "0.2.2"
+version = "0.2.3"
 description = "Tauri 2.0 desktop GUI for network discovery, scanning, and diagnostics"
 authors.workspace = true
 license.workspace = true
@@ -9,10 +9,14 @@ edition.workspace = true
 rust-version.workspace = true
 
 [build-dependencies]
-tauri-build = { version = "2.0.0", features = [] }
+# Open the constraint to the full 2.x line so cargo resolves to whatever
+# tauri minor matches the npm `@tauri-apps/api` (currently 2.10). The CLI
+# rejects same-major-different-minor skew with "Found version mismatched
+# Tauri packages", which broke the v0.2.2 GUI release.
+tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2.0.0", features = [] }
+tauri = { version = "2", features = [] }
 serde.workspace = true
 serde_json.workspace = true
 tokio.workspace = true

@@ -9,6 +9,32 @@ version and release together.
 
 ## [Unreleased]
 
+## [0.2.3] — 2026-05-03
+
+### Fixed
+- **Tauri version skew** broke all 4 GUI installer builds in v0.2.2's
+  release matrix. The Cargo.toml constraint `tauri = "2.0.0"` resolved
+  to `tauri 2.9.5`, but npm `@tauri-apps/api: ^2` resolved to `2.10.1`.
+  Tauri's CLI rejects same-major different-minor as a version
+  mismatch. Loosened the Rust constraint to `tauri = "2"` and ran
+  `npm update --save` so both sides land on the same minor (currently
+  `2.11.0`). Verified with a local `npm run tauri build` producing
+  `NetsCLI_0.2.3_x64_en-US.msi` cleanly.
+- **AUR publish job in publish.yml** failed on v0.2.2 with a confusing
+  `bash: --command: invalid option` error from the deploy action's
+  internals. Root cause: rendered PKGBUILD was written to `/tmp/
+  PKGBUILD`, but the `KSXGitHub/github-actions-deploy-aur` action runs
+  in a Docker container that only mounts `$GITHUB_WORKSPACE` — files
+  in `/tmp` are invisible inside the container. Render now writes to
+  `packaging/aur/PKGBUILD` (workspace-relative) before handoff.
+
+### Notes on v0.2.2
+- CLI binaries shipped successfully on v0.2.2 — `cargo install`,
+  `brew install netscli`, and `scoop install netscli` all give v0.2.2.
+- v0.2.2 GitHub release has CLI assets but no GUI installers.
+- AUR `netscli-bin` was last bumped to v0.2.0; it'll catch up to
+  v0.2.3 directly.
+
 ## [0.2.2] — 2026-05-03
 
 ### Fixed

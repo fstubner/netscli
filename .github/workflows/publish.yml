@@ -148,19 +148,25 @@ jobs:
         run: |
           set -euo pipefail
           version="${TAG#v}"
+          # Render into the workspace (not /tmp) — the AUR deploy action
+          # runs in a Docker container that mounts $GITHUB_WORKSPACE but
+          # not /tmp, so a /tmp path is invisible inside the container
+          # and produces a confusing `bash: --command: invalid option`
+          # error from the action's internal scripts.
           sed -E \
             -e "s|^pkgver=.*|pkgver=${version}|" \
             -e "s|^sha256sums_x86_64=.*|sha256sums_x86_64=('${SHA_X86_64}')|" \
             -e "s|^sha256sums_aarch64=.*|sha256sums_aarch64=('${SHA_AARCH64}')|" \
-            packaging/aur/PKGBUILD > /tmp/PKGBUILD
+            packaging/aur/PKGBUILD > packaging/aur/PKGBUILD.rendered
+          mv packaging/aur/PKGBUILD.rendered packaging/aur/PKGBUILD
           echo "--- rendered ---"
-          cat /tmp/PKGBUILD
+          cat packaging/aur/PKGBUILD
 
       - name: Push to AUR
         uses: KSXGitHub/github-actions-deploy-aur@v2.7.0
         with:
           pkgname: netscli-bin
-          pkgbuild: /tmp/PKGBUILD
+          pkgbuild: packaging/aur/PKGBUILD
           commit_username: Felix Stubner
           commit_email: felix.stubner@gmail.com
           ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
