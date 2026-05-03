@@ -2045,7 +2045,7 @@ version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4d40460c0ce33d6ce4b0630ad68ff63d6661961c48b6dba35e5a4d81cfb48222"
 dependencies = [
- "socket2 0.6.1",
+ "socket2 0.6.3",
  "widestring",
  "windows-registry",
  "windows-result 0.4.1",
@@ -2534,7 +2534,7 @@ dependencies = [
 
 [[package]]
 name = "netscli"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "anyhow",
  "chrono",
@@ -2561,7 +2561,7 @@ dependencies = [
 
 [[package]]
 name = "netscli-core"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "anyhow",
  "chrono",
@@ -2591,7 +2591,7 @@ dependencies = [
 
 [[package]]
 name = "netscli-gui"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "ipnet",
  "netscli-core",
@@ -2604,7 +2604,7 @@ dependencies = [
 
 [[package]]
 name = "netscli-mcp"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "anyhow",
  "ipnet",
