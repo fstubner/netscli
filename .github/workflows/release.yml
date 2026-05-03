@@ -276,7 +276,10 @@ jobs:
           TARGET: ${{ matrix.target }}
         run: |
           set -euo pipefail
-          BUNDLE_ROOT="apps/netscli-gui/src-tauri/target/${TARGET}/release/bundle"
+          # Cargo workspaces use the workspace-root `target/` regardless
+          # of the cwd cargo was invoked from. Tauri puts its bundles in
+          # target/<TARGET>/release/bundle/{deb,appimage,dmg,msi}/.
+          BUNDLE_ROOT="target/${TARGET}/release/bundle"
           OUT_DIR="${RUNNER_TEMP}/gui-out"
           mkdir -p "${OUT_DIR}"
           # Walk each glob, copy with the canonical asset name preserving

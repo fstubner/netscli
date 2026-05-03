@@ -9,6 +9,29 @@ version and release together.
 
 ## [Unreleased]
 
+## [0.2.4] — 2026-05-03
+
+### Fixed
+- **GUI bundle path** in release.yml's GUI matrix was rooted at
+  `apps/netscli-gui/src-tauri/target/${TARGET}/release/bundle/`. Cargo
+  workspaces actually use the **workspace-root** `target/` directory
+  regardless of which subcrate's directory cargo was invoked from, so
+  Tauri's bundle output lives at `target/${TARGET}/release/bundle/`.
+  v0.2.3 built the `.deb` / `.dmg` / `.msi` correctly but the collect
+  step found an empty bundle dir and skipped everything; sigstore-sign
+  then failed trying to sign nothing.
+- **AUR deploy action** (`KSXGitHub/github-actions-deploy-aur`) was
+  pinned to `@v2.7.0` (April 2024), which has a `bash: --command:
+  invalid option` regression in its container entrypoint. Bumped to
+  `@v4.1.3` (current stable, same input shape).
+
+### Notes on v0.2.3
+- CLI release shipped: 44 assets, sigstore-signed, on the v0.2.3
+  release page.
+- Homebrew, Scoop, Winget, and crates.io all updated to 0.2.3.
+- AUR is still on the previous version (failed to push).
+- 0 GUI installers attached to v0.2.3 release.
+
 ## [0.2.3] — 2026-05-03
 
 ### Fixed
