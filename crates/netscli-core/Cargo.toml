@@ -38,7 +38,7 @@ flate2 = "1.1"
 # library consumers who only want the scan / DNS / ARP primitives.
 chrono = { workspace = true, optional = true }
 sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "sqlite", "chrono", "macros", "migrate"], optional = true }
-pcap = { version = "1.1", optional = true }
+pcap = { version = "2.4", optional = true }
 mdns-sd = { version = "0.13", optional = true }
 
 [target.'cfg(unix)'.dependencies]
