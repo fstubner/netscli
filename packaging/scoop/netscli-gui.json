@@ -1,0 +1,34 @@
+{
+  "version": "0.2.4",
+  "description": "Network scanner desktop app (Tauri 2 + React) — discover hosts, scan ports, DNS, ARP. Lives in scoop extras since it's GUI; the CLI ships as `netscli` in this same bucket.",
+  "homepage": "https://netscli.com",
+  "license": "MIT",
+  "architecture": {
+    "64bit": {
+      "url": "https://github.com/fstubner/netscli/releases/download/v0.2.4/netscli-gui-windows-x86_64.msi",
+      "hash": "bdef02b05d636627057db8b395f9d38d76d9f884c634310d17f078d1ec86788d"
+    }
+  },
+  "installer": {
+    "type": "msi"
+  },
+  "shortcuts": [
+    [
+      "NetsCLI.exe",
+      "NetsCLI"
+    ]
+  ],
+  "checkver": {
+    "github": "https://github.com/fstubner/netscli"
+  },
+  "autoupdate": {
+    "architecture": {
+      "64bit": {
+        "url": "https://github.com/fstubner/netscli/releases/download/v$version/netscli-gui-windows-x86_64.msi"
+      }
+    },
+    "hash": {
+      "url": "$url.sha256"
+    }
+  }
+}
