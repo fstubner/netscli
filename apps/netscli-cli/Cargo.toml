@@ -22,7 +22,7 @@ ipnet.workspace = true
 clap = { version = "4.6", features = ["derive"] }
 clap_complete = "4.4"
 clap_mangen = "0.2"
-ratatui = "0.29.0"
+ratatui = "0.30.0"
 crossterm = "0.27"
 tui-textarea = "0.4"
 netscli-core = { path = "../../crates/netscli-core", version = "0.2.4", default-features = false, features = ["db", "mdns"] }
