@@ -39,7 +39,7 @@ flate2 = "1.1"
 chrono = { workspace = true, optional = true }
 sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "sqlite", "chrono", "macros", "migrate"], optional = true }
 pcap = { version = "1.1", optional = true }
-mdns-sd = { version = "0.13", optional = true }
+mdns-sd = { version = "0.19", optional = true }
 
 [target.'cfg(unix)'.dependencies]
 pnet_sys = "0.35"
