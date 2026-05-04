@@ -9,6 +9,61 @@ version and release together.
 
 ## [Unreleased]
 
+## [0.2.5] — 2026-05-05
+
+### Security
+
+- **hickory-resolver 0.24 → 0.26** closes
+  [RUSTSEC-2026-0119](https://github.com/hickory-dns/hickory-dns/security/advisories/GHSA-q2qq-hmj6-3wpp):
+  CPU exhaustion during message encoding due to O(n²) name compression
+  in `hickory-proto`. The DNS lookup tab and any inspect/discover that
+  resolves hostnames are no longer reachable through the vulnerable
+  encoding path. The 0.26 builder pattern (`TokioResolver::builder_tokio()`)
+  replaces the deprecated `TokioAsyncResolver::tokio` constructor; see
+  PR #55 for the source migration. The `.cargo/audit.toml` ignore added
+  in #52 was removed once the bump landed.
+
+### Fixed
+
+- **GUI: discover/sweep returned only a single host on Windows.**
+  Root cause: `detect_default_ipv4_subnet` iterated
+  `ipconfig::Adapter::prefixes()` and grabbed the first IPv4 entry, but
+  that list contains the host's own /32, broadcast /32, multicast /4,
+  link-local /16, and the network /24. Windows reports the host /32
+  first, so the "subnet" was a single IP. New helper
+  `pick_ipv4_subnet_from_prefixes` filters to network-shaped prefixes
+  (length 1..=30, not multicast, not link-local) and truncates host
+  bits, matching the Linux path. 5 unit tests added that run on every
+  CI platform via `cfg(any(windows, test))`. (#59)
+- **GUI: dashboard "Recent Scans" rendered with wrong colors / not as
+  list rows.** `.history-item` is a `<button>` (for keyboard
+  accessibility) but the CSS didn't reset user-agent button styles.
+  WebView2 on Windows applied Win32 chrome (`color: ButtonText`,
+  centered text, content-fit width, system button font), breaking the
+  inherit chain for child labels. Explicit reset added. (#59)
+
+### Changed
+
+- **Dependencies (all transitive, no API surface impact):**
+  - `crossterm 0.27 → 0.28` + `tui-textarea 0.4 → 0.7` had to land
+    together — tui-textarea 0.7 hardcodes `crossterm = "0.28"`. (#58)
+  - `mdns-sd 0.13 → 0.19` — adapt to the new `ScopedIp::to_ip_addr()`
+    accessor in `netscli-core/src/mdns.rs`. (#58)
+  - `clap 4.5.60 → 4.6.1` (#43), `pcap 1.3 → 2.4` (#45),
+    `clap_mangen 0.2.33 → 0.3.0` (#46),
+    `dialoguer 0.11.0 → 0.12.0` (#48), `dirs 5.0.1 → 6.0.0` (#51),
+    `tokio 1.52.1 → 1.52.2` + `clap_complete 4.6.2 → 4.6.3` (#57).
+- **`ratatui 0.29 → 0.30` deferred:** tui-textarea has no version yet
+  that supports ratatui 0.30 (latest 0.7 still pins ratatui 0.29).
+  Tracked via `@dependabot ignore` on the closed PR #49.
+
+### Added
+
+- **Release pipeline GUI automation.** `publish.yml` extended with 4
+  parallel jobs that publish the GUI bundles to Homebrew Cask, Scoop
+  extras (`netscli-gui.json`), Winget (`fstubner.netscli.gui`), and
+  AUR (`netscli-gui-bin`) on every tagged release. (#54, #53, #56)
+
 ## [0.2.4] — 2026-05-03
 
 ### Fixed
