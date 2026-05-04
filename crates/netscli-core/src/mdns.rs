@@ -115,7 +115,15 @@ impl MdnsEngine {
                                 full_name: info.get_fullname().to_string(),
                                 hostname: info.get_hostname().to_string(),
                                 service_type: stype.clone(),
-                                addresses: info.get_addresses().iter().copied().collect(),
+                                // mdns-sd 0.19 wraps each address in
+                                // `ScopedIp` (carries IPv6 scope IDs).
+                                // We only surface the bare `IpAddr` to
+                                // callers, so unwrap via `to_ip_addr()`.
+                                addresses: info
+                                    .get_addresses()
+                                    .iter()
+                                    .map(|s| s.to_ip_addr())
+                                    .collect(),
                                 port: info.get_port(),
                                 properties: props,
                             });
