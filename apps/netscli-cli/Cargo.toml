@@ -20,7 +20,7 @@ thiserror.workspace = true
 chrono.workspace = true
 ipnet.workspace = true
 clap = { version = "4.6", features = ["derive"] }
-clap_complete = "4.4"
+clap_complete = "4.6"
 clap_mangen = "0.3"
 ratatui = "0.29.0"
 crossterm = "0.27"
