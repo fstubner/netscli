@@ -231,13 +231,10 @@ pub async fn reverse_lookup_timeout(ip: IpAddr, timeout_ms: u64) -> Result<Optio
     };
     // hickory 0.26: `Lookup` is now flat; extract the first PTR's Name
     // and convert to UTF-8 manually instead of `.iter().next().to_utf8()`.
-    let name = resp
-        .answers()
-        .iter()
-        .find_map(|r| match &r.data {
-            RData::PTR(ptr) => Some(ptr.0.to_utf8()),
-            _ => None,
-        });
+    let name = resp.answers().iter().find_map(|r| match &r.data {
+        RData::PTR(ptr) => Some(ptr.0.to_utf8()),
+        _ => None,
+    });
     Ok(name.filter(|s| !s.is_empty()))
 }
 
