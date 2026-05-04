@@ -128,7 +128,6 @@ fn interface_preference_rank(name: &str) -> u8 {
 #[cfg(windows)]
 pub fn detect_default_ipv4_subnet() -> Option<Ipv4Net> {
     use ipconfig::{IfType, OperStatus};
-    use std::net::IpAddr;
 
     let adapters = ipconfig::get_adapters().ok()?;
     for adapter in adapters {
@@ -138,13 +137,60 @@ pub fn detect_default_ipv4_subnet() -> Option<Ipv4Net> {
         if adapter.if_type() == IfType::SoftwareLoopback {
             continue;
         }
-        for (prefix, len) in adapter.prefixes() {
-            if let IpAddr::V4(v4) = *prefix {
-                let prefix_len = (*len).min(32) as u8;
-                if let Ok(net) = Ipv4Net::new(v4, prefix_len) {
-                    return Some(net);
-                }
-            }
+        if let Some(net) = pick_ipv4_subnet_from_prefixes(adapter.prefixes()) {
+            return Some(net);
+        }
+    }
+
+    None
+}
+
+/// Pick the first network-shaped IPv4 subnet from a Windows adapter's
+/// prefix list.
+///
+/// `ipconfig::Adapter::prefixes()` returns ALL prefixes the OS knows for
+/// the adapter — that includes the host's own /32 (e.g., 192.168.1.42/32),
+/// broadcast /32 (192.168.1.255/32), multicast (224.0.0.0/4), link-local
+/// (169.254.0.0/16), and the limited-broadcast /32 (255.255.255.255/32),
+/// in addition to the actual network prefix we want (e.g., 192.168.1.0/24).
+///
+/// Order in the returned list is OS-defined; Windows typically reports the
+/// host /32 BEFORE the network /24, so picking the first IPv4 entry yields
+/// a single-IP "subnet" and `discover` returns only the local machine.
+///
+/// Filter to entries that look like a network of multiple hosts:
+///   - IPv4 only
+///   - prefix length in [1, 30] — /32 is one host or broadcast, and /31
+///     (RFC 3021 point-to-point) has only 2 IPs and is almost never the
+///     intended target for "discover network"
+///   - not multicast (first octet < 224)
+///   - not link-local (169.254.0.0/16)
+///
+/// Then truncate so we return the network address regardless of whether
+/// the prefix tuple's address had host bits set.
+#[cfg(any(windows, test))]
+fn pick_ipv4_subnet_from_prefixes(prefixes: &[(std::net::IpAddr, u32)]) -> Option<Ipv4Net> {
+    use std::net::IpAddr;
+
+    for &(prefix, len) in prefixes {
+        let IpAddr::V4(v4) = prefix else { continue };
+        if !(1..=30).contains(&len) {
+            continue;
+        }
+        let octets = v4.octets();
+        // Multicast (224.0.0.0/4) and reserved (240.0.0.0/4).
+        if octets[0] >= 224 {
+            continue;
+        }
+        // Link-local autoconf range (169.254.0.0/16).
+        if octets[0] == 169 && octets[1] == 254 {
+            continue;
+        }
+        let prefix_len = len as u8;
+        if let Ok(net) = Ipv4Net::new(v4, prefix_len) {
+            // `.trunc()` masks any host bits in `v4` so callers always see
+            // the network address (matching the non-Windows code path).
+            return Some(net.trunc());
         }
     }
 
@@ -299,5 +345,80 @@ mod tests {
             parse_ports_checked(Some("80,443")).unwrap(),
             Some(vec![80, 443])
         );
+    }
+
+    // The helper for Windows subnet detection is `cfg(any(windows, test))`,
+    // so its tests run on every platform's CI. Inputs mirror what
+    // `ipconfig::Adapter::prefixes()` actually returns on Windows hosts.
+    use std::net::{IpAddr, Ipv4Addr};
+
+    fn v4(a: u8, b: u8, c: u8, d: u8) -> IpAddr {
+        IpAddr::V4(Ipv4Addr::new(a, b, c, d))
+    }
+
+    #[test]
+    fn pick_subnet_skips_host_slash_32_takes_network_slash_24() {
+        // Typical Windows ordering: the host's own /32 comes before the
+        // network /24. Without filtering the bug hits — `discover_ipv4`
+        // would scan exactly one IP and return only the local machine.
+        let prefixes = [
+            (v4(192, 168, 1, 42), 32u32), // host
+            (v4(192, 168, 1, 0), 24),     // network — what we want
+            (v4(192, 168, 1, 255), 32),   // broadcast
+            (v4(224, 0, 0, 0), 4),        // multicast
+            (v4(255, 255, 255, 255), 32), // limited broadcast
+        ];
+        let net = pick_ipv4_subnet_from_prefixes(&prefixes).expect("must pick a subnet");
+        assert_eq!(net.to_string(), "192.168.1.0/24");
+    }
+
+    #[test]
+    fn pick_subnet_skips_multicast_and_link_local() {
+        // If the only available "real" prefix is preceded by multicast
+        // and link-local entries, we should still find the right one.
+        let prefixes = [
+            (v4(224, 0, 0, 0), 4),
+            (v4(169, 254, 0, 0), 16),
+            (v4(10, 0, 0, 0), 8),
+        ];
+        let net = pick_ipv4_subnet_from_prefixes(&prefixes).expect("must pick a subnet");
+        assert_eq!(net.to_string(), "10.0.0.0/8");
+    }
+
+    #[test]
+    fn pick_subnet_truncates_host_bits() {
+        // If Windows hands back a tuple with host bits set in the address
+        // (rare but possible across vendor stacks), we should still return
+        // the network address rather than a malformed Ipv4Net.
+        let prefixes = [(v4(192, 168, 1, 42), 24u32)];
+        let net = pick_ipv4_subnet_from_prefixes(&prefixes).expect("must pick a subnet");
+        assert_eq!(net.to_string(), "192.168.1.0/24");
+    }
+
+    #[test]
+    fn pick_subnet_returns_none_when_no_usable_prefix() {
+        // All host /32, multicast, link-local: nothing to scan.
+        let prefixes = [
+            (v4(192, 168, 1, 42), 32u32),
+            (v4(224, 0, 0, 0), 4),
+            (v4(169, 254, 12, 5), 16),
+            (v4(255, 255, 255, 255), 32),
+        ];
+        assert!(pick_ipv4_subnet_from_prefixes(&prefixes).is_none());
+    }
+
+    #[test]
+    fn pick_subnet_skips_slash_31_and_zero() {
+        // /31 has only 2 IPs and no broadcast (RFC 3021 point-to-point);
+        // not a useful "discover" target. /0 is the entire IPv4 space and
+        // would be rejected by `ensure_subnet_limit` later anyway, but
+        // skip it here too so we don't return something obviously wrong.
+        let prefixes = [
+            (v4(10, 0, 0, 0), 0u32),
+            (v4(10, 0, 0, 0), 31),
+            (v4(10, 0, 0, 0), 30),
+        ];
+        let net = pick_ipv4_subnet_from_prefixes(&prefixes).expect("must pick /30");
+        assert_eq!(net.to_string(), "10.0.0.0/30");
     }
 }
