@@ -175,3 +175,106 @@ jobs:
           ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
           commit_message: "netscli ${{ env.TAG }}"
           updpkgsums: false
+
+  # ─── Homebrew Cask (GUI desktop app) ───────────────────────────────
+  # Sibling to the homebrew job above. Cask points at the macOS .dmg
+  # installers; users install with `brew install --cask netscli`.
+  homebrew-cask:
+    name: Homebrew Cask
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.TAG }}
+      - name: Update fstubner/homebrew-tap (Cask)
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: bash scripts/release/publish-homebrew-cask.sh "$TAG"
+
+  # ─── Scoop bucket (GUI .msi) ───────────────────────────────────────
+  # Sibling to the scoop job above; updates bucket/netscli-gui.json
+  # rather than bucket/netscli.json. Users install with
+  # `scoop install netscli-gui`.
+  scoop-gui:
+    name: Scoop bucket (GUI)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.TAG }}
+      - name: Update fstubner/scoop-bucket (GUI)
+        env:
+          GH_TOKEN: ${{ secrets.SCOOP_BUCKET_TOKEN }}
+        run: bash scripts/release/publish-scoop-gui.sh "$TAG"
+
+  # ─── Winget GUI (microsoft/winget-pkgs) ────────────────────────────
+  # Distinct PackageIdentifier `fstubner.netscli.gui` (the CLI is
+  # `fstubner.netscli`). Users install with `winget install netscli-gui`
+  # via the Moniker.
+  winget-gui:
+    name: Winget (GUI)
+    runs-on: windows-latest
+    steps:
+      - name: Submit netscli-gui to microsoft/winget-pkgs
+        uses: vedantmgoyal2009/winget-releaser@v2
+        with:
+          identifier: fstubner.netscli.gui
+          version: ${{ env.TAG }}
+          installers-regex: 'netscli-gui-windows-x86_64\.msi$'
+          token: ${{ secrets.WINGET_TOKEN }}
+
+  # ─── AUR (netscli-gui-bin) ─────────────────────────────────────────
+  # Sibling to the aur job above. Same SSH key + same render-then-push
+  # flow, but for the AppImage and the netscli-gui-bin package.
+  aur-gui:
+    name: AUR (GUI)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.TAG }}
+
+      - name: Wait for Linux GUI .AppImage + compute SHA256
+        id: shas
+        env:
+          TAG: ${{ env.TAG }}
+        run: |
+          set -euo pipefail
+          BASE="https://github.com/fstubner/netscli/releases/download/${TAG}"
+          url="${BASE}/netscli-gui-linux-x86_64.AppImage.sha256"
+          echo "→ ${url}"
+          for i in {1..30}; do
+            if curl -fsSL --head "$url" >/dev/null 2>&1; then break; fi
+            echo "  not yet; retry in 30s ($i/30)"
+            sleep 30
+          done
+          sha=$(curl -fsSL "$url" | awk '{print $1}')
+          echo "x86_64=${sha}" >> "$GITHUB_OUTPUT"
+
+      - name: Render bumped PKGBUILD
+        env:
+          TAG: ${{ env.TAG }}
+          SHA_X86_64: ${{ steps.shas.outputs.x86_64 }}
+        run: |
+          set -euo pipefail
+          version="${TAG#v}"
+          # Same workspace-root render reasoning as the CLI AUR job —
+          # /tmp is invisible inside the AUR deploy action's Docker.
+          sed -E \
+            -e "s|^pkgver=.*|pkgver=${version}|" \
+            -e "s|^sha256sums_x86_64=.*|sha256sums_x86_64=('${SHA_X86_64}')|" \
+            packaging/aur/netscli-gui-bin/PKGBUILD > packaging/aur/netscli-gui-bin/PKGBUILD.rendered
+          mv packaging/aur/netscli-gui-bin/PKGBUILD.rendered packaging/aur/netscli-gui-bin/PKGBUILD
+          echo "--- rendered ---"
+          cat packaging/aur/netscli-gui-bin/PKGBUILD
+
+      - name: Push to AUR (netscli-gui-bin)
+        uses: KSXGitHub/github-actions-deploy-aur@v4.1.3
+        with:
+          pkgname: netscli-gui-bin
+          pkgbuild: packaging/aur/netscli-gui-bin/PKGBUILD
+          commit_username: Felix Stubner
+          commit_email: felix.stubner@gmail.com
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: "netscli-gui ${{ env.TAG }}"
+          updpkgsums: false
