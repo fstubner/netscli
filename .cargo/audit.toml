@@ -13,15 +13,6 @@ ignore = [
   # which is never compiled (we enable sqlx's `sqlite` feature only).
   "RUSTSEC-2023-0071",
 
-  # hickory-proto O(n²) name compression on message ENCODING. Triggered
-  # when crafting outbound DNS messages with many compressed names; we
-  # only use hickory as a stub resolver (small outbound queries, focus is
-  # decoding responses) so the encoding hot path isn't reachable in our
-  # call graph. Fix is hickory-proto 0.26.1, which requires a hickory-
-  # resolver 0.24 -> 0.26 major bump (TokioAsyncResolver -> generic
-  # Resolver<Provider>) — tracked as a separate dedicated PR.
-  "RUSTSEC-2026-0119",
-
   # -- Soundness warnings (transitive, not reachable via our usage) -----
 
   # rand 0.7.3 unsoundness with a custom logger calling rand::rng().

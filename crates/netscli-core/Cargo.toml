@@ -27,7 +27,7 @@ ipnet.workspace = true
 pnet_packet = "0.35"
 pnet_transport = "0.35"
 ipnetwork = "0.20"
-hickory-resolver = { version = "0.24", features = ["tokio-runtime"] }
+hickory-resolver = { version = "0.26", features = ["tokio"] }
 sysinfo = "0.38"
 mac_address = { version = "1.1", features = ["serde"] }
 futures = "0.3"

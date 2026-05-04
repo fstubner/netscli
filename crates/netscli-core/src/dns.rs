@@ -1,5 +1,5 @@
-use hickory_resolver::proto::rr::RecordType;
-use hickory_resolver::TokioAsyncResolver;
+use hickory_resolver::proto::rr::{RData, RecordType};
+use hickory_resolver::TokioResolver;
 use serde::Serialize;
 use std::net::IpAddr;
 use std::sync::OnceLock;
@@ -53,10 +53,17 @@ pub fn parse_record_type(value: &str) -> Option<RecordType> {
 /// Shared resolver — parsing the system config (`/etc/resolv.conf` or the
 /// Windows registry) on every lookup is wasteful for high-volume scans like
 /// a /24 with reverse DNS enabled.
-fn shared_resolver() -> Result<&'static TokioAsyncResolver> {
-    static RESOLVER: OnceLock<std::result::Result<TokioAsyncResolver, String>> = OnceLock::new();
-    let cached = RESOLVER
-        .get_or_init(|| TokioAsyncResolver::tokio_from_system_conf().map_err(|e| e.to_string()));
+fn shared_resolver() -> Result<&'static TokioResolver> {
+    static RESOLVER: OnceLock<std::result::Result<TokioResolver, String>> = OnceLock::new();
+    let cached = RESOLVER.get_or_init(|| {
+        // hickory 0.26 replaced `TokioAsyncResolver::tokio_from_system_conf`
+        // with a builder pattern. `builder_tokio()` reads `/etc/resolv.conf`
+        // (or the Windows registry); `.build()` returns the resolver. Both
+        // can fail, so we chain via `and_then`.
+        TokioResolver::builder_tokio()
+            .and_then(|b| b.build())
+            .map_err(|e| e.to_string())
+    });
     match cached {
         Ok(r) => Ok(r),
         Err(e) => Err(Error::dns(format!(
@@ -104,14 +111,17 @@ pub async fn lookup_record_timeout(
         Err(_) => return Err(Error::Timeout(timeout_ms)),
     };
 
+    // hickory 0.26 dropped `Lookup::record_iter()` in favor of explicit
+    // `.answers()` / `.authorities()` / `.additionals()` slice accessors.
+    // We only ever care about answer records.
+    // hickory 0.26 made `Record::data` a public field instead of a method,
+    // and dropped the previous Option wrapper around RData. Accessor is
+    // now plain `record.data`.
     let mut records = Vec::new();
-    for record in response.record_iter() {
-        let Some(data) = record.data() else {
-            continue;
-        };
+    for record in response.answers() {
         records.push(DnsRecord {
             record_type: record_type.to_string(),
-            value: normalize_value(&data.to_string()),
+            value: normalize_value(&record.data.to_string()),
         });
     }
     Ok(records)
@@ -168,7 +178,17 @@ pub async fn resolve_a_timeout(host: &str, timeout_ms: u64) -> Result<Vec<String
         Ok(Err(e)) => return Err(Error::dns(format!("A lookup failed: {e}"))),
         Err(_) => return Err(Error::Timeout(timeout_ms)),
     };
-    Ok(response.iter().map(|ip| ip.to_string()).collect())
+    // hickory 0.26 returns the flat `Lookup` here (it used to be a typed
+    // `Ipv4Lookup` wrapper that yielded `&Ipv4Addr` directly). We now
+    // extract the IPv4 from each answer's RData::A variant.
+    Ok(response
+        .answers()
+        .iter()
+        .filter_map(|r| match &r.data {
+            RData::A(a) => Some(a.to_string()),
+            _ => None,
+        })
+        .collect())
 }
 
 pub async fn resolve_aaaa(host: &str) -> Result<Vec<String>> {
@@ -187,7 +207,14 @@ pub async fn resolve_aaaa_timeout(host: &str, timeout_ms: u64) -> Result<Vec<Str
         Ok(Err(e)) => return Err(Error::dns(format!("AAAA lookup failed: {e}"))),
         Err(_) => return Err(Error::Timeout(timeout_ms)),
     };
-    Ok(response.iter().map(|ip| ip.to_string()).collect())
+    Ok(response
+        .answers()
+        .iter()
+        .filter_map(|r| match &r.data {
+            RData::AAAA(a) => Some(a.to_string()),
+            _ => None,
+        })
+        .collect())
 }
 
 pub async fn reverse_lookup_timeout(ip: IpAddr, timeout_ms: u64) -> Result<Option<String>> {
@@ -202,7 +229,12 @@ pub async fn reverse_lookup_timeout(ip: IpAddr, timeout_ms: u64) -> Result<Optio
         Ok(Err(e)) => return Err(Error::dns(format!("reverse lookup failed: {e}"))),
         Err(_) => return Err(Error::Timeout(timeout_ms)),
     };
-    let name = resp.iter().next().map(|n| n.to_utf8());
+    // hickory 0.26: `Lookup` is now flat; extract the first PTR's Name
+    // and convert to UTF-8 manually instead of `.iter().next().to_utf8()`.
+    let name = resp.answers().iter().find_map(|r| match &r.data {
+        RData::PTR(ptr) => Some(ptr.0.to_utf8()),
+        _ => None,
+    });
     Ok(name.filter(|s| !s.is_empty()))
 }
 
