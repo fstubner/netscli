@@ -28,7 +28,7 @@ tui-textarea = "0.4"
 netscli-core = { path = "../../crates/netscli-core", version = "0.2.4", default-features = false, features = ["db", "mdns"] }
 netscli-mcp = { path = "../../crates/netscli-mcp", version = "0.2.4", features = ["mdns"] }
 serde_yaml_ng = "0.10"
-dirs = "5.0"
+dirs = "6.0"
 mac_address = "1.1.8"
 shell-words = "1.1"
 dialoguer = "0.11"
