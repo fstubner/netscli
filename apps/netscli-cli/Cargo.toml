@@ -24,7 +24,7 @@ clap_complete = "4.4"
 clap_mangen = "0.2"
 ratatui = "0.29.0"
 crossterm = "0.27"
-tui-textarea = "0.4"
+tui-textarea = "0.7"
 netscli-core = { path = "../../crates/netscli-core", version = "0.2.4", default-features = false, features = ["db", "mdns"] }
 netscli-mcp = { path = "../../crates/netscli-mcp", version = "0.2.4", features = ["mdns"] }
 serde_yaml_ng = "0.10"
