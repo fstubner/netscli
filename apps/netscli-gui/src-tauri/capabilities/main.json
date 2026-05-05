@@ -1,0 +1,14 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main",
+  "description": "Capabilities granted to the main window. Tauri 2 is deny-by-default per permission, and `core:window:default` only includes read-only operations (is-maximized, inner-size, etc.). Without explicit grants for the mutating ops, the close/minimize/maximize buttons in TitleBar.tsx silently fail because the app uses `decorations: false` and a custom React title bar instead of the OS-native window chrome.",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-close",
+    "core:window:allow-minimize",
+    "core:window:allow-maximize",
+    "core:window:allow-unmaximize",
+    "core:window:allow-start-dragging"
+  ]
+}
