@@ -3,8 +3,27 @@ name: CI
 on:
   push:
     branches: [main]
+    # Pure-docs / site / packaging-template changes don't affect Rust
+    # behavior, and skipping them here avoids a full 3-OS test matrix on
+    # a typo fix in a README. The site has its own pages.yml workflow
+    # that handles its own changes; packaging templates are validated
+    # at release time by publish.yml when they're actually used.
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'site/**'
+      - 'packaging/**'
+      - 'LICENSE'
+      - '.gitignore'
   pull_request:
     branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'site/**'
+      - 'packaging/**'
+      - 'LICENSE'
+      - '.gitignore'
   # Let me run CI manually from the Actions tab, useful for re-running a
   # cache-warm build after tweaking the workflow without having to push.
   workflow_dispatch:
@@ -114,6 +133,16 @@ jobs:
   # up under optimizations / lto that debug builds miss, and the artifact
   # upload makes it possible to grab a "tip of main" binary straight from
   # the Actions run for quick smoke testing without cutting a release.
+  #
+  # Matrix is conditional on event:
+  #   - pull_request → ubuntu-latest only. The `test` job already runs on
+  #     all 3 OS, so cross-platform compile errors are caught there.
+  #     Release-profile-specific bugs (LTO, opt-level=3, strip) are rare,
+  #     and the actual release.yml rebuilds across 5 OS/arch on every tag.
+  #   - push to main → full ubuntu+windows+macos. macOS is a 10x billing
+  #     multiplier vs. ubuntu, so paying it once per main-merge instead
+  #     of once per PR cuts release-build cost by ~95% with effectively
+  #     equivalent coverage.
   release-build:
     name: Release build (${{ matrix.os }})
     needs: test
@@ -121,7 +150,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: ${{ github.event_name == 'pull_request' && fromJSON('["ubuntu-latest"]') || fromJSON('["ubuntu-latest", "windows-latest", "macos-latest"]') }}
     steps:
       - uses: actions/checkout@v6
       - name: Install system dependencies (Linux)
