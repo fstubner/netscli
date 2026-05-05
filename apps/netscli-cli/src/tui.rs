@@ -1,4 +1,4 @@
-use crate::formatter::Formatter;
+use crate::tui_formatter::Formatter;
 use crate::tui_settings::{StatsUnit, TuiSettings};
 use netscli_core::{NetworkManager, NetworkMonitor};
 use ratatui::{

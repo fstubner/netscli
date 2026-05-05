@@ -2,12 +2,12 @@
 
 mod args;
 mod cli_formatter;
-mod formatter;
 mod mcp_service;
 mod setup;
 mod trace;
 mod tui;
 mod tui_export;
+mod tui_formatter;
 mod tui_settings;
 
 use anyhow::{Context, Result};
@@ -21,7 +21,6 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode},
 };
 use dirs::home_dir;
-use formatter::Formatter;
 use mac_address::MacAddress;
 use netscli_core::{
     parse_ports_checked, Database, NetworkManager, Ops, OpsConfig, PcapCancelToken, PingScanner,
@@ -39,6 +38,7 @@ use std::str::FromStr;
 use std::time::Instant;
 use tokio::sync::watch;
 use tui::TuiApp;
+use tui_formatter::Formatter;
 
 struct TerminalCleanup;
 
