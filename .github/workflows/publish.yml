@@ -101,6 +101,35 @@ jobs:
     name: Winget
     runs-on: windows-latest
     steps:
+      # The `winget-releaser` action fetches the release's asset list
+      # via the GitHub API and bails fast if the matching .exe is not
+      # present yet. Both publish.yml and release.yml fire on
+      # `release: published`, so without polling here we race
+      # release.yml's Windows runner: in v0.2.5's run the action ran
+      # at ~1m45s but the .exe didn't land until ~7m later, giving
+      # the empty-`--urls` failure that needed a manual rerun. Poll
+      # the .sha256 sidecar (uploaded last in the matrix; ~600 bytes,
+      # cheap to HEAD) before invoking. Modeled on the AUR job's
+      # equivalent step further down.
+      - name: Wait for Windows CLI release asset
+        shell: bash
+        env:
+          TAG: ${{ env.TAG }}
+        run: |
+          set -euo pipefail
+          url="https://github.com/fstubner/netscli/releases/download/${TAG}/netscli-windows-x86_64.exe.sha256"
+          echo "→ ${url}"
+          for i in {1..30}; do
+            if curl -fsSL --head "$url" >/dev/null 2>&1; then
+              echo "asset present"
+              exit 0
+            fi
+            echo "  not yet; retry in 30s ($i/30)"
+            sleep 30
+          done
+          echo "asset never appeared after 15 minutes" >&2
+          exit 1
+
       - name: Submit netscli to microsoft/winget-pkgs
         uses: vedantmgoyal2009/winget-releaser@v2
         with:
@@ -215,6 +244,32 @@ jobs:
     name: Winget (GUI)
     runs-on: windows-latest
     steps:
+      # Same wait-then-submit pattern as the CLI Winget job above. The
+      # GUI .msi takes longer to build than the CLI .exe (Tauri bundle
+      # + WiX compose), so this poll matters even more here. Note: this
+      # job will still fail until microsoft/winget-pkgs has accepted at
+      # least one version of `fstubner.netscli.gui` — the action checks
+      # for an existing package directory before doing anything else.
+      # PR #368471 is the initial submission gating that.
+      - name: Wait for Windows GUI release asset
+        shell: bash
+        env:
+          TAG: ${{ env.TAG }}
+        run: |
+          set -euo pipefail
+          url="https://github.com/fstubner/netscli/releases/download/${TAG}/netscli-gui-windows-x86_64.msi.sha256"
+          echo "→ ${url}"
+          for i in {1..30}; do
+            if curl -fsSL --head "$url" >/dev/null 2>&1; then
+              echo "asset present"
+              exit 0
+            fi
+            echo "  not yet; retry in 30s ($i/30)"
+            sleep 30
+          done
+          echo "asset never appeared after 15 minutes" >&2
+          exit 1
+
       - name: Submit netscli-gui to microsoft/winget-pkgs
         uses: vedantmgoyal2009/winget-releaser@v2
         with:
