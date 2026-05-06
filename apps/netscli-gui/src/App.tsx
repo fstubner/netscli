@@ -60,7 +60,11 @@ import { ScanToolbar, ScanResults } from './views/ScanView';
 import { SettingsView } from './views/SettingsView';
 import { SweepToolbar, SweepResults } from './views/SweepView';
 
-const APP_VERSION = '0.1.0';
+// Vite injects this at build time from package.json — see vite.config.ts.
+// Keeps the in-app version display (status bar, About dialog) in sync
+// with package.json / tauri.conf.json automatically. Was hardcoded
+// '0.1.0' until v0.2.6, which a Winget moderator caught.
+const APP_VERSION = __APP_VERSION__;
 
 type DnsRecordType = 'A' | 'AAAA';
 

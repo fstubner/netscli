@@ -9,6 +9,44 @@ version and release together.
 
 ## [Unreleased]
 
+## [0.2.6] — 2026-05-06
+
+### Fixed
+
+- **GUI: in-app version display was stuck at `0.1.0`.** A stale
+  `APP_VERSION` constant in `App.tsx` powered both the bottom-bar
+  version readout and the About dialog, but it never got bumped
+  alongside `package.json`, `tauri.conf.json`, or the workspace
+  `Cargo.toml`s. Caught by a Winget moderator on
+  [microsoft/winget-pkgs#368471](https://github.com/microsoft/winget-pkgs/pull/368471):
+  the v0.2.4 build correctly reported `0.2.4` to the Windows registry
+  (Tauri pulls `ProductVersion` from `tauri.conf.json`), but users
+  saw `0.1.0` in the GUI itself. Wired `APP_VERSION` to read
+  `package.json` at build time via Vite's `define` so the in-app
+  display auto-syncs every release going forward.
+- **GUI: title-bar buttons (close, minimize, maximize) didn't work
+  on Windows.** Tauri 2's deny-by-default permission system requires
+  explicit `core:window:allow-close/minimize/maximize/unmaximize/start-dragging`
+  grants; the app was missing its capabilities config entirely.
+  Added `src-tauri/capabilities/main.json`. (#62)
+
+### Changed (internal)
+
+- **Major refactor of TUI / CLI organization** ([#63](https://github.com/fstubner/netscli/pull/63)–[#67](https://github.com/fstubner/netscli/pull/67)):
+  - `apps/netscli-cli/src/main.rs` shrank from 1870 → 527 lines (-72%).
+  - `apps/netscli-cli/src/tui.rs` (2226 lines) decomposed into
+    a `tui/` module with 8 focused files (state, events, widgets,
+    palette, command_catalog, config, history, mod).
+  - `apps/netscli-gui/src/App.tsx` shrank from 1480 → 931 lines (-37%)
+    via per-tab views in `views/*View.tsx`.
+  - `formatter.rs` renamed to `tui_formatter.rs` for naming
+    consistency with `tui_export.rs`, `tui_settings.rs`.
+  - All behavior-preserving; 25 tests pass on every PR's 3-OS matrix.
+- **CI runner-minute spend cut by ~70% per PR** by collapsing the
+  `release-build` matrix to ubuntu-only on PRs (full 3-OS only on
+  push to main) and adding `paths-ignore` for docs/site/packaging
+  changes. ([#61](https://github.com/fstubner/netscli/pull/61))
+
 ## [0.2.5] — 2026-05-05
 
 ### Security
