@@ -51,7 +51,14 @@ import type { HistoryEntry, Tab, TabViewMode, ToolParams, ToolResult } from './t
 import type { DefaultInterfaceInfo, InterfaceInfo, NetworkStats } from './types/netscli';
 
 import { DashboardView } from './views/DashboardView';
+import { DiscoverToolbar, DiscoverResults } from './views/DiscoverView';
+import { DnsToolbar, DnsResults } from './views/DnsView';
+import { InspectToolbar, InspectResults } from './views/InspectView';
+import { ArpResults, InterfacesToolbar, InterfacesResults } from './views/InterfacesView';
+import { PcapToolbar, PcapResults, pcapGuidance } from './views/PcapView';
+import { ScanToolbar, ScanResults } from './views/ScanView';
 import { SettingsView } from './views/SettingsView';
+import { SweepToolbar, SweepResults } from './views/SweepView';
 
 const APP_VERSION = '0.1.0';
 
@@ -102,14 +109,10 @@ function App() {
   const currentOpId = useRef<string | null>(null);
   const currentOpTab = useRef<Tab | null>(null);
 
-  const validateRequired = (field: string, value: string, label: string): boolean => {
-    if (value.trim() === '') {
-      setValidationErrors((prev) => ({ ...prev, [field]: `${label} is required` }));
-      return false;
-    }
-    setValidationErrors((prev) => ({ ...prev, [field]: null }));
-    return true;
-  };
+  // `validateRequired` was previously used inline by renderToolbar's
+  // case branches. After lifting per-tab toolbars into views/*View.tsx,
+  // each view runs its own inline validation against its own form
+  // state, so the helper is no longer needed here.
 
   useEffect(() => {
     mountedRef.current = true;
@@ -121,38 +124,6 @@ function App() {
       }
     };
   }, []);
-
-  const pcapGuidance = (err: string | null): string[] => {
-    const tips: string[] = [
-      'Pick an interface name from the Interfaces tab (e.g., eth0, wlan0, en0).',
-      'PCAP capture often requires elevated privileges (root/admin) depending on OS and config.',
-      'On Linux you may need libpcap installed and/or capabilities set for packet capture.',
-      'On Windows, install Npcap (WinPcap-compatible mode) if capture is unavailable.',
-    ];
-
-    if (!err) return tips;
-
-    const e = err.toLowerCase();
-    if (e.includes('interface not found')) {
-      tips.unshift('The selected interface was not found. Double-check the exact name.');
-    }
-    if (
-      e.includes('permission') ||
-      e.includes('operation not permitted') ||
-      e.includes('access is denied')
-    ) {
-      tips.unshift(
-        'This looks like a permissions issue. Try running as admin/root or granting capture capabilities.',
-      );
-    }
-    if (e.includes('pcap unavailable') || e.includes('pcap support disabled')) {
-      tips.unshift(
-        'PCAP appears unavailable in this build/environment. Install libpcap/Npcap or use a build with PCAP enabled.',
-      );
-    }
-
-    return tips;
-  };
 
   const cancelOperation = () => {
     const op_id = currentOpId.current;
@@ -406,379 +377,103 @@ function App() {
   const renderToolbar = () => {
     if (activeTab === 'dashboard' || activeTab === 'settings') return null;
 
+    // Bind the per-tab `runOperation` so the view components don't
+    // need to know about the active tab — they only see a callback
+    // that takes the params + exec they already constructed.
+    const onRunCurrent = (
+      params: ToolParams,
+      exec: (op_id: string) => Promise<ToolResult>,
+    ) => {
+      void runOperation(activeTab, params, exec);
+    };
+
     switch (activeTab) {
       case 'discover':
         return (
-          <div className="config-form">
-            <div className="config-field">
-              <label className="config-label">Subnet</label>
-              <input
-                className="config-input"
-                value={subnet}
-                onChange={(e) => setSubnet(e.target.value)}
-                placeholder="192.168.1.0/24"
-              />
-            </div>
-            <button
-              className={`config-button ${busy ? 'cancel' : ''}`}
-              onClick={(e) => {
-                e.preventDefault();
-                if (busy) {
-                  cancelOperation();
-                } else {
-                  void runOperation(
-                    'discover',
-                    { kind: 'discover', subnet: subnet || undefined },
-                    async (op_id) => ({
-                      kind: 'discover',
-                      data: await netscli.discoverNetwork(subnet || undefined, op_id, true),
-                    }),
-                  );
-                }
-              }}
-            >
-              {busy ? 'Cancel Scan' : 'Start Scan'}
-            </button>
-          </div>
+          <DiscoverToolbar
+            busy={busy}
+            subnet={subnet}
+            setSubnet={setSubnet}
+            onRun={onRunCurrent}
+            onCancel={cancelOperation}
+          />
         );
       case 'scan':
         return (
-          <div className="config-form">
-            <div className="config-field">
-              <label className="config-label">Host <span className="required">*</span></label>
-              <input
-                className={`config-input ${validationErrors.host ? 'input-error' : ''}`}
-                value={host}
-                onChange={(e) => {
-                  setHost(e.target.value);
-                  setValidationErrors((prev) => ({ ...prev, host: null }));
-                }}
-                placeholder="192.168.1.1"
-              />
-              {validationErrors.host && (
-                <span className="validation-error">{validationErrors.host}</span>
-              )}
-            </div>
-            <div className="config-field">
-              <label className="config-label">Ports</label>
-              <input
-                className="config-input"
-                value={ports}
-                onChange={(e) => setPorts(e.target.value)}
-                placeholder="22,80,443"
-              />
-            </div>
-            <button
-              className={`config-button ${busy ? 'cancel' : ''}`}
-              onClick={(e) => {
-                e.preventDefault();
-                if (busy) {
-                  cancelOperation();
-                } else {
-                  if (!validateRequired('host', host, 'Host')) return;
-                  void runOperation(
-                    'scan',
-                    { kind: 'scan', host, ports: ports || undefined },
-                    async (op_id) => ({
-                      kind: 'scan',
-                      data: await netscli.scanPorts(host, ports || undefined, op_id),
-                    }),
-                  );
-                }
-              }}
-            >
-              {busy ? 'Cancel Scan' : 'Start Scan'}
-            </button>
-          </div>
+          <ScanToolbar
+            busy={busy}
+            host={host}
+            setHost={setHost}
+            ports={ports}
+            setPorts={setPorts}
+            validationErrors={validationErrors}
+            setValidationErrors={setValidationErrors}
+            onRun={onRunCurrent}
+            onCancel={cancelOperation}
+          />
         );
       case 'inspect':
         return (
-          <div className="config-form">
-            <div className="config-field">
-              <label className="config-label">Host <span className="required">*</span></label>
-              <input
-                className={`config-input ${validationErrors.host ? 'input-error' : ''}`}
-                value={host}
-                onChange={(e) => {
-                  setHost(e.target.value);
-                  setValidationErrors((prev) => ({ ...prev, host: null }));
-                }}
-                placeholder="192.168.1.1"
-              />
-              {validationErrors.host && (
-                <span className="validation-error">{validationErrors.host}</span>
-              )}
-            </div>
-            <div className="config-field">
-              <label className="config-label">Ports</label>
-              <input
-                className="config-input"
-                value={ports}
-                onChange={(e) => setPorts(e.target.value)}
-                placeholder="22,80,443"
-              />
-            </div>
-            <button
-              className={`config-button ${busy ? 'cancel' : ''}`}
-              onClick={(e) => {
-                e.preventDefault();
-                if (busy) {
-                  cancelOperation();
-                } else {
-                  if (!validateRequired('host', host, 'Host')) return;
-                  void runOperation(
-                    'inspect',
-                    { kind: 'inspect', host, ports: ports || undefined },
-                    async (op_id) => ({
-                      kind: 'inspect',
-                      data: await netscli.inspectHost(host, ports || undefined, op_id),
-                    }),
-                  );
-                }
-              }}
-            >
-              {busy ? 'Cancel Scan' : 'Inspect Host'}
-            </button>
-          </div>
+          <InspectToolbar
+            busy={busy}
+            host={host}
+            setHost={setHost}
+            ports={ports}
+            setPorts={setPorts}
+            validationErrors={validationErrors}
+            setValidationErrors={setValidationErrors}
+            onRun={onRunCurrent}
+            onCancel={cancelOperation}
+          />
         );
       case 'sweep':
         return (
-          <div className="config-form">
-            <div className="config-field">
-              <label className="config-label">Subnet</label>
-              <input
-                className="config-input"
-                value={subnet}
-                onChange={(e) => setSubnet(e.target.value)}
-                placeholder="192.168.1.0/24"
-              />
-            </div>
-            <div className="config-field">
-              <label className="config-label">Ports</label>
-              <input
-                className="config-input"
-                value={ports}
-                onChange={(e) => setPorts(e.target.value)}
-                placeholder="80,443"
-              />
-            </div>
-            <button
-              className={`config-button ${busy ? 'cancel' : ''}`}
-              onClick={(e) => {
-                e.preventDefault();
-                if (busy) {
-                  cancelOperation();
-                } else {
-                  void runOperation(
-                    'sweep',
-                    { kind: 'sweep', subnet: subnet || undefined, ports: ports || undefined },
-                    async (op_id) => ({
-                      kind: 'sweep',
-                      data: await netscli.sweepNetwork(
-                        subnet || undefined,
-                        ports || undefined,
-                        op_id,
-                        true,
-                      ),
-                    }),
-                  );
-                }
-              }}
-            >
-              {busy ? 'Cancel Scan' : 'Start Sweep'}
-            </button>
-          </div>
+          <SweepToolbar
+            busy={busy}
+            subnet={subnet}
+            setSubnet={setSubnet}
+            ports={ports}
+            setPorts={setPorts}
+            onRun={onRunCurrent}
+            onCancel={cancelOperation}
+          />
         );
       case 'dns':
         return (
-          <div className="config-form">
-            <div className="config-field">
-              <label className="config-label">Hostname <span className="required">*</span></label>
-              <input
-                className={`config-input ${validationErrors.host ? 'input-error' : ''}`}
-                value={host}
-                onChange={(e) => {
-                  setHost(e.target.value);
-                  setValidationErrors((prev) => ({ ...prev, host: null }));
-                }}
-                placeholder="google.com"
-              />
-              {validationErrors.host && (
-                <span className="validation-error">{validationErrors.host}</span>
-              )}
-            </div>
-            <div className="config-field">
-              <label className="config-label">Type</label>
-              <select
-                className="config-input"
-                value={dnsType}
-                onChange={(e) => setDnsType(e.target.value as DnsRecordType)}
-              >
-                <option value="A">A (IPv4)</option>
-                <option value="AAAA">AAAA (IPv6)</option>
-              </select>
-            </div>
-            <button
-              className={`config-button ${busy ? 'cancel' : ''}`}
-              onClick={(e) => {
-                e.preventDefault();
-                if (busy) {
-                  cancelOperation();
-                } else {
-                  if (!validateRequired('host', host, 'Hostname')) return;
-                  void runOperation(
-                    'dns',
-                    { kind: 'dns', host, record: dnsType },
-                    async (op_id) => ({
-                      kind: 'dns',
-                      data: await netscli.dnsLookup(host, dnsType, op_id),
-                    }),
-                  );
-                }
-              }}
-            >
-              {busy ? 'Cancel' : 'Resolve'}
-            </button>
-          </div>
+          <DnsToolbar
+            busy={busy}
+            host={host}
+            setHost={setHost}
+            dnsType={dnsType}
+            setDnsType={setDnsType}
+            validationErrors={validationErrors}
+            setValidationErrors={setValidationErrors}
+            onRun={onRunCurrent}
+            onCancel={cancelOperation}
+          />
         );
       case 'interfaces':
         return (
-          <div className="config-form">
-            <button
-              className={`config-button ${busy ? 'cancel' : ''}`}
-              onClick={(e) => {
-                e.preventDefault();
-                if (busy) {
-                  cancelOperation();
-                } else {
-                  void runOperation(
-                    'interfaces',
-                    { kind: 'interfaces' },
-                    async (op_id) => ({
-                      kind: 'interfaces',
-                      data: await netscli.listInterfaces(op_id),
-                    }),
-                  );
-                }
-              }}
-            >
-              {busy ? 'Cancel' : 'Refresh Interfaces'}
-            </button>
-            <button
-              className={`config-button ${busy ? 'cancel' : ''}`}
-              onClick={(e) => {
-                e.preventDefault();
-                if (busy) {
-                  cancelOperation();
-                } else {
-                  void runOperation(
-                    'interfaces',
-                    { kind: 'arp' },
-                    async (op_id) => ({ kind: 'arp', data: await netscli.getArpTable(op_id) }),
-                  );
-                }
-              }}
-            >
-              {busy ? 'Cancel' : 'Show ARP Table'}
-            </button>
-          </div>
+          <InterfacesToolbar
+            busy={busy}
+            onRun={onRunCurrent}
+            onCancel={cancelOperation}
+          />
         );
       case 'pcap':
         return (
-          <div className="config-form">
-            <div className="info-banner" style={{ margin: '0 0 1rem 0' }}>
-              <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>PCAP tips</div>
-              <ul>
-                {pcapGuidance(error)
-                  .slice(0, 4)
-                  .map((t) => (
-                    <li key={t}>{t}</li>
-                  ))}
-              </ul>
-            </div>
-            <div className="config-field">
-              <label className="config-label">
-                Interface <span className="required">*</span>
-              </label>
-              <input
-                className={`config-input ${validationErrors.pcapInterface ? 'input-error' : ''}`}
-                value={pcapInterface}
-                onChange={(e) => {
-                  setPcapInterface(e.target.value);
-                  setValidationErrors((prev) => ({ ...prev, pcapInterface: null }));
-                }}
-                placeholder="eth0"
-              />
-              {validationErrors.pcapInterface && (
-                <span className="validation-error">{validationErrors.pcapInterface}</span>
-              )}
-            </div>
-            <div className="config-field">
-              <label className="config-label">Duration (seconds, 1–3600)</label>
-              <input
-                className={`config-input ${validationErrors.pcapDuration ? 'input-error' : ''}`}
-                type="number"
-                min={1}
-                max={3600}
-                value={pcapDuration}
-                onChange={(e) => {
-                  setPcapDuration(e.target.value);
-                  setValidationErrors((prev) => ({ ...prev, pcapDuration: null }));
-                }}
-                placeholder="5"
-              />
-              {validationErrors.pcapDuration && (
-                <span className="validation-error">{validationErrors.pcapDuration}</span>
-              )}
-            </div>
-            <button
-              className={`config-button ${busy ? 'cancel' : ''}`}
-              onClick={(e) => {
-                e.preventDefault();
-                if (busy) {
-                  cancelOperation();
-                  return;
-                }
-                // Validate before firing: the backend clamps duration to
-                // (1, 3600] but the user deserves an inline error instead
-                // of a round-trip for an obviously bad input.
-                if (!validateRequired('pcapInterface', pcapInterface, 'Interface')) return;
-                const duration = Number.parseInt(pcapDuration, 10);
-                if (!Number.isFinite(duration) || duration <= 0) {
-                  setValidationErrors((prev) => ({
-                    ...prev,
-                    pcapDuration: 'Duration must be a positive number of seconds',
-                  }));
-                  return;
-                }
-                if (duration > 3600) {
-                  setValidationErrors((prev) => ({
-                    ...prev,
-                    pcapDuration: 'Duration capped at 3600 seconds (1 hour)',
-                  }));
-                  return;
-                }
-                setValidationErrors((prev) => ({
-                  ...prev,
-                  pcapInterface: null,
-                  pcapDuration: null,
-                }));
-                void runOperation(
-                  'pcap',
-                  { kind: 'pcap', interface: pcapInterface, duration },
-                  async (op_id) => ({
-                    kind: 'pcap',
-                    data: await netscli.capturePcap(
-                      { interface: pcapInterface, duration },
-                      op_id,
-                    ),
-                  }),
-                );
-              }}
-            >
-              {busy ? 'Cancel' : 'Start Capture'}
-            </button>
-          </div>
+          <PcapToolbar
+            busy={busy}
+            pcapInterface={pcapInterface}
+            setPcapInterface={setPcapInterface}
+            pcapDuration={pcapDuration}
+            setPcapDuration={setPcapDuration}
+            validationErrors={validationErrors}
+            setValidationErrors={setValidationErrors}
+            error={error}
+            onRun={onRunCurrent}
+            onCancel={cancelOperation}
+          />
         );
       default:
         return null;
@@ -892,269 +587,25 @@ function App() {
       );
     }
 
+    // Dispatch on output.kind so each result renderer is purely a
+    // function of its data shape, with no cross-talk between tabs.
     switch (output.kind) {
-      case 'discover': {
-        const hosts = output.data;
-        if (hosts.length > 0) {
-          return (
-            <table className="results-table">
-              <thead>
-                <tr>
-                  <th>IP Address</th>
-                  <th>MAC Address</th>
-                  <th>Vendor</th>
-                  <th>Hostname</th>
-                </tr>
-              </thead>
-              <tbody>
-                {hosts.map((h) => (
-                  <tr key={h.ip}>
-                    <td>{h.ip}</td>
-                    <td>{h.mac || '-'}</td>
-                    <td>{h.vendor || '-'}</td>
-                    <td>{h.hostname || '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          );
-        }
-        return (
-          <div className="empty-state">
-            <div className="empty-state-text">No hosts discovered</div>
-          </div>
-        );
-      }
-
-      case 'scan': {
-        const results = output.data;
-        const openPorts = results.filter((p) => p.open);
-        if (openPorts.length === 0) {
-          return (
-            <div className="empty-state">
-              <div className="empty-state-text">No open ports found</div>
-            </div>
-          );
-        }
-        return (
-          <table className="results-table">
-            <thead>
-              <tr>
-                <th>Port</th>
-                <th>Service</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {openPorts.map((p) => (
-                <tr key={p.port}>
-                  <td>{p.port}</td>
-                  <td>{p.service || 'unknown'}</td>
-                  <td>
-                    <span style={{ color: '#00a86b', fontWeight: 500 }}>OPEN</span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        );
-      }
-
+      case 'discover':
+        return <DiscoverResults data={output.data} />;
+      case 'scan':
+        return <ScanResults data={output.data} />;
       case 'inspect':
-        return (
-          <div className="json-view">
-            <pre>{JSON.stringify(output.data, null, 2)}</pre>
-          </div>
-        );
-
-      case 'sweep': {
-        const entries = output.data;
-        if (entries.length === 0) {
-          return (
-            <div className="empty-state">
-              <div className="empty-state-text">No results</div>
-            </div>
-          );
-        }
-        return (
-          <div>
-            {entries.map((s) => (
-              <div key={s.host.ip} className="host-card">
-                <h4>
-                  {s.host.ip} {s.host.hostname && `(${s.host.hostname})`}
-                </h4>
-                {s.open_ports.length > 0 ? (
-                  <table className="results-table" style={{ marginTop: '0.5rem' }}>
-                    <thead>
-                      <tr>
-                        <th>Port</th>
-                        <th>Service</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {s.open_ports.map((p) => (
-                        <tr key={p.port}>
-                          <td>{p.port}</td>
-                          <td>{p.service || 'unknown'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  <div style={{ color: '#999', fontSize: '0.875rem' }}>No open ports</div>
-                )}
-              </div>
-            ))}
-          </div>
-        );
-      }
-
-      case 'dns': {
-        // Backend returns DnsRecord[] — one row per answer, with the type
-        // and its normalized value. Render as a two-column table so users
-        // can tell an A from an MX from a TXT at a glance.
-        const records = output.data;
-        if (records.length === 0) {
-          return (
-            <div className="empty-state">
-              <div className="empty-state-text">No results</div>
-            </div>
-          );
-        }
-        return (
-          <table className="results-table">
-            <thead>
-              <tr>
-                <th>Type</th>
-                <th>Value</th>
-              </tr>
-            </thead>
-            <tbody>
-              {records.map((r, idx) => (
-                <tr key={`${r.record_type}-${r.value}-${idx}`}>
-                  <td>{r.record_type}</td>
-                  <td>{r.value}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        );
-      }
-
-      case 'interfaces': {
-        const interfaces = output.data;
-        if (interfaces.length === 0) {
-          return (
-            <div className="empty-state">
-              <div className="empty-state-text">No interfaces found</div>
-            </div>
-          );
-        }
-        return (
-          <table className="results-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>State</th>
-                <th>MAC Address</th>
-                <th>Addresses</th>
-              </tr>
-            </thead>
-            <tbody>
-              {interfaces.map((iface) => (
-                <tr key={iface.name}>
-                  <td>
-                    {iface.name}
-                    {iface.is_loopback && (
-                      <span className="row-badge row-badge-muted" title="Loopback interface">
-                        loopback
-                      </span>
-                    )}
-                  </td>
-                  <td>
-                    <span
-                      className={`row-badge ${iface.is_up ? 'row-badge-up' : 'row-badge-down'}`}
-                    >
-                      {iface.is_up ? 'UP' : 'DOWN'}
-                    </span>
-                  </td>
-                  <td className="mono-cell">{iface.mac || '-'}</td>
-                  <td className="mono-cell">
-                    {iface.ips.length === 0 ? (
-                      <span className="dim">-</span>
-                    ) : (
-                      iface.ips.map((ip) => (
-                        <div key={ip} className="ip-line">
-                          {ip}
-                        </div>
-                      ))
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        );
-      }
-
-      case 'arp': {
-        const entries = output.data;
-        if (entries.length === 0) {
-          return (
-            <div className="empty-state">
-              <div className="empty-state-text">No data</div>
-            </div>
-          );
-        }
-        return (
-          <table className="results-table">
-            <thead>
-              <tr>
-                <th>IP Address</th>
-                <th>MAC Address</th>
-                <th>Interface</th>
-                <th>Vendor</th>
-              </tr>
-            </thead>
-            <tbody>
-              {entries.map((e) => (
-                <tr key={`${e.ip}-${e.mac}-${e.interface}`}>
-                  <td>{e.ip}</td>
-                  <td>{e.mac}</td>
-                  <td>{e.interface}</td>
-                  <td>{e.vendor || '-'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        );
-      }
-
-      case 'pcap': {
-        const r = output.data;
-        // Duration comes across as { secs, nanos }; flatten to a human-readable
-        // seconds value with one decimal.
-        const durSecs = r.duration.secs + r.duration.nanos / 1e9;
-        return (
-          <div className="pcap-summary">
-            <div className="pcap-stat">
-              <div className="pcap-stat-label">Packets captured</div>
-              <div className="pcap-stat-value">{r.packets_captured.toLocaleString()}</div>
-            </div>
-            <div className="pcap-stat">
-              <div className="pcap-stat-label">Duration</div>
-              <div className="pcap-stat-value">{durSecs.toFixed(2)} s</div>
-            </div>
-            <div className="pcap-stat pcap-stat-path">
-              <div className="pcap-stat-label">Output file</div>
-              <div className="pcap-stat-value mono-cell" title={r.file_path}>
-                {r.file_path}
-              </div>
-            </div>
-          </div>
-        );
-      }
-
+        return <InspectResults data={output.data} />;
+      case 'sweep':
+        return <SweepResults data={output.data} />;
+      case 'dns':
+        return <DnsResults data={output.data} />;
+      case 'interfaces':
+        return <InterfacesResults data={output.data} />;
+      case 'arp':
+        return <ArpResults data={output.data} />;
+      case 'pcap':
+        return <PcapResults data={output.data} />;
       default:
         return null;
     }
