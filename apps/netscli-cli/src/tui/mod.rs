@@ -9,12 +9,19 @@
 //! The split lets `main.rs` carry only the CLI arg dispatch and a
 //! single call to `tui::run_tui(...)`. Before the split, run_tui and
 //! handle_tui_command lived in main.rs, inflating it to ~1670 lines.
+mod command_catalog;
+mod config;
 mod events;
+mod history;
+mod palette;
 mod state;
+mod widgets;
 
 // Re-export TUI-public types so existing call sites in main.rs and
 // tui_export.rs keep working as `tui::Foo` after the directory split.
-pub use state::{help_lines, EntryState, HistoryEntry, TuiApp};
+pub use command_catalog::help_lines;
+pub use history::{EntryState, HistoryEntry};
+pub use state::TuiApp;
 
 use crate::commands;
 use crate::tui_formatter::Formatter;
