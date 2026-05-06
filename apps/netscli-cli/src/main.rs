@@ -2,6 +2,7 @@
 
 mod args;
 mod cli_formatter;
+mod commands;
 mod mcp_service;
 mod setup;
 mod trace;
@@ -20,7 +21,6 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode},
 };
-use dirs::home_dir;
 use mac_address::MacAddress;
 use netscli_core::{
     parse_ports_checked, Database, NetworkManager, Ops, OpsConfig, PcapCancelToken, PingScanner,
@@ -30,10 +30,8 @@ use ratatui::style::{Color, Style};
 use ratatui::text::{Line, Span};
 use ratatui::{backend::CrosstermBackend, Terminal};
 use serde::Serialize;
-use std::collections::HashMap;
 use std::io;
 use std::net::IpAddr;
-use std::path::PathBuf;
 use std::str::FromStr;
 use std::time::Instant;
 use tokio::sync::watch;
@@ -92,7 +90,7 @@ async fn main() -> Result<()> {
         eprintln!("netscli: first run detected. Type `/help` for commands. (This build has pcap disabled — rebuild with --features pcap to enable capture.)");
     }
 
-    let db = try_init_db().await;
+    let db = commands::try_init_db().await;
     let ops = Ops::new(OpsConfig {
         concurrency: cli.concurrency.unwrap_or(DEFAULT_CONCURRENCY),
         ..Default::default()
@@ -119,7 +117,8 @@ async fn main() -> Result<()> {
                 let format = output_format(*json, *yaml)?;
                 let start = Instant::now();
                 let (subnet_str, hosts) =
-                    run_discover(&ops, db.as_ref(), subnet.clone(), *resolve, None).await?;
+                    commands::run_discover(&ops, db.as_ref(), subnet.clone(), *resolve, None)
+                        .await?;
                 match format {
                     OutputFormat::Json | OutputFormat::Yaml => print_structured(format, &hosts)?,
                     OutputFormat::Text => {
@@ -144,7 +143,7 @@ async fn main() -> Result<()> {
                 let format = output_format(*json, *yaml)?;
                 let start = Instant::now();
                 let ports = parse_ports_checked(ports.as_deref())?;
-                let results = run_scan(&ops, db.as_ref(), host, ports).await?;
+                let results = commands::run_scan(&ops, db.as_ref(), host, ports).await?;
                 match format {
                     OutputFormat::Json | OutputFormat::Yaml => {
                         let open: Vec<_> = results.iter().filter(|p| p.open).cloned().collect();
@@ -172,7 +171,7 @@ async fn main() -> Result<()> {
                 let format = output_format(*json, *yaml)?;
                 let start = Instant::now();
                 let ports = parse_ports_checked(ports.as_deref())?;
-                let data = run_inspect(&ops, db.as_ref(), host.clone(), ports).await?;
+                let data = commands::run_inspect(&ops, db.as_ref(), host.clone(), ports).await?;
                 match format {
                     OutputFormat::Json | OutputFormat::Yaml => print_structured(format, &data)?,
                     OutputFormat::Text => {
@@ -198,7 +197,8 @@ async fn main() -> Result<()> {
                 let start = Instant::now();
                 let ports = parse_ports_checked(ports.as_deref())?;
                 let (subnet_str, results) =
-                    run_sweep(&ops, db.as_ref(), subnet.clone(), ports, *resolve, None).await?;
+                    commands::run_sweep(&ops, db.as_ref(), subnet.clone(), ports, *resolve, None)
+                        .await?;
                 match format {
                     OutputFormat::Json | OutputFormat::Yaml => print_structured(format, &results)?,
                     OutputFormat::Text => {
@@ -221,19 +221,19 @@ async fn main() -> Result<()> {
                 yaml,
             } => {
                 let format = output_format(*json, *yaml)?;
-                let records = run_dns(&ops, db.as_ref(), host, record.clone()).await?;
+                let records = commands::run_dns(&ops, db.as_ref(), host, record.clone()).await?;
                 match format {
                     OutputFormat::Json | OutputFormat::Yaml => {
                         print_structured(format, &records)?;
                     }
                     OutputFormat::Text => {
-                        print_dns_records_text(&records);
+                        commands::print_dns_records_text(&records);
                     }
                 }
             }
             Commands::Reverse { ip, json, yaml } => {
                 let format = output_format(*json, *yaml)?;
-                let res = run_reverse(&ops, db.as_ref(), ip).await?;
+                let res = commands::run_reverse(&ops, db.as_ref(), ip).await?;
                 match format {
                     OutputFormat::Json | OutputFormat::Yaml => print_structured(format, &res)?,
                     OutputFormat::Text => match res {
@@ -424,8 +424,13 @@ async fn main() -> Result<()> {
                     .await?;
 
                 if let Some(db) = db.as_ref() {
-                    db_add_scan_history_safe(db, "pcap", res.duration.as_millis() as i64, &res)
-                        .await;
+                    commands::db_add_scan_history_safe(
+                        db,
+                        "pcap",
+                        res.duration.as_millis() as i64,
+                        &res,
+                    )
+                    .await;
                 }
 
                 match format {
@@ -544,209 +549,8 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-fn warn_nonfatal(context: &str, err: impl std::fmt::Display) {
-    eprintln!("netscli: warning: {context}: {err}");
-}
-
-async fn db_upsert_host_safe(
-    db: &Database,
-    mac: &str,
-    ip: Option<&str>,
-    hostname: Option<&str>,
-    vendor: Option<&str>,
-) {
-    if let Err(e) = db.upsert_host(mac, ip, hostname, vendor).await {
-        warn_nonfatal("db upsert_host failed", e);
-    }
-}
-
-async fn db_add_scan_history_safe<T: Serialize>(
-    db: &Database,
-    command: &str,
-    duration_ms: i64,
-    value: &T,
-) {
-    match serde_json::to_string(value) {
-        Ok(json) => {
-            if let Err(e) = db.add_scan_history(command, duration_ms, &json).await {
-                warn_nonfatal("db add_scan_history failed", e);
-            }
-        }
-        Err(e) => warn_nonfatal("db failed to serialize scan history payload", e),
-    }
-}
-
-async fn db_upsert_discovered_hosts_safe(db: &Database, hosts: &[netscli_core::Host]) {
-    for h in hosts {
-        if let Some(mac) = h.mac.as_deref() {
-            db_upsert_host_safe(
-                db,
-                mac,
-                Some(&h.ip.to_string()),
-                h.hostname.as_deref(),
-                h.vendor.as_deref(),
-            )
-            .await;
-        }
-    }
-}
-
-async fn db_upsert_sweep_hosts_safe(db: &Database, entries: &[netscli_core::SweepEntry]) {
-    for entry in entries {
-        if let Some(mac) = entry.host.mac.as_deref() {
-            db_upsert_host_safe(
-                db,
-                mac,
-                Some(&entry.host.ip.to_string()),
-                entry.host.hostname.as_deref(),
-                entry.host.vendor.as_deref(),
-            )
-            .await;
-        }
-    }
-}
-
-async fn run_discover(
-    ops: &Ops,
-    db: Option<&Database>,
-    subnet: Option<String>,
-    resolve: bool,
-    progress: Option<std::sync::Arc<dyn Fn(netscli_core::DiscoverProgress) + Send + Sync>>,
-) -> Result<(String, Vec<netscli_core::Host>)> {
-    let (subnet_str, hosts) = ops
-        .discover_ipv4_with_progress(subnet, resolve, progress)
-        .await?;
-    if let Some(db) = db {
-        db_upsert_discovered_hosts_safe(db, &hosts).await;
-        db_add_scan_history_safe(db, "discover", 0, &hosts).await;
-    }
-    Ok((subnet_str, hosts))
-}
-
-async fn run_scan(
-    ops: &Ops,
-    db: Option<&Database>,
-    host: &str,
-    ports: Option<Vec<u16>>,
-) -> Result<Vec<netscli_core::PortResult>> {
-    let (_ip, results) = ops.scan_ports(host, ports).await?;
-    if let Some(db) = db {
-        db_add_scan_history_safe(db, "scan", 0, &results).await;
-    }
-    Ok(results)
-}
-
-async fn run_inspect(
-    ops: &Ops,
-    db: Option<&Database>,
-    host: String,
-    ports: Option<Vec<u16>>,
-) -> Result<netscli_core::InspectResult> {
-    let res = ops.inspect_host(host, ports).await?;
-    if let Some(db) = db {
-        db_add_scan_history_safe(db, "inspect", 0, &res).await;
-    }
-    Ok(res)
-}
-
-async fn run_sweep(
-    ops: &Ops,
-    db: Option<&Database>,
-    subnet: Option<String>,
-    ports: Option<Vec<u16>>,
-    resolve_hostnames: bool,
-    progress: Option<std::sync::Arc<dyn Fn(netscli_core::SweepProgress) + Send + Sync>>,
-) -> Result<(String, Vec<netscli_core::SweepEntry>)> {
-    let (subnet_str, entries) = ops
-        .sweep_ipv4_with_progress(subnet, ports, resolve_hostnames, progress)
-        .await?;
-    if let Some(db) = db {
-        db_upsert_sweep_hosts_safe(db, &entries).await;
-        db_add_scan_history_safe(db, "sweep", 0, &entries).await;
-    }
-    Ok((subnet_str, entries))
-}
-
-async fn run_dns(
-    ops: &Ops,
-    db: Option<&Database>,
-    host: &str,
-    record: Option<String>,
-) -> Result<Vec<netscli_core::dns::DnsRecord>> {
-    let records = ops.dns_lookup(host, record).await?;
-    if let Some(db) = db {
-        db_add_scan_history_safe(db, "dns", 0, &records).await;
-    }
-    Ok(records)
-}
-
-fn print_dns_records_text(records: &[netscli_core::dns::DnsRecord]) {
-    if records.is_empty() {
-        println!("No DNS records found.");
-        return;
-    }
-
-    let mut order: Vec<String> = Vec::new();
-    let mut grouped: HashMap<String, Vec<String>> = HashMap::new();
-    for record in records {
-        if !grouped.contains_key(&record.record_type) {
-            order.push(record.record_type.clone());
-        }
-        grouped
-            .entry(record.record_type.clone())
-            .or_default()
-            .push(record.value.clone());
-    }
-
-    for (idx, record_type) in order.iter().enumerate() {
-        if idx > 0 {
-            println!();
-        }
-        println!("DNS {record_type}");
-        if let Some(values) = grouped.get(record_type) {
-            for value in values {
-                println!("  {value}");
-            }
-        }
-    }
-}
-
-async fn run_reverse(ops: &Ops, db: Option<&Database>, ip: &str) -> Result<Option<String>> {
-    let ip: IpAddr = ip
-        .parse()
-        .context("Invalid IP address (expected IPv4 or IPv6)")?;
-    let name =
-        netscli_core::dns::reverse_lookup_best_effort_timeout(ip, ops.config().dns_timeout_ms)
-            .await;
-    if let Some(db) = db {
-        db_add_scan_history_safe(db, "reverse", 0, &name).await;
-    }
-    Ok(name)
-}
-
-async fn try_init_db() -> Option<Database> {
-    match init_db().await {
-        Ok(db) => Some(db),
-        Err(e) => {
-            eprintln!("netscli: warning: database unavailable ({e}); continuing without history");
-            None
-        }
-    }
-}
-
-async fn init_db() -> Result<Database> {
-    let base = home_dir().unwrap_or_else(|| PathBuf::from("."));
-    let db_path = base.join(".netscli").join("netscli.db");
-    let parent = db_path
-        .parent()
-        .context("netscli db path has no parent directory")?;
-    std::fs::create_dir_all(parent)?;
-    let db = Database::new(db_path).await?;
-    Ok(db)
-}
-
 async fn run_tui(concurrency: usize) -> Result<()> {
-    let db = try_init_db().await.map(std::sync::Arc::new);
+    let db = commands::try_init_db().await.map(std::sync::Arc::new);
     enable_raw_mode()?;
     let stdout = io::stdout();
     // Render into the main terminal buffer so native scrollback/selection works.
@@ -1154,7 +958,7 @@ async fn handle_tui_command(
                     as std::sync::Arc<dyn Fn(netscli_core::DiscoverProgress) + Send + Sync>
             });
 
-            match run_discover(ops, db, subnet, true, progress_cb).await {
+            match commands::run_discover(ops, db, subnet, true, progress_cb).await {
                 Ok((_subnet, hosts)) => {
                     out.extend(Formatter::format_discovered_hosts(&hosts));
                 }
@@ -1197,7 +1001,7 @@ async fn handle_tui_command(
                 match ops.scan_ports_with_progress(host, ports, progress_cb).await {
                     Ok((ip, res)) => {
                         if let Some(db) = db {
-                            db_add_scan_history_safe(db, "scan", 0, &res).await;
+                            commands::db_add_scan_history_safe(db, "scan", 0, &res).await;
                         }
 
                         let arp = netscli_core::NetworkManager::find_mac(&ip);
@@ -1230,7 +1034,7 @@ async fn handle_tui_command(
                         return out;
                     }
                 };
-                match run_inspect(ops, db, host.to_string(), ports).await {
+                match commands::run_inspect(ops, db, host.to_string(), ports).await {
                     Ok(res) => {
                         out.extend(Formatter::format_inspect_result(&res));
                     }
@@ -1294,7 +1098,7 @@ async fn handle_tui_command(
                     as std::sync::Arc<dyn Fn(netscli_core::SweepProgress) + Send + Sync>
             });
 
-            match run_sweep(ops, db, subnet, ports, resolve, progress_cb).await {
+            match commands::run_sweep(ops, db, subnet, ports, resolve, progress_cb).await {
                 Ok((subnet_str, entries)) => {
                     if entries.is_empty() {
                         out.push(Formatter::format_notice(&format!(
@@ -1374,7 +1178,7 @@ async fn handle_tui_command(
                     "{err}. Usage: /dns <host> [--record <type>|ALL]"
                 )));
             } else if let Some(host) = host {
-                match run_dns(ops, db, &host, record.clone()).await {
+                match commands::run_dns(ops, db, &host, record.clone()).await {
                     Ok(records) => {
                         out.extend(Formatter::format_dns_results(
                             &host,
@@ -1392,7 +1196,7 @@ async fn handle_tui_command(
         }
         "/reverse" => {
             if let Some(raw_ip) = parts.get(1) {
-                match run_reverse(ops, db, raw_ip).await {
+                match commands::run_reverse(ops, db, raw_ip).await {
                     Ok(Some(name)) => {
                         out.push(Line::from(vec![
                             Span::styled("PTR ", Style::default().fg(Color::Cyan)),
@@ -1835,7 +1639,7 @@ async fn handle_tui_command(
                 {
                     Ok(res) => {
                         if let Some(db) = db {
-                            db_add_scan_history_safe(
+                            commands::db_add_scan_history_safe(
                                 db,
                                 "pcap",
                                 res.duration.as_millis() as i64,
