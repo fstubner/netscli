@@ -2,6 +2,7 @@ import { ArrowDown, ArrowUp } from 'lucide-react';
 
 import type { DefaultInterfaceInfo, NetworkStats } from '../../types/netscli';
 import { resultSummary } from '../../tools/presentation';
+import { TOOL_CONFIG } from '../../tools/registry';
 import type { WorkspaceTab } from '../../tools/types';
 
 interface StatusBarProps {
@@ -22,8 +23,9 @@ export function StatusBar({
   selectedCount,
 }: StatusBarProps) {
   const interfaceDown = Boolean(interfaceInfo && !interfaceInfo.is_up);
-  const statusText = interfaceInfo ? (interfaceDown ? 'Down' : 'Active') : 'No interface';
+  const statusText = interfaceInfo ? (interfaceDown ? 'Interface down' : 'Interface up') : 'No interface';
   const resultText = activeTab ? footerResultText(activeTab, rowCount, selectedCount) : null;
+  const operationText = activeTab?.busy ? `Running ${TOOL_CONFIG[activeTab.kind].label}` : null;
 
   return (
     <footer className="statusbar" data-testid="statusbar">
@@ -41,6 +43,12 @@ export function StatusBar({
           <>
             <span className="divider" />
             <TrafficStats animateArrows={animateTrafficArrows} stats={networkStats} />
+          </>
+        )}
+        {operationText && (
+          <>
+            <span className="divider" />
+            <span className="operation-status">{operationText}</span>
           </>
         )}
       </div>

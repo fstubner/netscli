@@ -128,7 +128,7 @@ export const DEFAULT_SORT: Record<ToolKind, string> = {
   sweep: 'ip',
   interfaces: 'name',
   arp: 'ip',
-  pcap: 'metric',
+  pcap: 'no',
 };
 
 export function generateId(prefix: string): string {

@@ -37,6 +37,7 @@ cargo test -p netscli-mcp
 cargo test -p netscli
 cargo clippy --all-targets -- -D warnings
 cargo clippy --all-targets --features pcap -- -D warnings
+./scripts/test-pcap.ps1
 cd apps/netscli-gui && npm run test:unit && npm run build
 cd apps/netscli-gui && npm run test:maintainability
 cd apps/netscli-gui && npm run test:tauri-render
@@ -56,7 +57,9 @@ On Windows, `--features pcap` source builds require the Npcap runtime plus the
 Npcap SDK import library. Put the SDK architecture directory containing
 `wpcap.lib` on `LIB` for the build process, and put
 `C:\Windows\System32\Npcap` on `PATH` for runtime checks. Do not commit a
-machine-local SDK path into Cargo config.
+machine-local SDK path into Cargo config. `scripts/test-pcap.ps1` sets the
+expected Windows environment for the PCAP test target from `NPCAP_SDK` or
+`C:\tmp\netscli-npcap-sdk`.
 
 ## Module Size Guidance
 

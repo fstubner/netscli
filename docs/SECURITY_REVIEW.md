@@ -147,9 +147,7 @@ Completed:
 - `cargo check --manifest-path apps/netscli-gui/src-tauri/Cargo.toml` — passed.
 - `cargo clippy --all-targets -- -D warnings` — passed.
 - `cargo clippy --all-targets --features pcap -- -D warnings` — passed.
+- `.\scripts\test-pcap.ps1` — passed.
 - `cd apps/netscli-gui && npm run test:unit` — passed.
 - `cd apps/netscli-gui && npm run build` — passed.
 - `cd apps/netscli-gui && npm run test:tauri-render` — passed.
-
-Blocked:
-- `cargo test -p netscli-core --features pcap` did not link on this Windows machine because `link.exe` could not find `wpcap.lib`. This is a development environment requirement for the PCAP feature; runtime Npcap alone is not enough for this test target.

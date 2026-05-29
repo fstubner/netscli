@@ -124,3 +124,96 @@
   color: var(--mint);
   background: var(--bg-selected);
 }
+
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.confirm-dialog {
+  width: min(520px, calc(100vw - 32px));
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated);
+  box-shadow: 0 24px 70px var(--shadow);
+}
+
+.confirm-dialog-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+  padding: 18px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.confirm-dialog-icon {
+  width: 32px;
+  height: 32px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--amber), transparent 58%);
+  color: var(--amber);
+  background: color-mix(in srgb, var(--amber), transparent 91%);
+}
+
+.confirm-dialog h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.confirm-dialog p {
+  margin: 5px 0 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.dialog-close {
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  padding: 0;
+}
+
+.dialog-close:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-selected);
+  color: var(--text-primary);
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 18px 16px;
+}
+
+.confirm-dialog-actions button {
+  height: 30px;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  padding: 0 11px;
+}
+
+.confirm-dialog-actions button:hover {
+  background: var(--bg-selected);
+}
+
+.confirm-dialog-actions button.primary {
+  border-color: color-mix(in srgb, var(--mint), transparent 35%);
+  color: var(--mint);
+}

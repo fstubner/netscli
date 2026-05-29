@@ -90,6 +90,14 @@
   color: var(--text-muted);
 }
 
+.operation-status {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .statusbar .run-dot {
   margin-top: 1px;
 }

@@ -52,7 +52,7 @@ async function assertEmptyWorkspaceState(driver) {
   assert.equal(state.runDisabled, true, 'Run should be disabled without an active tab');
   assert.equal(state.exportDisabled, true, 'Export should be disabled without an active tab');
   assert.equal(state.filterDisabled, true, 'Filter should be disabled without an active tab');
-  assert.match(state.status, /Active|Down/i, 'Empty workspace should keep interface status visible');
+  assert.match(state.status, /Interface (up|down)/i, 'Empty workspace should keep interface status visible');
   assert.doesNotMatch(state.status, /0 results/i, 'Empty workspace should not show a result summary');
   assert.doesNotMatch(state.status, /v\d+\./i, 'Version should live in About, not the footer');
 }
@@ -179,7 +179,7 @@ async function assertInterfaceReadinessReflectsSelection(driver) {
   `);
   await closeSettingsDialog(driver);
   if (!selection.found) return;
-  await waitForText(driver, '[data-testid="statusbar"]', /\bDown\b/i);
+  await waitForText(driver, '[data-testid="statusbar"]', /Interface down/i);
 
   if (selection.originalName && selection.originalName !== selection.downName) {
     await openSettingsDialog(driver);
@@ -192,7 +192,7 @@ async function assertInterfaceReadinessReflectsSelection(driver) {
     `, selection.originalName);
     await closeSettingsDialog(driver);
     if (selection.originalUp === 'true') {
-      await waitForText(driver, '[data-testid="statusbar"]', /Active/i);
+      await waitForText(driver, '[data-testid="statusbar"]', /Interface up/i);
     }
   }
 }

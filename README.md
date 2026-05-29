@@ -374,7 +374,9 @@ cargo test --all
 Windows PCAP source builds require both the Npcap runtime and SDK. Set `LIB`
 to the SDK architecture directory containing `wpcap.lib` before running
 `cargo build --features pcap`; for 64-bit MSVC this is usually
-`<Npcap SDK>\Lib\x64`.
+`<Npcap SDK>\Lib\x64`. For the core PCAP test target on Windows, run
+`.\scripts\test-pcap.ps1`; it sets `LIB`, `INCLUDE`, and the Npcap runtime
+`PATH` from `NPCAP_SDK` or `C:\tmp\netscli-npcap-sdk`.
 
 ### GUI Application
 

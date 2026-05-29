@@ -43,6 +43,7 @@ cd apps/netscli-gui && npm run tauri build    # build installer
 # Tests
 cargo test --all                              # all workspace tests
 cargo test -p netscli-core                    # targeted test run
+./scripts/test-pcap.ps1                       # Windows PCAP tests with Npcap SDK env
 cd apps/netscli-gui && npm run test:unit      # GUI helper tests
 cd apps/netscli-gui && npm run build          # GUI typecheck + Vite build
 cd apps/netscli-gui && npm run test:tauri-render  # Tauri render automation

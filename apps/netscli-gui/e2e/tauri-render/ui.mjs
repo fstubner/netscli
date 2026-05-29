@@ -121,7 +121,13 @@ export async function assertTheme(driver, expected) {
 
 export async function saveScreenshot(driver, fileName) {
   await fs.promises.mkdir(artifactsDir, { recursive: true });
-  const png = await driver.takeScreenshot();
+  let png;
+  try {
+    const shell = await withElement(driver, '[data-testid="app-shell"]', 1_000);
+    png = await shell.takeScreenshot(true);
+  } catch {
+    png = await driver.takeScreenshot();
+  }
   await fs.promises.writeFile(path.join(artifactsDir, fileName), Buffer.from(png, 'base64'));
 }
 

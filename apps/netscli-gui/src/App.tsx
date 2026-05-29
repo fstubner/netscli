@@ -6,6 +6,7 @@ import { AboutDialog } from './components/shell/AboutDialog';
 import { AppFrame } from './components/shell/AppFrame';
 import { AppTooltip } from './components/shell/AppTooltip';
 import { CommandStrip } from './components/shell/CommandStrip';
+import { ConfirmDialog } from './components/shell/ConfirmDialog';
 import { ContentContextMenu } from './components/shell/ContentContextMenu';
 import { MenuBar } from './components/shell/MenuBar';
 import { SettingsDialog } from './components/shell/SettingsDialog';
@@ -24,6 +25,7 @@ import { usePopoverDismissal } from './hooks/usePopoverDismissal';
 import { usePreferences } from './hooks/usePreferences';
 import { useReleaseNotifications } from './hooks/useReleaseNotifications';
 import { appWindowAction, type AppWindowAction } from './services/appWindow';
+import { guardForOperation, type OperationGuard } from './workspace/operationGuards';
 import { useWorkspace } from './workspace/useWorkspace';
 
 const APP_VERSION = __APP_VERSION__;
@@ -51,6 +53,7 @@ function App() {
   const [contentContextMenu, setContentContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [dismissedWarningKeys, setDismissedWarningKeys] = useState<Record<string, true>>({});
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [pendingRun, setPendingRun] = useState<{ tabId: string; guard: OperationGuard } | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   useReleaseNotifications({
@@ -65,8 +68,18 @@ function App() {
   usePopoverDismissal({ contentContextMenu, openMenu, setContentContextMenu, setOpenMenu });
   useKeyboardShortcuts({ openMenu, setOpenMenu, setSettingsOpen, settingsOpen, workspace });
 
+  function requestRun(tabId: string) {
+    const tab = workspace.tabs.find((item) => item.id === tabId);
+    const guard = guardForOperation(tab);
+    if (guard) {
+      setPendingRun({ tabId, guard });
+      return;
+    }
+    void workspace.runTab(tabId);
+  }
+
   function runActive() {
-    if (activeTab) void workspace.runTab(activeTab.id);
+    if (activeTab) requestRun(activeTab.id);
   }
 
   function cancelActive() {
@@ -162,7 +175,7 @@ function App() {
                 interfaces={workspace.interfaces}
                 tab={activeTab}
                 onPatchForm={workspace.patchForm}
-                onRun={(tabId) => void workspace.runTab(tabId)}
+                onRun={requestRun}
               />
             </section>
 
@@ -259,6 +272,19 @@ function App() {
         />
       )}
       {aboutOpen && <AboutDialog appVersion={APP_VERSION} onClose={() => setAboutOpen(false)} />}
+      {pendingRun && (
+        <ConfirmDialog
+          confirmLabel={pendingRun.guard.confirmLabel}
+          message={pendingRun.guard.message}
+          title={pendingRun.guard.title}
+          onCancel={() => setPendingRun(null)}
+          onConfirm={() => {
+            const tabId = pendingRun.tabId;
+            setPendingRun(null);
+            void workspace.runTab(tabId);
+          }}
+        />
+      )}
       <AppTooltip />
     </div>
   );

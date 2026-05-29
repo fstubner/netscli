@@ -52,7 +52,7 @@ async function main() {
   const driver = await createDriver(webdriverPort, application);
 
   try {
-    await driver.manage().window().setRect({ width: 774, height: 970 });
+    await driver.manage().window().setRect({ x: 0, y: 0, width: 774, height: 970 });
     await withElement(driver, '[data-testid="app-shell"]', 20_000);
 
     const shell = await withElement(driver, '[data-testid="app-shell"]');
