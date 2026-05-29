@@ -1,0 +1,200 @@
+.detail-pane {
+  flex: 0 0 184px;
+  min-height: 130px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background: var(--bg-elevated);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.detail-pane.collapsed {
+  min-height: 35px;
+}
+
+.detail-pane.expanded {
+  flex: 1 1 auto !important;
+  min-height: 0;
+}
+
+.detail-resize-handle {
+  position: absolute;
+  top: -3px;
+  left: 0;
+  right: 0;
+  height: 6px;
+  z-index: 2;
+  cursor: row-resize;
+}
+
+.detail-resize-handle::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 2px;
+  height: 2px;
+  opacity: 0;
+  background: color-mix(in srgb, var(--mint), transparent 72%);
+}
+
+.detail-resize-handle:hover::after {
+  opacity: 1;
+}
+
+.workspace:has(.detail-pane.expanded) .active-form,
+.workspace:has(.detail-pane.expanded) .error-strip,
+.workspace:has(.detail-pane.expanded) .warning-strip,
+.workspace:has(.detail-pane.expanded) .result-region {
+  display: none;
+}
+
+.detail-tabs {
+  flex: 0 0 35px;
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.detail-tabs button {
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 0 14px;
+  cursor: pointer;
+}
+
+.detail-tabs button:hover,
+.detail-tabs button.active {
+  color: var(--text-primary);
+}
+
+.detail-tabs button.active {
+  box-shadow: inset 0 -2px 0 var(--mint);
+}
+
+.detail-context {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  padding-right: 14px;
+  color: var(--text-muted);
+  font-family: "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+  font-size: 12px;
+}
+
+.detail-actions {
+  display: inline-flex;
+  align-items: center;
+  margin-left: auto;
+  padding-right: 8px;
+}
+
+.detail-actions button {
+  width: 26px;
+  min-width: 26px;
+  height: 26px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 4px;
+  padding: 0;
+}
+
+.detail-actions button:hover {
+  border-color: var(--border-subtle);
+  background: var(--bg-input);
+  color: var(--text-primary);
+}
+
+.detail-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px 14px;
+  user-select: text;
+}
+
+.detail-body:focus {
+  outline: 0;
+}
+
+.detail-body:focus-visible {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mint), transparent 50%);
+}
+
+.detail-body pre {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+.json-preview {
+  color-scheme: only dark;
+  color: var(--text-primary);
+}
+
+.json-token.json-key {
+  color: var(--cyan);
+}
+
+.json-token.json-string {
+  color: var(--mint);
+}
+
+.json-token.json-number {
+  color: #f2c97d;
+}
+
+.json-token.json-boolean {
+  color: #9eb7ff;
+}
+
+.json-token.json-null {
+  color: var(--text-muted);
+}
+
+.json-token.json-punctuation {
+  color: var(--text-secondary);
+}
+
+.detail-list {
+  display: grid;
+  gap: 6px;
+}
+
+.detail-line {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.detail-line span {
+  color: var(--text-secondary);
+}
+
+.detail-line code {
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.detail-line.muted-line code {
+  color: var(--text-muted);
+  font-family: inherit;
+  font-weight: 400;
+}
+
+.selection-breakdown {
+  display: grid;
+  gap: 9px;
+  margin-top: 12px;
+}
+
+.selection-breakdown-title {
+  color: var(--text-secondary);
+}

@@ -1,0 +1,19 @@
+.app-frame {
+  flex: 0 0 34px;
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  position: relative;
+  z-index: var(--z-app-frame);
+  background: var(--bg-base);
+  border-bottom: 1px solid var(--border-subtle);
+  user-select: none;
+}
+
+.app-frame-drag {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  overflow: visible;
+}

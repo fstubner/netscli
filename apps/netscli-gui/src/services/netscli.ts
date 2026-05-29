@@ -84,10 +84,17 @@ export async function cancelOperation(op_id: string): Promise<void> {
   return invoke<void>('cancel_operation', { op_id });
 }
 
-export async function getNetworkStats(): Promise<NetworkStats> {
-  return invoke<NetworkStats>('get_network_stats');
+export async function getNetworkStats(interfaceName?: string | null): Promise<NetworkStats> {
+  return invoke<NetworkStats>('get_network_stats', { interface: interfaceName?.trim() || null });
 }
 
 export async function getDefaultInterface(): Promise<DefaultInterfaceInfo> {
   return invoke<DefaultInterfaceInfo>('get_default_interface');
+}
+
+export async function exportTextFile(
+  filename: string,
+  contents: string,
+): Promise<string> {
+  return invoke<string>('export_text_file', { filename, contents, target_path: null });
 }

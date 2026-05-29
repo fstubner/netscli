@@ -39,10 +39,22 @@ permissions:
   contents: read
 
 jobs:
+  maintainability:
+    name: Maintainability
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+      - name: File size guard
+        run: node scripts/check-file-size.mjs
+
   # Fast lint + format gate. Runs first because if `cargo fmt --check` is
   # going to fail there's no point firing up the matrix below.
   lint:
     name: Format + Clippy
+    needs: maintainability
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -124,6 +136,12 @@ jobs:
           cache-dependency-path: apps/netscli-gui/package-lock.json
       - name: npm ci
         run: npm ci
+        working-directory: apps/netscli-gui
+      - name: GUI unit tests
+        run: npm run test:unit
+        working-directory: apps/netscli-gui
+      - name: Source size guard
+        run: npm run test:maintainability
         working-directory: apps/netscli-gui
       - name: tsc + vite build
         run: npm run build

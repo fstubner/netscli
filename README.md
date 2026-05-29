@@ -106,10 +106,11 @@ brew install netscli
 ### Winget (Windows)
 
 ```powershell
-winget install netscli
+winget install fstubner.netscli      # CLI/TUI
+winget install fstubner.netscli.gui  # Desktop GUI
 ```
 
-Resolves from the official [`microsoft/winget-pkgs`](https://github.com/microsoft/winget-pkgs/tree/master/manifests/f/fstubner/netscli) repo (winget ships preinstalled on Windows 10/11).
+Resolves from the official [`microsoft/winget-pkgs`](https://github.com/microsoft/winget-pkgs/tree/master/manifests/f/fstubner) repo (winget ships preinstalled on Windows 10/11). The CLI and desktop app are separate package identifiers so they can be installed independently.
 
 ### Scoop (Windows)
 
@@ -214,6 +215,16 @@ This will interactively guide you through installing:
 - `libpcap` (for packet capture)
 - `tcpdump` (for PCAP functionality)
 
+### DNS Fallback Privacy
+
+DNS lookups use the operating system resolver first. If that resolver returns
+an error, NetsCLI may retry public names with Cloudflare DNS so normal internet
+lookups still work when the local resolver is flaky. Obvious local/internal
+names such as `.local`, `.lan`, `.home`, `.internal`, `.test`, and `localhost`
+skip the public fallback.
+
+Set `NETSCLI_DNS_FALLBACK=off` to disable public DNS fallback entirely.
+
 ### PCAP Support (Optional)
 
 PCAP capture is optional and disabled in the default builds for portability. To enable it:
@@ -221,7 +232,18 @@ PCAP capture is optional and disabled in the default builds for portability. To 
 - **Via installer (recommended)**: `NETSCLI_PCAP=1` does everything. It picks the pcap-enabled binary variant *and* installs the system library (`libpcap` on Linux/macOS, Npcap on Windows).
   - Add `NETSCLI_SKIP_LIBPCAP=1` (POSIX) or `NETSCLI_SKIP_NPCAP=1` (Windows) if you manage the system library yourself.
 - **From source**: `cargo build --features pcap` (see [Building](#building) for the full command with OS-specific deps).
-- **On Windows**: ensure `wpcap.dll` is on PATH. Npcap installs it to `C:\Windows\System32\Npcap\` which isn't on PATH by default. Add that directory to your PATH, or the installer does it for you when you set `NETSCLI_PCAP=1`.
+- **Capture parsing**: pcap-enabled CLI builds can also summarize existing capture files with `netscli pcap --read <file> --json` or `--yaml`.
+- **On Windows runtime**: ensure `wpcap.dll` is on PATH. Npcap installs it to `C:\Windows\System32\Npcap\` which isn't on PATH by default. Add that directory to your PATH, or the installer does it for you when you set `NETSCLI_PCAP=1`.
+- **On Windows source builds**: install the [Npcap SDK](https://npcap.com/#download) as well as the runtime. MSVC needs the SDK import library (`wpcap.lib`) at link time:
+
+  ```powershell
+  $env:NPCAP_SDK = "C:\tmp\netscli-npcap-sdk"
+  $env:LIB = "$env:NPCAP_SDK\Lib\x64;$env:LIB"
+  $env:INCLUDE = "$env:NPCAP_SDK\Include;$env:INCLUDE"
+  $env:PATH = "C:\Windows\System32\Npcap;$env:PATH"
+  cargo build -p netscli --features pcap
+  .\target\debug\netscli.exe pcap --check
+  ```
 
 ## Usage
 
@@ -296,6 +318,12 @@ netscli reverse <ip>
 
 # List network interfaces
 netscli interfaces
+
+# Capture packets (pcap-enabled builds)
+netscli pcap --interface "Ethernet" --duration 10 --max-packets 1000 --output capture.pcap
+
+# Summarize an existing capture as a packet table
+netscli pcap --read capture.pcap --max-packets 100
 ```
 
 ### Output Formats
@@ -306,6 +334,7 @@ Most CLI commands support structured JSON output:
 netscli discover --json
 netscli scan host -p 80 --json
 netscli arp --json
+netscli pcap --read capture.pcap --json
 ```
 
 Most CLI commands also support YAML:
@@ -314,6 +343,7 @@ Most CLI commands also support YAML:
 netscli discover --yaml
 netscli scan host -p 80 --yaml
 netscli arp --yaml
+netscli pcap --read capture.pcap --yaml
 ```
 
 **Supported formats:** `--json`, `--yaml`
@@ -341,21 +371,39 @@ cargo build --release -p netscli --features pcap
 cargo test --all
 ```
 
+Windows PCAP source builds require both the Npcap runtime and SDK. Set `LIB`
+to the SDK architecture directory containing `wpcap.lib` before running
+`cargo build --features pcap`; for 64-bit MSVC this is usually
+`<Npcap SDK>\Lib\x64`.
+
 ### GUI Application
 
 ```bash
 cd apps/netscli-gui
 npm install
-npm run tauri dev    # Development
+npm run tauri:dev    # Development
 npm run tauri build  # Production
 ```
+
+Do not launch `target/debug/netscli-gui.exe` directly after `cargo build`.
+Debug Tauri binaries load the configured `devUrl` (`http://localhost:1420`);
+if the Vite dev server is not running, WebView2 shows its own localhost
+connection error page. Use `npm run tauri:dev` so Tauri starts and waits for
+the frontend server, or build a bundled app with `npm run tauri build`.
 
 To include PCAP support in the desktop app build:
 
 ```bash
 cd apps/netscli-gui
+npm run tauri:dev:pcap          # Development with PCAP
 npm run tauri build -- --features pcap
 ```
+
+On Windows, the same Npcap SDK `LIB`/`INCLUDE` setup is required for the
+Tauri backend when building with `--features pcap`. For local development,
+`scripts/dev-gui-pcap.ps1` sets `LIB`, `INCLUDE`, and the Npcap runtime `PATH`
+from `NPCAP_SDK` or `C:\tmp\netscli-npcap-sdk`, then starts the app through
+Tauri's dev command.
 
 ### Cross-Compilation
 

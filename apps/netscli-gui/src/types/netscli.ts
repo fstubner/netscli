@@ -9,10 +9,35 @@ export interface Host {
   rtt_ms?: number | null;
 }
 
+export type PortStatus = 'open' | 'closed' | 'filtered' | 'error';
+
+export interface HttpHeader {
+  name: string;
+  value: string;
+}
+
+export interface HttpProbe {
+  status_line?: string | null;
+  headers: HttpHeader[];
+}
+
+export interface TlsProbe {
+  protocol?: string | null;
+  cipher_suite?: string | null;
+  alpn?: string | null;
+}
+
 export interface PortResult {
   port: number;
   open: boolean;
+  status: PortStatus;
   service?: string | null;
+  latency_ms?: number | null;
+  banner?: string | null;
+  http?: HttpProbe | null;
+  tls?: TlsProbe | null;
+  raw?: string | null;
+  error?: string | null;
 }
 
 export interface PingResult {
@@ -63,7 +88,7 @@ export interface ArpEntry {
 export interface NetworkStats {
   upload_mbps: number;
   download_mbps: number;
-  /** True for ~200ms after the last byte-count increase on the selected interface. */
+  /** True briefly after the last byte-count increase on the selected interface. */
   upload_active: boolean;
   download_active: boolean;
   available: boolean;
@@ -82,10 +107,23 @@ export interface RustDuration {
   nanos: number;
 }
 
+export interface PcapPacketSummary {
+  index: number;
+  timestamp: string;
+  source: string;
+  destination: string;
+  protocol: string;
+  length: number;
+  captured_length: number;
+  info: string;
+}
+
 export interface PcapResult {
   packets_captured: number;
   duration: RustDuration;
   file_path: string;
+  packets: PcapPacketSummary[];
+  packets_truncated: boolean;
 }
 
 export interface DnsRecord {

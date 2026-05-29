@@ -1,0 +1,62 @@
+import type { DefaultInterfaceInfo, InterfaceInfo, NetworkStats } from '../types/netscli';
+import type { HistoryEntry, ResultColumn, ResultRow, RowSelectionMode, ToolKind, WorkspaceTab } from '../tools/types';
+
+export interface WorkspaceModel {
+  tabs: WorkspaceTab[];
+  activeTab: WorkspaceTab | undefined;
+  activeTabId: string;
+  filterText: string;
+  toast: WorkspaceToast | null;
+  history: HistoryEntry[];
+  networkStats: NetworkStats | null;
+  defaultInterface: DefaultInterfaceInfo | null;
+  trafficInterface: DefaultInterfaceInfo | null;
+  trafficInterfaceName: string | null;
+  interfaces: InterfaceInfo[];
+  rows: ResultRow[];
+  selectedRow: ResultRow | undefined;
+  selectedRows: ResultRow[];
+  columns: ResultColumn[];
+  commandPreview: string;
+  setActiveTabId: (tabId: string) => void;
+  setFilterText: (filterText: string) => void;
+  setTrafficInterfaceName: (name: string) => void;
+  dismissToast: () => void;
+  showUpdateToast: (version: string, url: string) => void;
+  patchTab: (id: string, patch: Partial<WorkspaceTab>) => void;
+  patchForm: (id: string, key: string, value: string) => void;
+  selectRow: (index: number, mode?: RowSelectionMode) => void;
+  selectAllRows: () => void;
+  addTab: (kind: ToolKind) => void;
+  closeTab: (id: string) => void;
+  closeAllTabs: () => void;
+  closeOtherTabs: () => void;
+  runTab: (tabId: string) => Promise<void>;
+  cancelTab: (tabId: string) => Promise<void>;
+  exportCurrent: (format: 'json' | 'csv') => void;
+  exportSelectedJson: () => void;
+  exportSelectedCsv: () => void;
+  copyCommand: () => Promise<void>;
+  copySelectedDetails: () => Promise<void>;
+  copySelectedRaw: () => Promise<void>;
+  sortBy: (column: ResultColumn) => void;
+  openHistoryEntry: (entry: HistoryEntry) => void;
+  clearHistory: () => void;
+  clearCurrentResults: () => void;
+}
+
+export interface WorkspaceOptions {
+  interactionToasts: boolean;
+  operationToasts: boolean;
+  persistentHistory: boolean;
+}
+
+export interface WorkspaceToast {
+  id: string;
+  message: string;
+  kind: 'interaction' | 'operation' | 'update';
+  tabId?: string;
+  persistent?: boolean;
+  actionUrl?: string;
+  releaseVersion?: string;
+}

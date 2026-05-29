@@ -27,8 +27,15 @@ cargo login <your-crates.io-token>
 # Everything green, nothing uncommitted.
 cargo fmt --check
 cargo clippy --all-targets -- -D warnings
+cargo clippy --all-targets --features pcap -- -D warnings
 cargo test --all --no-fail-fast
+cargo audit
+cd apps/netscli-gui && npm run test:unit && npm run test:maintainability && npm run build
 git status                                    # should be clean
+
+# Windows note: `--features pcap` needs the Npcap SDK import library.
+# Set LIB to the SDK directory containing wpcap.lib before running the
+# PCAP clippy/build gates, for example C:\path\to\npcap-sdk\Lib\x64.
 
 # Dry-run each crate — this builds a tarball without uploading and
 # validates the manifest (no missing metadata, no path-only deps, etc).

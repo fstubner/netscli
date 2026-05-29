@@ -26,6 +26,8 @@ netscli/
 
 **Crate name vs source directory**: the CLI source lives at `apps/netscli-cli/` to match the other workspace members (`-core`, `-mcp`, `-gui`), but the Cargo package is just `netscli` — so end users run `cargo install netscli` (matching the produced binary). Internally we use `-p netscli`.
 
+For ownership boundaries and compatibility rules, see `docs/ARCHITECTURE.md`.
+
 ## Build, Test, and Development Commands
 
 ```bash
@@ -41,6 +43,9 @@ cd apps/netscli-gui && npm run tauri build    # build installer
 # Tests
 cargo test --all                              # all workspace tests
 cargo test -p netscli-core                    # targeted test run
+cd apps/netscli-gui && npm run test:unit      # GUI helper tests
+cd apps/netscli-gui && npm run build          # GUI typecheck + Vite build
+cd apps/netscli-gui && npm run test:tauri-render  # Tauri render automation
 
 # Linting & formatting
 cargo fmt                                     # apply rustfmt
@@ -80,14 +85,16 @@ cd scripts && cargo run --bin generate-oui
 ### Where to put new code
 
 - **Network logic** (scanning, pinging, DNS, etc.): `crates/netscli-core/src/`
-- **New network operations**: Add to `ops.rs` facade so all interfaces get it
-- **CLI subcommands**: `apps/netscli-cli/src/args.rs` (clap) + `main.rs` (handler)
-- **TUI commands**: `apps/netscli-cli/src/tui.rs` (command dispatch)
-- **TUI output formatting**: `apps/netscli-cli/src/formatter.rs`
-- **CLI text output**: `apps/netscli-cli/src/cli_formatter.rs`
-- **MCP tool exposure**: `crates/netscli-mcp/src/server.rs`
-- **GUI backend commands**: `apps/netscli-gui/src-tauri/src/main.rs`
+- **New network operations**: Add to the `ops.rs` facade and the matching `ops/` family module so all interfaces get it
+- **CLI subcommands**: `apps/netscli-cli/src/args.rs` (clap) + `cli_dispatch/` (handler)
+- **TUI commands**: `apps/netscli-cli/src/tui/events/`
+- **TUI output formatting**: `apps/netscli-cli/src/tui_formatter/`
+- **CLI text output**: `apps/netscli-cli/src/cli_formatter/`
+- **MCP tool exposure**: `crates/netscli-mcp/src/server/`
+- **GUI backend commands**: `apps/netscli-gui/src-tauri/src/commands/`
 - **GUI frontend**: `apps/netscli-gui/src/`
+
+Do not add GUI-only, TUI-only, CLI-only, or MCP-only network logic. Interface layers should call `netscli-core` or expose a missing core operation through `Ops`.
 
 ### Error handling pattern
 
@@ -169,6 +176,7 @@ Enforced in `ops.rs` and `server.rs`. Do not weaken without discussion.
 - Prefer targeted runs while iterating: `cargo test -p netscli-core`
 - Add tests alongside the relevant crate when changing core logic
 - SQLite tests should use `tempfile` crate, not real user data
+- Keep public Rust APIs, CLI syntax, MCP schemas, Tauri command payloads, GUI data shapes, and SQLite schema stable during refactors unless the task explicitly asks for a public change
 
 ## CLI Subcommands
 

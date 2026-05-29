@@ -1,0 +1,227 @@
+.toolbar {
+  flex: 0 0 45px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  position: relative;
+  z-index: var(--z-toolbar);
+  background: var(--bg-toolbar);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.icon-button,
+.primary-action,
+.add-tab,
+.tab-close,
+.command-strip button {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  min-width: 30px;
+  height: 30px;
+  cursor: pointer;
+  font-weight: 400;
+}
+
+.toolbar-run {
+  width: auto;
+  gap: 7px;
+  padding: 0 10px;
+}
+
+.toolbar-run span {
+  font-size: 12px;
+}
+
+.icon-button:hover:not(:disabled),
+.add-tab:hover,
+.tab-close:hover,
+.command-strip button:hover {
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+  border-color: var(--border-subtle);
+}
+
+.icon-button.strong {
+  color: var(--mint);
+}
+
+.stop-button.armed {
+  color: var(--text-secondary);
+}
+
+.stop-button.armed:hover:not(:disabled) {
+  color: var(--text-primary);
+}
+
+.stop-button.armed svg {
+  color: var(--red);
+  opacity: 1;
+}
+
+.icon-button:disabled,
+.primary-action:disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.icon-button:disabled > svg,
+.primary-action:disabled > svg {
+  opacity: 0.45;
+}
+
+@media (max-width: 720px) {
+  .toolbar-run {
+    width: 30px;
+    padding: 0;
+  }
+
+  .toolbar-run span {
+    display: none;
+  }
+}
+
+.toolbar-separator {
+  width: 1px;
+  height: 22px;
+  background: var(--border-strong);
+  margin: 0 6px;
+}
+
+.toolbar-spacer {
+  flex: 1;
+}
+
+.filter-control {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  min-width: min(300px, 40vw);
+  max-width: min(430px, 54vw);
+  height: 28px;
+}
+
+.filter-box {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  border: 1px solid var(--border-subtle);
+  border-right: 0;
+  background: var(--bg-input);
+  color: var(--text-muted);
+  border-radius: 4px 0 0 4px;
+}
+
+.filter-box input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.filter-box input::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
+}
+
+.filter-menu-button {
+  width: 30px;
+  min-width: 30px;
+  height: 28px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  border-radius: 0 4px 4px 0;
+}
+
+.filter-menu-button svg {
+  transform: translateY(1px);
+}
+
+.filter-menu-button:hover,
+.filter-menu-button.active {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.filter-advanced-popover {
+  position: absolute;
+  top: 34px;
+  right: 0;
+  z-index: var(--z-dropdown);
+  width: min(360px, calc(100vw - 24px));
+  padding: 6px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated);
+  box-shadow: 0 14px 30px var(--shadow);
+}
+
+.filter-syntax-hint {
+  margin: 2px 8px 7px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.filter-syntax-hint code {
+  color: var(--text-primary);
+}
+
+.filter-section + .filter-section {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.filter-section-label {
+  display: block;
+  padding: 4px 8px;
+  color: var(--text-muted);
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.filter-section button {
+  width: 100%;
+  min-height: 28px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(86px, 46%);
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  padding: 0 8px;
+  text-align: left;
+}
+
+.filter-section button span,
+.filter-section button code {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filter-section button:hover {
+  background: var(--bg-selected);
+  color: var(--mint);
+}
+
+.filter-section code {
+  color: var(--text-muted);
+  font-size: 11px;
+  justify-self: end;
+  max-width: 100%;
+}

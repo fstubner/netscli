@@ -1,0 +1,9 @@
+@import './shell/app-frame.css';
+@import './shell/menu.css';
+@import './shell/toolbar.css';
+@import './shell/tabs.css';
+@import './shell/command-status.css';
+@import './shell/context-menu.css';
+@import './shell/settings.css';
+@import './shell/window-controls.css';
+@import './shell/dialogs.css';

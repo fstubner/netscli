@@ -1,0 +1,56 @@
+name: GUI Render
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 7 * * 2'  # Tuesdays 07:00 UTC
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/netscli-gui/**'
+      - 'crates/netscli-core/**'
+      - 'Cargo.lock'
+      - 'Cargo.toml'
+      - 'rust-toolchain.toml'
+      - '.github/workflows/gui-render.yml'
+
+concurrency:
+  group: gui-render-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  tauri-render:
+    name: Tauri render automation
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.92.0"
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: gui-render-windows
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/netscli-gui/package-lock.json
+
+      - name: npm ci
+        run: npm ci
+        working-directory: apps/netscli-gui
+
+      - name: Install tauri-driver
+        run: cargo install tauri-driver --locked
+
+      - name: Run Tauri render test
+        run: npm run test:tauri-render
+        working-directory: apps/netscli-gui
