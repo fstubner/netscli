@@ -1,6 +1,8 @@
 import { ChevronDown } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
+import { useRovingFocus } from '../primitives/focus';
+import { useAnchoredPopoverPosition, useOverlayDismiss } from '../primitives/overlay';
 import { TOOL_CONFIG } from '../../tools/registry';
 import type { WorkspaceTab } from '../../tools/types';
 import type { InterfaceInfo } from '../../types/netscli';
@@ -22,18 +24,31 @@ export function ToolForm({ tab, interfaces = [], onPatchForm, onRun }: ToolFormP
   const config = TOOL_CONFIG[tab.kind];
   const [openField, setOpenField] = useState<string | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const popoverRef = useRef<HTMLDivElement | null>(null);
+  const popoverPosition = useAnchoredPopoverPosition({
+    align: 'end',
+    anchorRef: triggerRef,
+    estimatedHeight: 220,
+    open: openField !== null,
+    panelRef: popoverRef,
+    width: openField === 'interface' ? 330 : 160,
+  });
+  const onSelectKeyDown = useRovingFocus({
+    containerRef: popoverRef,
+    enabled: openField !== null,
+    itemSelector: 'button[role="option"]',
+    onClose: () => setOpenField(null),
+  });
 
-  useEffect(() => {
-    if (!openField) return;
+  useOverlayDismiss({
+    enabled: openField !== null,
+    onClose: () => setOpenField(null),
+    refs: [formRef],
+    restoreFocusRef: triggerRef,
+  });
 
-    function closeFieldDropdown(event: PointerEvent) {
-      const target = event.target as Node;
-      if (!formRef.current?.contains(target)) setOpenField(null);
-    }
-
-    document.addEventListener('pointerdown', closeFieldDropdown);
-    return () => document.removeEventListener('pointerdown', closeFieldDropdown);
-  }, [openField]);
+  useEffect(() => setOpenField(null), [tab.id]);
 
   return (
     <div className="form-row" ref={formRef}>
@@ -53,17 +68,37 @@ export function ToolForm({ tab, interfaces = [], onPatchForm, onRun }: ToolFormP
                 aria-label={field.label}
                 className={`field-select-trigger ${openField === field.key ? 'active' : ''}`}
                 data-testid={`${tab.kind}-${field.key}-input`}
+                ref={openField === field.key ? triggerRef : undefined}
                 type="button"
                 onClick={() => setOpenField(openField === field.key ? null : field.key)}
                 onKeyDown={(event) => {
-                if (event.key === 'Escape') setOpenField(null);
+                  if (event.key === 'Escape') {
+                    setOpenField(null);
+                  } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                    event.preventDefault();
+                    setOpenField(field.key);
+                  }
                 }}
               >
                 <span>{selectedLabel}</span>
                 <ChevronDown size={13} />
               </button>
               {openField === field.key && (
-                <div className="field-select-popover" role="listbox">
+                <div
+                  className="field-select-popover"
+                  data-testid={`${tab.kind}-${field.key}-popover`}
+                  ref={popoverRef}
+                  role="listbox"
+                  style={{
+                    left: popoverPosition.left,
+                    maxHeight: popoverPosition.maxHeight,
+                    minWidth: triggerRef.current?.getBoundingClientRect().width,
+                    top: popoverPosition.top,
+                    width: field.key === 'interface' ? 'min(360px, calc(100vw - 24px))' : undefined,
+                  }}
+                  tabIndex={-1}
+                  onKeyDown={onSelectKeyDown}
+                >
                   {options.map((option) => (
                     <button
                       className={option.value === tab.form[field.key] ? 'selected' : ''}

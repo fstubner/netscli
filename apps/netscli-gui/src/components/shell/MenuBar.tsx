@@ -17,10 +17,12 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { LOOKUP_TOOL_KINDS, SCAN_TOOL_KINDS, TOOL_CONFIG } from '../../tools/registry';
 import type { HistoryEntry, ToolKind, WorkspaceTab } from '../../tools/types';
+import { useRovingFocus } from '../primitives/focus';
+import { useAnchoredPopoverPosition, useOverlayDismiss } from '../primitives/overlay';
 import { NetsCliMenuMark } from './NetsCliMenuMark';
 
 interface MenuItem {
@@ -36,6 +38,8 @@ interface MenuSection {
   label?: string;
   items: MenuItem[];
 }
+
+const MENU_POPOVER_LABELS = new Set(['File', 'Edit', 'Scan', 'Tools', 'History', 'Help']);
 
 interface MenuBarProps {
   activeTab: WorkspaceTab | undefined;
@@ -88,7 +92,50 @@ export function MenuBar({
   onOpenHistoryEntry,
   onRunActive,
 }: MenuBarProps) {
-  const [popoverPosition, setPopoverPosition] = useState({ left: 0, top: 34 });
+  const menuPopoverOpen = openMenu !== null && MENU_POPOVER_LABELS.has(openMenu);
+  const activeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const lastTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const popoverRef = useRef<HTMLDivElement | null>(null);
+  const shouldRestoreFocusRef = useRef(false);
+  const popoverPosition = useAnchoredPopoverPosition({
+    anchorRef: activeButtonRef,
+    estimatedHeight: 300,
+    open: menuPopoverOpen,
+    panelRef: popoverRef,
+    width: openMenu === 'History' ? 320 : 220,
+  });
+  const closeMenu = () => {
+    const openLabel = openMenu;
+    lastTriggerRef.current =
+      activeButtonRef.current ??
+      Array.from(document.querySelectorAll<HTMLButtonElement>('.menu-button')).find(
+        (button) => button.textContent.trim() === openLabel,
+      ) ??
+      null;
+    shouldRestoreFocusRef.current = true;
+    lastTriggerRef.current?.focus({ preventScroll: true });
+    setOpenMenu(null);
+  };
+  const onMenuKeyDown = useRovingFocus({
+    containerRef: popoverRef,
+    enabled: menuPopoverOpen,
+    itemSelector: '.menu-popover-item:not(:disabled)',
+    onClose: closeMenu,
+  });
+
+  useOverlayDismiss({
+    enabled: menuPopoverOpen,
+    onClose: closeMenu,
+    refs: [activeButtonRef, popoverRef],
+    restoreFocusRef: activeButtonRef,
+  });
+
+  useEffect(() => {
+    if (menuPopoverOpen || !shouldRestoreFocusRef.current) return;
+    shouldRestoreFocusRef.current = false;
+    window.requestAnimationFrame(() => lastTriggerRef.current?.focus({ preventScroll: true }));
+    window.setTimeout(() => lastTriggerRef.current?.focus({ preventScroll: true }), 50);
+  }, [menuPopoverOpen]);
 
   const makeToolItem = (kind: ToolKind): MenuItem => ({
     label: TOOL_CONFIG[kind].label,
@@ -246,22 +293,26 @@ export function MenuBar({
       {groups.map((group) => (
         <div className="menu-root" key={group.label}>
           <button
+            aria-expanded={group.label !== 'Settings' ? openMenu === group.label : undefined}
+            aria-haspopup={group.label !== 'Settings' ? 'menu' : undefined}
             className={`menu-button ${openMenu === group.label ? 'active' : ''}`}
+            ref={openMenu === group.label ? activeButtonRef : undefined}
             onClick={(event) => {
               if (group.label === 'Settings') {
                 setOpenMenu(null);
                 onOpenSettings();
                 return;
               }
-              if (openMenu !== group.label) {
-                const rect = event.currentTarget.getBoundingClientRect();
-                const width = 220;
-                setPopoverPosition({
-                  left: Math.max(6, Math.min(rect.left, window.innerWidth - width - 8)),
-                  top: rect.bottom,
-                });
-              }
+              lastTriggerRef.current = event.currentTarget;
               setOpenMenu(openMenu === group.label ? null : group.label);
+            }}
+            onKeyDown={(event) => {
+              if (group.label === 'Settings') return;
+              if (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                lastTriggerRef.current = event.currentTarget;
+                setOpenMenu(group.label);
+              }
             }}
           >
             <span>{group.label}</span>
@@ -271,7 +322,11 @@ export function MenuBar({
             group.label !== 'Settings' && (
             <div
               className={`menu-popover ${group.label === 'History' ? 'history-popover' : ''}`}
-              style={{ left: popoverPosition.left, top: popoverPosition.top }}
+              ref={popoverRef}
+              role="menu"
+              style={{ left: popoverPosition.left, maxHeight: popoverPosition.maxHeight, top: popoverPosition.top }}
+              tabIndex={-1}
+              onKeyDown={onMenuKeyDown}
             >
               {group.sections.map((section, sectionIndex) => (
                 <div className="menu-popover-section" key={section.label ?? sectionIndex}>
@@ -285,7 +340,9 @@ export function MenuBar({
                       ].filter(Boolean).join(' ')}
                       disabled={item.disabled}
                       key={item.label}
+                      role="menuitem"
                       onClick={() => {
+                        shouldRestoreFocusRef.current = false;
                         item.action?.();
                         setOpenMenu(null);
                       }}

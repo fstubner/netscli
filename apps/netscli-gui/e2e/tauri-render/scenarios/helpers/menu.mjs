@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { By } from '../../driver.mjs';
+import { By, Key } from '../../driver.mjs';
 import { clickButtonText, waitForText, withElement } from '../../ui.mjs';
 
 async function assertMenuItems(driver, menuLabel, expectedItems) {
@@ -33,6 +33,23 @@ async function assertMenuIncludes(driver, menuLabel, expectedItems) {
       assert.ok(items.includes(expected), `${menuLabel} menu should include ${expected}`);
     }
   }
+}
+
+async function assertMenuKeyboardNavigation(driver) {
+  await openMenu(driver, 'File');
+  await driver.wait(
+    async () =>
+      driver.executeScript(
+        "return document.activeElement?.matches('.menu-popover-item') && document.activeElement?.textContent.trim() === 'New Port Scan';",
+      ),
+    5_000,
+    'Opening a menu should move focus to the first enabled menu item',
+  );
+  await driver.actions({ async: true }).sendKeys(Key.ARROW_DOWN).perform();
+  const afterArrow = await driver.executeScript("return document.activeElement?.textContent.trim() ?? '';");
+  assert.equal(afterArrow, 'Close Current Tab', 'ArrowDown should move menu focus to the next item');
+  await driver.actions({ async: true }).sendKeys(Key.ESCAPE).perform();
+  await waitForNoElement(driver, '.menu-popover');
 }
 
 async function assertEmptyWorkspaceState(driver) {
@@ -105,7 +122,7 @@ async function assertSettingsDialog(driver) {
     return {
       role: control?.getAttribute('role'),
       text: control?.textContent.trim() ?? '',
-      checkboxCount: document.querySelectorAll('[data-testid="settings-dialog"] [role="checkbox"]').length,
+      checkboxCount: document.querySelectorAll('[data-testid="settings-dialog"] .settings-checkbox-row input[type="checkbox"]').length,
       bodyColumns: body ? getComputedStyle(body).gridTemplateColumns.split(' ').length : 0,
       ratio: dialogRect ? dialogRect.width / dialogRect.height : 0,
       height: dialogRect ? Math.round(dialogRect.height) : 0,
@@ -118,7 +135,7 @@ async function assertSettingsDialog(driver) {
   assert.match(themeControl.text, /Dark|Light/i);
   assert.ok(themeControl.checkboxCount >= 4, 'Non-theme binary preferences should use checkbox controls');
   assert.equal(themeControl.bodyColumns, 1, 'Settings should use a single-column settings flow');
-  assert.equal(themeControl.operationRole, 'checkbox', 'Notification settings should use checkboxes');
+  assert.equal(themeControl.operationRole, '', 'Notification rows should rely on native checkbox semantics');
   assert.ok(themeControl.ratio >= 1.15, `Settings dialog should stay wider than tall, got ratio ${themeControl.ratio}`);
   assert.ok(themeControl.height <= 540, `Settings dialog should stay compact, got ${themeControl.height}px`);
   assert.equal(themeControl.checkboxWidth, '18px', 'Preference checkboxes should use compact square boxes');
@@ -153,7 +170,7 @@ async function clickMenuItem(driver, menuLabel, itemLabel) {
 async function ensureTrafficIndicatorsVisible(driver) {
   await openSettingsDialog(driver);
   const checked = await driver.executeScript(
-    "return document.querySelector('[data-testid=\"settings-activity-animation-toggle\"]')?.getAttribute('aria-checked') === 'true';",
+    "return document.querySelector('[data-testid=\"settings-activity-animation-toggle\"] input')?.checked === true;",
   );
   if (!checked) {
     await driver.findElement(By.css('[data-testid="settings-activity-animation-toggle"]')).click();
@@ -281,6 +298,7 @@ export {
   assertMenuIncludes,
   assertMenuItemDisabled,
   assertMenuItems,
+  assertMenuKeyboardNavigation,
   assertSettingsDialog,
   assertToolbarButtonDisabled,
   clickMenuItem,

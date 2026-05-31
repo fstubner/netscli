@@ -1,8 +1,11 @@
 import { ChevronDown, Download, FileSpreadsheet, Filter, Play, Square } from 'lucide-react';
+import { useRef } from 'react';
 
 import { TOOL_CONFIG } from '../../tools/registry';
 import { filterHintsFor } from '../../tools/presentation';
 import type { ToolKind, WorkspaceTab } from '../../tools/types';
+import { useRovingFocus } from '../primitives/focus';
+import { useAnchoredPopoverPosition, useOverlayDismiss } from '../primitives/overlay';
 
 interface ToolbarProps {
   activeTab: WorkspaceTab | undefined;
@@ -31,6 +34,29 @@ export function Toolbar({
   const kind = activeTab?.kind ?? 'scan';
   const filterHints = filterHintsFor(activeTab);
   const runLabel = activeTab ? runLabelFor(kind) : 'Start';
+  const filterButtonRef = useRef<HTMLButtonElement | null>(null);
+  const filterPanelRef = useRef<HTMLDivElement | null>(null);
+  const filterPanelPosition = useAnchoredPopoverPosition({
+    align: 'end',
+    anchorRef: filterButtonRef,
+    estimatedHeight: 390,
+    open: filterMenuOpen,
+    panelRef: filterPanelRef,
+    width: 360,
+  });
+  const closeFilterMenu = () => setOpenMenu(null);
+  const onFilterMenuKeyDown = useRovingFocus({
+    containerRef: filterPanelRef,
+    enabled: filterMenuOpen,
+    itemSelector: '.filter-section button:not(:disabled)',
+    onClose: closeFilterMenu,
+  });
+  useOverlayDismiss({
+    enabled: filterMenuOpen,
+    onClose: closeFilterMenu,
+    refs: [filterButtonRef, filterPanelRef],
+    restoreFocusRef: filterButtonRef,
+  });
   const applyFilter = (value: string) => {
     setFilterText(value);
     setOpenMenu(null);
@@ -99,18 +125,39 @@ export function Toolbar({
         </div>
         <button
           className={`filter-menu-button ${filterMenuOpen ? 'active' : ''}`}
+          aria-expanded={filterMenuOpen}
           aria-label="Advanced filters"
+          aria-haspopup="menu"
           data-testid="advanced-filter-toggle"
           data-tooltip={filterMenuOpen ? undefined : 'Advanced filters'}
           data-tooltip-align="right"
           data-tooltip-placement="bottom"
           disabled={!activeTab}
+          ref={filterButtonRef}
           onClick={() => setOpenMenu(filterMenuOpen ? null : 'advanced-filter')}
+          onKeyDown={(event) => {
+            if (event.key === 'ArrowDown') {
+              event.preventDefault();
+              setOpenMenu('advanced-filter');
+            }
+          }}
         >
           <ChevronDown size={13} />
         </button>
         {filterMenuOpen && activeTab && (
-          <div className="filter-advanced-popover" data-testid="advanced-filter-menu">
+          <div
+            className="filter-advanced-popover"
+            data-testid="advanced-filter-menu"
+            ref={filterPanelRef}
+            role="menu"
+            style={{
+              left: filterPanelPosition.left,
+              maxHeight: filterPanelPosition.maxHeight,
+              top: filterPanelPosition.top,
+            }}
+            tabIndex={-1}
+            onKeyDown={onFilterMenuKeyDown}
+          >
             <p className="filter-syntax-hint">
               Type tokens directly, e.g. <code>{filterHints.example}</code>.
               Prefix with <code>-</code> to exclude.
@@ -149,7 +196,7 @@ function FilterSection({
     <div className="filter-section">
       <span className="filter-section-label">{label}</span>
       {options.map(([labelText, value]) => (
-        <button key={`${labelText}-${value}`} type="button" onClick={() => onApply(value)}>
+        <button key={`${labelText}-${value}`} role="menuitem" type="button" onClick={() => onApply(value)}>
           <span>{labelText}</span>
           <code>{value || '*'}</code>
         </button>

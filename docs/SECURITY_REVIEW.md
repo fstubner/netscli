@@ -32,11 +32,15 @@ Recommendation: Move the 4,096-port cap into `netscli-core` so every interface s
 
 Severity: Medium
 
-Status: Addressed. The renderer no longer imports the Tauri dialog plugin or passes save paths. `export_text_file` now owns the native save dialog in the Tauri backend and rejects renderer-supplied paths.
+Status: Addressed. The renderer no longer imports the Tauri dialog plugin or passes save paths. `export_text_file` lives in the Tauri backend file module, owns the native save dialog, and rejects renderer-supplied paths.
 
-Evidence:
-- `apps/netscli-gui/src-tauri/src/commands/operations.rs` accepts `target_path` in `export_text_file`, creates missing parent directories, and writes `contents` to that path.
-- The current frontend normally gets the path from Tauri's save dialog in `apps/netscli-gui/src/workspace/toolExecution.ts`, but a compromised renderer could call the command directly with any user-writable path.
+Original evidence:
+- `apps/netscli-gui/src-tauri/src/commands/operations.rs` accepted `target_path` in `export_text_file`, created missing parent directories, and wrote `contents` to that path.
+- The frontend got the path from Tauri's save dialog in `apps/netscli-gui/src/workspace/toolExecution.ts`, but a compromised renderer could call the command directly with any user-writable path.
+
+Current evidence:
+- `apps/netscli-gui/src-tauri/src/commands/files.rs` rejects non-empty `target_path` values and opens the native save dialog from the backend.
+- GUI export calls pass `target_path: null`, so the renderer can choose file contents and a safe filename, but not an arbitrary filesystem path.
 
 Impact: In a Tauri app, backend commands are a privilege boundary. If an XSS or renderer supply-chain issue were introduced later, this command would give the renderer arbitrary write capability under the user's privileges.
 
@@ -46,13 +50,18 @@ Recommendation: Do not accept raw arbitrary paths from the renderer. Prefer a ba
 
 Severity: Medium
 
-Status: Addressed. Core now rejects zero/oversized PCAP limits, applies a bounded default duration when no duration or packet limit is provided, requires `.pcap` capture output files, GUI captures go to a generated export path, and MCP accepts only `.pcap` filenames rather than arbitrary paths.
+Status: Addressed. Core now rejects zero/oversized PCAP limits, applies a bounded default duration when no duration or packet limit is provided, requires `.pcap` capture output files, GUI captures use backend-owned automatic output or a backend-owned native save dialog, and MCP accepts only `.pcap` filenames rather than arbitrary paths.
 
-Evidence:
-- `crates/netscli-core/src/ops/pcap.rs` accepts arbitrary `output_file` paths and converts `duration`/`max_packets` directly into `PcapConfig`.
-- `crates/netscli-core/src/pcap.rs` captures until cancellation, duration, or max-packet limit. If neither duration nor max packets are provided, capture can run indefinitely.
-- `crates/netscli-mcp/src/server/operations.rs` clamps duration to one hour, but allows omitted or zero `maxPackets` to become unbounded.
+Original evidence:
+- `crates/netscli-core/src/ops/pcap.rs` accepted arbitrary `output_file` paths and converted `duration`/`max_packets` directly into `PcapConfig`.
+- `crates/netscli-core/src/pcap.rs` captured until cancellation, duration, or max-packet limit. If neither duration nor max packets were provided, capture could run indefinitely.
+- `crates/netscli-mcp/src/server/operations.rs` clamped duration to one hour, but allowed omitted or zero `maxPackets` to become unbounded.
 - CLI exposes `--output`, `--duration`, and `--max-packets` directly in `apps/netscli-cli/src/cli_dispatch/pcap.rs`.
+
+Current evidence:
+- `crates/netscli-core/src/pcap/` splits capture execution, parsing, protocol summaries, shared types, and tests behind the existing facade.
+- `apps/netscli-gui/src-tauri/src/commands/files.rs` owns GUI capture path selection and accepts only automatic output or native-save-dialog selection.
+- Parsed packet summaries are returned for GUI/CLI consumption so capture results are inspectable without turning the GUI into an arbitrary filesystem writer.
 
 Impact: Packet capture can collect sensitive local traffic and can write capture files wherever the caller can write. This is especially important for MCP because an AI agent can trigger the tool.
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   Bell,
   Check,
@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 
 import type { DefaultInterfaceInfo, InterfaceInfo } from '../../types/netscli';
+import { useModalFocus, useRovingFocus } from '../primitives/focus';
+import { useOverlayDismiss } from '../primitives/overlay';
 
 interface SettingsDialogProps {
   animateTrafficArrows: boolean;
@@ -57,20 +59,29 @@ export function SettingsDialog({
   onToggleTrafficArrowAnimation,
 }: SettingsDialogProps) {
   const [interfacePickerOpen, setInterfacePickerOpen] = useState(false);
+  const dialogRef = useRef<HTMLElement | null>(null);
+  const interfaceFieldRef = useRef<HTMLDivElement | null>(null);
+  const interfaceTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const interfaceListRef = useRef<HTMLDivElement | null>(null);
   const selectedInterface = interfaces.find((iface) => iface.name === trafficInterfaceName);
   const selectedInterfaceName = selectedInterface?.name ?? trafficInterfaceName ?? '';
   const selectedInterfaceDetail = selectedInterface
     ? formatInterfaceDetail(selectedInterface)
     : 'Detecting...';
 
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') onClose();
-    }
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  useModalFocus({ dialogRef, onClose });
+  useOverlayDismiss({
+    enabled: interfacePickerOpen,
+    onClose: () => setInterfacePickerOpen(false),
+    refs: [interfaceFieldRef],
+    restoreFocusRef: interfaceTriggerRef,
+  });
+  const onInterfaceListKeyDown = useRovingFocus({
+    containerRef: interfaceListRef,
+    enabled: interfacePickerOpen,
+    itemSelector: 'button[role="option"]',
+    onClose: () => setInterfacePickerOpen(false),
+  });
 
   return (
     <div className="settings-overlay" role="presentation" onMouseDown={onClose}>
@@ -79,7 +90,9 @@ export function SettingsDialog({
         aria-modal="true"
         className="settings-dialog"
         data-testid="settings-dialog"
+        ref={dialogRef}
         role="dialog"
+        tabIndex={-1}
         onMouseDown={(event) => event.stopPropagation()}
       >
         <header className="settings-dialog-header">
@@ -180,14 +193,23 @@ export function SettingsDialog({
               testId="settings-activity-animation-toggle"
               onClick={onToggleTrafficArrowAnimation}
             />
-            <div className="settings-interface-field">
+            <div className="settings-interface-field" ref={interfaceFieldRef}>
               <button
+                aria-expanded={interfacePickerOpen}
+                aria-haspopup="listbox"
                 className={`settings-interface-trigger ${interfacePickerOpen ? 'active' : ''}`}
                 data-interface-name={selectedInterfaceName}
                 data-interface-up={selectedInterface?.is_up ? 'true' : 'false'}
                 data-testid="settings-interface-trigger"
+                ref={interfaceTriggerRef}
                 type="button"
                 onClick={() => setInterfacePickerOpen((open) => !open)}
+                onKeyDown={(event) => {
+                  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                    event.preventDefault();
+                    setInterfacePickerOpen(true);
+                  }
+                }}
               >
                 <span>
                   <span>Network Interface</span>
@@ -200,7 +222,14 @@ export function SettingsDialog({
                 <ChevronDown size={13} />
               </button>
               {interfacePickerOpen && (
-                <div className="settings-interface-list" role="listbox" aria-label="Network Interface">
+                <div
+                  className="settings-interface-list"
+                  ref={interfaceListRef}
+                  role="listbox"
+                  aria-label="Network Interface"
+                  tabIndex={-1}
+                  onKeyDown={onInterfaceListKeyDown}
+                >
                   {interfaces.length === 0 && <span className="settings-empty">Detecting...</span>}
                   {interfaces.map((iface) => {
                     const selected = iface.name === selectedInterfaceName;
@@ -264,10 +293,8 @@ function SettingsSwitch({
 }: SettingsSwitchProps) {
   return (
     <label
-      aria-checked={checked}
       className="settings-checkbox-row"
       data-testid={testId}
-      role="checkbox"
     >
       <input checked={checked} type="checkbox" onChange={onClick} />
       <span className="settings-row-copy">

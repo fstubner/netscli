@@ -42,6 +42,14 @@
     ],
     "resources": {
       "../../../crates/netscli-core/data/oui.min.json.gz": "data/oui.min.json.gz"
+    },
+    "windows": {
+      "wix": {
+        "template": "wix/main.wxs"
+      },
+      "nsis": {
+        "installerHooks": "nsis/installer-hooks.nsh"
+      }
     }
   }
 }

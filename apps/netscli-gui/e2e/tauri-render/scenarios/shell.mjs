@@ -4,7 +4,7 @@ import { assertCommand, assertNoErrorStrip, assertTheme, clickButtonText, replac
 import { assertExportArtifactsCreated, countExportArtifacts } from './helpers/export.mjs';
 import { assertAboutDialogPolish, assertEmptyStateCentered, assertTrafficArrowsAreLedStyle, forceTabOverflow } from './helpers/polish.mjs';
 import { assertCommandStatusAlignment, assertInteractiveCursorTreatment, assertSuppressesNativeContextMenu, assertThemedTooltips, assertToastHasTimeoutBar } from './helpers/interaction.mjs';
-import { assertEmptyWorkspaceState, assertExitMenuItemNeutralUntilHover, assertInterfaceReadinessReflectsSelection, assertMenuIncludes, assertMenuItemDisabled, assertMenuItems, assertSettingsDialog, assertToolbarButtonDisabled, clickMenuItem, closeSettingsDialog, countTabs, ensureTrafficIndicatorsVisible, getActiveTabText, openSettingsDialog, waitForNoElement, waitForTabCount } from './helpers/menu.mjs';
+import { assertEmptyWorkspaceState, assertExitMenuItemNeutralUntilHover, assertInterfaceReadinessReflectsSelection, assertMenuIncludes, assertMenuItemDisabled, assertMenuItems, assertMenuKeyboardNavigation, assertSettingsDialog, assertToolbarButtonDisabled, clickMenuItem, closeSettingsDialog, countTabs, ensureTrafficIndicatorsVisible, getActiveTabText, openSettingsDialog, waitForNoElement, waitForTabCount } from './helpers/menu.mjs';
 import { assertActiveTabVisible, assertDetailPaneCanFillWorkspace, assertEmptyToolLauncherVisible, assertOverflowTabClickSelection, assertTabAddControlPlacement, assertTabOverflowTreatment, assertTabToolPopoverTopLayer, assertTabToolPopoverVisible } from './helpers/tabs.mjs';
 
 export async function exerciseMenusAndToolbar(driver) {
@@ -68,6 +68,7 @@ export async function exerciseMenusAndToolbar(driver) {
     'Export CSV',
     'Exit',
   ]);
+  await assertMenuKeyboardNavigation(driver);
   await assertMenuItems(driver, 'Edit', [
     'Copy CLI Command',
     'Copy Selected Details',

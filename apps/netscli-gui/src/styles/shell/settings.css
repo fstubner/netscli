@@ -239,8 +239,10 @@
 
 .settings-checkbox-row input {
   position: absolute;
+  right: 16px;
+  width: 18px;
+  height: 18px;
   opacity: 0;
-  pointer-events: none;
 }
 
 .settings-row-copy {
@@ -273,7 +275,12 @@
   color: var(--mint);
 }
 
-.settings-checkbox-row[aria-checked="true"] .settings-checkbox-box {
+.settings-checkbox-row:focus-within .settings-checkbox-box {
+  outline: 1px solid var(--mint);
+  outline-offset: 2px;
+}
+
+.settings-checkbox-row:has(input:checked) .settings-checkbox-box {
   border-color: color-mix(in srgb, var(--mint), transparent 35%);
   background: color-mix(in srgb, var(--mint), transparent 88%);
 }

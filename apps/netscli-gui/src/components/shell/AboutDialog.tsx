@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useRef } from 'react';
 import { ExternalLink, Scale, User, X } from 'lucide-react';
 
 import { openAllowedExternalUrl } from '../../services/externalLinks';
+import { useModalFocus } from '../primitives/focus';
 
 interface AboutDialogProps {
   appVersion: string;
@@ -9,16 +10,8 @@ interface AboutDialogProps {
 }
 
 export function AboutDialog({ appVersion, onClose }: AboutDialogProps) {
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        onClose();
-      }
-    }
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  const dialogRef = useRef<HTMLElement | null>(null);
+  useModalFocus({ dialogRef, onClose });
 
   function openProjectUrl(url: string) {
     void openAllowedExternalUrl(url);
@@ -31,7 +24,9 @@ export function AboutDialog({ appVersion, onClose }: AboutDialogProps) {
         aria-modal="true"
         className="about-dialog"
         data-testid="about-dialog"
+        ref={dialogRef}
         role="dialog"
+        tabIndex={-1}
         onMouseDown={(event) => event.stopPropagation()}
       >
         <button className="about-close" aria-label="Close" data-tooltip="Close" onClick={onClose}>

@@ -156,11 +156,11 @@
 }
 
 .filter-advanced-popover {
-  position: absolute;
-  top: 34px;
-  right: 0;
+  position: fixed;
   z-index: var(--z-dropdown);
   width: min(360px, calc(100vw - 24px));
+  overflow: auto;
+  overscroll-behavior: contain;
   padding: 6px;
   border: 1px solid var(--border-strong);
   background: var(--bg-elevated);

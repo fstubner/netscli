@@ -1,4 +1,7 @@
 import { AlertTriangle, X } from 'lucide-react';
+import { useRef } from 'react';
+
+import { useModalFocus } from '../primitives/focus';
 
 interface ConfirmDialogProps {
   title: string;
@@ -15,13 +18,18 @@ export function ConfirmDialog({
   onCancel,
   onConfirm,
 }: ConfirmDialogProps) {
+  const dialogRef = useRef<HTMLElement | null>(null);
+  useModalFocus({ dialogRef, onClose: onCancel });
+
   return (
     <div className="dialog-overlay" role="presentation" onMouseDown={onCancel}>
       <section
         aria-labelledby="confirm-title"
         aria-modal="true"
         className="confirm-dialog"
+        ref={dialogRef}
         role="dialog"
+        tabIndex={-1}
         onMouseDown={(event) => event.stopPropagation()}
       >
         <header className="confirm-dialog-header">

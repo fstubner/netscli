@@ -73,6 +73,10 @@ describe('buildCommand', () => {
     expect(buildCommand(pcap)).toBe(
       'netscli pcap --interface Ethernet --duration 10 --filter "tcp port 443" --max-packets 50',
     );
+    pcap.form.output_mode = 'Ask';
+    expect(buildCommand(pcap)).toBe(
+      'netscli pcap --interface Ethernet --output <choose-file> --duration 10 --filter "tcp port 443" --max-packets 50',
+    );
   });
 });
 

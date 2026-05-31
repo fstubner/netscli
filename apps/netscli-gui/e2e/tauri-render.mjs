@@ -31,7 +31,10 @@ async function main() {
     webdriverPort = await getFreePort();
   }
 
-  if (process.env.SKIP_TAURI_BUILD !== '1') {
+  const usingExternalApp = Boolean(process.env.TAURI_APP_PATH);
+  if (usingExternalApp) {
+    console.log(`Using installed Tauri app: ${process.env.TAURI_APP_PATH}`);
+  } else if (process.env.SKIP_TAURI_BUILD !== '1') {
     await run(npmBin, ['exec', '--', 'tauri', 'build', '--debug', '--no-bundle'], {
       env: {
         CARGO_BUILD_JOBS: process.env.CARGO_BUILD_JOBS ?? '1',
@@ -149,7 +152,7 @@ main()
 async function ensureSettingsToggleOn(driver, testId) {
   await openSettingsDialog(driver);
   const checked = await driver.executeScript(
-    "return document.querySelector(`[data-testid=\"${arguments[0]}\"]`)?.getAttribute('aria-checked') === 'true';",
+    "return document.querySelector(`[data-testid=\"${arguments[0]}\"] input`)?.checked === true;",
     testId,
   );
   if (!checked) {

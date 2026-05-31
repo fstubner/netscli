@@ -110,14 +110,10 @@
 }
 
 .field-select-popover {
-  position: absolute;
-  top: 34px;
-  right: 0;
+  position: fixed;
   z-index: var(--z-dropdown);
-  width: max(100%, 128px);
   min-width: 128px;
   max-width: min(360px, calc(100vw - 24px));
-  max-height: 220px;
   overflow: auto;
   padding: 5px;
   background: var(--bg-elevated);

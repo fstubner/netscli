@@ -102,6 +102,7 @@ export const TOOL_CONFIG: Record<ToolKind, ToolConfig> = {
     action: 'Capture',
     fields: [
       { key: 'interface', label: 'Interface', type: 'select', placeholder: 'Select interface', required: true },
+      { key: 'output_mode', label: 'Save', type: 'select', compact: true, options: ['Auto', 'Ask'] },
       { key: 'duration', label: 'Seconds', type: 'number', compact: true, placeholder: '5' },
       { key: 'filter', label: 'Filter', placeholder: 'tcp port 443' },
       { key: 'max_packets', label: 'Packets', type: 'number', compact: true, placeholder: '1000' },
@@ -117,7 +118,7 @@ export const DEFAULT_FORM: Record<ToolKind, Record<string, string>> = {
   sweep: { subnet: '', ports: '22,80,443' },
   interfaces: {},
   arp: {},
-  pcap: { interface: '', duration: '5', filter: '', max_packets: '1000' },
+  pcap: { interface: '', output_mode: 'Auto', duration: '5', filter: '', max_packets: '1000' },
 };
 
 export const DEFAULT_SORT: Record<ToolKind, string> = {

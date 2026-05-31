@@ -4,6 +4,7 @@ import { ChevronDown, Plus, X } from 'lucide-react';
 import { TOOL_CONFIG } from '../../tools/registry';
 import { tabIdentity } from '../../tools/presentation';
 import type { ToolKind, WorkspaceTab } from '../../tools/types';
+import { computePopoverPosition } from '../primitives/overlay';
 import { tabDisplayFor } from './tabDisplay';
 import { TabToolMenu } from './TabToolMenu';
 
@@ -41,7 +42,7 @@ export function TabStrip({
     pointerId: 0,
   });
   const suppressNextClick = useRef(false);
-  const [toolMenuPosition, setToolMenuPosition] = useState({ left: 0, top: 0 });
+  const [toolMenuPosition, setToolMenuPosition] = useState({ left: 0, maxHeight: 360, top: 0 });
   const [overflowState, setOverflowState] = useState({
     overflow: false,
     left: false,
@@ -65,15 +66,15 @@ export function TabStrip({
     const trigger = chevronRef.current;
     if (!trigger) return;
     const rect = trigger.getBoundingClientRect();
-    const width = 220;
-    const viewportPadding = 8;
-    setToolMenuPosition({
-      left: Math.min(
-        Math.max(viewportPadding, rect.right - width),
-        window.innerWidth - width - viewportPadding,
-      ),
-      top: Math.min(rect.bottom + 4, window.innerHeight - 260),
-    });
+    setToolMenuPosition(
+      computePopoverPosition(rect, {
+        align: 'end',
+        height: 360,
+        viewportHeight: window.innerHeight,
+        viewportWidth: window.innerWidth,
+        width: 220,
+      }),
+    );
   }, []);
 
   useEffect(() => {
@@ -278,7 +279,12 @@ export function TabStrip({
         </button>
       </div>
       {toolMenuOpen && (
-        <TabToolMenu onAddToolTab={onAddToolTab} position={toolMenuPosition} setOpenMenu={setOpenMenu} />
+        <TabToolMenu
+          onAddToolTab={onAddToolTab}
+          position={toolMenuPosition}
+          setOpenMenu={setOpenMenu}
+          triggerRef={chevronRef}
+        />
       )}
     </nav>
   );

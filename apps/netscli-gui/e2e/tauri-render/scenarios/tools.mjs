@@ -101,6 +101,13 @@ export async function exercisePcapValidation(driver) {
   await replaceInput(driver, '[data-testid="pcap-filter-input"]', 'tcp');
   await replaceInput(driver, '[data-testid="pcap-max_packets-input"]', '1');
   await assertCommand(driver, /netscli pcap --interface .+ --duration 1 --filter "tcp" --max-packets 1/);
+  await driver.findElement(By.css('[data-testid="pcap-output_mode-input"]')).click();
+  await waitForText(driver, '.field-select-popover', /Ask/i);
+  await assertFieldSelectPopoverVisible(driver);
+  await clickButtonText(driver, '.field-select-popover button', 'Ask');
+  await assertCommand(driver, /netscli pcap --interface .+ --output <choose-file> --duration 1 --filter "tcp" --max-packets 1/);
+  await driver.findElement(By.css('[data-testid="pcap-output_mode-input"]')).click();
+  await clickButtonText(driver, '.field-select-popover button', 'Auto');
   await assertNoErrorStrip(driver);
 }
 

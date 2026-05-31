@@ -103,6 +103,12 @@ export function ResultTable({
                   className="column-resizer"
                   role="separator"
                   aria-label={`Resize ${column.label} column`}
+                  aria-orientation="vertical"
+                  aria-valuemax={640}
+                  aria-valuemin={72}
+                  aria-valuenow={column.width ?? 120}
+                  tabIndex={0}
+                  onKeyDown={(event) => handleColumnResizeKeyDown(event, column, setColumnWidths)}
                   onPointerDown={(event) => {
                     event.preventDefault();
                     startColumnResize(event, column, setColumnWidths);
@@ -165,6 +171,35 @@ function updateOverflowState(
   const top = element.scrollTop > 1;
   const bottom = element.scrollTop + element.clientHeight < element.scrollHeight - 1;
   setOverflow({ top, bottom, vertical });
+}
+
+function handleColumnResizeKeyDown(
+  event: KeyboardEvent<HTMLElement>,
+  column: ResultColumn,
+  setColumnWidths: Dispatch<SetStateAction<Record<string, number>>>,
+) {
+  const step = event.shiftKey ? 48 : 16;
+  let nextWidth: number | null = null;
+
+  switch (event.key) {
+    case 'ArrowLeft':
+      nextWidth = Math.max(72, (column.width ?? 120) - step);
+      break;
+    case 'ArrowRight':
+      nextWidth = Math.min(640, (column.width ?? 120) + step);
+      break;
+    case 'Home':
+      nextWidth = 72;
+      break;
+    case 'End':
+      nextWidth = 640;
+      break;
+    default:
+      return;
+  }
+
+  event.preventDefault();
+  setColumnWidths((prev) => ({ ...prev, [column.key]: nextWidth }));
 }
 
 function startColumnResize(

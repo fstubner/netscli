@@ -211,6 +211,8 @@
   z-index: var(--z-dropdown);
   width: 220px;
   padding: 5px;
+  overflow: auto;
+  overscroll-behavior: contain;
   background: var(--bg-elevated);
   border: 1px solid var(--border-strong);
   box-shadow: 0 14px 30px var(--shadow);

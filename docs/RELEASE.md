@@ -34,6 +34,32 @@ Before the first automated release runs, add these secrets at
    library on `LIB` (for x64 MSVC, the directory containing `wpcap.lib` is
    usually `<Npcap SDK>\Lib\x64`) and `C:\Windows\System32\Npcap` on `PATH`
    for runtime checks.
+   For the desktop installer smoke, run:
+   ```powershell
+   cd apps/netscli-gui
+   npm run tauri build
+
+   # Installed-binary render smoke. The render harness skips its own
+   # Tauri build when TAURI_APP_PATH is set.
+   $env:TAURI_APP_PATH = "C:\Program Files\NetsCLI\netscli-gui.exe"
+   npm run test:tauri-render
+   Remove-Item Env:\TAURI_APP_PATH
+   ```
+   For installer smoke, validate both Windows bundles:
+   - **NSIS:** install silently to a temporary user-writable directory,
+     run the installed-binary render smoke with `TAURI_APP_PATH`, then
+     uninstall silently and verify the app files plus
+     `HKCU:\Software\netscli\NetsCLI` install-location key are gone.
+   - **MSI:** install elevated, verify `InstallLocation` is
+     `C:\Program Files\NetsCLI\`, run the installed-binary render smoke,
+     install the next MSI over it to verify upgrade behavior, then
+     uninstall elevated and keep the installer logs with the release
+     notes.
+
+   The MSI uses a custom WiX template so stale NSIS remembered install
+   paths cannot redirect a clean MSI install into an old temporary
+   directory. Treat any regression in these installer checks as a
+   release-validation blocker.
    Also check dependency freshness:
    ```bash
    cargo update --dry-run

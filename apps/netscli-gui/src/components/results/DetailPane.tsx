@@ -98,6 +98,12 @@ export function DetailPane({
         className="detail-resize-handle"
         role="separator"
         aria-label="Resize details pane"
+        aria-orientation="horizontal"
+        aria-valuemax={560}
+        aria-valuemin={35}
+        aria-valuenow={mode === 'collapsed' ? 35 : mode === 'expanded' ? 560 : height}
+        tabIndex={0}
+        onKeyDown={(event) => handleDetailResizeKeyDown(event, height, setHeight, setMode)}
         onPointerDown={(event) => startDetailResize(event, setHeight, setMode)}
       />
       <div className="detail-tabs">
@@ -298,4 +304,42 @@ function startDetailResize(
 
   window.addEventListener('pointermove', onMove);
   window.addEventListener('pointerup', onUp, { once: true });
+}
+
+function handleDetailResizeKeyDown(
+  event: KeyboardEvent<HTMLDivElement>,
+  height: number,
+  setHeight: (height: number) => void,
+  setMode: (mode: 'normal' | 'collapsed' | 'expanded') => void,
+) {
+  const step = event.shiftKey ? 48 : 16;
+
+  switch (event.key) {
+    case 'ArrowUp':
+      event.preventDefault();
+      setMode('normal');
+      setHeight(Math.min(560, Math.max(96, height + step)));
+      break;
+    case 'ArrowDown': {
+      event.preventDefault();
+      const next = height - step;
+      if (next < 78) {
+        setMode('collapsed');
+      } else {
+        setMode('normal');
+        setHeight(Math.max(96, next));
+      }
+      break;
+    }
+    case 'Home':
+      event.preventDefault();
+      setMode('collapsed');
+      break;
+    case 'End':
+      event.preventDefault();
+      setMode('expanded');
+      break;
+    default:
+      break;
+  }
 }

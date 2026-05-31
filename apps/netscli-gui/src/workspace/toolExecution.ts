@@ -78,11 +78,16 @@ export async function executeTool(tab: WorkspaceTab, opId: string): Promise<Tool
             duration: numberOrUndefined(tab.form.duration),
             filter: emptyToUndefined(tab.form.filter),
             max_packets: numberOrUndefined(tab.form.max_packets),
+            output_mode: captureOutputMode(tab.form.output_mode),
           },
           opId,
         ),
       };
   }
+}
+
+function captureOutputMode(value: string | undefined): string {
+  return value?.trim().toLowerCase() === 'ask' ? 'ask' : 'auto';
 }
 
 async function executeDns(tab: WorkspaceTab, opId: string): Promise<ToolResult> {

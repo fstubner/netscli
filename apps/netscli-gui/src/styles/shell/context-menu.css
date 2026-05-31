@@ -3,6 +3,8 @@
   z-index: var(--z-dropdown);
   width: 232px;
   padding: 5px;
+  overflow: auto;
+  overscroll-behavior: contain;
   background: var(--bg-elevated);
   border: 1px solid var(--border-strong);
   box-shadow: 0 12px 30px var(--shadow);

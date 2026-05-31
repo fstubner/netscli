@@ -68,6 +68,7 @@ export async function capturePcap(
     filter?: string;
     duration?: number;
     max_packets?: number;
+    output_mode?: string;
   },
   op_id?: string,
 ): Promise<PcapResult> {
@@ -77,6 +78,7 @@ export async function capturePcap(
     filter: params.filter,
     duration: params.duration,
     max_packets: params.max_packets,
+    output_mode: params.output_mode,
   });
 }
 

@@ -1,8 +1,10 @@
 import { Search, Terminal, Wrench } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { LOOKUP_TOOL_KINDS, SCAN_TOOL_KINDS, TOOL_CONFIG } from '../../tools/registry';
 import type { ToolKind } from '../../tools/types';
+import { useRovingFocus } from '../primitives/focus';
+import { useOverlayDismiss } from '../primitives/overlay';
 
 interface EmptyWorkspaceProps {
   onAddToolTab: (kind: ToolKind) => void;
@@ -13,26 +15,20 @@ type PickerKind = 'scan' | 'tool';
 export function EmptyWorkspace({ onAddToolTab }: EmptyWorkspaceProps) {
   const [pickerKind, setPickerKind] = useState<PickerKind | null>(null);
   const pickerRef = useRef<HTMLDivElement | null>(null);
+  const pickerPanelRef = useRef<HTMLDivElement | null>(null);
   const pickerOpen = pickerKind !== null;
-
-  useEffect(() => {
-    if (!pickerOpen) return;
-
-    function closeOnOutsidePointer(event: PointerEvent) {
-      if (!pickerRef.current?.contains(event.target as Node)) setPickerKind(null);
-    }
-
-    function closeOnEscape(event: KeyboardEvent) {
-      if (event.key === 'Escape') setPickerKind(null);
-    }
-
-    document.addEventListener('pointerdown', closeOnOutsidePointer);
-    document.addEventListener('keydown', closeOnEscape);
-    return () => {
-      document.removeEventListener('pointerdown', closeOnOutsidePointer);
-      document.removeEventListener('keydown', closeOnEscape);
-    };
-  }, [pickerOpen]);
+  const closePicker = () => setPickerKind(null);
+  const onPickerKeyDown = useRovingFocus({
+    containerRef: pickerPanelRef,
+    enabled: pickerOpen,
+    itemSelector: 'button:not(:disabled)',
+    onClose: closePicker,
+  });
+  useOverlayDismiss({
+    enabled: pickerOpen,
+    onClose: closePicker,
+    refs: [pickerRef, pickerPanelRef],
+  });
 
   const pickerConfig =
     pickerKind === 'scan'
@@ -50,6 +46,7 @@ export function EmptyWorkspace({ onAddToolTab }: EmptyWorkspaceProps) {
       <div className="empty-tabs-actions" ref={pickerRef}>
         <button
           aria-expanded={pickerKind === 'scan'}
+          aria-haspopup="menu"
           className="primary"
           data-testid="empty-choose-scan"
           type="button"
@@ -61,6 +58,7 @@ export function EmptyWorkspace({ onAddToolTab }: EmptyWorkspaceProps) {
         <div className="empty-tool-picker">
           <button
             aria-expanded={pickerKind === 'tool'}
+            aria-haspopup="menu"
             data-testid="empty-choose-tool"
             type="button"
             onClick={() => togglePicker('tool')}
@@ -70,7 +68,14 @@ export function EmptyWorkspace({ onAddToolTab }: EmptyWorkspaceProps) {
           </button>
         </div>
         {pickerOpen && (
-          <div className="empty-tool-launcher" data-testid="empty-tool-popover">
+          <div
+            className="empty-tool-launcher"
+            data-testid="empty-tool-popover"
+            ref={pickerPanelRef}
+            role="menu"
+            tabIndex={-1}
+            onKeyDown={onPickerKeyDown}
+          >
             <ToolPickerSection
               kinds={pickerConfig.kinds}
               label={pickerConfig.label}
@@ -105,6 +110,7 @@ function ToolPickerSection({
           <button
             key={kind}
             type="button"
+            role="menuitem"
             onClick={() => {
               onAddToolTab(kind);
               onClose();
