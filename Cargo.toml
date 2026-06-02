@@ -17,7 +17,7 @@ documentation = "https://docs.rs/netscli"
 keywords = ["networking", "scanner", "tui", "cli", "mcp"]
 categories = ["command-line-utilities", "network-programming"]
 edition = "2021"
-rust-version = "1.92.0"
+rust-version = "1.96.0"
 
 [workspace.dependencies]
 # Shared across all workspace members — pinned here to guarantee a single version.
