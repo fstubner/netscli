@@ -263,7 +263,7 @@ export const site: SiteData = {
     {
       title: 'Desktop app',
       body:
-        "A standalone desktop application for when you'd rather not open a terminal. Scan ports, discover hosts, look up DNS records, inspect your ARP table. Prebuilt installers attached to every <a href=\"https://github.com/fstubner/netscli/releases/latest\">GitHub release</a> &mdash; sigstore-signed, no build-from-source needed.",
+        'A standalone desktop application for when you would rather not open a terminal. Scan ports, discover hosts, look up DNS records, and inspect your ARP table. On Windows, use <code>winget install fstubner.netscli.gui</code> for the hash-verified install path. Direct installers are attached to every <a href="https://github.com/fstubner/netscli/releases/latest">GitHub release</a>; Windows direct downloads are currently unsigned and may show publisher warnings until Authenticode signing is added later.',
       image: {
         src: '/gui-scan.png',
         webp: '/gui-scan.webp',
@@ -307,7 +307,7 @@ export const site: SiteData = {
       windows: [
         {
           label: 'Winget',
-          command: 'winget install netscli',
+          command: 'winget install fstubner.netscli',
         },
         {
           label: 'Scoop',
@@ -385,6 +385,8 @@ export const site: SiteData = {
         <div class="faq-command-list" aria-label="Install commands">
           <div class="faq-command"><span>Linux/macOS</span><code>curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash</code></div>
           <div class="faq-command"><span>Windows</span><code>iwr -useb https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.ps1 | iex</code></div>
+          <div class="faq-command"><span>Windows CLI</span><code>winget install fstubner.netscli</code></div>
+          <div class="faq-command"><span>Windows GUI</span><code>winget install fstubner.netscli.gui</code></div>
           <div class="faq-command"><span>Rust</span><code>cargo install netscli</code></div>
         </div>
         <p>Prebuilt binaries for Windows, Linux (<code>x86_64</code>/<code>aarch64</code>/<code>musl</code>), and macOS (<code>x86_64</code>/<code>aarch64</code>) are attached to every <a href="https://github.com/fstubner/netscli/releases/latest">GitHub release</a>.</p>
@@ -434,11 +436,12 @@ export const site: SiteData = {
     },
     {
       q: 'Is netscli a free network scanner for Windows, macOS, or Linux?',
-      a: 'Yes — same binary on all three. netscli is MIT-licensed and free for any use, including commercial. On Windows: `winget install netscli` (winget is preinstalled on Windows 10/11) or `scoop install netscli`. On macOS: `brew tap fstubner/tap && brew install netscli`. On Linux: the install script (`curl -fsSL ... | bash`), the AUR (`yay -S netscli-bin`), or Homebrew on Linux. The default build has no driver or installer dependencies — only the optional packet-capture feature uses libpcap (Linux/macOS) or Npcap (Windows), and only if you opt in with NETSCLI_PCAP=1.',
+      a: 'Yes. netscli is MIT-licensed and free for any use, including commercial. On Windows: `winget install fstubner.netscli` for the CLI/TUI, `winget install fstubner.netscli.gui` for the desktop GUI, or `scoop install netscli`. On macOS: `brew tap fstubner/tap && brew install netscli`. On Linux: the install script (`curl -fsSL ... | bash`), the AUR (`yay -S netscli-bin`), or Homebrew on Linux. The default build has no driver or installer dependencies; only the optional packet-capture feature uses libpcap (Linux/macOS) or Npcap (Windows), and only if you opt in with NETSCLI_PCAP=1.',
       aHtml: `
         <p>Yes. netscli is MIT-licensed and free for any use, including commercial.</p>
         <div class="faq-command-list" aria-label="Package manager commands">
-          <div class="faq-command"><span>Windows</span><code>winget install netscli</code></div>
+          <div class="faq-command"><span>Windows CLI</span><code>winget install fstubner.netscli</code></div>
+          <div class="faq-command"><span>Windows GUI</span><code>winget install fstubner.netscli.gui</code></div>
           <div class="faq-command"><span>Windows</span><code>scoop install netscli</code></div>
           <div class="faq-command"><span>macOS</span><code>brew tap fstubner/tap &amp;&amp; brew install netscli</code></div>
           <div class="faq-command"><span>Linux</span><code>curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash</code></div>
