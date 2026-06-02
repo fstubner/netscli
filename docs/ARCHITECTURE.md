@@ -65,6 +65,12 @@ expected Windows environment for the PCAP test target from `NPCAP_SDK` or
 
 Keep runtime and automation source files under roughly 300 lines when practical. `scripts/check-file-size.mjs` enforces this for Rust crates, CLI/TUI code, GUI frontend code, Tauri backend code, and GUI render automation. Static marketing-site content, generated assets, lockfiles, and vendored data are outside this guard.
 
+The guard has a small explicit transition-exception list for files that are
+already over the target after the GUI professionalization work. Each exception
+has a capped line count and a reason. Do not add new exceptions casually: split
+the file instead, or lower/remove an existing exception when follow-up refactors
+reduce it.
+
 When adding behavior, prefer a new owner module over growing a facade:
 
 - TUI event-loop behavior belongs under `apps/netscli-cli/src/tui/runtime/`.
