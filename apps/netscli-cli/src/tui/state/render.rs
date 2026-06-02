@@ -1,12 +1,12 @@
 use super::super::widgets::input_container_height;
 use super::TuiApp;
 use ratatui::{
+    backend::Backend,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     text::Line,
     widgets::Paragraph,
     Frame, Terminal,
 };
-use std::io;
 
 mod config_panel;
 mod content;
@@ -15,10 +15,7 @@ mod message;
 mod scrollbar;
 
 impl<'a> TuiApp<'a> {
-    pub fn draw<B: ratatui::backend::Backend>(
-        &mut self,
-        terminal: &mut Terminal<B>,
-    ) -> io::Result<()> {
+    pub fn draw<B: Backend>(&mut self, terminal: &mut Terminal<B>) -> Result<(), B::Error> {
         terminal.draw(|f| self.draw_frame(f))?;
         Ok(())
     }

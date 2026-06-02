@@ -5,8 +5,8 @@ use ratatui::{
     text::{Line, Span},
     widgets::{Block, Borders},
 };
+use ratatui_textarea::TextArea;
 use std::time::{SystemTime, UNIX_EPOCH};
-use tui_textarea::TextArea;
 
 pub(super) const INPUT_PLACEHOLDER: &str = "Type /help for commands";
 

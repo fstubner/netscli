@@ -4,8 +4,8 @@ use super::history::HistoryEntry;
 use super::widgets::{configure_input, cycle_option, cycle_unit};
 use crate::tui_settings::TuiSettings;
 use netscli_core::{NetworkManager, NetworkMonitor};
+use ratatui_textarea::{CursorMove, TextArea};
 use std::time::{SystemTime, UNIX_EPOCH};
-use tui_textarea::{CursorMove, TextArea};
 
 mod interaction;
 mod render;
