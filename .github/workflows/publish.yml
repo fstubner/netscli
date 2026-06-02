@@ -238,8 +238,9 @@ jobs:
 
   # ─── Winget GUI (microsoft/winget-pkgs) ────────────────────────────
   # Distinct PackageIdentifier `fstubner.netscli.gui` (the CLI is
-  # `fstubner.netscli`). Users install with `winget install netscli-gui`
-  # via the Moniker.
+  # `fstubner.netscli`). Prefer the canonical command
+  # `winget install fstubner.netscli.gui`; the `netscli-gui` moniker may
+  # resolve after the package is accepted into the Winget catalog.
   winget-gui:
     name: Winget (GUI)
     runs-on: windows-latest
