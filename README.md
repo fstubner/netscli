@@ -8,7 +8,7 @@
 [![crates.io](https://img.shields.io/crates/v/netscli.svg)](https://crates.io/crates/netscli)
 [![Release](https://img.shields.io/github/v/release/fstubner/netscli)](https://github.com/fstubner/netscli/releases)
 [![Downloads](https://img.shields.io/github/downloads/fstubner/netscli/total)](https://github.com/fstubner/netscli/releases)
-[![Rust 1.92.0](https://img.shields.io/badge/rust-1.92.0-blue.svg)](https://www.rust-lang.org/)
+[![Rust 1.96.0](https://img.shields.io/badge/rust-1.96.0-blue.svg)](https://www.rust-lang.org/)
 [![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-informational)](#installation)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -364,7 +364,7 @@ netscli pcap --read capture.pcap --yaml
 
 ### Prerequisites
 
-- Rust 1.92.0 (pinned via `rust-toolchain.toml`) ([install from rustup.rs](https://rustup.rs/))
+- Rust 1.96.0 (pinned via `rust-toolchain.toml`) ([install from rustup.rs](https://rustup.rs/))
 - For GUI: Node.js 18+ and npm
 
 ### CLI Binary

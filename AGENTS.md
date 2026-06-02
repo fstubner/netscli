@@ -58,8 +58,8 @@ cd scripts && cargo run --bin generate-oui
 
 ## Toolchain
 
-- Rust **1.92.0** pinned in `rust-toolchain.toml` (includes rustfmt + clippy)
-- MSRV: 1.92
+- Rust **1.96.0** pinned in `rust-toolchain.toml` (includes rustfmt + clippy)
+- MSRV: 1.96
 - Cargo resolver: v2
 - GUI frontend: Node.js with npm, Vite, TypeScript
 

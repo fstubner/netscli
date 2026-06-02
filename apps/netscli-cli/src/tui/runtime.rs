@@ -39,20 +39,19 @@ pub async fn run_tui(concurrency: usize) -> Result<()> {
 
         tasks.finish_ready_task(&mut app).await;
 
-        if event::poll(tick_rate)? {
-            match event::read()? {
-                Event::Resize(_, _) => {}
-                Event::Mouse(_) => {}
-                Event::Key(key) => {
-                    if input
-                        .handle_key(key, &mut app, &mut tasks, &ops, &db)
-                        .await?
-                    {
-                        break;
-                    }
-                }
-                _ => {}
-            }
+        if !event::poll(tick_rate)? {
+            continue;
+        }
+
+        let Event::Key(key) = event::read()? else {
+            continue;
+        };
+
+        if input
+            .handle_key(key, &mut app, &mut tasks, &ops, &db)
+            .await?
+        {
+            break;
         }
     }
 
