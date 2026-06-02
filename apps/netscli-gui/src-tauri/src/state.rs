@@ -1,4 +1,6 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 
 use netscli_core::PcapCancelToken;
 use tokio::sync::Mutex as AsyncMutex;
@@ -6,6 +8,11 @@ use tokio::sync::Mutex as AsyncMutex;
 #[derive(Default)]
 pub(crate) struct OperationManager {
     tasks: AsyncMutex<HashMap<String, OperationHandle>>,
+}
+
+#[derive(Default)]
+pub(crate) struct ArtifactRegistry {
+    paths: Mutex<HashSet<PathBuf>>,
 }
 
 struct OperationHandle {
@@ -48,4 +55,29 @@ impl OperationManager {
             false
         }
     }
+}
+
+impl ArtifactRegistry {
+    pub(crate) fn register(&self, path: &Path) -> Result<(), String> {
+        let path = canonical_artifact_path(path)?;
+        let mut paths = self
+            .paths
+            .lock()
+            .map_err(|_| "Artifact registry lock poisoned".to_string())?;
+        paths.insert(path);
+        Ok(())
+    }
+
+    pub(crate) fn contains(&self, path: &Path) -> Result<bool, String> {
+        let path = canonical_artifact_path(path)?;
+        let paths = self
+            .paths
+            .lock()
+            .map_err(|_| "Artifact registry lock poisoned".to_string())?;
+        Ok(paths.contains(&path))
+    }
+}
+
+fn canonical_artifact_path(path: &Path) -> Result<PathBuf, String> {
+    std::fs::canonicalize(path).map_err(|e| format!("Artifact path is not accessible: {e}"))
 }

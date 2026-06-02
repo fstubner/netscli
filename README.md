@@ -112,6 +112,12 @@ winget install fstubner.netscli.gui  # Desktop GUI
 
 Resolves from the official [`microsoft/winget-pkgs`](https://github.com/microsoft/winget-pkgs/tree/master/manifests/f/fstubner) repo (winget ships preinstalled on Windows 10/11). The CLI and desktop app are separate package identifiers so they can be installed independently.
 
+For Windows, winget is the recommended install path. The winget manifest pins
+the installer URL and verifies the installer SHA256 hash before install. Direct
+GitHub downloads are available, but the Windows installers are currently
+unsigned and may show "unknown publisher" or SmartScreen warnings until code
+signing is added later.
+
 ### Scoop (Windows)
 
 ```powershell
@@ -185,9 +191,14 @@ cargo install --git https://github.com/fstubner/netscli netscli
 
 Prebuilt installers are attached to every [GitHub release](https://github.com/fstubner/netscli/releases/latest) as of v0.2.1:
 
-- **Windows**: `netscli-gui-windows-x86_64.msi` — double-click to install. WebView2 ships preinstalled on Windows 10/11; if the app fails to start, [install the Evergreen runtime](https://developer.microsoft.com/microsoft-edge/webview2/).
+- **Windows**: `netscli-gui-windows-x86_64.msi` — recommended install path is `winget install fstubner.netscli.gui` because winget verifies the published installer hash. Direct MSI installs are currently unsigned and may show Windows warnings. WebView2 ships preinstalled on Windows 10/11; if the app fails to start, [install the Evergreen runtime](https://developer.microsoft.com/microsoft-edge/webview2/).
 - **macOS**: `netscli-gui-macos-aarch64.dmg` (Apple Silicon) or `netscli-gui-macos-x86_64.dmg` (Intel). Currently **unsigned** — first launch will show "unverified developer". Right-click → Open to bypass Gatekeeper, or run `xattr -dr com.apple.quarantine /Applications/NetsCLI.app`. Notarized build is tracked separately.
 - **Linux**: `netscli-gui-linux-x86_64.deb` (Debian/Ubuntu) or `netscli-gui-linux-x86_64.AppImage` (any distro; `chmod +x` and run).
+
+The published desktop GUI installers are built without packet capture support
+so they do not depend on or redistribute Npcap/libpcap. Packet Capture appears
+only in local desktop builds compiled with the `pcap` feature and a working
+Npcap/libpcap runtime.
 
 To build from source instead:
 
@@ -232,6 +243,7 @@ PCAP capture is optional and disabled in the default builds for portability. To 
 - **Via installer (recommended)**: `NETSCLI_PCAP=1` does everything. It picks the pcap-enabled binary variant *and* installs the system library (`libpcap` on Linux/macOS, Npcap on Windows).
   - Add `NETSCLI_SKIP_LIBPCAP=1` (POSIX) or `NETSCLI_SKIP_NPCAP=1` (Windows) if you manage the system library yourself.
 - **From source**: `cargo build --features pcap` (see [Building](#building) for the full command with OS-specific deps).
+- **Desktop GUI**: published GUI installers are intentionally non-PCAP. Use `npm run tauri:dev:pcap` or `npm run tauri build -- --features pcap` for local packet-capture GUI builds.
 - **Capture parsing**: pcap-enabled CLI builds can also summarize existing capture files with `netscli pcap --read <file> --json` or `--yaml`.
 - **On Windows runtime**: ensure `wpcap.dll` is on PATH. Npcap installs it to `C:\Windows\System32\Npcap\` which isn't on PATH by default. Add that directory to your PATH, or the installer does it for you when you set `NETSCLI_PCAP=1`.
 - **On Windows source builds**: install the [Npcap SDK](https://npcap.com/#download) as well as the runtime. MSVC needs the SDK import library (`wpcap.lib`) at link time:
@@ -404,8 +416,11 @@ npm run tauri build -- --features pcap
 On Windows, the same Npcap SDK `LIB`/`INCLUDE` setup is required for the
 Tauri backend when building with `--features pcap`. For local development,
 `scripts/dev-gui-pcap.ps1` sets `LIB`, `INCLUDE`, and the Npcap runtime `PATH`
-from `NPCAP_SDK` or `C:\tmp\netscli-npcap-sdk`, then starts the app through
-Tauri's dev command.
+from `NPCAP_SDK` or `C:\tmp\netscli-npcap-sdk`, uses a separate
+`target-pcap` Cargo target directory, then starts the app through Tauri's dev
+command. Keeping PCAP GUI builds in a separate target directory avoids
+accidentally replacing the normal non-PCAP debug app with a binary that
+requires `wpcap.dll` at process startup.
 
 ### Cross-Compilation
 

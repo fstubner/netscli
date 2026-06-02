@@ -11,8 +11,10 @@ export function columnsFor(
   const hasVendor = hasColumnData(rows, 'vendor');
   const hasBanner = hasColumnData(rows, 'banner');
   const hasPorts = hasColumnData(rows, 'ports');
+  const hasMac = hasColumnData(rows, 'mac');
 
-  if (kind === 'inspect' && result?.kind === 'inspect' && result.data.open_ports.length === 0) {
+  const inspectPorts = result?.kind === 'inspect' ? (result.data.ports ?? result.data.open_ports) : [];
+  if (kind === 'inspect' && result?.kind === 'inspect' && inspectPorts.length === 0) {
     return [
       { key: 'host', label: 'Host', mono: true, width: 220 },
       { key: 'ip', label: 'IP', mono: true, width: 220 },
@@ -53,20 +55,24 @@ export function columnsFor(
       return [
         { key: 'record_type', label: 'Type', mono: true, width: 72 },
         { key: 'value', label: 'Value', mono: true, grow: true },
+        { key: 'ttl', label: 'TTL', mono: true, width: 90 },
+        { key: 'resolver', label: 'Resolver', width: 130 },
       ];
     case 'sweep':
       return [
-        { key: 'ip', label: 'Host', mono: true, width: 170 },
+        { key: 'ip', label: 'IP', mono: true, width: 160 },
         hasHostname
-          ? { key: 'hostname', label: 'Hostname', grow: true }
+          ? { key: 'hostname', label: 'Hostname', width: 190 }
           : { key: 'hostname', label: 'Hostname', width: 130 },
+        hasMac ? { key: 'mac', label: 'MAC', mono: true, width: 190 } : { key: 'mac', label: 'MAC', width: 120 },
+        hasVendor
+          ? { key: 'vendor', label: 'Vendor', grow: true }
+          : { key: 'vendor', label: 'Vendor', width: 170 },
+        { key: 'rtt', label: 'RTT', mono: true, width: 100 },
         { key: 'open_ports', label: 'Open', mono: true, width: 100 },
         hasPorts
           ? { key: 'ports', label: 'Ports', mono: true, grow: true }
           : { key: 'ports', label: 'Ports', width: 120 },
-        hasVendor
-          ? { key: 'vendor', label: 'Vendor', grow: true }
-          : { key: 'vendor', label: 'Vendor', width: 180 },
       ];
     case 'interfaces':
       return [
@@ -74,7 +80,8 @@ export function columnsFor(
         { key: 'ips', label: 'Addresses', mono: true, grow: true },
         { key: 'mac', label: 'MAC', mono: true, width: 190 },
         { key: 'state', label: 'State', width: 110 },
-        { key: 'loopback', label: 'Loopback', width: 110 },
+        { key: 'app', label: 'App', width: 120 },
+        { key: 'kind', label: 'Kind', width: 110 },
       ];
     case 'arp':
       return [
@@ -90,6 +97,7 @@ export function columnsFor(
         { key: 'source', label: 'Source', mono: true, width: 220 },
         { key: 'destination', label: 'Destination', mono: true, width: 220 },
         { key: 'protocol', label: 'Protocol', width: 110 },
+        { key: 'ports', label: 'Ports', mono: true, width: 140 },
         { key: 'length', label: 'Length', mono: true, width: 100 },
         { key: 'info', label: 'Info', grow: true },
       ];

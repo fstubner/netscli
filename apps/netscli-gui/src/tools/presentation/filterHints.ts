@@ -19,10 +19,14 @@ const FIELD_KEY_LABELS: Record<string, string> = {
   ips: 'Address',
   name: 'Interface',
   open_ports: 'Open ports',
+  resolver: 'Resolver',
+  ttl: 'TTL',
+  app: 'App marker',
 };
 
 const FIELD_KEY_ALIASES: Record<string, string> = {
   banner: 'banner',
+  app: 'app',
   duration: 'duration',
   file: 'file',
   hostname: 'hostname',
@@ -46,19 +50,22 @@ const FIELD_KEY_ALIASES: Record<string, string> = {
   status: 'status',
   destination: 'destination',
   info: 'info',
+  kind: 'kind',
   length: 'length',
   time: 'time',
+  ttl: 'ttl',
   value: 'value',
+  resolver: 'resolver',
   vendor: 'vendor',
 };
 
 const SAMPLE_FIELDS: Record<ToolKind, string[]> = {
   scan: ['status', 'port', 'service', 'banner'],
   discover: ['ip', 'hostname', 'vendor', 'mac'],
-  dns: ['record_type', 'value'],
+  dns: ['record_type', 'value', 'resolver', 'ttl'],
   inspect: ['status', 'port', 'service', 'hostname'],
-  sweep: ['ip', 'hostname', 'vendor', 'ports'],
-  interfaces: ['state', 'name', 'ips'],
+  sweep: ['ip', 'hostname', 'vendor', 'ports', 'mac'],
+  interfaces: ['state', 'name', 'ips', 'kind'],
   arp: ['ip', 'interface', 'vendor', 'mac'],
   pcap: ['protocol', 'source', 'destination', 'info'],
 };
@@ -76,7 +83,7 @@ export function filterHintsFor(tab: WorkspaceTab | undefined): FilterHints {
   const columns = columnsFor(tab.kind, tab.result, rows);
   const sections = [
     ...commonSectionsFor(tab.kind, rows),
-    fieldSection(columns),
+    fieldSection(columns, rows),
     ...resultValueSections(tab.kind, rows),
   ].filter((section) => section.options.length > 0);
 
@@ -170,10 +177,11 @@ function commonSectionsFor(kind: ToolKind, rows: ResultRow[]): FilterSectionConf
   }
 }
 
-function fieldSection(columns: ResultColumn[]): FilterSectionConfig {
+function fieldSection(columns: ResultColumn[], rows: ResultRow[]): FilterSectionConfig {
   return {
     label: 'Fields',
     options: columns
+      .filter((column) => rows.length === 0 || hasFieldData(rows, column.key))
       .map((column) => {
         const key = FIELD_KEY_ALIASES[column.key];
         if (!key) return null;
@@ -181,6 +189,10 @@ function fieldSection(columns: ResultColumn[]): FilterSectionConfig {
       })
       .filter((option): option is [string, string] => Boolean(option)),
   };
+}
+
+function hasFieldData(rows: ResultRow[], field: string): boolean {
+  return valuesForField(rows, field).length > 0;
 }
 
 function resultValueSections(kind: ToolKind, rows: ResultRow[]): FilterSectionConfig[] {

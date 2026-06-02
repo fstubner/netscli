@@ -6,12 +6,24 @@ export interface OperationGuard {
   confirmLabel: string;
 }
 
-const PUBLIC_SCAN_CONFIRM_HOSTS = 256;
 const LARGE_PRIVATE_CONFIRM_HOSTS = 4096;
 const LARGE_SWEEP_CONFIRM_PROBES = 8192;
+const LARGE_PORT_CONFIRM_PROBES = 1024;
 
 export function guardForOperation(tab: WorkspaceTab | undefined): OperationGuard | null {
   if (!tab) return null;
+
+  if (tab.kind === 'scan' || tab.kind === 'inspect') {
+    const ports = countPorts(tab.form.ports);
+    if (ports > LARGE_PORT_CONFIRM_PROBES) {
+      return {
+        title: 'Confirm Large Port Set',
+        message: `${tab.kind === 'scan' ? 'Scanning' : 'Inspecting'} ${tab.form.host || 'this host'} checks ${ports.toLocaleString()} ports. Continue only if this is intentional.`,
+        confirmLabel: `Run ${tab.kind}`,
+      };
+    }
+    return null;
+  }
 
   if (tab.kind !== 'discover' && tab.kind !== 'sweep') return null;
 
@@ -20,11 +32,11 @@ export function guardForOperation(tab: WorkspaceTab | undefined): OperationGuard
   if (!parsed) return null;
 
   const hostCount = usableHostCount(parsed.prefix);
-  const publicRange = !isPrivateIpv4(parsed.octets);
-  const ports = tab.kind === 'sweep' ? countPorts(tab.form.ports) : 0;
+  const publicRange = isPublicIpv4(parsed.octets);
+  const ports = tab.kind === 'sweep' ? countPorts(tab.form.ports, 5) : 0;
   const probeCount = tab.kind === 'sweep' ? hostCount * Math.max(ports, 1) : hostCount;
 
-  if (publicRange && hostCount > PUBLIC_SCAN_CONFIRM_HOSTS) {
+  if (publicRange && hostCount > 1) {
     return {
       title: 'Confirm Public Range',
       message: `${tab.kind === 'sweep' ? 'Sweeping' : 'Discovering'} ${subnet} touches about ${hostCount.toLocaleString()} public addresses. Continue only if you own or have permission to test this range.`,
@@ -58,12 +70,19 @@ function usableHostCount(prefix: number): number {
   return Math.max(1, 2 ** (32 - prefix) - 2);
 }
 
-function isPrivateIpv4([a, b]: number[]): boolean {
-  return a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168);
+function isPublicIpv4([a, b, c]: number[]): boolean {
+  if (a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168)) return false;
+  if (a === 127 || (a === 169 && b === 254) || (a === 100 && b >= 64 && b <= 127)) return false;
+  if (a === 0 || a >= 224) return false;
+  if (a === 192 && b === 0 && c === 2) return false;
+  if (a === 198 && (b === 18 || b === 19)) return false;
+  if (a === 198 && b === 51 && c === 100) return false;
+  if (a === 203 && b === 0 && c === 113) return false;
+  return true;
 }
 
-function countPorts(value: string | undefined): number {
-  if (!value?.trim()) return 0;
+function countPorts(value: string | undefined, fallback = 0): number {
+  if (!value?.trim()) return fallback;
 
   return value
     .split(',')

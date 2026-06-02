@@ -1,4 +1,4 @@
-import type { PortResult, PortStatus } from '../../types/netscli';
+import type { InspectResult, PortResult, PortStatus } from '../../types/netscli';
 import type { DetailTab, ResultColumn, ResultRow } from '../types';
 
 export interface DetailLine {
@@ -130,6 +130,136 @@ export function portRawPreview(port: PortResult): string {
   return JSON.stringify(port, null, 2);
 }
 
+export function inspectOverviewLines(result: InspectResult): DetailLine[] {
+  const ports = result.ports ?? result.open_ports;
+  const open = result.open_ports.length;
+  const ping = result.ping;
+
+  return [
+    { label: 'Host', value: result.host },
+    { label: 'Resolved IP', value: result.ip || ping?.ip || '-' },
+    { label: 'Reverse DNS', value: result.hostname || '-' },
+    { label: 'Host Status', value: ping ? (ping.alive ? 'up' : 'down') : 'not checked' },
+    { label: 'Ping Method', value: ping?.method || '-' },
+    { label: 'RTT', value: ping?.rtt_ms == null ? '-' : `${ping.rtt_ms} ms` },
+    { label: 'Ports Checked', value: ports.length > 0 ? String(ports.length) : 'host-only inspection' },
+    { label: 'Open Ports', value: String(open) },
+  ];
+}
+
+export function inspectPortsLines(result: InspectResult, row: ResultRow | undefined): DetailLine[] {
+  if (row?.port) {
+    return [
+      { label: 'Selected Port', value: String(row.port.port) },
+      { label: 'Service', value: row.port.service || 'tcp' },
+      { label: 'Status', value: row.port.status },
+      { label: 'Latency', value: latencyOfPort(row.port) },
+      { label: 'Meaning', value: portStatusMeaning(row.port) },
+      { label: 'Banner', value: row.port.banner?.trim() || 'No plaintext banner captured', muted: !row.port.banner?.trim() },
+      { label: 'HTTP', value: row.port.http?.status_line || httpReason(row.port), muted: !row.port.http?.status_line },
+      { label: 'TLS', value: row.port.tls?.protocol || tlsReason(row.port), muted: !row.port.tls?.protocol },
+    ];
+  }
+
+  const ports = result.ports ?? result.open_ports;
+  if (ports.length === 0) {
+    return [
+      { label: 'Ports', value: 'No ports were scanned for this host inspection.', muted: true },
+      { label: 'What It Means', value: 'Inspect only checked host reachability and reverse DNS.' },
+    ];
+  }
+
+  const statuses = countValues(ports.map((port) => port.status));
+  const openPorts = ports.filter((port) => port.open).map((port) => String(port.port));
+  return [
+    { label: 'Checked Ports', value: formatList(ports.map((port) => String(port.port)), 16) },
+    { label: 'Statuses', value: formatCounts(statuses) },
+    { label: 'Open Ports', value: openPorts.length > 0 ? formatList(openPorts, 16) : 'No open ports found' },
+  ];
+}
+
+export function detailLinesForRow(row: ResultRow): DetailLine[] {
+  if (row.kind === 'pcap') return pcapDetailLines(row.raw);
+
+  const lines = Object.entries(row.data).map(([key, value]) => ({
+    label: key,
+    value: value == null || value === '' ? '-' : String(value),
+  }));
+
+  switch (row.kind) {
+    case 'discover':
+      return [
+        ...lines,
+        {
+          label: 'Summary',
+          value: `Responded host${row.data.vendor ? ', known vendor' : ', vendor unknown'}`,
+        },
+      ];
+    case 'sweep':
+      return [
+        ...lines,
+        {
+          label: 'Summary',
+          value: Number(row.data.open_ports || 0) > 0
+            ? `${row.data.open_ports} open service group(s) found`
+            : 'No exposed services found on scanned ports',
+        },
+      ];
+    case 'arp':
+      return [
+        { label: 'Source', value: 'Local neighbor cache' },
+        ...lines,
+      ];
+    case 'interfaces':
+      return [
+        ...lines,
+        {
+          label: 'Summary',
+          value: `${row.data.state || 'unknown'} ${row.data.kind || 'interface'}`,
+        },
+      ];
+    case 'dns':
+      return lines.filter((line) => line.value !== '-');
+    default:
+      return lines;
+  }
+}
+
+function pcapDetailLines(raw: unknown): DetailLine[] {
+  const packet = raw as Record<string, unknown>;
+  const lines: DetailLine[] = [
+    { label: 'No.', value: valueOrDash(packet.index) },
+    { label: 'Timestamp', value: valueOrDash(packet.timestamp) },
+    { label: 'Protocol', value: valueOrDash(packet.protocol) },
+    { label: 'Source', value: valueOrDash(packet.source) },
+    { label: 'Destination', value: valueOrDash(packet.destination) },
+    { label: 'Length', value: valueOrDash(packet.length) },
+    { label: 'Captured', value: valueOrDash(packet.captured_length) },
+    { label: 'Info', value: valueOrDash(packet.info) },
+  ];
+
+  addOptionalLine(lines, 'Ethernet source', packet.ethernet_source);
+  addOptionalLine(lines, 'Ethernet destination', packet.ethernet_destination);
+  addOptionalLine(lines, 'Source port', packet.source_port);
+  addOptionalLine(lines, 'Destination port', packet.destination_port);
+  addOptionalLine(lines, 'TCP flags', packet.tcp_flags);
+  addOptionalLine(lines, 'ICMP type', packet.icmp_type);
+  addOptionalLine(lines, 'ICMP code', packet.icmp_code);
+  addOptionalLine(lines, 'ARP operation', packet.arp_operation);
+  addOptionalLine(lines, 'Hex preview', packet.hex_preview);
+
+  return lines;
+}
+
+function addOptionalLine(lines: DetailLine[], label: string, value: unknown) {
+  if (value == null || value === '') return;
+  lines.push({ label, value: String(value) });
+}
+
+function valueOrDash(value: unknown): string {
+  return value == null || value === '' ? '-' : String(value);
+}
+
 function bannerReason(port: PortResult): string {
   switch (port.status) {
     case 'open':
@@ -183,6 +313,24 @@ function statusLatencyLabel(status: PortStatus): string {
   if (status === 'filtered') return 'timeout';
   if (status === 'closed') return 'refused';
   return '-';
+}
+
+function latencyOfPort(port: PortResult): string {
+  if (typeof port.latency_ms === 'number') return `${port.latency_ms} ms`;
+  return statusLatencyLabel(port.status);
+}
+
+function portStatusMeaning(port: PortResult): string {
+  switch (port.status) {
+    case 'open':
+      return 'TCP connect succeeded.';
+    case 'closed':
+      return 'The host refused the connection.';
+    case 'filtered':
+      return 'The probe timed out or was blocked before connect.';
+    case 'error':
+      return port.error || 'The probe failed before classification completed.';
+  }
 }
 
 function countValues(values: string[]): Record<string, number> {

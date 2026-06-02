@@ -107,6 +107,9 @@ async function assertSettingsDialog(driver) {
   await waitForText(driver, '[data-testid="settings-dialog"]', /Interaction Toasts/i);
   await waitForText(driver, '[data-testid="settings-dialog"]', /Operation Toasts/i);
   await waitForText(driver, '[data-testid="settings-dialog"]', /Release Notifications/i);
+  await waitForText(driver, '[data-testid="settings-dialog"]', /Saving/i);
+  await waitForText(driver, '[data-testid="settings-dialog"]', /Ask Where To Save/i);
+  await waitForText(driver, '[data-testid="settings-dialog"]', /Default Save Folder/i);
   await waitForText(driver, '[data-testid="settings-dialog"]', /Activity Animation/i);
   await waitForText(driver, '[data-testid="settings-dialog"]', /Network Interface/i);
   const text = await driver.findElement(By.css('[data-testid="settings-dialog"]')).getText();
@@ -123,6 +126,8 @@ async function assertSettingsDialog(driver) {
       role: control?.getAttribute('role'),
       text: control?.textContent.trim() ?? '',
       checkboxCount: document.querySelectorAll('[data-testid="settings-dialog"] .settings-checkbox-row input[type="checkbox"]').length,
+      saveFolderButton: document.querySelector('[data-testid="settings-save-folder-button"]')?.textContent.trim() ?? '',
+      saveFolderClearDisabled: document.querySelector('[data-testid="settings-save-folder-clear"]')?.disabled ?? false,
       bodyColumns: body ? getComputedStyle(body).gridTemplateColumns.split(' ').length : 0,
       ratio: dialogRect ? dialogRect.width / dialogRect.height : 0,
       height: dialogRect ? Math.round(dialogRect.height) : 0,
@@ -133,7 +138,9 @@ async function assertSettingsDialog(driver) {
   `);
   assert.equal(themeControl.role, 'switch', 'Theme selection should be a single toggle switch');
   assert.match(themeControl.text, /Dark|Light/i);
-  assert.ok(themeControl.checkboxCount >= 4, 'Non-theme binary preferences should use checkbox controls');
+  assert.ok(themeControl.checkboxCount >= 5, 'Non-theme binary preferences should use checkbox controls');
+  assert.equal(themeControl.saveFolderButton, 'Choose Folder', 'Default save folder should be configured from Settings');
+  assert.equal(themeControl.saveFolderClearDisabled, true, 'Save folder reset should be disabled until a custom folder is selected');
   assert.equal(themeControl.bodyColumns, 1, 'Settings should use a single-column settings flow');
   assert.equal(themeControl.operationRole, '', 'Notification rows should rely on native checkbox semantics');
   assert.ok(themeControl.ratio >= 1.15, `Settings dialog should stay wider than tall, got ratio ${themeControl.ratio}`);

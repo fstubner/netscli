@@ -60,6 +60,19 @@ Before the first automated release runs, add these secrets at
    paths cannot redirect a clean MSI install into an old temporary
    directory. Treat any regression in these installer checks as a
    release-validation blocker.
+
+   The published desktop GUI installers are intentionally built without
+   `--features pcap`. This keeps the GUI install path free of libpcap/Npcap
+   runtime dependencies and avoids redistributing Npcap. Packet Capture is
+   available in local GUI builds only when the Tauri backend is built with
+   `--features pcap` and the user has installed the required system runtime
+   themselves. If a future release adds PCAP-enabled GUI installers, validate
+   launch behavior on Windows with and without Npcap installed before
+   publishing that flavor. For local Windows PCAP GUI experiments, use
+   `scripts/dev-gui-pcap.ps1` or otherwise set `CARGO_TARGET_DIR=target-pcap`
+   so a PCAP-linked debug binary does not replace the normal non-PCAP
+   `target/debug/netscli-gui.exe`.
+
    Also check dependency freshness:
    ```bash
    cargo update --dry-run
@@ -100,6 +113,25 @@ Before the first automated release runs, add these secrets at
   every release the same way the CLI ones do. Templates remain under
   [`packaging/`](../packaging/) for reference; deployed copies live in
   the tap / bucket / AUR / winget-pkgs.
+
+## Windows trust and signing policy
+
+Windows Authenticode signing is deferred for now. The recommended Windows
+install path is Winget:
+
+```powershell
+winget install fstubner.netscli.gui
+```
+
+Winget validates the installer against the SHA256 hash in the submitted
+manifest after the `microsoft/winget-pkgs` review path. Keep that package
+ID and hash-verified install path prominent in README and release notes.
+
+Direct GitHub MSI/NSIS downloads remain available, but they are currently
+unsigned and can show "unknown publisher" or SmartScreen warnings. Do not
+claim that Winget replaces Authenticode signing; describe it as the
+preferred hash-verified install channel until a paid or Store signing path
+is adopted.
 
 ## Future Microsoft Store channel
 

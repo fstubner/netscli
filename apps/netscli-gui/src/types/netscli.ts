@@ -55,6 +55,8 @@ export interface InspectResult {
   host: string;
   ip?: string | null;
   ping?: PingResult | null;
+  /** All scanned ports, including closed/filtered/error states. Older backends may omit this. */
+  ports?: PortResult[];
   open_ports: PortResult[];
   hostname?: string | null;
 }
@@ -116,6 +118,26 @@ export interface PcapPacketSummary {
   length: number;
   captured_length: number;
   info: string;
+  source_port?: number | null;
+  destination_port?: number | null;
+  tcp_flags?: string | null;
+  icmp_type?: number | null;
+  icmp_code?: number | null;
+  arp_operation?: string | null;
+  ethernet_source?: string | null;
+  ethernet_destination?: string | null;
+  hex_preview?: string | null;
+}
+
+export interface PcapCapability {
+  available: boolean;
+  interfaces: string[];
+  message?: string | null;
+}
+
+export interface FileSavePreferences {
+  ask_each_time: boolean;
+  default_directory?: string | null;
 }
 
 export interface PcapResult {
@@ -129,4 +151,7 @@ export interface PcapResult {
 export interface DnsRecord {
   value: string;
   record_type: string;
+  name?: string | null;
+  ttl_seconds?: number | null;
+  resolver_source?: string | null;
 }

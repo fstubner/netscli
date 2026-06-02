@@ -38,6 +38,8 @@ export async function exerciseScan(driver, port) {
   await waitForRow(driver, rowSelector);
   await replaceInput(driver, '[data-testid="result-filter"]', 'no-match-for-render-test');
   await waitForText(driver, '.empty-filter', /No rows match/i);
+  await driver.findElement(By.css('[data-testid="clear-result-filter"]')).click();
+  await waitForRow(driver, rowSelector);
   await driver.findElement(By.css('[data-testid="advanced-filter-toggle"]')).click();
   await waitForText(driver, '[data-testid="advanced-filter-menu"]', /Open/i);
   await assertAdvancedFilterTopLayer(driver);

@@ -11,10 +11,15 @@ export function resultSummary(result: ToolResult | null): string {
       return `${result.data.length} hosts`;
     case 'dns':
       return `${result.data.length} records`;
-    case 'inspect':
-      if (result.data.open_ports.length > 0) return `${result.data.open_ports.length} open ports`;
+    case 'inspect': {
+      const ports = result.data.ports ?? result.data.open_ports;
+      if (ports.length > 0) {
+        const open = ports.filter((port) => port.open).length;
+        return `${ports.length} ${ports.length === 1 ? 'port' : 'ports'} checked - ${open} open`;
+      }
       if (result.data.ping) return `${result.data.ping.alive ? 'host up' : 'host down'} - 0 open ports`;
       return '0 open ports';
+    }
     case 'sweep': {
       const hosts = result.data.length;
       const open = result.data.filter((host) => host.open_ports.length > 0).length;

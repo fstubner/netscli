@@ -108,8 +108,9 @@ async function main() {
     await exerciseArp(driver);
     await saveScreenshot(driver, 'screen-arp.png');
 
-    await exercisePcapValidation(driver);
-    await saveScreenshot(driver, 'screen-pcap-validation.png');
+    if (await exercisePcapValidation(driver)) {
+      await saveScreenshot(driver, 'screen-pcap-validation.png');
+    }
 
     await openSettingsDialog(driver);
     await driver.findElement(By.css('[data-testid="settings-theme-toggle"]')).click();

@@ -13,7 +13,7 @@ pub async fn lookup_record_timeout(
     record_type: RecordType,
     timeout_ms: u64,
 ) -> Result<Vec<DnsRecord>> {
-    let response = lookup_with_fallback(host, record_type, timeout_ms).await?;
+    let (response, resolver_source) = lookup_with_fallback(host, record_type, timeout_ms).await?;
 
     // hickory 0.26 dropped `Lookup::record_iter()` in favor of explicit
     // `.answers()` / `.authorities()` / `.additionals()` slice accessors.
@@ -26,6 +26,9 @@ pub async fn lookup_record_timeout(
         records.push(DnsRecord {
             record_type: record_type.to_string(),
             value: normalize_value(&record.data.to_string()),
+            name: Some(normalize_value(&record.name.to_string())),
+            ttl_seconds: Some(record.ttl),
+            resolver_source: Some(resolver_source.to_string()),
         });
     }
     Ok(records)
@@ -71,7 +74,7 @@ pub async fn resolve_a(host: &str) -> Result<Vec<String>> {
 }
 
 pub async fn resolve_a_timeout(host: &str, timeout_ms: u64) -> Result<Vec<String>> {
-    let response = lookup_with_fallback(host, RecordType::A, timeout_ms).await?;
+    let (response, _) = lookup_with_fallback(host, RecordType::A, timeout_ms).await?;
     // hickory 0.26 returns the flat `Lookup` here (it used to be a typed
     // `Ipv4Lookup` wrapper that yielded `&Ipv4Addr` directly). We now
     // extract the IPv4 from each answer's RData::A variant.
@@ -90,7 +93,7 @@ pub async fn resolve_aaaa(host: &str) -> Result<Vec<String>> {
 }
 
 pub async fn resolve_aaaa_timeout(host: &str, timeout_ms: u64) -> Result<Vec<String>> {
-    let response = lookup_with_fallback(host, RecordType::AAAA, timeout_ms).await?;
+    let (response, _) = lookup_with_fallback(host, RecordType::AAAA, timeout_ms).await?;
     Ok(response
         .answers()
         .iter()
@@ -105,7 +108,7 @@ async fn lookup_with_fallback(
     host: &str,
     record_type: RecordType,
     timeout_ms: u64,
-) -> Result<Lookup> {
+) -> Result<(Lookup, &'static str)> {
     let resolver = shared_resolver()?;
     match timeout(
         Duration::from_millis(timeout_ms),
@@ -113,7 +116,7 @@ async fn lookup_with_fallback(
     )
     .await
     {
-        Ok(Ok(resp)) => Ok(resp),
+        Ok(Ok(resp)) => Ok((resp, "system")),
         Ok(Err(system_err)) => {
             if !super::resolver::should_use_public_fallback(host) {
                 return Err(Error::dns(format!(
@@ -127,7 +130,7 @@ async fn lookup_with_fallback(
             )
             .await
             {
-                Ok(Ok(resp)) => Ok(resp),
+                Ok(Ok(resp)) => Ok((resp, "public_fallback")),
                 Ok(Err(fallback_err)) => Err(Error::dns(format!(
                     "{record_type} lookup failed: system resolver returned {system_err}; public fallback returned {fallback_err}"
                 ))),
@@ -143,6 +146,7 @@ async fn lookup_with_fallback(
 #[cfg(test)]
 mod tests {
     use super::resolve_a;
+    use crate::dns::DnsRecord;
 
     #[tokio::test]
     async fn test_resolve_a_localhost() {
@@ -156,4 +160,20 @@ mod tests {
 
     // NOTE: Unit tests avoid network-dependent DNS behavior.
     // Network integration tests should be added separately (and marked as ignored).
+
+    #[test]
+    fn dns_record_serializes_additive_metadata() {
+        let record = DnsRecord {
+            record_type: "A".to_string(),
+            value: "127.0.0.1".to_string(),
+            name: Some("localhost".to_string()),
+            ttl_seconds: Some(60),
+            resolver_source: Some("system".to_string()),
+        };
+
+        let value = serde_json::to_value(record).expect("serialize DNS record");
+        assert_eq!(value["name"], "localhost");
+        assert_eq!(value["ttl_seconds"], 60);
+        assert_eq!(value["resolver_source"], "system");
+    }
 }

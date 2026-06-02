@@ -1,13 +1,13 @@
 use mac_address::MacAddress;
 use std::net::IpAddr;
-use std::process::Command;
 
+use super::command;
 use crate::error::{Error, Result};
 
 pub(super) fn add_entry(ip: IpAddr, mac: MacAddress) -> Result<()> {
     #[cfg(target_os = "windows")]
     {
-        let status = Command::new("arp")
+        let status = command::arp_command()
             .args(["-s", &ip.to_string(), &mac.to_string().replace(":", "-")])
             .status()?;
         if !status.success() {
@@ -18,7 +18,7 @@ pub(super) fn add_entry(ip: IpAddr, mac: MacAddress) -> Result<()> {
     }
     #[cfg(not(target_os = "windows"))]
     {
-        let status = Command::new("arp")
+        let status = command::arp_command()
             .args(["-s", &ip.to_string(), &mac.to_string()])
             .status()?;
         if !status.success() {
@@ -33,7 +33,9 @@ pub(super) fn add_entry(ip: IpAddr, mac: MacAddress) -> Result<()> {
 pub(super) fn delete_entry(ip: IpAddr) -> Result<()> {
     #[cfg(target_os = "windows")]
     {
-        let status = Command::new("arp").args(["-d", &ip.to_string()]).status()?;
+        let status = command::arp_command()
+            .args(["-d", &ip.to_string()])
+            .status()?;
         if !status.success() {
             return Err(Error::Other(
                 "Failed to delete ARP entry (run as admin?)".into(),
@@ -42,7 +44,9 @@ pub(super) fn delete_entry(ip: IpAddr) -> Result<()> {
     }
     #[cfg(not(target_os = "windows"))]
     {
-        let status = Command::new("arp").args(["-d", &ip.to_string()]).status()?;
+        let status = command::arp_command()
+            .args(["-d", &ip.to_string()])
+            .status()?;
         if !status.success() {
             return Err(Error::Other(
                 "Failed to delete ARP entry (requires root/admin privileges)".into(),
@@ -55,7 +59,7 @@ pub(super) fn delete_entry(ip: IpAddr) -> Result<()> {
 pub(super) fn clear_table() -> Result<()> {
     #[cfg(target_os = "windows")]
     {
-        let status = Command::new("arp").args(["-d", "*"]).status()?;
+        let status = command::arp_command().args(["-d", "*"]).status()?;
         if !status.success() {
             return Err(Error::Other(
                 "Failed to clear ARP table (run as admin?)".into(),
@@ -70,14 +74,14 @@ pub(super) fn clear_table() -> Result<()> {
         // For simplicity in this cross-platform shim:
         #[cfg(target_os = "macos")]
         {
-            let status = Command::new("arp").args(["-d", "-a"]).status()?;
+            let status = command::arp_command().args(["-d", "-a"]).status()?;
             if !status.success() {
                 return Err(Error::Other("Failed to clear ARP table".into()));
             }
         }
         #[cfg(target_os = "linux")]
         {
-            let status = Command::new("ip")
+            let status = command::command("ip")
                 .args(["neigh", "flush", "all"])
                 .status()?;
             if !status.success() {

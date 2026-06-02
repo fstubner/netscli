@@ -196,6 +196,10 @@ jobs:
   # renamed to `netscli-gui-{os}-{arch}.{ext}`, sigstore-signed, and
   # uploaded alongside the CLI binaries on the same release.
   #
+  # GUI installers intentionally do not pass `--features pcap`: packet capture
+  # requires libpcap/Npcap at runtime, and NetsCLI does not redistribute Npcap
+  # inside the Windows desktop installer.
+  #
   # macOS .dmg ships UNSIGNED — users see "unverified developer" on first
   # launch and must right-click → Open. Notarization (paid Apple Developer
   # cert) is tracked separately. Linux ARM64 + Windows ARM64 GUI builds

@@ -1,8 +1,7 @@
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import {
   Bell,
-  Check,
-  ChevronDown,
+  FolderOpen,
   Moon,
   Network,
   Palette,
@@ -11,15 +10,16 @@ import {
   X,
 } from 'lucide-react';
 
-import type { DefaultInterfaceInfo, InterfaceInfo } from '../../types/netscli';
-import { useModalFocus, useRovingFocus } from '../primitives/focus';
-import { useOverlayDismiss } from '../primitives/overlay';
+import type { DefaultInterfaceInfo, FileSavePreferences, InterfaceInfo } from '../../types/netscli';
+import { useModalFocus } from '../primitives/focus';
+import { NetworkInterfacePicker, SettingsSwitch } from './SettingsControls';
 
 interface SettingsDialogProps {
   animateTrafficArrows: boolean;
   commandBarVisible: boolean;
   darkMode: boolean;
   defaultInterface: DefaultInterfaceInfo | null;
+  fileSavePreferences: FileSavePreferences;
   interactionToasts: boolean;
   interfaces: InterfaceInfo[];
   operationToasts: boolean;
@@ -27,8 +27,11 @@ interface SettingsDialogProps {
   releaseNotifications: boolean;
   trafficInterfaceName: string | null;
   onClose: () => void;
+  onChooseSaveFolder: () => void;
+  onClearSaveFolder: () => void;
   onSelectTrafficInterface: (name: string) => void;
   onSetDarkMode: (enabled: boolean) => void;
+  onToggleFileSaveAskEachTime: () => void;
   onToggleInteractionToasts: () => void;
   onToggleOperationToasts: () => void;
   onTogglePersistentHistory: () => void;
@@ -42,6 +45,7 @@ export function SettingsDialog({
   commandBarVisible,
   darkMode,
   defaultInterface,
+  fileSavePreferences,
   interactionToasts,
   interfaces,
   operationToasts,
@@ -49,8 +53,11 @@ export function SettingsDialog({
   releaseNotifications,
   trafficInterfaceName,
   onClose,
+  onChooseSaveFolder,
+  onClearSaveFolder,
   onSelectTrafficInterface,
   onSetDarkMode,
+  onToggleFileSaveAskEachTime,
   onToggleInteractionToasts,
   onToggleOperationToasts,
   onTogglePersistentHistory,
@@ -58,30 +65,9 @@ export function SettingsDialog({
   onToggleCommandBar,
   onToggleTrafficArrowAnimation,
 }: SettingsDialogProps) {
-  const [interfacePickerOpen, setInterfacePickerOpen] = useState(false);
   const dialogRef = useRef<HTMLElement | null>(null);
-  const interfaceFieldRef = useRef<HTMLDivElement | null>(null);
-  const interfaceTriggerRef = useRef<HTMLButtonElement | null>(null);
-  const interfaceListRef = useRef<HTMLDivElement | null>(null);
-  const selectedInterface = interfaces.find((iface) => iface.name === trafficInterfaceName);
-  const selectedInterfaceName = selectedInterface?.name ?? trafficInterfaceName ?? '';
-  const selectedInterfaceDetail = selectedInterface
-    ? formatInterfaceDetail(selectedInterface)
-    : 'Detecting...';
 
   useModalFocus({ dialogRef, onClose });
-  useOverlayDismiss({
-    enabled: interfacePickerOpen,
-    onClose: () => setInterfacePickerOpen(false),
-    refs: [interfaceFieldRef],
-    restoreFocusRef: interfaceTriggerRef,
-  });
-  const onInterfaceListKeyDown = useRovingFocus({
-    containerRef: interfaceListRef,
-    enabled: interfacePickerOpen,
-    itemSelector: 'button[role="option"]',
-    onClose: () => setInterfacePickerOpen(false),
-  });
 
   return (
     <div className="settings-overlay" role="presentation" onMouseDown={onClose}>
@@ -183,6 +169,43 @@ export function SettingsDialog({
 
           <section className="settings-section">
             <span className="settings-section-label">
+              <FolderOpen size={13} />
+              Saving
+            </span>
+            <SettingsSwitch
+              checked={fileSavePreferences.ask_each_time}
+              label="Ask Where To Save"
+              note="Prompt before exporting CSV/JSON or saving packet captures."
+              testId="settings-save-ask-toggle"
+              onClick={onToggleFileSaveAskEachTime}
+            />
+            <div className="settings-folder-row">
+              <div className="settings-row-copy">
+                <span>Default Save Folder</span>
+                <small>{fileSavePreferences.default_directory ?? 'Downloads\\NetsCLI'}</small>
+              </div>
+              <div className="settings-folder-actions">
+                <button
+                  data-testid="settings-save-folder-button"
+                  type="button"
+                  onClick={onChooseSaveFolder}
+                >
+                  Choose Folder
+                </button>
+                <button
+                  data-testid="settings-save-folder-clear"
+                  disabled={!fileSavePreferences.default_directory}
+                  type="button"
+                  onClick={onClearSaveFolder}
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <section className="settings-section">
+            <span className="settings-section-label">
               <Network size={13} />
               Network Activity
             </span>
@@ -193,123 +216,15 @@ export function SettingsDialog({
               testId="settings-activity-animation-toggle"
               onClick={onToggleTrafficArrowAnimation}
             />
-            <div className="settings-interface-field" ref={interfaceFieldRef}>
-              <button
-                aria-expanded={interfacePickerOpen}
-                aria-haspopup="listbox"
-                className={`settings-interface-trigger ${interfacePickerOpen ? 'active' : ''}`}
-                data-interface-name={selectedInterfaceName}
-                data-interface-up={selectedInterface?.is_up ? 'true' : 'false'}
-                data-testid="settings-interface-trigger"
-                ref={interfaceTriggerRef}
-                type="button"
-                onClick={() => setInterfacePickerOpen((open) => !open)}
-                onKeyDown={(event) => {
-                  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-                    event.preventDefault();
-                    setInterfacePickerOpen(true);
-                  }
-                }}
-              >
-                <span>
-                  <span>Network Interface</span>
-                  <small>
-                    {selectedInterfaceName
-                      ? `${selectedInterfaceName} - ${selectedInterfaceDetail}`
-                      : 'Detecting...'}
-                  </small>
-                </span>
-                <ChevronDown size={13} />
-              </button>
-              {interfacePickerOpen && (
-                <div
-                  className="settings-interface-list"
-                  ref={interfaceListRef}
-                  role="listbox"
-                  aria-label="Network Interface"
-                  tabIndex={-1}
-                  onKeyDown={onInterfaceListKeyDown}
-                >
-                  {interfaces.length === 0 && <span className="settings-empty">Detecting...</span>}
-                  {interfaces.map((iface) => {
-                    const selected = iface.name === selectedInterfaceName;
-                    const isDefault = iface.name === defaultInterface?.name;
-
-                    return (
-                      <button
-                        className={`settings-interface-option ${selected ? 'selected' : ''}`}
-                        data-interface-name={iface.name}
-                        data-interface-up={iface.is_up ? 'true' : 'false'}
-                        data-testid="settings-interface-option"
-                        key={iface.name}
-                        role="option"
-                        aria-selected={selected}
-                        type="button"
-                        onClick={() => {
-                          onSelectTrafficInterface(iface.name);
-                          setInterfacePickerOpen(false);
-                        }}
-                      >
-                        <span className="settings-interface-main">
-                          <span>{iface.name}</span>
-                          <small>{formatInterfaceDetail(iface)}</small>
-                        </span>
-                        <span className="settings-interface-badges">
-                          {isDefault && <span className="settings-interface-badge">Default</span>}
-                          {selected && (
-                            <span className="settings-interface-badge selected">
-                              <Check size={11} />
-                              Selected
-                            </span>
-                          )}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+            <NetworkInterfacePicker
+              defaultInterface={defaultInterface}
+              interfaces={interfaces}
+              selectedName={trafficInterfaceName}
+              onSelect={onSelectTrafficInterface}
+            />
           </section>
         </div>
       </section>
     </div>
   );
-}
-
-interface SettingsSwitchProps {
-  checked: boolean;
-  label: string;
-  note: string;
-  testId: string;
-  onClick: () => void;
-}
-
-function SettingsSwitch({
-  checked,
-  label,
-  note,
-  testId,
-  onClick,
-}: SettingsSwitchProps) {
-  return (
-    <label
-      className="settings-checkbox-row"
-      data-testid={testId}
-    >
-      <input checked={checked} type="checkbox" onChange={onClick} />
-      <span className="settings-row-copy">
-        <span>{label}</span>
-        <small>{note}</small>
-      </span>
-      <span className="settings-checkbox-box" aria-hidden="true">
-        {checked && <Check size={12} />}
-      </span>
-    </label>
-  );
-}
-
-function formatInterfaceDetail(iface: InterfaceInfo): string {
-  const status = iface.is_up ? 'Up' : 'Down';
-  const addresses = iface.ips.length > 0 ? iface.ips.slice(0, 2).join(', ') : 'No address';
-  return `${addresses} - ${status}`;
 }

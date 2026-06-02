@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
-import { LOOKUP_TOOL_KINDS, SCAN_TOOL_KINDS, TOOL_CONFIG } from '../../tools/registry';
+import { availableToolKinds, LOOKUP_TOOL_KINDS, SCAN_TOOL_KINDS, TOOL_CONFIG } from '../../tools/registry';
 import type { HistoryEntry, ToolKind, WorkspaceTab } from '../../tools/types';
 import { useRovingFocus } from '../primitives/focus';
 import { useAnchoredPopoverPosition, useOverlayDismiss } from '../primitives/overlay';
@@ -45,6 +45,7 @@ interface MenuBarProps {
   activeTab: WorkspaceTab | undefined;
   history: HistoryEntry[];
   openMenu: string | null;
+  pcapAvailable: boolean;
   setOpenMenu: (menu: string | null) => void;
   tabCount: number;
   onAddTab: (kind: ToolKind) => void;
@@ -71,6 +72,7 @@ export function MenuBar({
   activeTab,
   history,
   openMenu,
+  pcapAvailable,
   setOpenMenu,
   tabCount,
   onAddTab,
@@ -227,7 +229,7 @@ export function MenuBar({
       sections: [
         {
           label: 'Tools and Inventory',
-          items: LOOKUP_TOOL_KINDS.map(makeToolItem),
+          items: availableToolKinds(LOOKUP_TOOL_KINDS, pcapAvailable).map(makeToolItem),
         },
       ],
     },

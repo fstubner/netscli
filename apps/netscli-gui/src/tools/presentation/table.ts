@@ -46,7 +46,7 @@ function parseFilter(input: string): FilterToken[] {
   const query = input.trim();
   if (!query) return [];
 
-  const matches = query.match(/"[^"]+"|'[^']+'|\S+/g) ?? [];
+  const matches = tokenizeFilter(query);
   return matches
     .map((raw) => raw.trim())
     .filter(Boolean)
@@ -59,11 +59,39 @@ function parseFilter(input: string): FilterToken[] {
       }
       return {
         key: normalizeFieldKey(token.slice(0, splitIndex)),
-        value: token.slice(splitIndex + 1).toLowerCase(),
+        value: stripQuotes(token.slice(splitIndex + 1)).toLowerCase(),
         negate,
       };
     })
     .filter((token) => token.value.length > 0);
+}
+
+function tokenizeFilter(query: string): string[] {
+  const tokens: string[] = [];
+  let current = '';
+  let quote: '"' | "'" | null = null;
+
+  for (const char of query) {
+    if ((char === '"' || char === "'") && quote === null) {
+      quote = char;
+      current += char;
+      continue;
+    }
+    if (char === quote) {
+      quote = null;
+      current += char;
+      continue;
+    }
+    if (/\s/.test(char) && quote === null) {
+      if (current.trim()) tokens.push(current.trim());
+      current = '';
+      continue;
+    }
+    current += char;
+  }
+
+  if (current.trim()) tokens.push(current.trim());
+  return tokens;
 }
 
 function matchesFilter(row: ResultRow, tokens: FilterToken[]): boolean {

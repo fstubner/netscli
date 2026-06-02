@@ -38,6 +38,13 @@ export async function runWorkspaceTab({
   patchTab(tab.id, {
     busy: true,
     error: null,
+    progress: {
+      kind: tab.kind,
+      completed: 0,
+      total: 0,
+      found: 0,
+      detail: initialProgressDetail(tab),
+    },
     result: null,
     selectedIndex: 0,
     selectedIndices: [0],
@@ -55,10 +62,11 @@ export async function runWorkspaceTab({
     patchTab(tab.id, {
       result,
       busy: false,
+      progress: null,
       selectedIndex: 0,
       selectedIndices: [0],
       selectionAnchor: 0,
-      detailTab: tab.kind === 'scan' ? 'banner' : 'details',
+      detailTab: tab.kind === 'scan' ? 'banner' : tab.kind === 'inspect' ? 'overview' : 'details',
     });
     showToast({
       message: `${TOOL_CONFIG[tab.kind].label} complete`,
@@ -83,7 +91,7 @@ export async function runWorkspaceTab({
   } catch (error) {
     if (activeOps.current[tab.id] !== opId) return;
     const message = error instanceof Error ? error.message : String(error);
-    patchTab(tab.id, { error: message, busy: false, result: null });
+    patchTab(tab.id, { error: message, busy: false, progress: null, result: null });
     showToast({
       message: `${TOOL_CONFIG[tab.kind].label} failed`,
       kind: 'operation',
@@ -108,10 +116,23 @@ export async function cancelWorkspaceTab(
     await netscli.cancelOperation(opId).catch(() => undefined);
   }
   delete activeOps.current[tabId];
-  patchTab(tabId, { busy: false, error: 'Operation cancelled' });
+  patchTab(tabId, { busy: false, progress: null, error: 'Operation cancelled' });
   showToast({
     message: `${tab ? TOOL_CONFIG[tab.kind].label : 'Operation'} stopped`,
     kind: 'operation',
     tabId,
   });
+}
+
+function initialProgressDetail(tab: WorkspaceTab): string {
+  switch (tab.kind) {
+    case 'scan':
+      return 'Preparing port probes';
+    case 'discover':
+      return 'Preparing host discovery';
+    case 'sweep':
+      return 'Preparing network sweep';
+    default:
+      return 'Running operation';
+  }
 }

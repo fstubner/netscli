@@ -23,7 +23,6 @@ export function buildCommand(tab: WorkspaceTab): string {
     case 'pcap': {
       const parts = ['netscli pcap'];
       if (form.interface) parts.push(`--interface ${form.interface}`);
-      if (form.output_mode === 'Ask') parts.push('--output <choose-file>');
       if (form.duration) parts.push(`--duration ${form.duration}`);
       if (form.filter) parts.push(`--filter "${form.filter}"`);
       if (form.max_packets) parts.push(`--max-packets ${form.max_packets}`);

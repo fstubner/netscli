@@ -5,14 +5,27 @@ interface OperationProgressProps {
 }
 
 export function OperationProgress({ tab }: OperationProgressProps) {
+  const progress = tab.progress;
+  const total = progress?.total ?? 0;
+  const completed = progress?.completed ?? 0;
+  const pct = total > 0 ? Math.min(100, Math.round((completed / total) * 100)) : null;
+  const detail = progress?.detail || operationDetail(tab);
+
   return (
     <section className="operation-progress" aria-label="Operation progress">
       <div className="operation-progress-copy">
         <span>{operationTitle(tab)}</span>
-        <small>{operationDetail(tab)}</small>
+        <small>{detail}</small>
       </div>
-      <div className="operation-progress-bar" aria-hidden="true">
-        <span />
+      <div
+        aria-valuemax={total || undefined}
+        aria-valuemin={0}
+        aria-valuenow={pct == null ? undefined : completed}
+        aria-valuetext={pct == null ? detail : `${completed} of ${total}, ${pct}%`}
+        className={`operation-progress-bar ${pct == null ? 'indeterminate' : 'determinate'}`}
+        role="progressbar"
+      >
+        <span style={pct == null ? undefined : { transform: `scaleX(${pct / 100})` }} />
       </div>
     </section>
   );

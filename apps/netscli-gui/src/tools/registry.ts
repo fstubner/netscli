@@ -27,6 +27,10 @@ export const SCAN_TOOL_KINDS: ToolKind[] = ['scan', 'discover', 'inspect', 'swee
 
 export const LOOKUP_TOOL_KINDS: ToolKind[] = ['dns', 'interfaces', 'arp', 'pcap'];
 
+export function availableToolKinds(kinds: ToolKind[], pcapAvailable: boolean): ToolKind[] {
+  return pcapAvailable ? kinds : kinds.filter((kind) => kind !== 'pcap');
+}
+
 export const TOOL_CONFIG: Record<ToolKind, ToolConfig> = {
   scan: {
     label: 'Port Scan',
@@ -102,7 +106,6 @@ export const TOOL_CONFIG: Record<ToolKind, ToolConfig> = {
     action: 'Capture',
     fields: [
       { key: 'interface', label: 'Interface', type: 'select', placeholder: 'Select interface', required: true },
-      { key: 'output_mode', label: 'Save', type: 'select', compact: true, options: ['Auto', 'Ask'] },
       { key: 'duration', label: 'Seconds', type: 'number', compact: true, placeholder: '5' },
       { key: 'filter', label: 'Filter', placeholder: 'tcp port 443' },
       { key: 'max_packets', label: 'Packets', type: 'number', compact: true, placeholder: '1000' },
@@ -118,7 +121,7 @@ export const DEFAULT_FORM: Record<ToolKind, Record<string, string>> = {
   sweep: { subnet: '', ports: '22,80,443' },
   interfaces: {},
   arp: {},
-  pcap: { interface: '', output_mode: 'Auto', duration: '5', filter: '', max_packets: '1000' },
+  pcap: { interface: '', duration: '5', filter: '', max_packets: '1000' },
 };
 
 export const DEFAULT_SORT: Record<ToolKind, string> = {
@@ -149,10 +152,11 @@ export function createTab(kind: ToolKind): WorkspaceTab {
     result: null,
     error: null,
     busy: false,
+    progress: null,
     selectedIndex: 0,
     selectedIndices: [0],
     selectionAnchor: 0,
-    detailTab: kind === 'scan' ? 'banner' : 'details',
+    detailTab: kind === 'scan' ? 'banner' : kind === 'inspect' ? 'overview' : 'details',
     sortKey: DEFAULT_SORT[kind],
     sortDir: 'asc',
   };

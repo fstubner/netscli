@@ -1,17 +1,29 @@
 import { invoke } from '@tauri-apps/api/core';
+import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 
 import type {
   ArpEntry,
   DefaultInterfaceInfo,
   DnsRecord,
+  FileSavePreferences,
   Host,
   InspectResult,
   InterfaceInfo,
   NetworkStats,
+  PcapCapability,
   PcapResult,
   PortResult,
   SweepEntry,
 } from '../types/netscli';
+import type { OperationProgressState } from '../tools/types';
+
+const OPERATION_PROGRESS_EVENT = 'netscli://operation-progress';
+
+export async function listenOperationProgress(
+  handler: (progress: OperationProgressState) => void,
+): Promise<UnlistenFn> {
+  return listen<OperationProgressState>(OPERATION_PROGRESS_EVENT, (event) => handler(event.payload));
+}
 
 export async function discoverNetwork(
   subnet?: string,
@@ -68,7 +80,6 @@ export async function capturePcap(
     filter?: string;
     duration?: number;
     max_packets?: number;
-    output_mode?: string;
   },
   op_id?: string,
 ): Promise<PcapResult> {
@@ -78,8 +89,27 @@ export async function capturePcap(
     filter: params.filter,
     duration: params.duration,
     max_packets: params.max_packets,
-    output_mode: params.output_mode,
   });
+}
+
+export async function getPcapCapability(): Promise<PcapCapability> {
+  return invoke<PcapCapability>('pcap_capability');
+}
+
+export async function getFileSavePreferences(): Promise<FileSavePreferences> {
+  return invoke<FileSavePreferences>('get_file_save_preferences');
+}
+
+export async function setFileSaveAskEachTime(ask_each_time: boolean): Promise<FileSavePreferences> {
+  return invoke<FileSavePreferences>('set_file_save_ask_each_time', { ask_each_time });
+}
+
+export async function chooseFileSaveDefaultDirectory(): Promise<FileSavePreferences> {
+  return invoke<FileSavePreferences>('choose_file_save_default_directory');
+}
+
+export async function clearFileSaveDefaultDirectory(): Promise<FileSavePreferences> {
+  return invoke<FileSavePreferences>('clear_file_save_default_directory');
 }
 
 export async function cancelOperation(op_id: string): Promise<void> {
@@ -99,4 +129,12 @@ export async function exportTextFile(
   contents: string,
 ): Promise<string> {
   return invoke<string>('export_text_file', { filename, contents, target_path: null });
+}
+
+export async function openFilesystemPath(path: string): Promise<void> {
+  return invoke<void>('open_saved_artifact', { path });
+}
+
+export async function revealFilesystemPath(path: string): Promise<void> {
+  return invoke<void>('reveal_saved_artifact', { path });
 }

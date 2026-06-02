@@ -32,3 +32,10 @@
 .content-context-menu button:disabled {
   color: var(--text-muted);
 }
+
+.content-context-menu button span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -9,6 +9,7 @@ pub struct InspectResult {
     pub host: String,
     pub ip: Option<IpAddr>,
     pub ping: Option<PingResult>,
+    pub ports: Vec<PortResult>,
     pub open_ports: Vec<PortResult>,
     pub hostname: Option<String>,
 }
@@ -62,11 +63,15 @@ impl InspectEngine {
 
         let (ping_res, ports_res, hostname) = tokio::join!(ping_fut, scan_fut, hostname_fut);
 
+        let ports = ports_res;
+        let open_ports = ports.iter().filter(|p| p.open).cloned().collect();
+
         Ok(InspectResult {
             host,
             ip: Some(ip_for_scan),
             ping: Some(ping_res),
-            open_ports: ports_res.into_iter().filter(|p| p.open).collect(),
+            ports,
+            open_ports,
             hostname,
         })
     }

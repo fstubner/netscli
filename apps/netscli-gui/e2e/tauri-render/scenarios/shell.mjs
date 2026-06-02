@@ -79,7 +79,7 @@ export async function exerciseMenusAndToolbar(driver) {
   ]);
   await assertMenuItems(driver, 'Scan', ['Run Active Tab', 'Cancel Active Tab', 'Port Scan', 'Discover', 'Inspect', 'Sweep']);
   await waitForText(driver, '.menu-popover', /Operations/i);
-  await assertMenuItems(driver, 'Tools', ['DNS Lookup', 'Interfaces', 'ARP Table', 'Packet Capture']);
+  await assertMenuIncludes(driver, 'Tools', ['DNS Lookup', 'Interfaces', 'ARP Table']);
   await waitForText(driver, '.menu-popover', /Tools and inventory/i);
   await assertMenuItems(driver, 'History', [/netscli scan/i, 'Clear History']);
   await assertSettingsDialog(driver);

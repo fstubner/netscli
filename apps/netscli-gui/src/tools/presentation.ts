@@ -1,7 +1,11 @@
 export { columnsFor } from './presentation/columns';
 export { buildCommand } from './presentation/commands';
+export { copyContextForCell } from './presentation/copy';
 export {
+  detailLinesForRow,
   detailTabsFor,
+  inspectOverviewLines,
+  inspectPortsLines,
   portBannerLines,
   portHeaderLines,
   portRawPreview,

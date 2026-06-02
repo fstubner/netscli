@@ -12,6 +12,7 @@ interface TabStripProps {
   tabs: WorkspaceTab[];
   activeTabId: string;
   openMenu: string | null;
+  pcapAvailable: boolean;
   onAddScanTab: () => void;
   onAddToolTab: (kind: ToolKind) => void;
   onCloseTab: (tabId: string) => void;
@@ -23,6 +24,7 @@ export function TabStrip({
   tabs,
   activeTabId,
   openMenu,
+  pcapAvailable,
   onAddScanTab,
   onAddToolTab,
   onCloseTab,
@@ -281,6 +283,7 @@ export function TabStrip({
       {toolMenuOpen && (
         <TabToolMenu
           onAddToolTab={onAddToolTab}
+          pcapAvailable={pcapAvailable}
           position={toolMenuPosition}
           setOpenMenu={setOpenMenu}
           triggerRef={chevronRef}

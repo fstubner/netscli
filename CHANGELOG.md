@@ -38,6 +38,11 @@ version and release together.
   output stays concise, but scanned ports can show closed, filtered, and
   error states with latency where available instead of only emphasizing
   open ports.
+- **Windows install guidance now prefers Winget for the desktop app.**
+  Release notes and install docs call out Winget's manifest review and
+  installer hash verification as the recommended Windows path, while direct
+  GitHub Windows installers remain unsigned and may show Windows warnings
+  until code signing is added later.
 
 ### Changed (internal)
 

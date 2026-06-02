@@ -14,7 +14,7 @@ const TAB_LABELS: Record<WorkspaceTab['kind'], string> = {
   sweep: 'Sweep',
   interfaces: 'Interfaces',
   arp: 'ARP',
-  pcap: 'Capture',
+  pcap: 'Packet Capture',
 };
 
 export function tabIdentity(tab: WorkspaceTab): TabIdentity {

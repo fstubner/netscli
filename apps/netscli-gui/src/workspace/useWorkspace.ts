@@ -32,7 +32,10 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
   } = useNetworkStatus(showToast);
 
   const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? tabs[0];
-  const baseRows = useMemo(() => buildRows(activeTab?.result ?? null), [activeTab?.result]);
+  const baseRows = useMemo(
+    () => enrichInterfaceRows(buildRows(activeTab?.result ?? null), defaultInterface?.name, trafficInterfaceName),
+    [activeTab?.result, defaultInterface?.name, trafficInterfaceName],
+  );
   const rows = useMemo(
     () => (activeTab ? filterAndSortRows(baseRows, activeTab, filterText) : []),
     [activeTab, baseRows, filterText],
@@ -72,6 +75,27 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
     void runTab(activeTab.id);
   }, [activeTab?.id, activeTab?.busy, activeTab?.result]);
 
+  useEffect(() => {
+    if (!isTauri()) return;
+    let cancelled = false;
+    let unlisten: (() => void) | undefined;
+    void netscli.listenOperationProgress((progress) => {
+      const tabId = Object.entries(activeOps.current).find(([, opId]) => opId === progress.op_id)?.[0];
+      if (!tabId) return;
+      patchTab(tabId, { progress });
+    }).then((dispose) => {
+      if (cancelled) {
+        dispose();
+      } else {
+        unlisten = dispose;
+      }
+    });
+    return () => {
+      cancelled = true;
+      unlisten?.();
+    };
+  }, []);
+
   function showExportToast(path: string | null | undefined, fallback: string) {
     if (path === undefined) return;
     showToast({ message: path ? `Exported to ${path}` : fallback, kind: 'interaction' });
@@ -92,7 +116,7 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
         tab.id === id
           ? {
               ...tab,
-              detailTab: tab.kind === 'scan' ? 'banner' : 'details',
+              detailTab: tab.kind === 'scan' ? 'banner' : tab.kind === 'inspect' ? 'overview' : 'details',
               error: null,
               form: { ...tab.form, [key]: value },
               result: null,
@@ -173,6 +197,15 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
     setActiveTabId(tab.id);
   }
 
+  function openHostTool(kind: 'scan' | 'inspect', host: string) {
+    const value = host.trim();
+    if (!value) return;
+    const tab = applyContextDefaults(createTab(kind), defaultInterface, trafficInterfaceName, interfaces);
+    tab.form = { ...tab.form, host: value };
+    setTabs((prev) => [...prev, tab]);
+    setActiveTabId(tab.id);
+  }
+
   function cancelOperationIds(tabIds: string[]) {
     for (const tabId of tabIds) {
       autoRunTabIds.current.delete(tabId);
@@ -245,6 +278,26 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
     if (!commandPreview) return;
     await navigator.clipboard?.writeText(commandPreview).catch(() => undefined);
     showToast({ message: 'Command copied', kind: 'interaction' });
+  }
+
+  async function copyCellValue(label: string, value: string) {
+    if (!value) return;
+    await navigator.clipboard?.writeText(value).catch(() => undefined);
+    showToast({ message: `${label} copied`, kind: 'interaction' });
+  }
+
+  async function openCaptureFile(path: string) {
+    if (!path) return;
+    await netscli.openFilesystemPath(path).catch((error) => {
+      showToast({ message: `Open failed: ${String(error)}`, kind: 'interaction' });
+    });
+  }
+
+  async function revealCaptureFile(path: string) {
+    if (!path) return;
+    await netscli.revealFilesystemPath(path).catch((error) => {
+      showToast({ message: `Reveal failed: ${String(error)}`, kind: 'interaction' });
+    });
   }
 
   async function copySelectedDetails() {
@@ -324,6 +377,7 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
     selectRow,
     selectAllRows,
     addTab,
+    openHostTool,
     closeTab,
     closeAllTabs,
     closeOtherTabs,
@@ -332,6 +386,9 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
     exportCurrent,
     exportSelectedJson,
     exportSelectedCsv,
+    copyCellValue,
+    openCaptureFile,
+    revealCaptureFile,
     copyCommand,
     copySelectedDetails,
     copySelectedRaw,
@@ -340,4 +397,22 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
     clearHistory,
     clearCurrentResults,
   };
+}
+
+function enrichInterfaceRows(rows: ReturnType<typeof buildRows>, defaultName: string | undefined, selectedName: string | null) {
+  if (rows.length === 0 || rows[0]?.kind !== 'interfaces') return rows;
+  const activeName = selectedName || defaultName;
+  return rows.map((row) => {
+    const name = String(row.data.name ?? '');
+    const labels = [
+      activeName && name === activeName ? 'selected' : '',
+      defaultName && name === defaultName ? 'default' : '',
+    ].filter(Boolean);
+    const data = { ...row.data, app: labels.join(', ') };
+    return {
+      ...row,
+      data,
+      searchText: Object.values(data).join(' ').toLowerCase(),
+    };
+  });
 }

@@ -34,6 +34,24 @@ pub struct PcapPacketSummary {
     pub length: u32,
     pub captured_length: u32,
     pub info: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source_port: Option<u16>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub destination_port: Option<u16>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tcp_flags: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub icmp_type: Option<u8>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub icmp_code: Option<u8>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub arp_operation: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ethernet_source: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ethernet_destination: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub hex_preview: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]

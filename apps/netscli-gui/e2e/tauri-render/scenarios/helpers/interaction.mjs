@@ -109,27 +109,30 @@ async function assertInteractiveCursorTreatment(driver) {
 }
 
 async function dispatchTooltipPointerOver(driver, selector) {
-  await driver.executeScript(
+  const dispatched = await driver.executeScript(
     `
       const control = document.querySelector(arguments[0]);
       if (!control) return false;
       const rect = control.getBoundingClientRect();
-      control.dispatchEvent(new MouseEvent('pointerover', {
+      const EventCtor = window.PointerEvent ?? MouseEvent;
+      control.dispatchEvent(new EventCtor('pointerover', {
         bubbles: true,
         cancelable: true,
         composed: true,
         clientX: rect.left + rect.width / 2,
         clientY: rect.top + rect.height / 2,
       }));
+      if (typeof control.focus === 'function') control.focus({ preventScroll: true });
       return true;
     `,
     selector,
   );
+  assert.equal(dispatched, true, `Expected tooltip host ${selector} to exist`);
 }
 
 async function assertSuppressesNativeContextMenu(driver) {
   const prevented = await driver.executeScript(`
-    const target = document.querySelector('[data-testid="result-table"]');
+    const target = document.querySelector('[data-testid="result-table"] tbody td') ?? document.querySelector('[data-testid="result-table"]');
     const rect = target?.getBoundingClientRect();
     const event = new MouseEvent('contextmenu', {
       bubbles: true,
@@ -141,6 +144,29 @@ async function assertSuppressesNativeContextMenu(driver) {
     return event.defaultPrevented;
   `);
   assert.equal(prevented, true, 'WebView browser context menu should be suppressed');
+  await waitForText(driver, '[data-testid="content-context-menu"]', /Copy (Port|IP|Type|Interface|Host|MAC|Value)/i);
+  const copiedCellLabel = await driver.executeScript(`
+    const buttons = Array.from(document.querySelectorAll('[data-testid="content-context-menu"] button'));
+    const button = buttons.find((item) => /^Copy (?!Selected)/.test(item.textContent.trim()));
+    button?.click();
+    return button?.textContent.trim() ?? null;
+  `);
+  assert.ok(copiedCellLabel, 'Context menu should expose a copy action for the clicked cell');
+  await waitForText(driver, '.toast', /copied/i);
+
+  const rowMenuPrevented = await driver.executeScript(`
+    const target = document.querySelector('[data-testid="result-table"] tbody td') ?? document.querySelector('[data-testid="result-table"]');
+    const rect = target?.getBoundingClientRect();
+    const event = new MouseEvent('contextmenu', {
+      bubbles: true,
+      cancelable: true,
+      clientX: rect ? rect.left + 24 : 24,
+      clientY: rect ? rect.top + 10 : 24,
+    });
+    target.dispatchEvent(event);
+    return event.defaultPrevented;
+  `);
+  assert.equal(rowMenuPrevented, true, 'Result cells should reopen the app context menu');
   await waitForText(driver, '[data-testid="content-context-menu"]', /Copy Selected Raw/i);
   const contextMenuText = await driver.findElement(By.css('[data-testid="content-context-menu"]')).getText();
   assert.doesNotMatch(contextMenuText, /Copy CLI Command/i, 'Content context menu should stay scoped to selected content');

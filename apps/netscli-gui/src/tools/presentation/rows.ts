@@ -48,7 +48,13 @@ export function buildRows(result: ToolResult | null): ResultRow[] {
       });
     case 'dns':
       return result.data.map((record, index) => {
-        const data = { record_type: record.record_type, value: record.value };
+        const data = {
+          record_type: record.record_type,
+          value: record.value,
+          ttl: record.ttl_seconds == null ? '' : `${record.ttl_seconds}s`,
+          resolver: record.resolver_source ?? '',
+          name: record.name ?? '',
+        };
         return {
           id: `dns-${index}`,
           kind: 'dns',
@@ -58,7 +64,8 @@ export function buildRows(result: ToolResult | null): ResultRow[] {
         };
       });
     case 'inspect': {
-      const rows = result.data.open_ports.map((port, index) => portRow(port, index, 'inspect'));
+      const ports = result.data.ports?.length ? result.data.ports : result.data.open_ports;
+      const rows = ports.map((port, index) => portRow(port, index, 'inspect'));
       if (rows.length > 0) return rows;
       const ping = result.data.ping;
       const data = {
@@ -84,10 +91,11 @@ export function buildRows(result: ToolResult | null): ResultRow[] {
         const data = {
           ip: entry.host.ip,
           hostname: entry.host.hostname ?? '',
-          open_ports: entry.open_ports.length,
-          ports: openPorts,
           mac: entry.host.mac ?? '',
           vendor: entry.host.vendor ?? '',
+          rtt: entry.host.rtt_ms == null ? '' : `${entry.host.rtt_ms} ms`,
+          open_ports: entry.open_ports.length,
+          ports: openPorts,
         };
         return {
           id: `sweep-${entry.host.ip}-${index}`,
@@ -104,6 +112,8 @@ export function buildRows(result: ToolResult | null): ResultRow[] {
           ips: iface.ips.join(', '),
           mac: iface.mac ?? '',
           state: iface.is_up ? 'up' : 'down',
+          app: '',
+          kind: interfaceKind(iface.name, iface.is_loopback),
           loopback: iface.is_loopback ? 'yes' : '',
         };
         return {
@@ -140,6 +150,9 @@ export function buildRows(result: ToolResult | null): ResultRow[] {
           protocol: packet.protocol,
           length: packet.length,
           info: packet.info,
+          ports: packet.source_port != null && packet.destination_port != null
+            ? `${packet.source_port} -> ${packet.destination_port}`
+            : '',
         };
         return {
           id: `pcap-${packet.index}`,
@@ -151,4 +164,16 @@ export function buildRows(result: ToolResult | null): ResultRow[] {
       });
     }
   }
+}
+
+function interfaceKind(name: string, isLoopback: boolean): string {
+  if (isLoopback) return 'loopback';
+  const lowered = name.toLowerCase();
+  if (lowered.includes('vmware') || lowered.includes('virtual') || lowered.includes('vethernet')) {
+    return 'virtual';
+  }
+  if (lowered.includes('tailscale') || lowered.includes('wireguard') || lowered.includes('vpn')) {
+    return 'vpn';
+  }
+  return 'physical';
 }

@@ -6,10 +6,13 @@ import {
   buildCommand,
   buildRows,
   columnsFor,
+  copyContextForCell,
   csvEscape,
   detailTabsFor,
   filterHintsFor,
   filterAndSortRows,
+  inspectOverviewLines,
+  inspectPortsLines,
   portBannerLines,
   portHeaderLines,
   portRawPreview,
@@ -73,10 +76,6 @@ describe('buildCommand', () => {
     expect(buildCommand(pcap)).toBe(
       'netscli pcap --interface Ethernet --duration 10 --filter "tcp port 443" --max-packets 50',
     );
-    pcap.form.output_mode = 'Ask';
-    expect(buildCommand(pcap)).toBe(
-      'netscli pcap --interface Ethernet --output <choose-file> --duration 10 --filter "tcp port 443" --max-packets 50',
-    );
   });
 });
 
@@ -103,6 +102,10 @@ describe('tabIdentity', () => {
       identifier: '',
     });
     expect(tabIdentity(createTab('arp'))).toEqual({ label: 'ARP', identifier: '' });
+
+    const pcap = createTab('pcap');
+    pcap.form.interface = 'Eth 2.5G';
+    expect(tabIdentity(pcap)).toEqual({ label: 'Packet Capture', identifier: 'Eth 2.5G' });
   });
 
   it('keeps tab hover text compact and leaves CLI commands to the command bar', () => {
@@ -124,6 +127,28 @@ describe('result presentation', () => {
         data: [portResult(80, 'open'), portResult(81, 'closed'), portResult(82, 'filtered')],
       }),
     ).toBe('3 results - 1 open');
+    expect(
+      resultSummary({
+        kind: 'inspect',
+        data: {
+          host: '127.0.0.1',
+          ports: [portResult(22, 'filtered'), portResult(80, 'closed'), portResult(443, 'open')],
+          open_ports: [portResult(443, 'open')],
+          ping: { ip: '127.0.0.1', alive: false, seq: 0 },
+        },
+      }),
+    ).toBe('3 ports checked - 1 open');
+    expect(
+      resultSummary({
+        kind: 'inspect',
+        data: {
+          host: '127.0.0.1',
+          ports: [portResult(8080, 'open')],
+          open_ports: [portResult(8080, 'open')],
+          ping: { ip: '127.0.0.1', alive: true, seq: 0 },
+        },
+      }),
+    ).toBe('1 port checked - 1 open');
     expect(
       resultSummary({
         kind: 'inspect',
@@ -153,6 +178,23 @@ describe('result presentation', () => {
     expect(rows[0]?.searchText).toContain('cloudflare');
   });
 
+  it('normalizes inspect rows from all scanned ports, not only open ports', () => {
+    const rows = buildRows({
+      kind: 'inspect',
+      data: {
+        host: '127.0.0.1',
+        ports: [portResult(22, 'filtered'), portResult(80, 'closed'), portResult(443, 'open')],
+        open_ports: [portResult(443, 'open')],
+        ping: { ip: '127.0.0.1', alive: false, seq: 0 },
+        hostname: 'localhost',
+      },
+    });
+
+    expect(rows.map((row) => row.data.port)).toEqual([22, 80, 443]);
+    expect(rows.map((row) => row.data.status)).toEqual(['filtered', 'closed', 'open']);
+    expect(columnsFor('inspect', null, rows).map((column) => column.key)).toContain('port');
+  });
+
   it('normalizes PCAP captures into packet rows instead of a capture summary row', () => {
     const rows = buildRows({
       kind: 'pcap',
@@ -171,6 +213,10 @@ describe('result presentation', () => {
             length: 54,
             captured_length: 54,
             info: '54231 -> 443 [SYN] Len=0',
+            source_port: 54231,
+            destination_port: 443,
+            tcp_flags: 'SYN',
+            hex_preview: '00 11',
           },
         ],
       },
@@ -182,6 +228,7 @@ describe('result presentation', () => {
       source: '192.168.1.10',
       destination: '1.1.1.1',
       protocol: 'TCP',
+      ports: '54231 -> 443',
       length: 54,
     });
     expect(columnsFor('pcap', null).map((column) => column.key)).toEqual([
@@ -190,6 +237,7 @@ describe('result presentation', () => {
       'source',
       'destination',
       'protocol',
+      'ports',
       'length',
       'info',
     ]);
@@ -213,13 +261,45 @@ describe('result presentation', () => {
     expect(filterAndSortRows(rows, tab, '-service:http').map((row) => row.data.port)).toEqual([]);
   });
 
+  it('keeps quoted field filters together for multi-word values', () => {
+    const tab = createTab('sweep');
+    tab.sortKey = 'ip';
+    tab.result = {
+      kind: 'sweep',
+      data: [
+        {
+          host: {
+            ip: '192.168.1.74',
+            vendor: 'WNC Corporation',
+          },
+          open_ports: [portResult(22, 'open')],
+        },
+        {
+          host: {
+            ip: '192.168.1.125',
+            vendor: 'Philips Lighting BV',
+          },
+          open_ports: [portResult(80, 'open')],
+        },
+      ],
+    };
+
+    const rows = buildRows(tab.result);
+    expect(filterAndSortRows(rows, tab, 'vendor:"WNC Corporation"').map((row) => row.data.ip)).toEqual([
+      '192.168.1.74',
+    ]);
+    expect(filterAndSortRows(rows, tab, 'vendor:"Philips Lighting BV"').map((row) => row.data.ip)).toEqual([
+      '192.168.1.125',
+    ]);
+  });
+
   it('builds tab-aware filter hints without site-specific canned values', () => {
     const dns = createTab('dns');
     dns.result = {
       kind: 'dns',
       data: [
         { record_type: 'A', value: '185.199.110.153' },
-        { record_type: 'MX', value: '10 mail.example.test' },
+        { record_type: 'MX', value: '10 mail.example.test', ttl_seconds: 300, resolver_source: 'system' },
       ],
     };
     const dnsHints = filterHintsFor(dns);
@@ -227,6 +307,7 @@ describe('result presentation', () => {
     expect(dnsHints.placeholder).toContain('type:A');
     expect(dnsText).toContain('type:A');
     expect(dnsText).toContain('value:185.199.110.153');
+    expect(dnsText).toContain('resolver:system');
     expect(dnsText).not.toMatch(/GitHub Pages|vendor:apple|value:mail/i);
 
     const discover = createTab('discover');
@@ -255,10 +336,41 @@ describe('result presentation', () => {
     expect(detailTabsFor(undefined)).toEqual(['details', 'raw']);
   });
 
+  it('builds host-profile detail content for inspect results', () => {
+    const result = {
+      host: '127.0.0.1',
+      ip: '127.0.0.1',
+      hostname: 'localhost',
+      ports: [portResult(22, 'filtered'), portResult(443, 'open', 9, 'nginx')],
+      open_ports: [portResult(443, 'open', 9, 'nginx')],
+      ping: { ip: '127.0.0.1', alive: true, seq: 0, method: 'tcp-connect', rtt_ms: 2 },
+    };
+    const rows = buildRows({ kind: 'inspect', data: result });
+
+    expect(inspectOverviewLines(result).map((line) => [line.label, line.value])).toEqual(
+      expect.arrayContaining([
+        ['Host', '127.0.0.1'],
+        ['Reverse DNS', 'localhost'],
+        ['Ports Checked', '2'],
+        ['Open Ports', '1'],
+      ]),
+    );
+    expect(inspectPortsLines(result, rows[0]).map((line) => [line.label, line.value])).toEqual(
+      expect.arrayContaining([
+        ['Selected Port', '22'],
+        ['Status', 'filtered'],
+        ['Meaning', 'The probe timed out or was blocked before connect.'],
+      ]),
+    );
+    expect(inspectPortsLines(result, undefined).find((line) => line.label === 'Open Ports')?.value).toBe('443');
+  });
+
   it('keeps DNS record type compact and leaves value column to fill the table', () => {
     const columns = columnsFor('dns', null);
     expect(columns[0]).toMatchObject({ key: 'record_type', width: 72 });
     expect(columns[1]).toMatchObject({ key: 'value', grow: true });
+    expect(columns.map((column) => column.key)).toContain('ttl');
+    expect(columns.map((column) => column.key)).toContain('resolver');
   });
 
   it('does not let empty optional columns consume the main table width', () => {
@@ -344,5 +456,27 @@ describe('result presentation', () => {
       },
     ]);
     expect(csv).toBe('Name,Value\ntxt,"hello, ""world"""');
+  });
+
+  it('builds copy context for populated result cells only', () => {
+    const row = {
+      id: 'row-1',
+      kind: 'discover' as const,
+      data: { ip: '192.168.1.125', hostname: '', vendor: 'Philips Lighting BV' },
+      raw: {},
+      searchText: '',
+    };
+
+    expect(copyContextForCell(row, { key: 'vendor', label: 'Vendor' })).toEqual({
+      columnKey: 'vendor',
+      label: 'Vendor',
+      value: 'Philips Lighting BV',
+      row: {
+        id: 'row-1',
+        kind: 'discover',
+        data: { ip: '192.168.1.125', hostname: '', vendor: 'Philips Lighting BV' },
+      },
+    });
+    expect(copyContextForCell(row, { key: 'hostname', label: 'Hostname' })).toBeNull();
   });
 });

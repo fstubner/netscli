@@ -1,4 +1,4 @@
-import { ChevronDown, Download, FileSpreadsheet, Filter, Play, Square } from 'lucide-react';
+import { ChevronDown, Download, FileSpreadsheet, Filter, Play, Square, X } from 'lucide-react';
 import { useRef } from 'react';
 
 import { TOOL_CONFIG } from '../../tools/registry';
@@ -113,6 +113,7 @@ export function Toolbar({
         <div className="filter-box">
           <Filter size={14} />
           <input
+            aria-label="Filter results"
             autoCapitalize="off"
             autoCorrect="off"
             data-testid="result-filter"
@@ -122,6 +123,20 @@ export function Toolbar({
             placeholder={filterHints.placeholder}
             onChange={(event) => setFilterText(event.target.value)}
           />
+          {filterText.length > 0 && (
+            <button
+              aria-label="Clear filters"
+              className="filter-clear-button"
+              data-testid="clear-result-filter"
+              data-tooltip="Clear filters"
+              data-tooltip-placement="bottom"
+              disabled={!activeTab}
+              type="button"
+              onClick={() => setFilterText('')}
+            >
+              <X size={13} />
+            </button>
+          )}
         </div>
         <button
           className={`filter-menu-button ${filterMenuOpen ? 'active' : ''}`}

@@ -1,8 +1,8 @@
 use mac_address::MacAddress;
 use std::net::IpAddr;
-#[cfg(any(target_os = "windows", target_os = "macos"))]
-use std::process::Command;
 
+#[cfg(any(target_os = "windows", target_os = "macos"))]
+use super::command;
 use crate::arp::types::ArpEntry;
 #[cfg(not(any(target_os = "linux", target_os = "windows", target_os = "macos")))]
 use crate::error::Error;
@@ -44,7 +44,7 @@ pub(super) fn get_arp_table() -> Result<Vec<ArpEntry>> {
 pub(super) fn get_arp_table() -> Result<Vec<ArpEntry>> {
     use std::str::FromStr;
 
-    let output = Command::new("arp").arg("-a").output()?;
+    let output = command::arp_command().arg("-a").output()?;
     let text = String::from_utf8_lossy(&output.stdout);
     let mut entries = Vec::new();
 
@@ -99,7 +99,7 @@ pub(super) fn get_arp_table() -> Result<Vec<ArpEntry>> {
 pub(super) fn get_arp_table() -> Result<Vec<ArpEntry>> {
     use std::str::FromStr;
 
-    let output = Command::new("arp").arg("-an").output()?;
+    let output = command::arp_command().arg("-an").output()?;
     let text = String::from_utf8_lossy(&output.stdout);
     let mut entries = Vec::new();
 

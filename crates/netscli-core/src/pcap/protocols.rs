@@ -31,6 +31,15 @@ pub(super) fn summarize_packet(
         length: header.len,
         captured_length: header.caplen,
         info: "unsupported link type".to_string(),
+        source_port: None,
+        destination_port: None,
+        tcp_flags: None,
+        icmp_type: None,
+        icmp_code: None,
+        arp_operation: None,
+        ethernet_source: None,
+        ethernet_destination: None,
+        hex_preview: Some(hex_preview(data, 64)),
     };
 
     match link_type {
@@ -48,8 +57,12 @@ fn summarize_ethernet(data: &[u8], summary: &mut PcapPacketSummary) {
         return;
     };
 
-    summary.source = packet.get_source().to_string();
-    summary.destination = packet.get_destination().to_string();
+    let source = packet.get_source().to_string();
+    let destination = packet.get_destination().to_string();
+    summary.source = source.clone();
+    summary.destination = destination.clone();
+    summary.ethernet_source = Some(source);
+    summary.ethernet_destination = Some(destination);
 
     match packet.get_ethertype() {
         EtherTypes::Ipv4 => summarize_ipv4(packet.payload(), summary),
@@ -127,6 +140,9 @@ fn summarize_tcp(data: &[u8], summary: &mut PcapPacketSummary) {
 
     let flags = tcp_flags(packet.get_flags());
     let payload_len = packet.payload().len();
+    summary.source_port = Some(packet.get_source());
+    summary.destination_port = Some(packet.get_destination());
+    summary.tcp_flags = Some(flags.clone());
     summary.info = format!(
         "{} -> {} [{}] Len={payload_len}",
         packet.get_source(),
@@ -142,6 +158,8 @@ fn summarize_udp(data: &[u8], summary: &mut PcapPacketSummary) {
         return;
     };
 
+    summary.source_port = Some(packet.get_source());
+    summary.destination_port = Some(packet.get_destination());
     summary.info = format!(
         "{} -> {} Len={}",
         packet.get_source(),
@@ -157,6 +175,8 @@ fn summarize_icmp(data: &[u8], protocol: &str, summary: &mut PcapPacketSummary) 
         return;
     };
 
+    summary.icmp_type = Some(packet.get_icmp_type().0);
+    summary.icmp_code = Some(packet.get_icmp_code().0);
     summary.info = format!(
         "type {} code {}",
         packet.get_icmp_type().0,
@@ -173,19 +193,30 @@ fn summarize_arp(data: &[u8], summary: &mut PcapPacketSummary) {
 
     summary.source = packet.get_sender_proto_addr().to_string();
     summary.destination = packet.get_target_proto_addr().to_string();
-    summary.info = match packet.get_operation() {
-        ArpOperations::Request => format!(
-            "Who has {}? Tell {}",
-            packet.get_target_proto_addr(),
-            packet.get_sender_proto_addr()
+    let (operation, info) = match packet.get_operation() {
+        ArpOperations::Request => (
+            "request".to_string(),
+            format!(
+                "Who has {}? Tell {}",
+                packet.get_target_proto_addr(),
+                packet.get_sender_proto_addr()
+            ),
         ),
-        ArpOperations::Reply => format!(
-            "{} is at {}",
-            packet.get_sender_proto_addr(),
-            packet.get_sender_hw_addr()
+        ArpOperations::Reply => (
+            "reply".to_string(),
+            format!(
+                "{} is at {}",
+                packet.get_sender_proto_addr(),
+                packet.get_sender_hw_addr()
+            ),
         ),
-        operation => format!("ARP operation {}", operation.0),
+        operation => (
+            operation.0.to_string(),
+            format!("ARP operation {}", operation.0),
+        ),
     };
+    summary.arp_operation = Some(operation);
+    summary.info = info;
 }
 
 fn tcp_flags(flags: u8) -> String {
@@ -213,4 +244,12 @@ fn tcp_flags(flags: u8) -> String {
     } else {
         names.join(",")
     }
+}
+
+fn hex_preview(data: &[u8], max_bytes: usize) -> String {
+    data.iter()
+        .take(max_bytes)
+        .map(|byte| format!("{byte:02x}"))
+        .collect::<Vec<_>>()
+        .join(" ")
 }

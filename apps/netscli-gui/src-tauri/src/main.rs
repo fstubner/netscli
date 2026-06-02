@@ -7,12 +7,14 @@ mod state;
 use std::sync::Mutex;
 
 use commands::{
-    cancel_operation, capture_pcap, discover_network, dns_lookup, export_text_file, get_arp_table,
-    get_default_interface, get_network_stats, inspect_host_cmd, list_interfaces, scan_ports,
-    sweep_network,
+    cancel_operation, capture_pcap, choose_file_save_default_directory,
+    clear_file_save_default_directory, discover_network, dns_lookup, export_text_file,
+    get_arp_table, get_default_interface, get_file_save_preferences, get_network_stats,
+    inspect_host_cmd, list_interfaces, open_saved_artifact, pcap_capability, reveal_saved_artifact,
+    scan_ports, set_file_save_ask_each_time, sweep_network,
 };
 use netscli_core::NetworkMonitor;
-use state::OperationManager;
+use state::{ArtifactRegistry, OperationManager};
 
 fn configure_dev_oui_path() {
     // Set OUI database path for dev builds so vendor lookup works.
@@ -45,6 +47,7 @@ fn main() {
         .plugin(tauri_plugin_opener::init())
         .manage(Mutex::new(monitor))
         .manage(OperationManager::default())
+        .manage(ArtifactRegistry::default())
         .invoke_handler(tauri::generate_handler![
             cancel_operation,
             discover_network,
@@ -54,8 +57,15 @@ fn main() {
             dns_lookup,
             list_interfaces,
             get_arp_table,
+            pcap_capability,
             capture_pcap,
             export_text_file,
+            open_saved_artifact,
+            reveal_saved_artifact,
+            get_file_save_preferences,
+            set_file_save_ask_each_time,
+            choose_file_save_default_directory,
+            clear_file_save_default_directory,
             get_network_stats,
             get_default_interface
         ])

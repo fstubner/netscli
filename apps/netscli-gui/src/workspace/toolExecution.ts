@@ -78,16 +78,11 @@ export async function executeTool(tab: WorkspaceTab, opId: string): Promise<Tool
             duration: numberOrUndefined(tab.form.duration),
             filter: emptyToUndefined(tab.form.filter),
             max_packets: numberOrUndefined(tab.form.max_packets),
-            output_mode: captureOutputMode(tab.form.output_mode),
           },
           opId,
         ),
       };
   }
-}
-
-function captureOutputMode(value: string | undefined): string {
-  return value?.trim().toLowerCase() === 'ask' ? 'ask' : 'auto';
 }
 
 async function executeDns(tab: WorkspaceTab, opId: string): Promise<ToolResult> {
@@ -121,7 +116,7 @@ async function executeDns(tab: WorkspaceTab, opId: string): Promise<ToolResult> 
   return {
     kind: 'dns',
     data,
-    warnings: failures.length > 0 ? [`Some DNS record lookups failed: ${failureRecordTypes(failures)}`] : undefined,
+    warnings: failures.length > 0 ? [`Partial DNS results: no answers for ${failureRecordTypes(failures)}`] : undefined,
   };
 }
 

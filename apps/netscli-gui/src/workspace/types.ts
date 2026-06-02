@@ -28,6 +28,7 @@ export interface WorkspaceModel {
   selectRow: (index: number, mode?: RowSelectionMode) => void;
   selectAllRows: () => void;
   addTab: (kind: ToolKind) => void;
+  openHostTool: (kind: 'scan' | 'inspect', host: string) => void;
   closeTab: (id: string) => void;
   closeAllTabs: () => void;
   closeOtherTabs: () => void;
@@ -36,6 +37,9 @@ export interface WorkspaceModel {
   exportCurrent: (format: 'json' | 'csv') => void;
   exportSelectedJson: () => void;
   exportSelectedCsv: () => void;
+  copyCellValue: (label: string, value: string) => Promise<void>;
+  openCaptureFile: (path: string) => Promise<void>;
+  revealCaptureFile: (path: string) => Promise<void>;
   copyCommand: () => Promise<void>;
   copySelectedDetails: () => Promise<void>;
   copySelectedRaw: () => Promise<void>;

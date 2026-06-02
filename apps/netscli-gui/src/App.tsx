@@ -24,7 +24,9 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { usePopoverDismissal } from './hooks/usePopoverDismissal';
 import { usePreferences } from './hooks/usePreferences';
 import { useReleaseNotifications } from './hooks/useReleaseNotifications';
+import { useTauriRuntimeState } from './hooks/useTauriRuntimeState';
 import { appWindowAction, type AppWindowAction } from './services/appWindow';
+import type { ResultCellContext } from './tools/types';
 import { guardForOperation, type OperationGuard } from './workspace/operationGuards';
 import { useWorkspace } from './workspace/useWorkspace';
 
@@ -50,7 +52,18 @@ function App() {
   const workspace = useWorkspace({ interactionToasts, operationToasts, persistentHistory });
   const activeTab = workspace.activeTab;
   const [openMenu, setOpenMenu] = useState<string | null>(null);
-  const [contentContextMenu, setContentContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const [contentContextMenu, setContentContextMenu] = useState<{
+    cell?: ResultCellContext;
+    x: number;
+    y: number;
+  } | null>(null);
+  const {
+    chooseSaveFolder,
+    clearSaveFolder,
+    fileSavePreferences,
+    pcapAvailable,
+    toggleFileSaveAskEachTime,
+  } = useTauriRuntimeState();
   const [dismissedWarningKeys, setDismissedWarningKeys] = useState<Record<string, true>>({});
   const [aboutOpen, setAboutOpen] = useState(false);
   const [pendingRun, setPendingRun] = useState<{ tabId: string; guard: OperationGuard } | null>(null);
@@ -63,7 +76,6 @@ function App() {
     showUpdateToast: workspace.showUpdateToast,
     toast: workspace.toast,
   });
-
 
   usePopoverDismissal({ contentContextMenu, openMenu, setContentContextMenu, setOpenMenu });
   useKeyboardShortcuts({ openMenu, setOpenMenu, setSettingsOpen, settingsOpen, workspace });
@@ -96,13 +108,14 @@ function App() {
     void appWindowAction('drag');
   }
 
-  function openContentContextMenu(event: MouseEvent<HTMLElement>) {
+  function openContentContextMenu(event: MouseEvent<HTMLElement>, cell?: ResultCellContext) {
     if (!activeTab) return;
     event.preventDefault();
     setOpenMenu(null);
     const menuWidth = 240;
     const menuHeight = 190;
     setContentContextMenu({
+      cell,
       x: Math.max(8, Math.min(event.clientX, window.innerWidth - menuWidth - 8)),
       y: Math.max(8, Math.min(event.clientY, window.innerHeight - menuHeight - 8)),
     });
@@ -119,6 +132,7 @@ function App() {
           activeTab={activeTab}
           history={workspace.history}
           openMenu={openMenu}
+          pcapAvailable={pcapAvailable}
           setOpenMenu={setOpenMenu}
           tabCount={workspace.tabs.length}
           onAddTab={workspace.addTab}
@@ -159,6 +173,7 @@ function App() {
       <TabStrip
         activeTabId={workspace.activeTabId}
         openMenu={openMenu}
+        pcapAvailable={pcapAvailable}
         tabs={workspace.tabs}
         onAddScanTab={() => workspace.addTab('scan')}
         onAddToolTab={workspace.addTab}
@@ -215,6 +230,7 @@ function App() {
           </>
         ) : (
           <EmptyWorkspace
+            pcapAvailable={pcapAvailable}
             onAddToolTab={workspace.addTab}
           />
         )}
@@ -238,14 +254,21 @@ function App() {
         <ContentContextMenu
           canClear={Boolean(activeTab && (activeTab.result || activeTab.error))}
           canUseSelection={Boolean(activeTab?.result)}
+          captureFilePath={activeTab?.result?.kind === 'pcap' ? activeTab.result.data.file_path : undefined}
+          cell={contentContextMenu.cell}
           x={contentContextMenu.x}
           y={contentContextMenu.y}
           onClearResults={workspace.clearCurrentResults}
           onClose={() => setContentContextMenu(null)}
+          onCopyCell={(cell) => void workspace.copyCellValue(cell.label, cell.value)}
           onCopyDetails={() => void workspace.copySelectedDetails()}
           onCopyRaw={() => void workspace.copySelectedRaw()}
           onExportCsv={workspace.exportSelectedCsv}
           onExportJson={workspace.exportSelectedJson}
+          onInspectHost={(host) => workspace.openHostTool('inspect', host)}
+          onOpenCaptureFile={(path) => void workspace.openCaptureFile(path)}
+          onRevealCaptureFile={(path) => void workspace.revealCaptureFile(path)}
+          onScanHost={(host) => workspace.openHostTool('scan', host)}
         />
       )}
       {settingsOpen && (
@@ -259,10 +282,14 @@ function App() {
           operationToasts={operationToasts}
           persistentHistory={persistentHistory}
           releaseNotifications={releaseNotifications}
+          fileSavePreferences={fileSavePreferences}
           trafficInterfaceName={workspace.trafficInterfaceName}
           onClose={() => setSettingsOpen(false)}
+          onChooseSaveFolder={() => void chooseSaveFolder()}
+          onClearSaveFolder={() => void clearSaveFolder()}
           onSelectTrafficInterface={workspace.setTrafficInterfaceName}
           onSetDarkMode={setDarkMode}
+          onToggleFileSaveAskEachTime={() => void toggleFileSaveAskEachTime()}
           onToggleInteractionToasts={() => setInteractionToasts((prev) => !prev)}
           onToggleOperationToasts={() => setOperationToasts((prev) => !prev)}
           onTogglePersistentHistory={() => setPersistentHistory((prev) => !prev)}

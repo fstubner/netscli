@@ -164,3 +164,46 @@ impl SweepEngine {
         Ok(entries)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::SweepEntry;
+    use crate::discover::Host;
+    use crate::scan::{PortResult, PortStatus};
+    use std::net::{IpAddr, Ipv4Addr};
+
+    #[test]
+    fn sweep_entry_preserves_host_inventory_and_open_ports() {
+        let entry = SweepEntry {
+            host: Host {
+                ip: IpAddr::V4(Ipv4Addr::new(192, 168, 1, 125)),
+                hostname: Some("lamp.local".to_string()),
+                mac: Some("00:17:88:6E:6C:5C".to_string()),
+                vendor: Some("Philips Lighting BV".to_string()),
+                rtt_ms: Some(4),
+            },
+            open_ports: vec![PortResult {
+                port: 443,
+                open: true,
+                status: PortStatus::Open,
+                service: Some("https".to_string()),
+                latency_ms: Some(3),
+                banner: None,
+                http: None,
+                tls: None,
+                raw: None,
+                error: None,
+            }],
+        };
+
+        let value = serde_json::to_value(&entry).expect("serialize sweep entry");
+
+        assert_eq!(value["host"]["ip"], "192.168.1.125");
+        assert_eq!(value["host"]["hostname"], "lamp.local");
+        assert_eq!(value["host"]["mac"], "00:17:88:6E:6C:5C");
+        assert_eq!(value["host"]["vendor"], "Philips Lighting BV");
+        assert_eq!(value["host"]["rtt_ms"], 4);
+        assert_eq!(value["open_ports"][0]["port"], 443);
+        assert_eq!(value["open_ports"][0]["status"], "open");
+    }
+}

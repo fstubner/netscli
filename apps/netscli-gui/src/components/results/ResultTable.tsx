@@ -11,15 +11,15 @@ import {
   type SetStateAction,
 } from 'react';
 
-import { renderValue } from '../../tools/presentation';
-import type { ResultColumn, ResultRow, RowSelectionMode, WorkspaceTab } from '../../tools/types';
+import { copyContextForCell, renderValue } from '../../tools/presentation';
+import type { ResultCellContext, ResultColumn, ResultRow, RowSelectionMode, WorkspaceTab } from '../../tools/types';
 import { StatusPill } from './StatusPill';
 
 interface ResultTableProps {
   activeTab: WorkspaceTab;
   columns: ResultColumn[];
   rows: ResultRow[];
-  onContentContextMenu: (event: MouseEvent<HTMLElement>) => void;
+  onContentContextMenu: (event: MouseEvent<HTMLElement>, cell?: ResultCellContext) => void;
   onSelectAllRows: () => void;
   onSelectRow: (index: number, mode?: RowSelectionMode) => void;
   onSort: (column: ResultColumn) => void;
@@ -135,13 +135,24 @@ export function ResultTable({
                   const value = row.data[column.key];
                   if (column.key === 'status' || column.key === 'state') {
                     return (
-                      <td key={column.key}>
+                      <td
+                        key={column.key}
+                        onContextMenu={(event) =>
+                          openCellContextMenu(event, row, index, column, selected, onSelectRow, onContentContextMenu)
+                        }
+                      >
                         <StatusPill value={value} />
                       </td>
                     );
                   }
                   return (
-                    <td className={column.mono ? 'mono' : ''} key={column.key}>
+                    <td
+                      className={column.mono ? 'mono' : ''}
+                      key={column.key}
+                      onContextMenu={(event) =>
+                        openCellContextMenu(event, row, index, column, selected, onSelectRow, onContentContextMenu)
+                      }
+                    >
                       {renderValue(value)}
                     </td>
                   );
@@ -160,6 +171,20 @@ function selectionModeForPointer(event: MouseEvent<HTMLTableRowElement>): RowSel
   if (event.shiftKey) return 'range';
   if (event.ctrlKey || event.metaKey) return 'toggle';
   return 'single';
+}
+
+function openCellContextMenu(
+  event: MouseEvent<HTMLElement>,
+  row: ResultRow,
+  index: number,
+  column: ResultColumn,
+  selected: boolean,
+  onSelectRow: (index: number, mode?: RowSelectionMode) => void,
+  onContentContextMenu: (event: MouseEvent<HTMLElement>, cell?: ResultCellContext) => void,
+) {
+  event.stopPropagation();
+  if (!selected) onSelectRow(index, 'single');
+  onContentContextMenu(event, copyContextForCell(row, column) ?? undefined);
 }
 
 function updateOverflowState(

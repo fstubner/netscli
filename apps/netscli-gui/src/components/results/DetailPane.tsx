@@ -8,6 +8,9 @@ import {
 
 import {
   detailTabsFor,
+  detailLinesForRow,
+  inspectOverviewLines,
+  inspectPortsLines,
   latencyOf,
   portBannerLines,
   portHeaderLines,
@@ -82,7 +85,10 @@ export function DetailPane({
   onSetDetailTab,
 }: DetailPaneProps) {
   const selectedCount = selectedRows.length;
-  const tabSet = detailTabsFor(selectedRow, selectedCount);
+  const inspectResult = activeTab.result?.kind === 'inspect' ? activeTab.result.data : null;
+  const tabSet = inspectResult && selectedCount <= 1
+    ? (['overview', 'ports', 'raw'] as DetailTab[])
+    : detailTabsFor(selectedRow, selectedCount);
   const activeDetail = tabSet.includes(activeTab.detailTab) ? activeTab.detailTab : tabSet[0];
   const [height, setHeight] = useState(184);
   const [mode, setMode] = useState<'normal' | 'collapsed' | 'expanded'>('normal');
@@ -117,7 +123,7 @@ export function DetailPane({
             {selectedCount} selected
           </span>
         )}
-        {selectedCount <= 1 && selectedRow?.port && (
+        {selectedCount <= 1 && selectedRow?.port && !inspectResult && (
           <span className="detail-context">
             port {selectedRow.port.port} - {selectedRow.port.service ?? 'tcp'}
           </span>
@@ -149,7 +155,16 @@ export function DetailPane({
             event.currentTarget.focus({ preventScroll: true });
           }}
         >
-          {!selectedRow && <span className="muted">No row selected.</span>}
+          {!selectedRow && !inspectResult && <span className="muted">No row selected.</span>}
+          {inspectResult && selectedCount <= 1 && activeDetail === 'overview' && (
+            <DetailList lines={inspectOverviewLines(inspectResult)} />
+          )}
+          {inspectResult && selectedCount <= 1 && activeDetail === 'ports' && (
+            <DetailList lines={inspectPortsLines(inspectResult, selectedRow)} />
+          )}
+          {inspectResult && selectedCount <= 1 && activeDetail === 'raw' && (
+            <JsonPreview value={JSON.stringify(inspectResult, null, 2)} />
+          )}
           {selectedCount > 1 && activeDetail === 'selection' && (
             <>
               <DetailList lines={selectionSummaryLines(selectedRows, columns)} />
@@ -157,19 +172,12 @@ export function DetailPane({
             </>
           )}
           {selectedCount > 1 && activeDetail === 'raw' && <JsonPreview value={selectedRowsRawPreview(selectedRows)} />}
-          {selectedCount <= 1 && selectedRow?.port && <PortDetail detailTab={activeDetail} row={selectedRow} />}
-          {selectedCount <= 1 && selectedRow && !selectedRow.port && activeDetail === 'raw' && (
+          {selectedCount <= 1 && !inspectResult && selectedRow?.port && <PortDetail detailTab={activeDetail} row={selectedRow} />}
+          {selectedCount <= 1 && !inspectResult && selectedRow && !selectedRow.port && activeDetail === 'raw' && (
             <JsonPreview value={JSON.stringify(selectedRow.raw, null, 2)} />
           )}
-          {selectedCount <= 1 && selectedRow && !selectedRow.port && activeDetail === 'details' && (
-            <div className="detail-list">
-              {Object.entries(selectedRow.data).map(([key, value]) => (
-                <div className="detail-line" key={key}>
-                  <span>{key}</span>
-                  <code>{renderValue(value)}</code>
-                </div>
-              ))}
-            </div>
+          {selectedCount <= 1 && !inspectResult && selectedRow && !selectedRow.port && activeDetail === 'details' && (
+            <DetailList lines={detailLinesForRow(selectedRow)} />
           )}
         </div>
       )}
@@ -192,7 +200,7 @@ function selectionBreakdownLines(rows: ResultRow[], columns: ResultColumn[]): Ar
     ];
   }
 
-  const valuesFor = (key: string) => rows.map((row) => renderValue(row.data[key])).filter(isUsefulValue);
+  const valuesFor = (key: string) => rows.map((row) => row.data[key] == null ? '' : String(row.data[key])).filter(isUsefulValue);
   const ipValues = valuesFor('ip');
   const vendorValues = valuesFor('vendor');
   const interfaceValues = valuesFor('interface');

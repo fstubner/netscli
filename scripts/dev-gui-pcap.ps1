@@ -30,6 +30,7 @@ if (-not (Test-Path (Join-Path $NpcapRuntime 'wpcap.dll'))) {
 $env:LIB = "$NpcapLib;$env:LIB"
 $env:INCLUDE = "$NpcapInclude;$env:INCLUDE"
 $env:PATH = "$NpcapRuntime;$env:PATH"
+$env:CARGO_TARGET_DIR = Join-Path $RepoRoot 'target-pcap'
 
 Set-Location $GuiRoot
 npm run tauri:dev:pcap

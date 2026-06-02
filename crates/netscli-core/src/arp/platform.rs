@@ -1,3 +1,4 @@
+mod command;
 mod interfaces;
 mod mutate;
 mod table;
