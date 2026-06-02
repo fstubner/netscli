@@ -164,7 +164,8 @@ impl<'a> TuiApp<'a> {
         let w = area.width as usize;
         let blink_on = cursor_blink_on();
         if area.height < 3 || w < 8 {
-            let (row, col) = self.input.cursor();
+            let cursor = self.input.cursor();
+            let (row, col) = (cursor.0, cursor.1);
             let cursor_col = if row == 0 { col } else { 0 };
             let raw = self.input.lines().first().cloned().unwrap_or_default();
             let empty = raw.trim().is_empty();
@@ -200,7 +201,8 @@ impl<'a> TuiApp<'a> {
             return;
         }
 
-        let (row, col) = self.input.cursor();
+        let cursor = self.input.cursor();
+        let (row, col) = (cursor.0, cursor.1);
         let cursor_col = if row == 0 { col } else { 0 };
 
         let raw = self.input.lines().first().cloned().unwrap_or_default();
