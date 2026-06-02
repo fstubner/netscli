@@ -225,28 +225,31 @@ pub enum Commands {
     /// Capture network packets to PCAP file
     #[cfg(feature = "pcap")]
     #[command(group(
-        // Either --check (list devices, don't capture) or a real capture
-        // with --interface. This keeps the old `--check` UX ergonomic —
-        // users shouldn't have to supply a dummy interface just to list.
+        // Exactly one mode: list devices, parse an existing file, or capture
+        // from an interface.
         clap::ArgGroup::new("pcap_mode")
-            .args(["interface", "check"])
+            .args(["interface", "read", "check"])
             .required(true)
-            .multiple(true)
+            .multiple(false)
     ))]
     Pcap {
         /// Network interface name (required unless --check is used)
         #[arg(short, long)]
         interface: Option<String>,
 
+        /// Read and summarize packets from an existing PCAP file
+        #[arg(long, value_name = "FILE")]
+        read: Option<String>,
+
         /// Filter expression (BPF)
         #[arg(long)]
         filter: Option<String>,
 
-        /// Duration seconds
+        /// Duration seconds (defaults to a bounded capture when --max-packets is omitted)
         #[arg(long)]
         duration: Option<u64>,
 
-        /// Max packets
+        /// Max packets to capture, or max parsed packet rows to return with --read
         #[arg(long)]
         max_packets: Option<usize>,
 

@@ -1,43 +1,135 @@
 #!/usr/bin/env python3
-"""Generate NetsCLI app icons at multiple sizes.
+# -*- coding: utf-8 -*-
+"""Generate NetsCLI desktop icon assets.
 
-Creates a dark rounded-rect icon with a green-to-cyan "N>" terminal prompt,
-matching the NetsCLI brand gradient. Outputs PNG files for all required
-Tauri icon sizes plus .ico for Windows.
-
-No external dependencies (uses only stdlib zlib/struct).
+The source mark matches site/public/favicon.svg: a dark rounded square with
+the ANSI-shadow "N" slice filled by the brand gradient
+#005a1e -> #0aae7a -> #1edcff.
 """
 
+from __future__ import annotations
+
+from io import BytesIO
 import math
+import os
 import struct
 import zlib
-import os
 
-# ── Brand colours (same gradient as the TUI/CLI) ──────────────────────
-BG = (26, 26, 26, 255)          # #1a1a1a  (dark background)
-GRAD_START = (0, 90, 30, 255)   # #005a1e  (deep green)
-GRAD_MID = (10, 174, 122, 255)  # #0aae7a  (teal)
-GRAD_END = (30, 220, 255, 255)  # #1edcff  (cyan)
+try:
+    from PIL import Image, ImageDraw, ImageFont
+except Exception:  # pragma: no cover - fallback is for machines without Pillow.
+    Image = None
+    ImageDraw = None
+    ImageFont = None
 
-def lerp_color(c1, c2, t):
-    """Linear interpolation between two RGBA colours."""
+
+BG = (17, 17, 17, 255)
+GRAD_START = (0, 90, 30, 255)
+GRAD_MID = (10, 174, 122, 255)
+GRAD_END = (30, 220, 255, 255)
+
+ANSI_N = [
+    "███╗   ██╗",
+    "████╗  ██║",
+    "██╔██╗ ██║",
+    "██║╚██╗██║",
+    "██║ ╚████║",
+    "╚═╝  ╚═══╝",
+]
+
+ANSI_N_Y = [18.0, 25.4, 32.8, 40.2, 47.6, 55.0]
+MARK_VIEWBOX = 64.0
+MARK_RADIUS = 9.0
+MARK_FONT_SIZE = 7.4
+
+FONT_CANDIDATES = [
+    os.environ.get("NETSCLI_ICON_FONT"),
+    r"C:\Windows\Fonts\CascadiaMono.ttf",
+    r"C:\Windows\Fonts\CascadiaMonoPL.ttf",
+    r"C:\Windows\Fonts\consola.ttf",
+    "/System/Library/Fonts/Menlo.ttc",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+    "/usr/share/fonts/truetype/liberation2/LiberationMono-Regular.ttf",
+]
+
+
+def lerp_color(c1: tuple[int, int, int, int], c2: tuple[int, int, int, int], t: float):
     return tuple(int(c1[i] + (c2[i] - c1[i]) * t) for i in range(4))
 
-def gradient_color(x_ratio):
-    """Map 0..1 along x to the brand gradient."""
+
+def gradient_color(x_ratio: float):
     if x_ratio < 0.45:
         return lerp_color(GRAD_START, GRAD_MID, x_ratio / 0.45)
-    else:
-        return lerp_color(GRAD_MID, GRAD_END, (x_ratio - 0.45) / 0.55)
+    return lerp_color(GRAD_MID, GRAD_END, (x_ratio - 0.45) / 0.55)
 
 
-def rounded_rect_mask(size, radius):
-    """Return a 2-D list (size × size) of alpha values for a rounded rect."""
+def load_font(size: int):
+    if ImageFont is None:
+        return None
+    for path in FONT_CANDIDATES:
+        if not path:
+            continue
+        try:
+            if os.path.exists(path):
+                return ImageFont.truetype(path, size=size)
+        except OSError:
+            continue
+    return ImageFont.load_default()
+
+
+def render_icon_pillow(size: int) -> bytes:
+    assert Image is not None and ImageDraw is not None
+
+    scale = 4 if size < 256 else 2
+    canvas_size = size * scale
+    image = Image.new("RGBA", (canvas_size, canvas_size), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(image)
+    radius = max(1, round(MARK_RADIUS / MARK_VIEWBOX * canvas_size))
+    draw.rounded_rectangle((0, 0, canvas_size - 1, canvas_size - 1), radius=radius, fill=BG)
+
+    mask = Image.new("L", (canvas_size, canvas_size), 0)
+    mask_draw = ImageDraw.Draw(mask)
+    font = load_font(max(4, round(MARK_FONT_SIZE / MARK_VIEWBOX * canvas_size)))
+    for row, y in zip(ANSI_N, ANSI_N_Y):
+        left, _top, right, _bottom = mask_draw.textbbox((0, 0), row, font=font)
+        x = (canvas_size - (right - left)) / 2 - left
+        mask_draw.text((x, y / MARK_VIEWBOX * canvas_size), row, font=font, fill=255)
+
+    bbox = mask.getbbox()
+    if bbox:
+        glyph = mask.crop(bbox)
+        centered_mask = Image.new("L", (canvas_size, canvas_size), 0)
+        centered_mask.paste(
+            glyph,
+            (
+                round((canvas_size - glyph.width) / 2),
+                round((canvas_size - glyph.height) / 2),
+            ),
+        )
+        mask = centered_mask
+
+    gradient = Image.new("RGBA", (canvas_size, canvas_size), (0, 0, 0, 0))
+    grad_px = gradient.load()
+    for x in range(canvas_size):
+        color = gradient_color(x / max(1, canvas_size - 1))
+        for y2 in range(canvas_size):
+            grad_px[x, y2] = color
+    gradient.putalpha(mask)
+    image.alpha_composite(gradient)
+
+    if scale > 1:
+        image = image.resize((size, size), Image.Resampling.LANCZOS)
+
+    out = BytesIO()
+    image.save(out, format="PNG", optimize=True)
+    return out.getvalue()
+
+
+def rounded_rect_mask(size: int, radius: int) -> list[list[int]]:
     mask = [[0] * size for _ in range(size)]
     for y in range(size):
         for x in range(size):
-            # Check corners
-            dx = dy = 0
+            dx = dy = 0.0
             if x < radius and y < radius:
                 dx, dy = radius - x - 0.5, radius - y - 0.5
             elif x >= size - radius and y < radius:
@@ -60,174 +152,111 @@ def rounded_rect_mask(size, radius):
     return mask
 
 
-# ── Bitmap font for "N>" ──────────────────────────────────────────────
-# Each glyph is a list of strings; '#' = filled pixel, '.' = empty.
-# Designed for a ~12px cap height so it scales well.
-
-GLYPH_N = [
-    "##....##",
-    "###...##",
-    "####..##",
-    "##.##.##",
-    "##..####",
-    "##...###",
-    "##....##",
-]
-
-GLYPH_GT = [
-    "##......",
-    "..##....",
-    "....##..",
-    "......##",
-    "....##..",
-    "..##....",
-    "##......",
-]
-
-def render_icon(size):
-    """Render icon at `size` × `size` pixels and return raw RGBA bytes list."""
+def render_icon_fallback(size: int) -> list[list[tuple[int, int, int, int]]]:
     pixels = [[BG for _ in range(size)] for _ in range(size)]
-    radius = max(2, size // 6)
-    mask = rounded_rect_mask(size, radius)
-
-    # Compute glyph placement: "N>" centred in the icon
-    # Each glyph char maps to a block of scale × scale pixels
-    glyph_rows = len(GLYPH_N)       # 7
-    n_cols = len(GLYPH_N[0])        # 8
-    gt_cols = len(GLYPH_GT[0])      # 8
-    gap_cols = 2                     # 2-char gap between N and >
-    total_cols = n_cols + gap_cols + gt_cols  # 18
-
-    # Scale so glyphs fill ~60 % of the icon width
-    target_w = int(size * 0.60)
-    scale = max(1, target_w // total_cols)
-
-    glyph_w = total_cols * scale
-    glyph_h = glyph_rows * scale
-
+    rows = ANSI_N
+    cols = max(len(row) for row in rows)
+    cell_w = max(1, int((size * 0.72) // cols))
+    cell_h = max(1, int(cell_w * 0.78))
+    glyph_w = cols * cell_w
+    glyph_h = len(rows) * cell_h
     ox = (size - glyph_w) // 2
     oy = (size - glyph_h) // 2
 
-    # Draw glyphs
-    for row_idx in range(glyph_rows):
-        n_row = GLYPH_N[row_idx]
-        gt_row = GLYPH_GT[row_idx]
-        full_row = n_row + ("." * gap_cols) + gt_row  # 18 chars
-
-        for col_idx, ch in enumerate(full_row):
-            if ch != '#':
+    for row_index, row in enumerate(rows):
+        for col_index, ch in enumerate(row):
+            if ch == " ":
                 continue
-            # Fill the scale×scale block
-            for dy in range(scale):
-                for dx in range(scale):
-                    px = ox + col_idx * scale + dx
-                    py = oy + row_idx * scale + dy
+            for dy in range(cell_h):
+                for dx in range(cell_w):
+                    px = ox + col_index * cell_w + dx
+                    py = oy + row_index * cell_h + dy
                     if 0 <= px < size and 0 <= py < size:
-                        x_ratio = px / size
-                        pixels[py][px] = gradient_color(x_ratio)
+                        pixels[py][px] = gradient_color(px / max(1, size - 1))
 
-    # Apply rounded-rect mask
+    mask = rounded_rect_mask(size, max(2, size // 6))
     for y in range(size):
         for x in range(size):
-            a = mask[y][x]
-            if a == 0:
+            alpha = mask[y][x]
+            if alpha == 0:
                 pixels[y][x] = (0, 0, 0, 0)
-            elif a < 255:
-                r, g, b, _ = pixels[y][x]
-                pixels[y][x] = (r, g, b, a)
-
+            elif alpha < 255:
+                r, g, b, _a = pixels[y][x]
+                pixels[y][x] = (r, g, b, alpha)
     return pixels
 
 
-def encode_png(pixels, width, height):
-    """Encode RGBA pixel grid as a PNG file (bytes)."""
-    sig = b'\x89PNG\r\n\x1a\n'
-
-    # IHDR
-    ihdr = struct.pack('>IIBBBBB', width, height, 8, 6, 0, 0, 0)
-    chunks = [_make_chunk(b'IHDR', ihdr)]
-
-    # IDAT
-    raw = b''
+def encode_png(pixels: list[list[tuple[int, int, int, int]]], width: int, height: int) -> bytes:
+    chunks = [_make_chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0))]
+    raw = bytearray()
     for row in pixels:
-        raw += b'\x00'
+        raw.append(0)
         for r, g, b, a in row:
-            raw += struct.pack('BBBB', r, g, b, a)
-    compressed = zlib.compress(raw, 9)
-    chunks.append(_make_chunk(b'IDAT', compressed))
-
-    # IEND
-    chunks.append(_make_chunk(b'IEND', b''))
-
-    return sig + b''.join(chunks)
+            raw.extend(struct.pack("BBBB", r, g, b, a))
+    chunks.append(_make_chunk(b"IDAT", zlib.compress(bytes(raw), 9)))
+    chunks.append(_make_chunk(b"IEND", b""))
+    return b"\x89PNG\r\n\x1a\n" + b"".join(chunks)
 
 
-def _make_chunk(chunk_type, data):
+def _make_chunk(chunk_type: bytes, data: bytes) -> bytes:
     crc = zlib.crc32(chunk_type + data) & 0xFFFFFFFF
-    return struct.pack('>I', len(data)) + chunk_type + data + struct.pack('>I', crc)
+    return struct.pack(">I", len(data)) + chunk_type + data + struct.pack(">I", crc)
 
 
-def encode_ico(png_data_list):
-    """Wrap one or more PNG blobs into a .ico file."""
+def render_png(size: int) -> bytes:
+    if Image is not None:
+        return render_icon_pillow(size)
+    return encode_png(render_icon_fallback(size), size, size)
+
+
+def encode_ico(png_data_list: list[tuple[bytes, int]]) -> bytes:
     count = len(png_data_list)
-    header = struct.pack('<HHH', 0, 1, count)
+    header = struct.pack("<HHH", 0, 1, count)
     offset = 6 + count * 16
-    entries = b''
-    data = b''
+    entries = bytearray()
+    data = bytearray()
     for png_bytes, size in png_data_list:
-        w = 0 if size >= 256 else size
-        h = w
-        entries += struct.pack('<BBBBHHII', w, h, 0, 0, 1, 32, len(png_bytes), offset)
-        data += png_bytes
+        width = 0 if size >= 256 else size
+        entries.extend(struct.pack("<BBBBHHII", width, width, 0, 0, 1, 32, len(png_bytes), offset))
+        data.extend(png_bytes)
         offset += len(png_bytes)
-    return header + entries + data
+    return header + bytes(entries) + bytes(data)
 
 
-def main():
+def main() -> None:
     icon_dir = os.path.dirname(os.path.abspath(__file__))
-
-    # Sizes required by Tauri
     sizes = {
-        'icon.png': 512,
-        '32x32.png': 32,
-        '64x64.png': 64,
-        '128x128.png': 128,
-        '128x128@2x.png': 256,
-        'Square30x30Logo.png': 30,
-        'Square44x44Logo.png': 44,
-        'Square71x71Logo.png': 71,
-        'Square89x89Logo.png': 89,
-        'Square107x107Logo.png': 107,
-        'Square142x142Logo.png': 142,
-        'Square150x150Logo.png': 150,
-        'Square284x284Logo.png': 284,
-        'Square310x310Logo.png': 310,
-        'StoreLogo.png': 50,
+        "icon.png": 512,
+        "32x32.png": 32,
+        "64x64.png": 64,
+        "128x128.png": 128,
+        "128x128@2x.png": 256,
+        "Square30x30Logo.png": 30,
+        "Square44x44Logo.png": 44,
+        "Square71x71Logo.png": 71,
+        "Square89x89Logo.png": 89,
+        "Square107x107Logo.png": 107,
+        "Square142x142Logo.png": 142,
+        "Square150x150Logo.png": 150,
+        "Square284x284Logo.png": 284,
+        "Square310x310Logo.png": 310,
+        "StoreLogo.png": 50,
     }
 
-    ico_entries = []
-
     for filename, size in sizes.items():
-        pixels = render_icon(size)
-        png_bytes = encode_png(pixels, size, size)
+        png_bytes = render_png(size)
         path = os.path.join(icon_dir, filename)
-        with open(path, 'wb') as f:
+        with open(path, "wb") as f:
             f.write(png_bytes)
-        print(f'  {filename:>24s}  {size:>4d}x{size:<4d}  ({len(png_bytes):,} bytes)')
+        print(f"{filename:>24s}  {size:>4d}x{size:<4d}  ({len(png_bytes):,} bytes)")
 
-        if size in (16, 32, 48, 64, 128, 256):
-            ico_entries.append((png_bytes, size))
-
-    # Generate .ico with multiple sizes
-    if ico_entries:
-        ico_path = os.path.join(icon_dir, 'icon.ico')
-        ico_bytes = encode_ico(ico_entries)
-        with open(ico_path, 'wb') as f:
-            f.write(ico_bytes)
-        print(f'  {"icon.ico":>24s}  multi   ({len(ico_bytes):,} bytes)')
-
-    print('\nDone! All icons generated.')
+    ico_entries = [(render_png(size), size) for size in (16, 32, 48, 64, 128, 256)]
+    ico_bytes = encode_ico(ico_entries)
+    ico_path = os.path.join(icon_dir, "icon.ico")
+    with open(ico_path, "wb") as f:
+        f.write(ico_bytes)
+    print(f"{'icon.ico':>24s}  multi   ({len(ico_bytes):,} bytes)")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

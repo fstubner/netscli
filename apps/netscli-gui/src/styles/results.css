@@ -1,0 +1,434 @@
+.error-strip {
+  flex: 0 0 auto;
+  padding: 8px 14px;
+  color: var(--red);
+  background: color-mix(in srgb, var(--red), transparent 90%);
+  border-bottom: 1px solid color-mix(in srgb, var(--red), transparent 55%);
+}
+
+.warning-strip {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px 7px 14px;
+  color: var(--amber);
+  background: color-mix(in srgb, var(--amber), transparent 91%);
+  border-bottom: 1px solid color-mix(in srgb, var(--amber), transparent 58%);
+}
+
+.warning-strip span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.warning-strip button {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  line-height: 1;
+  background: transparent;
+  color: currentColor;
+}
+
+.warning-strip button svg {
+  display: block;
+}
+
+.warning-strip button:hover {
+  border-color: color-mix(in srgb, var(--amber), transparent 58%);
+  background: color-mix(in srgb, var(--amber), transparent 86%);
+}
+
+.warning-strip button:focus-visible {
+  outline: 1px solid var(--amber);
+  outline-offset: 1px;
+}
+
+.operation-progress {
+  flex: 0 0 auto;
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 170px;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--mint), transparent 94%);
+}
+
+.operation-progress-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.operation-progress-copy span {
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.operation-progress-copy small {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.operation-progress-bar {
+  height: 3px;
+  overflow: hidden;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+}
+
+.operation-progress-bar span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-origin: left center;
+  background: var(--mint);
+}
+
+.operation-progress-bar.indeterminate span {
+  width: 42%;
+  animation: operation-progress-slide 1100ms ease-in-out infinite;
+}
+
+.operation-progress-bar.determinate span {
+  animation: none;
+  transition: transform 140ms linear;
+}
+
+@keyframes operation-progress-slide {
+  0% {
+    transform: translateX(-110%);
+  }
+
+  100% {
+    transform: translateX(250%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .operation-progress-bar span {
+    width: 100%;
+    animation: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .operation-progress {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 7px;
+  }
+}
+
+.result-region {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-base);
+}
+
+.table-shell {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: auto;
+  outline: 0;
+  user-select: none;
+}
+
+.table-shell.has-vertical-overflow {
+  scrollbar-gutter: stable;
+}
+
+.table-shell:focus-visible {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mint), transparent 35%);
+}
+
+.result-table {
+  width: 100%;
+  min-width: 680px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  user-select: none;
+}
+
+.result-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--bg-elevated);
+}
+
+.result-table th,
+.result-table td {
+  height: 30px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.result-table th {
+  position: relative;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.result-table th button {
+  width: 100%;
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.column-resizer {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 7px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 4;
+}
+
+.column-resizer:hover {
+  background: color-mix(in srgb, var(--mint), transparent 72%);
+}
+
+.table-shell::before,
+.table-shell::after {
+  content: "";
+  position: sticky;
+  left: 0;
+  display: block;
+  width: 100%;
+  height: 14px;
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.table-shell::before {
+  top: 30px;
+  margin-bottom: -14px;
+  background: linear-gradient(to bottom, var(--shadow), transparent);
+}
+
+.table-shell::after {
+  bottom: 0;
+  margin-top: -14px;
+  background: linear-gradient(to top, var(--shadow), transparent);
+}
+
+.table-shell.has-top-overflow::before,
+.table-shell.has-bottom-overflow::after {
+  opacity: 0.42;
+}
+
+.result-table tbody tr {
+  cursor: default;
+}
+
+.result-table tbody tr:hover {
+  background: color-mix(in srgb, var(--bg-selected), transparent 45%);
+}
+
+.result-table tbody tr.selected {
+  background: var(--bg-selected);
+  box-shadow: inset 2px 0 0 var(--mint);
+}
+
+.result-table tbody tr.focused {
+  outline: 1px solid color-mix(in srgb, var(--mint), transparent 58%);
+  outline-offset: -1px;
+}
+
+.result-table tbody tr.selected.focused {
+  box-shadow:
+    inset 2px 0 0 var(--mint),
+    inset 0 0 0 1px color-mix(in srgb, var(--mint), transparent 62%);
+}
+
+.sort-marker {
+  color: var(--mint);
+  font-size: 11px;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  text-transform: lowercase;
+}
+
+.status-dot,
+.run-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--text-muted);
+}
+
+.status-open .status-dot,
+.status-up .status-dot,
+.run-dot {
+  background: var(--mint);
+}
+
+.status-closed .status-dot,
+.status-down .status-dot {
+  background: var(--red);
+}
+
+.status-filtered .status-dot {
+  background: var(--amber);
+}
+
+.status-error .status-dot {
+  background: var(--red);
+}
+
+.empty-workspace,
+.empty-filter {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.empty-workspace {
+  transform: translateY(-4px);
+}
+
+.empty-workspace svg {
+  display: block;
+}
+
+.empty-tabs-state {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.empty-tabs-state h1 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.empty-tabs-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.empty-tool-picker {
+  position: relative;
+}
+
+.empty-tabs-actions button {
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border-radius: 4px;
+  padding: 0 11px;
+}
+
+.empty-tabs-actions button.primary {
+  border-color: var(--mint);
+  color: var(--mint);
+}
+
+.empty-tabs-actions button:hover {
+  background: var(--bg-selected);
+}
+
+.empty-tool-launcher {
+  position: fixed;
+  z-index: var(--z-dropdown);
+  left: 50%;
+  top: 50%;
+  width: min(340px, calc(100vw - 32px));
+  max-height: min(420px, calc(100vh - 112px));
+  transform: translate(-50%, calc(-100% - 18px));
+  padding: 5px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 14px 30px var(--shadow);
+  text-align: left;
+}
+
+.empty-tool-section + .empty-tool-section {
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.empty-tool-section-label {
+  display: block;
+  padding: 5px 9px 3px;
+  color: var(--text-muted);
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.empty-tool-section button {
+  width: 100%;
+  justify-content: flex-start;
+  border-color: transparent;
+  background: transparent;
+}
+
+.empty-tool-section button:hover {
+  color: var(--mint);
+}
+
+.empty-filter {
+  height: 80px;
+}

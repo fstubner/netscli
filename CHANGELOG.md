@@ -9,6 +9,57 @@ version and release together.
 
 ## [Unreleased]
 
+### Added
+
+- **Richer port scan results across every interface.** Port scans now
+  report additive status and detail fields (`open`, `closed`,
+  `filtered`, `error`, latency, banners, HTTP metadata, TLS metadata,
+  and raw previews where available) while keeping the older `open`,
+  `port`, `service`, and `error` fields intact for compatibility.
+- **GUI render automation.** The desktop app now has Tauri/WebDriver
+  render coverage for the diagnostic workspace, including tab layout,
+  top menus, toolbar actions, filtering, row selection, detail panes,
+  command preview, and status bar behavior.
+
+### Changed
+
+- **Desktop app redesigned around a denser diagnostic workspace.**
+  NetsCLI Desktop moved from the earlier dashboard-style UI to a
+  native-like shell with operation tabs, compact forms, sortable and
+  filterable results, row details, CLI command previews, and status
+  summaries. The GUI continues to use the same `netscli-core`
+  operations as the CLI, TUI, and MCP server, so desktop behavior stays
+  aligned with the rest of the tool.
+- **Desktop app icon refreshed to match the current brand.** The Tauri
+  icon generator now renders the ANSI-style `N` using the same gradient
+  direction as the website/favicon, and regenerates the Windows/Tauri
+  icon assets from that source.
+- **CLI and TUI scan output now reflects richer status data.** Human
+  output stays concise, but scanned ports can show closed, filtered, and
+  error states with latency where available instead of only emphasizing
+  open ports.
+- **Windows install guidance now prefers Winget for the desktop app.**
+  Release notes and install docs call out Winget's manifest review and
+  installer hash verification as the recommended Windows path, while direct
+  GitHub Windows installers remain unsigned and may show Windows warnings
+  until code signing is added later.
+
+### Changed (internal)
+
+- **GUI architecture split into maintainable ownership modules.**
+  `App.tsx` and the old single CSS file were decomposed into workspace
+  state, tool presentation helpers, shell components, result/detail
+  components, Tauri services, and layered style files. The UI behavior
+  stays production-data driven; no mock/sample data is shipped in the
+  app.
+- **Core, CLI, TUI, MCP, and Tauri internals reduced from monolithic
+  files into facades plus focused modules.** The public Rust API, CLI
+  syntax, MCP schema, Tauri command payloads, GUI data shape, and SQLite
+  schema remain stable.
+- **CI tightened for future changes.** PR CI now includes GUI unit tests
+  before the GUI build, and a separate Tauri render workflow can run
+  manually, nightly, or on GUI/Tauri-related pull requests.
+
 ## [0.2.6] — 2026-05-06
 
 ### Fixed

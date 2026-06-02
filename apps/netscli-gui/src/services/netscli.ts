@@ -1,17 +1,29 @@
 import { invoke } from '@tauri-apps/api/core';
+import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 
 import type {
   ArpEntry,
   DefaultInterfaceInfo,
   DnsRecord,
+  FileSavePreferences,
   Host,
   InspectResult,
   InterfaceInfo,
   NetworkStats,
+  PcapCapability,
   PcapResult,
   PortResult,
   SweepEntry,
 } from '../types/netscli';
+import type { OperationProgressState } from '../tools/types';
+
+const OPERATION_PROGRESS_EVENT = 'netscli://operation-progress';
+
+export async function listenOperationProgress(
+  handler: (progress: OperationProgressState) => void,
+): Promise<UnlistenFn> {
+  return listen<OperationProgressState>(OPERATION_PROGRESS_EVENT, (event) => handler(event.payload));
+}
 
 export async function discoverNetwork(
   subnet?: string,
@@ -80,14 +92,49 @@ export async function capturePcap(
   });
 }
 
+export async function getPcapCapability(): Promise<PcapCapability> {
+  return invoke<PcapCapability>('pcap_capability');
+}
+
+export async function getFileSavePreferences(): Promise<FileSavePreferences> {
+  return invoke<FileSavePreferences>('get_file_save_preferences');
+}
+
+export async function setFileSaveAskEachTime(ask_each_time: boolean): Promise<FileSavePreferences> {
+  return invoke<FileSavePreferences>('set_file_save_ask_each_time', { ask_each_time });
+}
+
+export async function chooseFileSaveDefaultDirectory(): Promise<FileSavePreferences> {
+  return invoke<FileSavePreferences>('choose_file_save_default_directory');
+}
+
+export async function clearFileSaveDefaultDirectory(): Promise<FileSavePreferences> {
+  return invoke<FileSavePreferences>('clear_file_save_default_directory');
+}
+
 export async function cancelOperation(op_id: string): Promise<void> {
   return invoke<void>('cancel_operation', { op_id });
 }
 
-export async function getNetworkStats(): Promise<NetworkStats> {
-  return invoke<NetworkStats>('get_network_stats');
+export async function getNetworkStats(interfaceName?: string | null): Promise<NetworkStats> {
+  return invoke<NetworkStats>('get_network_stats', { interface: interfaceName?.trim() || null });
 }
 
 export async function getDefaultInterface(): Promise<DefaultInterfaceInfo> {
   return invoke<DefaultInterfaceInfo>('get_default_interface');
+}
+
+export async function exportTextFile(
+  filename: string,
+  contents: string,
+): Promise<string> {
+  return invoke<string>('export_text_file', { filename, contents, target_path: null });
+}
+
+export async function openFilesystemPath(path: string): Promise<void> {
+  return invoke<void>('open_saved_artifact', { path });
+}
+
+export async function revealFilesystemPath(path: string): Promise<void> {
+  return invoke<void>('reveal_saved_artifact', { path });
 }

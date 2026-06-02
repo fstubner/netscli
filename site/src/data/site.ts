@@ -263,7 +263,7 @@ export const site: SiteData = {
     {
       title: 'Desktop app',
       body:
-        "A standalone desktop application for when you'd rather not open a terminal. Scan ports, discover hosts, look up DNS records, inspect your ARP table. Prebuilt installers attached to every <a href=\"https://github.com/fstubner/netscli/releases/latest\">GitHub release</a> &mdash; sigstore-signed, no build-from-source needed.",
+        'A standalone desktop application for when you would rather not open a terminal. Scan ports, discover hosts, look up DNS records, and inspect your ARP table. On Windows, use <code>winget install fstubner.netscli.gui</code> for the hash-verified install path. Direct installers are attached to every <a href="https://github.com/fstubner/netscli/releases/latest">GitHub release</a>; Windows direct downloads are currently unsigned and may show publisher warnings until Authenticode signing is added later.',
       image: {
         src: '/gui-scan.png',
         webp: '/gui-scan.webp',
@@ -307,7 +307,7 @@ export const site: SiteData = {
       windows: [
         {
           label: 'Winget',
-          command: 'winget install netscli',
+          command: 'winget install fstubner.netscli',
         },
         {
           label: 'Scoop',
@@ -380,8 +380,17 @@ export const site: SiteData = {
     {
       q: 'How do I install netscli?',
       a: 'On Linux or macOS run: curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash. On Windows run: iwr -useb https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.ps1 | iex. With Rust installed you can also run: cargo install netscli. Prebuilt binaries for Windows, Linux (x86_64/aarch64/musl), and macOS (x86_64/aarch64) are attached to every GitHub release.',
-      aHtml:
-        'On Linux or macOS: <code>curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash</code>. On Windows: <code>iwr -useb https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.ps1 | iex</code>. With Rust installed you can also run <code>cargo install netscli</code>. Prebuilt binaries for Windows, Linux (x86_64/aarch64/musl), and macOS (x86_64/aarch64) are attached to every <a href="https://github.com/fstubner/netscli/releases/latest">GitHub release</a>.',
+      aHtml: `
+        <p>Choose the installer for your platform:</p>
+        <div class="faq-command-list" aria-label="Install commands">
+          <div class="faq-command"><span>Linux/macOS</span><code>curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash</code></div>
+          <div class="faq-command"><span>Windows</span><code>iwr -useb https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.ps1 | iex</code></div>
+          <div class="faq-command"><span>Windows CLI</span><code>winget install fstubner.netscli</code></div>
+          <div class="faq-command"><span>Windows GUI</span><code>winget install fstubner.netscli.gui</code></div>
+          <div class="faq-command"><span>Rust</span><code>cargo install netscli</code></div>
+        </div>
+        <p>Prebuilt binaries for Windows, Linux (<code>x86_64</code>/<code>aarch64</code>/<code>musl</code>), and macOS (<code>x86_64</code>/<code>aarch64</code>) are attached to every <a href="https://github.com/fstubner/netscli/releases/latest">GitHub release</a>.</p>
+      `,
     },
     {
       q: 'Can I use netscli with Claude Code, Cursor, or another AI agent?',
@@ -416,14 +425,30 @@ export const site: SiteData = {
     {
       q: 'How do I find devices on my home network with netscli?',
       a: 'Run `netscli discover` from any machine on the network. netscli auto-detects a sensible subnet from your default interface and pings every host in that range, then runs reverse DNS, ARP-table lookups for MAC addresses, and OUI vendor matching to identify devices like your router, NAS, smart TV, printer, and IoT gear. Override the subnet with `netscli discover 192.168.1.0/24`, or run `netscli serve` to let an AI agent answer questions about your LAN directly.',
-      aHtml:
-        'Run <code>netscli discover</code> from any machine on the network. netscli auto-detects a sensible subnet from your default interface and pings every host in that range, then runs reverse DNS, ARP-table lookups for MAC addresses, and OUI vendor matching to identify devices like your router, NAS, smart TV, printer, and IoT gear. Override the subnet with <code>netscli discover 192.168.1.0/24</code>, or run <code>netscli serve</code> to let an AI agent answer questions about your LAN directly.',
+      aHtml: `
+        <p>Run discovery from any machine on the network:</p>
+        <div class="faq-command-list" aria-label="Discovery commands">
+          <div class="faq-command"><span>Auto-detect</span><code>netscli discover</code></div>
+          <div class="faq-command"><span>Specific subnet</span><code>netscli discover 192.168.1.0/24</code></div>
+        </div>
+        <p>netscli pings the range, then runs reverse DNS, ARP-table lookups for MAC addresses, and OUI vendor matching to identify devices like your router, NAS, smart TV, printer, and IoT gear. Run <code>netscli serve</code> to let an AI agent answer questions about your LAN directly.</p>
+      `,
     },
     {
       q: 'Is netscli a free network scanner for Windows, macOS, or Linux?',
-      a: 'Yes — same binary on all three. netscli is MIT-licensed and free for any use, including commercial. On Windows: `winget install netscli` (winget is preinstalled on Windows 10/11) or `scoop install netscli`. On macOS: `brew tap fstubner/tap && brew install netscli`. On Linux: the install script (`curl -fsSL ... | bash`), the AUR (`yay -S netscli-bin`), or Homebrew on Linux. The default build has no driver or installer dependencies — only the optional packet-capture feature uses libpcap (Linux/macOS) or Npcap (Windows), and only if you opt in with NETSCLI_PCAP=1.',
-      aHtml:
-        'Yes — same binary on all three. netscli is MIT-licensed and free for any use, including commercial. On Windows: <code>winget install netscli</code> (winget is preinstalled on Windows 10/11) or <code>scoop install netscli</code>. On macOS: <code>brew tap fstubner/tap &amp;&amp; brew install netscli</code>. On Linux: the <a href="https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh">install script</a>, the <a href="https://aur.archlinux.org/packages/netscli-bin">AUR</a> (<code>yay -S netscli-bin</code>), or Homebrew on Linux. The default build has no driver or installer dependencies — only the optional packet-capture feature uses libpcap (Linux/macOS) or Npcap (Windows), and only if you opt in with <code>NETSCLI_PCAP=1</code>.',
+      a: 'Yes. netscli is MIT-licensed and free for any use, including commercial. On Windows: `winget install fstubner.netscli` for the CLI/TUI, `winget install fstubner.netscli.gui` for the desktop GUI, or `scoop install netscli`. On macOS: `brew tap fstubner/tap && brew install netscli`. On Linux: the install script (`curl -fsSL ... | bash`), the AUR (`yay -S netscli-bin`), or Homebrew on Linux. The default build has no driver or installer dependencies; only the optional packet-capture feature uses libpcap (Linux/macOS) or Npcap (Windows), and only if you opt in with NETSCLI_PCAP=1.',
+      aHtml: `
+        <p>Yes. netscli is MIT-licensed and free for any use, including commercial.</p>
+        <div class="faq-command-list" aria-label="Package manager commands">
+          <div class="faq-command"><span>Windows CLI</span><code>winget install fstubner.netscli</code></div>
+          <div class="faq-command"><span>Windows GUI</span><code>winget install fstubner.netscli.gui</code></div>
+          <div class="faq-command"><span>Windows</span><code>scoop install netscli</code></div>
+          <div class="faq-command"><span>macOS</span><code>brew tap fstubner/tap &amp;&amp; brew install netscli</code></div>
+          <div class="faq-command"><span>Linux</span><code>curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash</code></div>
+          <div class="faq-command"><span>Arch Linux</span><code>yay -S netscli-bin</code></div>
+        </div>
+        <p>The default build has no driver or installer dependencies. Only the optional packet-capture feature uses libpcap (Linux/macOS) or Npcap (Windows), and only if you opt in with <code>NETSCLI_PCAP=1</code>.</p>
+      `,
     },
     {
       q: 'Can netscli replace nmap for simple network scans?',

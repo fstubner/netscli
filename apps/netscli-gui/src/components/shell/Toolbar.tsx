@@ -1,0 +1,221 @@
+import { ChevronDown, Download, FileSpreadsheet, Filter, Play, Square, X } from 'lucide-react';
+import { useRef } from 'react';
+
+import { TOOL_CONFIG } from '../../tools/registry';
+import { filterHintsFor } from '../../tools/presentation';
+import type { ToolKind, WorkspaceTab } from '../../tools/types';
+import { useRovingFocus } from '../primitives/focus';
+import { useAnchoredPopoverPosition, useOverlayDismiss } from '../primitives/overlay';
+
+interface ToolbarProps {
+  activeTab: WorkspaceTab | undefined;
+  filterText: string;
+  openMenu: string | null;
+  setOpenMenu: (menu: string | null) => void;
+  setFilterText: (value: string) => void;
+  onCancelActive: () => void;
+  onExportJson: () => void;
+  onExportCsv: () => void;
+  onRunActive: () => void;
+}
+
+export function Toolbar({
+  activeTab,
+  filterText,
+  openMenu,
+  setOpenMenu,
+  setFilterText,
+  onCancelActive,
+  onExportCsv,
+  onExportJson,
+  onRunActive,
+}: ToolbarProps) {
+  const filterMenuOpen = openMenu === 'advanced-filter';
+  const kind = activeTab?.kind ?? 'scan';
+  const filterHints = filterHintsFor(activeTab);
+  const runLabel = activeTab ? runLabelFor(kind) : 'Start';
+  const filterButtonRef = useRef<HTMLButtonElement | null>(null);
+  const filterPanelRef = useRef<HTMLDivElement | null>(null);
+  const filterPanelPosition = useAnchoredPopoverPosition({
+    align: 'end',
+    anchorRef: filterButtonRef,
+    estimatedHeight: 390,
+    open: filterMenuOpen,
+    panelRef: filterPanelRef,
+    width: 360,
+  });
+  const closeFilterMenu = () => setOpenMenu(null);
+  const onFilterMenuKeyDown = useRovingFocus({
+    containerRef: filterPanelRef,
+    enabled: filterMenuOpen,
+    itemSelector: '.filter-section button:not(:disabled)',
+    onClose: closeFilterMenu,
+  });
+  useOverlayDismiss({
+    enabled: filterMenuOpen,
+    onClose: closeFilterMenu,
+    refs: [filterButtonRef, filterPanelRef],
+    restoreFocusRef: filterButtonRef,
+  });
+  const applyFilter = (value: string) => {
+    setFilterText(value);
+    setOpenMenu(null);
+  };
+
+  return (
+    <div className="toolbar">
+      <button
+        className="icon-button strong toolbar-run"
+        data-testid="run-active-tab"
+        disabled={!activeTab || activeTab.busy}
+        aria-label={runLabel}
+        data-tooltip={runLabel}
+        data-tooltip-placement="bottom"
+        onClick={onRunActive}
+      >
+        <Play size={16} />
+        <span>{runLabel}</span>
+      </button>
+      <button
+        className={`icon-button stop-button ${activeTab?.busy ? 'armed' : ''}`}
+        disabled={!activeTab?.busy}
+        aria-label="Stop current operation"
+        data-tooltip="Stop current operation"
+        data-tooltip-placement="bottom"
+        onClick={onCancelActive}
+      >
+        <Square size={13} />
+      </button>
+      <div className="toolbar-separator" />
+      <button
+        className="icon-button"
+        aria-label="Export JSON"
+        data-testid="export-json-button"
+        data-tooltip="Export JSON"
+        data-tooltip-placement="bottom"
+        disabled={!activeTab?.result}
+        onClick={onExportJson}
+      >
+        <Download size={15} />
+      </button>
+      <button
+        className="icon-button"
+        aria-label="Export CSV"
+        data-tooltip="Export CSV"
+        data-tooltip-placement="bottom"
+        disabled={!activeTab?.result}
+        onClick={onExportCsv}
+      >
+        <FileSpreadsheet size={15} />
+      </button>
+      <div className="toolbar-spacer" />
+      <div className="filter-control">
+        <div className="filter-box">
+          <Filter size={14} />
+          <input
+            aria-label="Filter results"
+            autoCapitalize="off"
+            autoCorrect="off"
+            data-testid="result-filter"
+            spellCheck={false}
+            disabled={!activeTab}
+            value={filterText}
+            placeholder={filterHints.placeholder}
+            onChange={(event) => setFilterText(event.target.value)}
+          />
+          {filterText.length > 0 && (
+            <button
+              aria-label="Clear filters"
+              className="filter-clear-button"
+              data-testid="clear-result-filter"
+              data-tooltip="Clear filters"
+              data-tooltip-placement="bottom"
+              disabled={!activeTab}
+              type="button"
+              onClick={() => setFilterText('')}
+            >
+              <X size={13} />
+            </button>
+          )}
+        </div>
+        <button
+          className={`filter-menu-button ${filterMenuOpen ? 'active' : ''}`}
+          aria-expanded={filterMenuOpen}
+          aria-label="Advanced filters"
+          aria-haspopup="menu"
+          data-testid="advanced-filter-toggle"
+          data-tooltip={filterMenuOpen ? undefined : 'Advanced filters'}
+          data-tooltip-align="right"
+          data-tooltip-placement="bottom"
+          disabled={!activeTab}
+          ref={filterButtonRef}
+          onClick={() => setOpenMenu(filterMenuOpen ? null : 'advanced-filter')}
+          onKeyDown={(event) => {
+            if (event.key === 'ArrowDown') {
+              event.preventDefault();
+              setOpenMenu('advanced-filter');
+            }
+          }}
+        >
+          <ChevronDown size={13} />
+        </button>
+        {filterMenuOpen && activeTab && (
+          <div
+            className="filter-advanced-popover"
+            data-testid="advanced-filter-menu"
+            ref={filterPanelRef}
+            role="menu"
+            style={{
+              left: filterPanelPosition.left,
+              maxHeight: filterPanelPosition.maxHeight,
+              top: filterPanelPosition.top,
+            }}
+            tabIndex={-1}
+            onKeyDown={onFilterMenuKeyDown}
+          >
+            <p className="filter-syntax-hint">
+              Type tokens directly, e.g. <code>{filterHints.example}</code>.
+              Prefix with <code>-</code> to exclude.
+            </p>
+            {filterHints.sections.map((section) => (
+              <FilterSection
+                key={section.label}
+                label={section.label}
+                options={section.options}
+                onApply={applyFilter}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function runLabelFor(kind: ToolKind): string {
+  if (kind === 'scan') return 'Start Scan';
+  if (kind === 'pcap') return 'Start Capture';
+  return TOOL_CONFIG[kind].action;
+}
+
+function FilterSection({
+  label,
+  options,
+  onApply,
+}: {
+  label: string;
+  options: Array<[string, string]>;
+  onApply: (value: string) => void;
+}) {
+  return (
+    <div className="filter-section">
+      <span className="filter-section-label">{label}</span>
+      {options.map(([labelText, value]) => (
+        <button key={`${labelText}-${value}`} role="menuitem" type="button" onClick={() => onApply(value)}>
+          <span>{labelText}</span>
+          <code>{value || '*'}</code>
+        </button>
+      ))}
+    </div>
+  );
+}

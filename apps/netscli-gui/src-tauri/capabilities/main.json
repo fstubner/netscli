@@ -9,6 +9,13 @@
     "core:window:allow-minimize",
     "core:window:allow-maximize",
     "core:window:allow-unmaximize",
-    "core:window:allow-start-dragging"
+    "core:window:allow-start-dragging",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [
+        { "url": "https://github.com/fstubner/netscli" },
+        { "url": "https://github.com/fstubner/netscli/*" }
+      ]
+    }
   ]
 }

@@ -25,6 +25,7 @@ bun-debug.log*
 *.csv
 *.tgz
 *.pcap
+apps/netscli-gui/e2e/artifacts/
 
 # IDEs / editors
 .DS_Store
@@ -59,6 +60,11 @@ nul
 # Claude Code
 .claude/
 
+# Local agent/browser tooling state
+.agents/
+.playwright-mcp/
+skills-lock.json
+
 # Temp scripts / screenshots (root-level only)
 /*.ps1
 /*.png
@@ -69,8 +75,10 @@ nul
 
 # Local-only docs:
 # - DEVLOG: rolling personal devlog, kept on disk but not part of public history
+# - release-drafts: raw blog / announcement notes before they are polished
 # - docs/superpowers/{specs,plans}: brainstorm/plan artifacts that shouldn't
 #   leak into the repo's docs/ tree (the rendered design lives in CHANGELOG +
 #   PRs already)
 docs/DEVLOG.md
+docs/release-drafts/
 docs/superpowers/

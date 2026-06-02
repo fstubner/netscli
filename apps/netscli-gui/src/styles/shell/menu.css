@@ -1,0 +1,137 @@
+.menu-strip {
+  display: flex;
+  align-items: stretch;
+  flex: 1 1 auto;
+  height: 100%;
+  min-width: 0;
+  padding-left: 8px;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.menu-brand-mark {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 100%;
+  display: inline-grid;
+  place-items: center;
+  margin-right: 4px;
+}
+
+.menu-brand-mark svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.menu-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.menu-root {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.menu-button {
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  padding: 0 10px;
+  cursor: default;
+  font-weight: 400;
+}
+
+.menu-button:hover,
+.menu-button.active {
+  background: var(--bg-elevated);
+}
+
+.menu-popover {
+  position: fixed;
+  z-index: var(--z-dropdown);
+  width: 220px;
+  max-width: min(320px, calc(100vw - 24px));
+  padding: 5px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 12px 30px var(--shadow);
+}
+
+.menu-popover-section + .menu-popover-section {
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.menu-popover-label {
+  display: block;
+  padding: 5px 9px 3px;
+  color: var(--text-muted);
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.menu-popover-item {
+  width: 100%;
+  height: 28px;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  padding: 0 9px;
+  text-align: left;
+  cursor: default;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 400;
+}
+
+.menu-popover-item:hover:not(:disabled) {
+  background: var(--bg-selected);
+  color: var(--mint);
+}
+
+.menu-popover-item.danger {
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.menu-popover-item.danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--red), transparent 82%);
+  color: var(--text-primary);
+}
+
+.menu-popover-item svg {
+  color: var(--text-muted);
+}
+
+.menu-popover-item:hover:not(:disabled) svg {
+  color: currentColor;
+}
+
+.menu-popover .menu-popover-item.danger:hover:not(:disabled) > svg {
+  color: var(--red);
+  stroke: var(--red);
+}
+
+.menu-popover-item:disabled {
+  color: var(--text-muted);
+}
+
+.menu-popover-item.selected {
+  color: var(--mint);
+}

@@ -1,0 +1,101 @@
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-base);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 6px;
+  border: 2px solid var(--bg-base);
+}
+
+@media (max-width: 760px) {
+  .app-frame {
+    flex-basis: 32px;
+  }
+
+  .menu-button {
+    padding: 0 7px;
+  }
+
+  .toolbar {
+    flex-wrap: wrap;
+    min-height: 78px;
+    padding: 7px 10px;
+  }
+
+  .filter-control {
+    order: 2;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .filter-advanced-popover {
+    width: min(270px, calc(100vw - 20px));
+  }
+
+  .tab-strip {
+    flex-basis: 38px;
+  }
+
+  .work-tab {
+    min-width: 136px;
+  }
+
+  .active-form {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .form-row {
+    flex-wrap: wrap;
+  }
+
+  .form-field,
+  .form-field.compact {
+    flex: 1 1 100%;
+  }
+
+  .detail-pane {
+    flex-basis: 170px;
+  }
+
+  .detail-line {
+    grid-template-columns: 88px minmax(0, 1fr);
+  }
+
+  .statusbar {
+    align-items: flex-start;
+    flex-direction: column;
+    height: auto;
+    padding: 6px 10px;
+  }
+
+  .status-right {
+    margin-left: 0;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 560px) {
+  .result-region {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+
+  .filter-section button {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    padding-block: 4px;
+  }
+
+  .filter-section code {
+    justify-self: start;
+  }
+}

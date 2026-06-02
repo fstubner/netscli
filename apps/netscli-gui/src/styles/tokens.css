@@ -1,0 +1,171 @@
+:root {
+  font-family:
+    "Inter",
+    "Segoe UI",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 400;
+  color-scheme: dark light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  background: #0d1015;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-width: 340px;
+  overflow: hidden;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  font-weight: 400;
+}
+
+button {
+  color: inherit;
+}
+
+.container button:not(:disabled),
+.container [role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
+
+.container button:disabled,
+.container [aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+.container {
+  --shell-edge-padding: 12px;
+  --bg-body: #0d1015;
+  --bg-base: #181c24;
+  --bg-elevated: #20242d;
+  --bg-toolbar: #1d2129;
+  --bg-input: #11141a;
+  --bg-selected: #203738;
+  --border-subtle: #2a303b;
+  --border-strong: #343b49;
+  --text-primary: #e4e7ef;
+  --text-secondary: #9aa2b3;
+  --text-muted: #667085;
+  --mint: #3eddb0;
+  --mint-deep: #0aae7a;
+  --cyan: #1edcff;
+  --red: #ef4456;
+  --amber: #f5a524;
+  --shadow: rgba(0, 0, 0, 0.35);
+  --z-form: 260;
+  --z-tabs: 300;
+  --z-toolbar: 360;
+  --z-app-frame: 700;
+  --z-dropdown-root: 1800;
+  --z-dropdown: 2000;
+  --z-modal: 3000;
+  --z-tooltip: 4000;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-body);
+  color: var(--text-primary);
+}
+
+[data-tooltip] {
+  position: relative;
+}
+
+[data-tooltip]::after {
+  display: none;
+  content: none;
+}
+
+.app-tooltip {
+  position: fixed;
+  z-index: var(--z-tooltip);
+  max-width: min(300px, calc(100vw - 16px));
+  width: max-content;
+  padding: 5px 7px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  box-shadow: 0 10px 24px var(--shadow);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.25;
+  pointer-events: none;
+  text-align: center;
+  white-space: pre-line;
+}
+
+.app-tooltip.placement-top {
+  transform: translate(-50%, -100%);
+}
+
+.app-tooltip.placement-bottom {
+  transform: translate(-50%, 0);
+}
+
+.app-tooltip.align-right {
+  transform: translate(-100%, 0);
+}
+
+.app-tooltip.align-right.placement-top {
+  transform: translate(-100%, -100%);
+}
+
+.container.theme-light {
+  --bg-body: #eef1f5;
+  --bg-base: #f8fafc;
+  --bg-elevated: #ffffff;
+  --bg-toolbar: #eef2f6;
+  --bg-input: #ffffff;
+  --bg-selected: #dff7ef;
+  --border-subtle: #d7dde6;
+  --border-strong: #c2cad6;
+  --text-primary: #17202b;
+  --text-secondary: #4d5a6b;
+  --text-muted: #7b8797;
+  --mint: #008a63;
+  --mint-deep: #007052;
+  --cyan: #0476a8;
+  --red: #c6293d;
+  --amber: #a96700;
+  --shadow: rgba(35, 45, 60, 0.14);
+}
+
+.mono,
+code,
+pre {
+  font-family: "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.45;
+  }
+}

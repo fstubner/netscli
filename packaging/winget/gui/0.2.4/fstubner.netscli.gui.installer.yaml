@@ -3,11 +3,11 @@
 # Winget installer manifest for the netscli desktop app.
 #
 # Distinct PackageIdentifier (`fstubner.netscli.gui`) from the CLI
-# (`fstubner.netscli`) so users can install one without the other:
-#   winget install netscli       -> CLI
-#   winget install netscli-gui   -> GUI
-# Moniker resolves to the chosen identifier as long as it's unique in
-# the catalog.
+# (`fstubner.netscli`) so users can install one without the other.
+# Prefer the canonical command:
+#   winget install fstubner.netscli.gui
+# The `netscli-gui` moniker may resolve after the package is accepted
+# into the Winget catalog.
 
 PackageIdentifier: fstubner.netscli.gui
 PackageVersion: 0.2.4

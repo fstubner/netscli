@@ -38,7 +38,7 @@ pub struct NetworkMonitor {
 impl NetworkMonitor {
     const REFRESH_INTERVAL: Duration = Duration::from_millis(100);
     const RATE_INTERVAL: Duration = Duration::from_millis(400);
-    const ACTIVE_HOLD: Duration = Duration::from_millis(200);
+    const ACTIVE_HOLD: Duration = Duration::from_millis(180);
 
     pub fn new() -> Self {
         let mut networks = Networks::new_with_refreshed_list();

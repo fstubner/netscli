@@ -9,55 +9,16 @@ import type {
   SweepEntry,
 } from './netscli';
 
-export type Tab =
-  | 'dashboard'
-  | 'discover'
-  | 'scan'
-  | 'inspect'
-  | 'sweep'
-  | 'dns'
-  | 'interfaces'
-  | 'pcap'
-  | 'settings';
+type ToolResultMeta = {
+  warnings?: string[];
+};
 
 export type ToolResult =
-  | { kind: 'discover'; data: Host[] }
-  | { kind: 'scan'; data: PortResult[] }
-  | { kind: 'inspect'; data: InspectResult }
-  | { kind: 'sweep'; data: SweepEntry[] }
-  | { kind: 'dns'; data: DnsRecord[] }
-  | { kind: 'interfaces'; data: InterfaceInfo[] }
-  | { kind: 'arp'; data: ArpEntry[] }
-  | { kind: 'pcap'; data: PcapResult };
-
-export type ToolParams =
-  | { kind: 'discover'; subnet?: string }
-  | { kind: 'scan'; host: string; ports?: string }
-  | { kind: 'inspect'; host: string; ports?: string }
-  | { kind: 'sweep'; subnet?: string; ports?: string }
-  | {
-      kind: 'dns';
-      host: string;
-      // Accept any record type the backend supports, plus ALL/ANY aggregate queries.
-      record: 'A' | 'AAAA' | 'CNAME' | 'MX' | 'NS' | 'TXT' | 'SRV' | 'PTR' | 'SOA' | 'CAA' | 'ALL' | 'ANY';
-    }
-  | { kind: 'interfaces' }
-  | { kind: 'arp' }
-  | {
-      kind: 'pcap';
-      interface: string;
-      duration?: number;
-      filter?: string;
-      max_packets?: number;
-      output_file?: string;
-    };
-
-export type TabViewMode = 'results' | 'history';
-
-export interface HistoryEntry {
-  id: string;
-  tab: Tab;
-  timestamp: Date;
-  params: ToolParams;
-  result: ToolResult;
-}
+  | ({ kind: 'discover'; data: Host[] } & ToolResultMeta)
+  | ({ kind: 'scan'; data: PortResult[] } & ToolResultMeta)
+  | ({ kind: 'inspect'; data: InspectResult } & ToolResultMeta)
+  | ({ kind: 'sweep'; data: SweepEntry[] } & ToolResultMeta)
+  | ({ kind: 'dns'; data: DnsRecord[] } & ToolResultMeta)
+  | ({ kind: 'interfaces'; data: InterfaceInfo[] } & ToolResultMeta)
+  | ({ kind: 'arp'; data: ArpEntry[] } & ToolResultMeta)
+  | ({ kind: 'pcap'; data: PcapResult } & ToolResultMeta);

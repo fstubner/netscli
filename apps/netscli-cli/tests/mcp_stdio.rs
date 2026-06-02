@@ -2,6 +2,7 @@ use std::process::Stdio;
 
 use serde_json::Value;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+use tokio::net::TcpListener;
 use tokio::process::Command;
 use tokio::time::{timeout, Duration};
 
@@ -169,6 +170,58 @@ async fn mcp_tools_call_rejects_port_zero() {
         .unwrap_or("")
         .contains("port 0"));
 
+    drop(stdin);
+    let _ = timeout(Duration::from_secs(10), child.wait())
+        .await
+        .expect("timeout waiting for server exit")
+        .expect("wait");
+}
+
+#[tokio::test]
+async fn mcp_tools_call_scan_ports_returns_richer_port_results() {
+    let listener = TcpListener::bind(("127.0.0.1", 0))
+        .await
+        .expect("bind test listener");
+    let port = listener.local_addr().expect("local addr").port();
+    let accept_task = tokio::spawn(async move {
+        let (mut socket, _) = listener.accept().await.expect("accept scan connection");
+        socket
+            .write_all(b"SSH-2.0-mcp-test\r\n")
+            .await
+            .expect("write banner");
+    });
+
+    let (mut child, mut stdin, mut lines) = spawn_mcp().await;
+    initialize(&mut stdin, &mut lines).await;
+
+    let request = format!(
+        r#"{{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{{"name":"scan_ports","arguments":{{"host":"127.0.0.1","ports":[{port}]}}}}}}
+"#
+    );
+    stdin
+        .write_all(request.as_bytes())
+        .await
+        .expect("write tools/call scan_ports");
+    stdin.flush().await.expect("flush tools/call scan_ports");
+
+    let resp = read_json_line(&mut lines).await;
+    assert_eq!(resp["id"], 2);
+    assert!(resp.get("error").is_none() || resp["error"].is_null());
+
+    let text = resp["result"]["content"][0]["text"]
+        .as_str()
+        .expect("text content");
+    let payload: Value = serde_json::from_str(text).expect("tool text JSON payload");
+    let ports = payload.as_array().expect("scan_ports payload array");
+    assert_eq!(ports.len(), 1);
+    let item = &ports[0];
+    assert_eq!(item["port"], port);
+    assert_eq!(item["open"], true);
+    assert_eq!(item["status"], "open");
+    assert!(item["latency_ms"].is_number());
+    assert_eq!(item["banner"], "SSH-2.0-mcp-test");
+
+    accept_task.await.expect("listener task");
     drop(stdin);
     let _ = timeout(Duration::from_secs(10), child.wait())
         .await

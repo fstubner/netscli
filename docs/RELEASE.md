@@ -21,6 +21,65 @@ Before the first automated release runs, add these secrets at
 
 1. **Bump versions + CHANGELOG**, merge to main. (Already done for v0.2.1
    via [#30](https://github.com/fstubner/netscli/pull/30).)
+   Before tagging, run the local release gate:
+   ```bash
+   cargo fmt --check
+   cargo test --all --no-fail-fast
+   cargo clippy --all-targets -- -D warnings
+   cargo clippy --all-targets --features pcap -- -D warnings
+   cargo audit
+   cd apps/netscli-gui && npm run test:unit && npm run test:maintainability && npm run build && npm run test:tauri-render
+   ```
+   On Windows, PCAP-enabled source builds also need the Npcap SDK import
+   library on `LIB` (for x64 MSVC, the directory containing `wpcap.lib` is
+   usually `<Npcap SDK>\Lib\x64`) and `C:\Windows\System32\Npcap` on `PATH`
+   for runtime checks.
+   For the desktop installer smoke, run:
+   ```powershell
+   cd apps/netscli-gui
+   npm run tauri build
+
+   # Installed-binary render smoke. The render harness skips its own
+   # Tauri build when TAURI_APP_PATH is set.
+   $env:TAURI_APP_PATH = "C:\Program Files\NetsCLI\netscli-gui.exe"
+   npm run test:tauri-render
+   Remove-Item Env:\TAURI_APP_PATH
+   ```
+   For installer smoke, validate both Windows bundles:
+   - **NSIS:** install silently to a temporary user-writable directory,
+     run the installed-binary render smoke with `TAURI_APP_PATH`, then
+     uninstall silently and verify the app files plus
+     `HKCU:\Software\netscli\NetsCLI` install-location key are gone.
+   - **MSI:** install elevated, verify `InstallLocation` is
+     `C:\Program Files\NetsCLI\`, run the installed-binary render smoke,
+     install the next MSI over it to verify upgrade behavior, then
+     uninstall elevated and keep the installer logs with the release
+     notes.
+
+   The MSI uses a custom WiX template so stale NSIS remembered install
+   paths cannot redirect a clean MSI install into an old temporary
+   directory. Treat any regression in these installer checks as a
+   release-validation blocker.
+
+   The published desktop GUI installers are intentionally built without
+   `--features pcap`. This keeps the GUI install path free of libpcap/Npcap
+   runtime dependencies and avoids redistributing Npcap. Packet Capture is
+   available in local GUI builds only when the Tauri backend is built with
+   `--features pcap` and the user has installed the required system runtime
+   themselves. If a future release adds PCAP-enabled GUI installers, validate
+   launch behavior on Windows with and without Npcap installed before
+   publishing that flavor. For local Windows PCAP GUI experiments, use
+   `scripts/dev-gui-pcap.ps1` or otherwise set `CARGO_TARGET_DIR=target-pcap`
+   so a PCAP-linked debug binary does not replace the normal non-PCAP
+   `target/debug/netscli-gui.exe`.
+
+   Also check dependency freshness:
+   ```bash
+   cargo update --dry-run
+   npm outdated --prefix apps/netscli-gui
+   ```
+   If these report compatible updates, refresh the lockfiles and rerun
+   the full gate before tagging.
 2. **Tag and draft the release.** Either `gh release create vX.Y.Z --draft
    --generate-notes` or use the web UI's "Draft a new release" button.
 3. **Promote the draft to public.** This is the one human action that
@@ -55,11 +114,65 @@ Before the first automated release runs, add these secrets at
   [`packaging/`](../packaging/) for reference; deployed copies live in
   the tap / bucket / AUR / winget-pkgs.
 
+## Windows trust and signing policy
+
+Windows Authenticode signing is deferred for now. The recommended Windows
+install path is Winget:
+
+```powershell
+winget install fstubner.netscli.gui
+```
+
+Winget validates the installer against the SHA256 hash in the submitted
+manifest after the `microsoft/winget-pkgs` review path. Keep that package
+ID and hash-verified install path prominent in README and release notes.
+
+Direct GitHub MSI/NSIS downloads remain available, but they are currently
+unsigned and can show "unknown publisher" or SmartScreen warnings. Do not
+claim that Winget replaces Authenticode signing; describe it as the
+preferred hash-verified install channel until a paid or Store signing path
+is adopted.
+
+## Future Microsoft Store channel
+
+NetsCLI Desktop can be submitted to the Microsoft Store later as an
+`EXE or MSI app`, but it is a separate distribution channel from Winget.
+Before attempting it, prepare:
+
+- Partner Center developer enrollment and reserved app name.
+- A Store-specific Tauri Windows bundle config using the offline
+  WebView2 installer mode.
+- Authenticode signing with a certificate that chains to a CA in the
+  Microsoft Trusted Root Program. Sigstore release signatures are useful
+  for artifact provenance, but they do not replace Store-required Windows
+  code signing for EXE/MSI submissions.
+- A versioned HTTPS installer URL for each submitted release. Do not
+  reuse mutable `latest` URLs for Store submissions.
+- Silent standalone install behavior for the MSI/EXE. UAC is allowed,
+  but the installer should not show normal setup UI and must not be a
+  downloader stub.
+
+Relevant references:
+[Tauri Microsoft Store guide](https://v2.tauri.app/distribute/microsoft-store/)
+and
+[Microsoft EXE/MSI package requirements](https://learn.microsoft.com/windows/apps/publish/publish-your-app/msi/app-package-requirements).
+
+## Future update notifications
+
+Winget users update through `winget upgrade fstubner.netscli.gui` or
+`winget upgrade --all`; Winget does not push app-owned update toasts.
+If the GUI should proactively announce new releases, add a desktop-side
+update check that compares the running version with GitHub Releases or a
+Tauri updater manifest, then show a short in-app toast with a link to the
+release. Keep installation itself owned by the selected channel
+(Winget, GitHub installer, Homebrew cask, Scoop, AUR, or a future Store
+listing) so the app does not invent a competing updater path.
+
 ## GUI install commands
 
 | Platform | Command |
 |----------|---------|
-| Windows | `winget install netscli-gui` |
+| Windows | `winget install fstubner.netscli.gui` |
 | macOS | `brew install --cask netscli` |
 | Linux (any distro, AppImage) | `yay -S netscli-gui-bin` |
 | Windows (Scoop) | `scoop install netscli-gui` |
