@@ -20,7 +20,10 @@ nav{
   position:sticky;top:0;z-index:10;
   background:rgba(17,17,17,.85);backdrop-filter:blur(12px);
   border-bottom:1px solid rgba(255,255,255,.06);
-  padding:12px 24px;display:flex;align-items:center;justify-content:space-between;
+}
+.nav-inner{
+  max-width:1060px;margin:0 auto;padding:12px 24px;
+  display:flex;align-items:center;justify-content:space-between;
 }
 .mark{
   display:inline-block;line-height:0;text-decoration:none;
@@ -209,6 +212,28 @@ section .lead a{color:#ccc;text-decoration:underline;text-underline-offset:3px}
   overflow-wrap:anywhere;
   word-break:break-word;
 }
+.faq .answer p{margin:0 0 10px}
+.faq .answer p:last-child{margin-bottom:0}
+.faq-command-list{display:grid;gap:8px;margin:10px 0 12px}
+.faq-command{
+  display:grid;
+  grid-template-columns:112px minmax(0,1fr);
+  gap:10px;
+  align-items:start;
+}
+.faq-command span{
+  color:#8b95a8;
+  font-size:.78rem;
+  line-height:1.7;
+}
+.faq-command code{
+  display:block;
+  padding:5px 7px;
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:5px;
+  background:rgba(255,255,255,.045);
+  white-space:normal;
+}
 .faq .answer code{
   font-size:.8125rem;
   overflow-wrap:anywhere;
@@ -253,6 +278,7 @@ footer a:hover{color:#ccc}
   section{padding:48px 0}
   section h2{font-size:1.25rem}
   .hero .quick-install{font-size:.75rem;padding:10px 12px}
+  .faq-command{grid-template-columns:1fr;gap:4px}
   /* Let the curl | bash command wrap instead of being ellipsed — losing
      the "| bash" at the end made the command unusable on phones. */
   .hero .quick-install span{white-space:normal;overflow:visible;text-overflow:clip;word-break:break-all}

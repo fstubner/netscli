@@ -3,13 +3,15 @@ import { site } from '../data/site';
 const { branding, hero } = site;
 ---
 <nav>
-  <a class="mark" href="/" aria-label={branding.wordmarkAlt}>
-    <img src={branding.wordmark} alt={branding.wordmarkAlt} width="160" height="32" />
-  </a>
-  <div class="nlinks">
-    <a href="#surfaces">Features</a>
-    <a href="#install">Install</a>
-    <a href="#faq">FAQ</a>
-    <a href={hero.sourceUrl}>GitHub</a>
+  <div class="nav-inner">
+    <a class="mark" href="/" aria-label={branding.wordmarkAlt}>
+      <img src={branding.wordmark} alt={branding.wordmarkAlt} width="160" height="32" />
+    </a>
+    <div class="nlinks">
+      <a href="#surfaces">Features</a>
+      <a href="#install">Install</a>
+      <a href="#faq">FAQ</a>
+      <a href={hero.sourceUrl}>GitHub</a>
+    </div>
   </div>
 </nav>
