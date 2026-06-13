@@ -2,14 +2,22 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { isTauri } from '../services/env';
 import * as netscli from '../services/netscli';
-import { createTab } from '../tools/registry';
+import { createTab, TOOL_CONFIG } from '../tools/registry';
 import { buildCommand, buildRows, columnsFor, filterAndSortRows } from '../tools/presentation';
-import type { HistoryEntry, ResultColumn, RowSelectionMode, ToolKind, WorkspaceTab } from '../tools/types';
+import type { ToolResult } from '../types/app';
+import type { HistoryEntry, OperationProgressState, ResultColumn, RowSelectionMode, ToolKind, WorkspaceTab } from '../tools/types';
 import { applyContextDefaults, shouldAutoRun } from './networkDefaults';
 import { cancelWorkspaceTab, runWorkspaceTab } from './operations';
 import { clampIndex, normalizeSelection, rangeBetween } from './selection';
 import { loadHistory, saveHistory } from './historyStorage';
-import { copyRowsDetails, copyRowsRaw, exportCurrentResult, exportSelectedRows } from './transfer';
+import {
+  buildResultBundle,
+  copyRowsDetails,
+  copyRowsRaw,
+  exportCurrentResult,
+  exportSelectedRows,
+  parseResultBundle,
+} from './transfer';
 import type { WorkspaceModel, WorkspaceOptions } from './types';
 import { useNetworkStatus } from './useNetworkStatus';
 import { useWorkspaceToast } from './useWorkspaceToast';
@@ -82,7 +90,7 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
     void netscli.listenOperationProgress((progress) => {
       const tabId = Object.entries(activeOps.current).find(([, opId]) => opId === progress.op_id)?.[0];
       if (!tabId) return;
-      patchTab(tabId, { progress });
+      setTabs((prev) => prev.map((tab) => (tab.id === tabId ? applyProgressUpdate(tab, progress) : tab)));
     }).then((dispose) => {
       if (cancelled) {
         dispose();
@@ -247,6 +255,9 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
 
   async function runTab(tabId: string) {
     const tab = tabs.find((item) => item.id === tabId);
+    if (toast?.kind === 'operation') {
+      dismissToast();
+    }
     await runWorkspaceTab({
       activeOps,
       patchTab,
@@ -258,8 +269,7 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
   }
 
   async function cancelTab(tabId: string) {
-    const tab = tabs.find((item) => item.id === tabId);
-    await cancelWorkspaceTab(tabId, tab, activeOps, patchTab, showToast);
+    await cancelWorkspaceTab(tabId, activeOps, patchTab);
   }
 
   function exportCurrent(format: 'json' | 'csv') {
@@ -272,6 +282,39 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
 
   function exportSelectedJson() {
     exportSelectedRows(activeTab, columns, selectedRows, 'json', showExportToast, showExportError);
+  }
+
+  async function saveResultBundle() {
+    if (!activeTab?.result) return;
+    const bundle = buildResultBundle(activeTab, commandPreview);
+    if (!bundle) return;
+    try {
+      const path = await netscli.saveResultBundle(JSON.stringify(bundle, null, 2));
+      showExportToast(path, 'Saved result bundle');
+    } catch (error) {
+      if (!/cancelled/i.test(String(error))) showExportError(error);
+    }
+  }
+
+  async function openResultBundle() {
+    try {
+      const bundle = parseResultBundle(await netscli.openResultBundle());
+      if (!(bundle.kind in TOOL_CONFIG)) {
+        throw new Error(`Unsupported tool kind '${bundle.kind}'`);
+      }
+      const tab = createTab(bundle.kind);
+      tab.title = bundle.title || TOOL_CONFIG[bundle.kind].shortLabel;
+      tab.form = { ...tab.form, ...bundle.form };
+      tab.result = bundle.result;
+      tab.detailTab = bundle.kind === 'scan' ? 'banner' : bundle.kind === 'inspect' ? 'overview' : 'details';
+      setTabs((prev) => [...prev, tab]);
+      setActiveTabId(tab.id);
+      showToast({ message: 'Result bundle opened', kind: 'interaction' });
+    } catch (error) {
+      if (!/cancelled/i.test(String(error))) {
+        showToast({ message: `Open failed: ${String(error)}`, kind: 'interaction' });
+      }
+    }
   }
 
   async function copyCommand() {
@@ -386,6 +429,8 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
     exportCurrent,
     exportSelectedJson,
     exportSelectedCsv,
+    saveResultBundle,
+    openResultBundle,
     copyCellValue,
     openCaptureFile,
     revealCaptureFile,
@@ -397,6 +442,54 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
     clearHistory,
     clearCurrentResults,
   };
+}
+
+function applyProgressUpdate(tab: WorkspaceTab, progress: OperationProgressState): WorkspaceTab {
+  if (tab.kind !== 'trace') {
+    return { ...tab, progress };
+  }
+
+  const traceLine = traceLineFromProgress(progress.detail);
+  if (!traceLine) {
+    return { ...tab, progress };
+  }
+
+  const existing = tab.result?.kind === 'trace' ? tab.result : null;
+  const lines = existing?.data.lines ?? [];
+  if (lines.includes(traceLine)) {
+    return { ...tab, progress };
+  }
+
+  const result: ToolResult = {
+    kind: 'trace',
+    data: {
+      host: existing?.data.host ?? tab.form.host?.trim() ?? '',
+      tool: existing?.data.tool ?? 'trace',
+      exit_code: existing?.data.exit_code ?? null,
+      lines: [...lines, traceLine],
+    },
+  };
+  if (existing?.warnings) result.warnings = existing.warnings;
+
+  return {
+    ...tab,
+    progress,
+    result,
+    selectedIndex: tab.result ? tab.selectedIndex : 0,
+    selectedIndices: tab.result ? tab.selectedIndices : [0],
+  };
+}
+
+function traceLineFromProgress(detail: string | null | undefined): string | null {
+  const value = detail?.trim();
+  if (!value) return null;
+  const separator = ' - ';
+  const line = value.includes(separator)
+    ? value.slice(value.indexOf(separator) + separator.length).trim()
+    : value;
+  if (!line) return null;
+  const firstToken = line.split(/\s+/)[0];
+  return /^\d+$/.test(firstToken) ? line : null;
 }
 
 function enrichInterfaceRows(rows: ReturnType<typeof buildRows>, defaultName: string | undefined, selectedName: string | null) {

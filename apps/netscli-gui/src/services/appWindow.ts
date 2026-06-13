@@ -9,7 +9,13 @@ export async function appWindowAction(action: AppWindowAction) {
     const win = getCurrentWindow();
     if (action === 'close') await win.close();
     if (action === 'minimize') await win.minimize();
-    if (action === 'maximize') await win.toggleMaximize();
+    if (action === 'maximize') {
+      if (await win.isMaximized()) {
+        await win.unmaximize();
+      } else {
+        await win.maximize();
+      }
+    }
     if (action === 'drag') await win.startDragging();
   } catch {
     return;

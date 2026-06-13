@@ -6,11 +6,13 @@ import {
   Download,
   FileSpreadsheet,
   FilePlus,
+  FolderOpen,
   PanelTopClose,
   History as HistoryIcon,
   Info,
   LogOut,
   Play,
+  Save,
   Square,
   SquareX,
   Trash2,
@@ -20,7 +22,7 @@ import {
 import { useEffect, useRef } from 'react';
 
 import { availableToolKinds, LOOKUP_TOOL_KINDS, SCAN_TOOL_KINDS, TOOL_CONFIG } from '../../tools/registry';
-import type { HistoryEntry, ToolKind, WorkspaceTab } from '../../tools/types';
+import type { HistoryEntry, ToolCapabilityMap, ToolKind, WorkspaceTab } from '../../tools/types';
 import { useRovingFocus } from '../primitives/focus';
 import { useAnchoredPopoverPosition, useOverlayDismiss } from '../primitives/overlay';
 import { NetsCliMenuMark } from './NetsCliMenuMark';
@@ -45,9 +47,9 @@ interface MenuBarProps {
   activeTab: WorkspaceTab | undefined;
   history: HistoryEntry[];
   openMenu: string | null;
-  pcapAvailable: boolean;
   setOpenMenu: (menu: string | null) => void;
   tabCount: number;
+  toolCapabilities: ToolCapabilityMap;
   onAddTab: (kind: ToolKind) => void;
   onAbout: () => void;
   onOpenSettings: () => void;
@@ -64,6 +66,8 @@ interface MenuBarProps {
   onExport: (format: 'json' | 'csv') => void;
   onExportSelectedJson: () => void;
   onExportSelectedCsv: () => void;
+  onOpenResultBundle: () => void;
+  onSaveResultBundle: () => void;
   onOpenHistoryEntry: (entry: HistoryEntry) => void;
   onRunActive: () => void;
 }
@@ -72,9 +76,9 @@ export function MenuBar({
   activeTab,
   history,
   openMenu,
-  pcapAvailable,
   setOpenMenu,
   tabCount,
+  toolCapabilities,
   onAddTab,
   onAbout,
   onOpenSettings,
@@ -91,6 +95,8 @@ export function MenuBar({
   onExport,
   onExportSelectedJson,
   onExportSelectedCsv,
+  onOpenResultBundle,
+  onSaveResultBundle,
   onOpenHistoryEntry,
   onRunActive,
 }: MenuBarProps) {
@@ -160,6 +166,8 @@ export function MenuBar({
               disabled: !activeTab || tabCount <= 1,
             },
             { label: 'Close All Tabs', Icon: SquareX, action: onCloseAllTabs, disabled: tabCount === 0 },
+            { label: 'Open Result Bundle', Icon: FolderOpen, action: onOpenResultBundle },
+            { label: 'Save Result Bundle', Icon: Save, action: onSaveResultBundle, disabled: !activeTab?.result },
             { label: 'Export JSON', Icon: Download, action: () => onExport('json'), disabled: !activeTab?.result },
             { label: 'Export CSV', Icon: Download, action: () => onExport('csv'), disabled: !activeTab?.result },
           ],
@@ -229,7 +237,7 @@ export function MenuBar({
       sections: [
         {
           label: 'Tools and Inventory',
-          items: availableToolKinds(LOOKUP_TOOL_KINDS, pcapAvailable).map(makeToolItem),
+          items: availableToolKinds(LOOKUP_TOOL_KINDS, toolCapabilities).map(makeToolItem),
         },
       ],
     },
@@ -350,7 +358,7 @@ export function MenuBar({
                       }}
                     >
                       <item.Icon size={14} />
-                      {item.label}
+                      <span className="menu-popover-item-label">{item.label}</span>
                     </button>
                   ))}
                 </div>

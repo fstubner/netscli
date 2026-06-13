@@ -4,6 +4,12 @@
   gap: 6px;
 }
 
+.settings-interface-field.compact {
+  width: 174px;
+  min-width: 174px;
+  justify-self: end;
+}
+
 .settings-interface-trigger {
   width: 100%;
   min-height: 48px;
@@ -38,13 +44,14 @@
 
 .settings-interface-trigger svg {
   flex: 0 0 auto;
+  align-self: center;
   color: var(--text-muted);
+  justify-self: end;
 }
 
-.settings-interface-list {
+.settings-select-list {
   position: fixed;
   z-index: var(--z-dropdown);
-  width: min(620px, calc(100vw - 16px));
   display: flex;
   flex-direction: column;
   align-content: start;
@@ -53,6 +60,23 @@
   border: 1px solid var(--border-subtle);
   background: var(--bg-input);
   box-shadow: 0 18px 46px var(--shadow);
+}
+
+.settings-interface-list {
+  display: flex;
+  flex-direction: column;
+  align-content: start;
+  width: 100%;
+  max-height: 280px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-input);
+}
+
+.settings-select-list {
+  min-width: 150px;
+  padding: 5px;
 }
 
 .settings-interface-option {
@@ -90,6 +114,31 @@
   gap: 5px;
 }
 
+.settings-interface-field.compact .settings-interface-badges {
+  min-width: 0;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.settings-interface-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.settings-interface-status > span {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--red);
+}
+
+.settings-interface-status.up > span {
+  background: var(--mint);
+}
+
 .settings-interface-badge {
   display: inline-flex;
   align-items: center;
@@ -109,6 +158,86 @@
 .settings-interface-option.selected {
   color: var(--mint);
   background: color-mix(in srgb, var(--mint), transparent 90%);
+}
+
+.settings-select-field {
+  width: 174px;
+  min-width: 174px;
+}
+
+.settings-select-trigger {
+  width: 100%;
+  height: 30px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  padding: 0 9px 0 10px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.settings-interface-field.compact .settings-interface-option {
+  min-height: 40px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 5px;
+  padding: 7px 9px;
+}
+
+.settings-interface-field.compact .settings-interface-trigger {
+  min-height: 30px;
+  padding: 4px 9px 4px 10px;
+}
+
+.settings-select-trigger:hover,
+.settings-select-trigger:focus-visible,
+.settings-select-trigger.active {
+  border-color: var(--border-strong);
+}
+
+.settings-select-trigger span,
+.settings-select-option-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-select-trigger svg {
+  align-self: center;
+  color: var(--text-muted);
+  justify-self: end;
+}
+
+.settings-select-list button {
+  width: 100%;
+  min-height: 30px;
+  display: grid;
+  gap: 2px;
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  padding: 6px 9px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.settings-select-list button:hover,
+.settings-select-list button.selected {
+  background: var(--bg-selected);
+  color: var(--mint);
+}
+
+.settings-select-list small {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .settings-empty {

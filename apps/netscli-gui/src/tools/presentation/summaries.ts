@@ -7,10 +7,16 @@ export function resultSummary(result: ToolResult | null): string {
       const open = result.data.filter((port) => port.open).length;
       return `${result.data.length} results - ${open} open`;
     }
+    case 'ping':
+      return `${result.data.received}/${result.data.sent} replies - ${formatNumber(result.data.loss_pct)}% loss`;
+    case 'trace':
+      return `${traceHopCount(result.data.lines)} hops - ${result.data.tool}`;
     case 'discover':
       return `${result.data.length} hosts`;
     case 'dns':
       return `${result.data.length} records`;
+    case 'reverse':
+      return result.data.hostname ? 'reverse name found' : 'no reverse name';
     case 'inspect': {
       const ports = result.data.ports ?? result.data.open_ports;
       if (ports.length > 0) {
@@ -25,11 +31,21 @@ export function resultSummary(result: ToolResult | null): string {
       const open = result.data.filter((host) => host.open_ports.length > 0).length;
       return `${hosts} hosts - ${open} with open ports`;
     }
+    case 'mdns':
+      return `${result.data.length} services`;
     case 'interfaces':
       return `${result.data.length} interfaces`;
     case 'arp':
       return `${result.data.length} ARP entries`;
     case 'pcap':
-      return `${result.data.packets_captured} packets`;
+      return `${'packets_captured' in result.data ? result.data.packets_captured : result.data.total_packets} packets`;
   }
+}
+
+function traceHopCount(lines: string[]): number {
+  return lines.filter((line) => /^\s*\d+\s+/.test(line)).length;
+}
+
+function formatNumber(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }

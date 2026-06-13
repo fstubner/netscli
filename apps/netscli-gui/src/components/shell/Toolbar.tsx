@@ -1,5 +1,5 @@
 import { ChevronDown, Download, FileSpreadsheet, Filter, Play, Square, X } from 'lucide-react';
-import { useRef } from 'react';
+import { useRef, type RefObject } from 'react';
 
 import { TOOL_CONFIG } from '../../tools/registry';
 import { filterHintsFor } from '../../tools/presentation';
@@ -9,6 +9,7 @@ import { useAnchoredPopoverPosition, useOverlayDismiss } from '../primitives/ove
 
 interface ToolbarProps {
   activeTab: WorkspaceTab | undefined;
+  filterInputRef?: RefObject<HTMLInputElement | null>;
   filterText: string;
   openMenu: string | null;
   setOpenMenu: (menu: string | null) => void;
@@ -17,10 +18,12 @@ interface ToolbarProps {
   onExportJson: () => void;
   onExportCsv: () => void;
   onRunActive: () => void;
+  runDisabledReason?: string;
 }
 
 export function Toolbar({
   activeTab,
+  filterInputRef,
   filterText,
   openMenu,
   setOpenMenu,
@@ -29,6 +32,7 @@ export function Toolbar({
   onExportCsv,
   onExportJson,
   onRunActive,
+  runDisabledReason,
 }: ToolbarProps) {
   const filterMenuOpen = openMenu === 'advanced-filter';
   const kind = activeTab?.kind ?? 'scan';
@@ -67,9 +71,9 @@ export function Toolbar({
       <button
         className="icon-button strong toolbar-run"
         data-testid="run-active-tab"
-        disabled={!activeTab || activeTab.busy}
+        disabled={!activeTab || activeTab.busy || Boolean(runDisabledReason)}
         aria-label={runLabel}
-        data-tooltip={runLabel}
+        data-tooltip={runDisabledReason ?? runLabel}
         data-tooltip-placement="bottom"
         onClick={onRunActive}
       >
@@ -117,6 +121,7 @@ export function Toolbar({
             autoCapitalize="off"
             autoCorrect="off"
             data-testid="result-filter"
+            ref={filterInputRef}
             spellCheck={false}
             disabled={!activeTab}
             value={filterText}

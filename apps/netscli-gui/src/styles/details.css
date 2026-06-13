@@ -110,11 +110,20 @@
 }
 
 .detail-body {
+  --detail-shadow-top: 0 0 transparent;
+  --detail-shadow-right: 0 0 transparent;
+  --detail-shadow-bottom: 0 0 transparent;
+  --detail-shadow-left: 0 0 transparent;
   flex: 1;
   min-height: 0;
   overflow: auto;
   padding: 10px 14px;
   user-select: text;
+  box-shadow:
+    var(--detail-shadow-top),
+    var(--detail-shadow-right),
+    var(--detail-shadow-bottom),
+    var(--detail-shadow-left);
 }
 
 .detail-body:focus {
@@ -122,7 +131,24 @@
 }
 
 .detail-body:focus-visible {
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mint), transparent 50%);
+  outline: 1px solid color-mix(in srgb, var(--mint), transparent 50%);
+  outline-offset: -1px;
+}
+
+.detail-body.has-top-overflow {
+  --detail-shadow-top: inset 0 18px 16px -16px color-mix(in srgb, var(--shadow), black 25%);
+}
+
+.detail-body.has-right-overflow {
+  --detail-shadow-right: inset -18px 0 16px -16px color-mix(in srgb, var(--shadow), black 25%);
+}
+
+.detail-body.has-bottom-overflow {
+  --detail-shadow-bottom: inset 0 -18px 16px -16px color-mix(in srgb, var(--shadow), black 25%);
+}
+
+.detail-body.has-left-overflow {
+  --detail-shadow-left: inset 18px 0 16px -16px color-mix(in srgb, var(--shadow), black 25%);
 }
 
 .detail-body pre {

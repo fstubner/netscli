@@ -31,6 +31,12 @@ function statusExplanation(value: unknown): string {
       return 'Interface or host is reachable/up.';
     case 'down':
       return 'Interface or host is unavailable/down.';
+    case 'reply':
+      return 'Reply: this hop responded to the trace probe.';
+    case 'timeout':
+      return 'Timeout: this hop did not respond before the trace timeout.';
+    case 'note':
+      return 'Trace output note from the system trace tool.';
     default:
       return renderValue(value);
   }

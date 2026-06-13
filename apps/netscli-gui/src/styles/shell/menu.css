@@ -67,6 +67,10 @@
   box-shadow: 0 12px 30px var(--shadow);
 }
 
+.history-popover {
+  width: 320px;
+}
+
 .menu-popover-section + .menu-popover-section {
   margin-top: 5px;
   padding-top: 5px;
@@ -117,6 +121,13 @@
 
 .menu-popover-item svg {
   color: var(--text-muted);
+}
+
+.menu-popover-item-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .menu-popover-item:hover:not(:disabled) svg {

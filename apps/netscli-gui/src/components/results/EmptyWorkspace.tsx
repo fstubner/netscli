@@ -2,18 +2,18 @@ import { Search, Terminal, Wrench } from 'lucide-react';
 import { useRef, useState } from 'react';
 
 import { availableToolKinds, LOOKUP_TOOL_KINDS, SCAN_TOOL_KINDS, TOOL_CONFIG } from '../../tools/registry';
-import type { ToolKind } from '../../tools/types';
+import type { ToolCapabilityMap, ToolKind } from '../../tools/types';
 import { useRovingFocus } from '../primitives/focus';
 import { useOverlayDismiss } from '../primitives/overlay';
 
 interface EmptyWorkspaceProps {
-  pcapAvailable: boolean;
+  toolCapabilities: ToolCapabilityMap;
   onAddToolTab: (kind: ToolKind) => void;
 }
 
 type PickerKind = 'scan' | 'tool';
 
-export function EmptyWorkspace({ onAddToolTab, pcapAvailable }: EmptyWorkspaceProps) {
+export function EmptyWorkspace({ onAddToolTab, toolCapabilities }: EmptyWorkspaceProps) {
   const [pickerKind, setPickerKind] = useState<PickerKind | null>(null);
   const pickerRef = useRef<HTMLDivElement | null>(null);
   const pickerPanelRef = useRef<HTMLDivElement | null>(null);
@@ -34,7 +34,7 @@ export function EmptyWorkspace({ onAddToolTab, pcapAvailable }: EmptyWorkspacePr
   const pickerConfig =
     pickerKind === 'scan'
       ? { kinds: SCAN_TOOL_KINDS, label: 'Scan Operations' }
-      : { kinds: availableToolKinds(LOOKUP_TOOL_KINDS, pcapAvailable), label: 'Lookups and Inventory' };
+      : { kinds: availableToolKinds(LOOKUP_TOOL_KINDS, toolCapabilities), label: 'Lookups and Inventory' };
 
   function togglePicker(kind: PickerKind) {
     setPickerKind((current) => (current === kind ? null : kind));

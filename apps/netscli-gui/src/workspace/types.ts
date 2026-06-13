@@ -37,6 +37,8 @@ export interface WorkspaceModel {
   exportCurrent: (format: 'json' | 'csv') => void;
   exportSelectedJson: () => void;
   exportSelectedCsv: () => void;
+  saveResultBundle: () => Promise<void>;
+  openResultBundle: () => Promise<void>;
   copyCellValue: (label: string, value: string) => Promise<void>;
   openCaptureFile: (path: string) => Promise<void>;
   revealCaptureFile: (path: string) => Promise<void>;

@@ -50,11 +50,6 @@ export async function runWorkspaceTab({
     selectedIndices: [0],
     selectionAnchor: 0,
   });
-  showToast({
-    message: `${TOOL_CONFIG[tab.kind].label} started`,
-    kind: 'operation',
-    tabId: tab.id,
-  });
 
   try {
     const result = await executeTool(tab, opId);
@@ -106,32 +101,36 @@ export async function runWorkspaceTab({
 
 export async function cancelWorkspaceTab(
   tabId: string,
-  tab: WorkspaceTab | undefined,
   activeOps: RefObject<Record<string, string>>,
   patchTab: (id: string, patch: Partial<WorkspaceTab>) => void,
-  showToast: (toast: Omit<WorkspaceToast, 'id'>) => void,
 ) {
   const opId = activeOps.current[tabId];
   if (opId && isTauri()) {
     await netscli.cancelOperation(opId).catch(() => undefined);
   }
   delete activeOps.current[tabId];
-  patchTab(tabId, { busy: false, progress: null, error: 'Operation cancelled' });
-  showToast({
-    message: `${tab ? TOOL_CONFIG[tab.kind].label : 'Operation'} stopped`,
-    kind: 'operation',
-    tabId,
-  });
+  patchTab(tabId, { busy: false, progress: null, error: null });
 }
 
 function initialProgressDetail(tab: WorkspaceTab): string {
   switch (tab.kind) {
     case 'scan':
       return 'Preparing port probes';
+    case 'ping':
+      return 'Sending probes';
+    case 'trace':
+      return 'Starting route trace';
     case 'discover':
       return 'Preparing host discovery';
+    case 'dns':
+    case 'reverse':
+      return 'Querying DNS';
     case 'sweep':
       return 'Preparing network sweep';
+    case 'mdns':
+      return 'Listening for mDNS services';
+    case 'pcap':
+      return tab.form.mode === 'Open File' ? 'Opening capture file' : 'Starting packet capture';
     default:
       return 'Running operation';
   }

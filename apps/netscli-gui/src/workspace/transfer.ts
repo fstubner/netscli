@@ -1,6 +1,33 @@
-import type { ResultColumn, ResultRow, WorkspaceTab } from '../tools/types';
+import type { ToolKind, ResultColumn, ResultRow, WorkspaceTab } from '../tools/types';
+import type { ToolResult } from '../types/app';
 import { serializeRowsAsCsv } from '../tools/presentation';
 import { downloadText } from './toolExecution';
+
+export const RESULT_BUNDLE_SCHEMA = 'netscli.result.v1';
+const TOOL_KINDS = [
+  'scan',
+  'ping',
+  'trace',
+  'discover',
+  'dns',
+  'reverse',
+  'inspect',
+  'sweep',
+  'mdns',
+  'interfaces',
+  'arp',
+  'pcap',
+] as const satisfies readonly ToolKind[];
+
+export interface ResultBundle {
+  schema: typeof RESULT_BUNDLE_SCHEMA;
+  exportedAt: string;
+  title: string;
+  command: string;
+  kind: ToolKind;
+  form: Record<string, string>;
+  result: ToolResult;
+}
 
 export function exportCurrentResult(
   activeTab: WorkspaceTab | undefined,
@@ -32,6 +59,52 @@ export function exportCurrentResult(
     onSuccess,
     onError,
   );
+}
+
+export function buildResultBundle(activeTab: WorkspaceTab, command: string): ResultBundle | null {
+  if (!activeTab.result) return null;
+  return {
+    schema: RESULT_BUNDLE_SCHEMA,
+    exportedAt: new Date().toISOString(),
+    title: activeTab.title,
+    command,
+    kind: activeTab.kind,
+    form: { ...activeTab.form },
+    result: activeTab.result,
+  };
+}
+
+export function parseResultBundle(value: unknown): ResultBundle {
+  if (!value || typeof value !== 'object') {
+    throw new Error('Result bundle must be a JSON object');
+  }
+  const bundle = value as Partial<ResultBundle>;
+  if (bundle.schema !== RESULT_BUNDLE_SCHEMA) {
+    throw new Error('Unsupported result bundle schema');
+  }
+  if (!bundle.kind || typeof bundle.kind !== 'string') {
+    throw new Error('Result bundle is missing a tool kind');
+  }
+  if (!isToolKind(bundle.kind)) {
+    throw new Error(`Unsupported result bundle tool kind: ${bundle.kind}`);
+  }
+  if (!bundle.result || typeof bundle.result !== 'object') {
+    throw new Error('Result bundle is missing result data');
+  }
+  const result = bundle.result as { kind?: unknown; data?: unknown };
+  if (result.kind !== bundle.kind) {
+    throw new Error('Result bundle kind does not match its result payload');
+  }
+  validateResultDataShape(bundle.kind, result.data);
+  return {
+    schema: RESULT_BUNDLE_SCHEMA,
+    exportedAt: typeof bundle.exportedAt === 'string' ? bundle.exportedAt : new Date().toISOString(),
+    title: typeof bundle.title === 'string' ? bundle.title : bundle.kind,
+    command: typeof bundle.command === 'string' ? bundle.command : '',
+    kind: bundle.kind,
+    form: isStringRecord(bundle.form) ? bundle.form : {},
+    result: bundle.result as ToolResult,
+  };
 }
 
 export function exportSelectedRows(
@@ -100,3 +173,39 @@ function exportText(
     .catch(onError);
 }
 
+function isStringRecord(value: unknown): value is Record<string, string> {
+  if (!value || typeof value !== 'object') return false;
+  return Object.values(value).every((item) => typeof item === 'string');
+}
+
+function isToolKind(value: string): value is ToolKind {
+  return (TOOL_KINDS as readonly string[]).includes(value);
+}
+
+function validateResultDataShape(kind: ToolKind, data: unknown) {
+  if (
+    kind === 'scan' ||
+    kind === 'discover' ||
+    kind === 'dns' ||
+    kind === 'sweep' ||
+    kind === 'mdns' ||
+    kind === 'interfaces' ||
+    kind === 'arp'
+  ) {
+    if (!Array.isArray(data)) {
+      throw new Error(`Result bundle data for ${kind} must be an array`);
+    }
+    return;
+  }
+
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    throw new Error(`Result bundle data for ${kind} must be an object`);
+  }
+
+  if (kind === 'trace' && !Array.isArray((data as { lines?: unknown }).lines)) {
+    throw new Error('Result bundle trace data must include lines');
+  }
+  if (kind === 'pcap' && !Array.isArray((data as { packets?: unknown }).packets)) {
+    throw new Error('Result bundle pcap data must include packets');
+  }
+}

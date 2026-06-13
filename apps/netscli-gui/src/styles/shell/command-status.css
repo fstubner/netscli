@@ -52,6 +52,10 @@
   white-space: nowrap;
 }
 
+.status-result-divider {
+  flex: 0 0 auto;
+}
+
 .traffic-stats {
   display: inline-flex;
   align-items: center;
@@ -83,6 +87,7 @@
 }
 
 .traffic-rate.active .traffic-arrow {
+  color: var(--mint);
   opacity: 1;
 }
 

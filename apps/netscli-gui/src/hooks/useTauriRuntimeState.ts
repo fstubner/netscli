@@ -5,25 +5,56 @@ import {
   chooseFileSaveDefaultDirectory,
   clearFileSaveDefaultDirectory,
   getFileSavePreferences,
+  getMdnsCapability,
   getPcapCapability,
   setFileSaveAskEachTime,
 } from '../services/netscli';
-import type { FileSavePreferences } from '../types/netscli';
+import type { FileSavePreferences, OptionalCapability } from '../types/netscli';
+import type { PcapCapability } from '../types/netscli';
+import type { ToolCapabilityMap } from '../tools/types';
 
 export function useTauriRuntimeState() {
   const [fileSavePreferences, setFileSavePreferences] = useState<FileSavePreferences>({
     ask_each_time: false,
     default_directory: null,
   });
-  const [pcapAvailable, setPcapAvailable] = useState(false);
+  const [pcapCapability, setPcapCapability] = useState<PcapCapability>({
+    compiled: false,
+    available: false,
+    interfaces: [],
+    message: 'Checking Packet Capture support.',
+  });
+  const [mdnsCapability, setMdnsCapability] = useState<OptionalCapability>({
+    compiled: true,
+    available: true,
+    message: null,
+  });
 
   useEffect(() => {
     if (!isTauri()) return;
     let cancelled = false;
-    void Promise.allSettled([getPcapCapability(), getFileSavePreferences()]).then((results) => {
+    void Promise.allSettled([getPcapCapability(), getMdnsCapability(), getFileSavePreferences()]).then((results) => {
       if (cancelled) return;
-      const [pcapCapability, savePreferences] = results;
-      setPcapAvailable(pcapCapability.status === 'fulfilled' ? pcapCapability.value.available : false);
+      const [pcapCapability, mdnsCapability, savePreferences] = results;
+      setPcapCapability(
+        pcapCapability.status === 'fulfilled'
+          ? pcapCapability.value
+          : {
+              compiled: false,
+              available: false,
+              interfaces: [],
+              message: 'Packet Capture support could not be checked.',
+            },
+      );
+      setMdnsCapability(
+        mdnsCapability.status === 'fulfilled'
+          ? mdnsCapability.value
+          : {
+              compiled: false,
+              available: false,
+              message: 'mDNS discovery support could not be checked.',
+            },
+      );
       if (savePreferences.status === 'fulfilled') {
         setFileSavePreferences(savePreferences.value);
       }
@@ -63,11 +94,18 @@ export function useTauriRuntimeState() {
     }
   }
 
+  const toolCapabilities: ToolCapabilityMap = {
+    mdns: mdnsCapability.compiled,
+    pcap: pcapCapability.compiled,
+  };
+
   return {
     chooseSaveFolder,
     clearSaveFolder,
     fileSavePreferences,
-    pcapAvailable,
+    mdnsCapability,
+    pcapCapability,
+    toolCapabilities,
     toggleFileSaveAskEachTime,
   };
 }

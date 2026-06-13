@@ -1,6 +1,7 @@
 import { ArrowDown, ArrowUp } from 'lucide-react';
 
 import type { DefaultInterfaceInfo, NetworkStats } from '../../types/netscli';
+import type { TrafficDisplayUnit, TrafficPrecision } from '../../hooks/usePreferences';
 import { resultSummary } from '../../tools/presentation';
 import { TOOL_CONFIG } from '../../tools/registry';
 import type { WorkspaceTab } from '../../tools/types';
@@ -12,6 +13,8 @@ interface StatusBarProps {
   networkStats: NetworkStats | null;
   rowCount: number;
   selectedCount: number;
+  trafficDisplayUnit: TrafficDisplayUnit;
+  trafficPrecision: TrafficPrecision;
 }
 
 export function StatusBar({
@@ -21,6 +24,8 @@ export function StatusBar({
   networkStats,
   rowCount,
   selectedCount,
+  trafficDisplayUnit,
+  trafficPrecision,
 }: StatusBarProps) {
   const interfaceDown = Boolean(interfaceInfo && !interfaceInfo.is_up);
   const statusText = interfaceInfo ? (interfaceDown ? 'Interface down' : 'Interface up') : 'No interface';
@@ -30,19 +35,29 @@ export function StatusBar({
   return (
     <footer className="statusbar" data-testid="statusbar">
       <div className="status-left">
-        <span className={`run-dot ${interfaceDown ? 'down' : ''}`} />
-        <span>{statusText}</span>
+        <span
+          aria-label={statusText}
+          className={`run-dot ${interfaceDown ? 'down' : ''}`}
+          data-tooltip={statusText}
+          role="img"
+        />
+        <span className="status-text">{statusText}</span>
         {interfaceInfo && (
           <>
             <span className="divider" />
-            <span>{interfaceInfo.name}</span>
-            <code>{interfaceInfo.ips[0] ?? 'no address'}</code>
+            <span className="status-interface-name">{interfaceInfo.name}</span>
+            <code className="status-interface-address">{interfaceInfo.ips[0] ?? 'no address'}</code>
           </>
         )}
         {networkStats && (
           <>
             <span className="divider" />
-            <TrafficStats animateArrows={animateTrafficArrows} stats={networkStats} />
+            <TrafficStats
+              animateArrows={animateTrafficArrows}
+              precision={trafficPrecision}
+              stats={networkStats}
+              unit={trafficDisplayUnit}
+            />
           </>
         )}
         {operationText && (
@@ -52,7 +67,12 @@ export function StatusBar({
           </>
         )}
       </div>
-      {resultText && <div className="status-right">{resultText}</div>}
+      {resultText && (
+        <>
+          <span className="divider status-result-divider" />
+          <div className="status-right">{resultText}</div>
+        </>
+      )}
     </footer>
   );
 }
@@ -62,10 +82,22 @@ function footerResultText(tab: WorkspaceTab, rowCount: number, selectedCount: nu
   return resultSummary(tab.result ?? null);
 }
 
-function TrafficStats({ animateArrows, stats }: { animateArrows: boolean; stats: NetworkStats }) {
+function TrafficStats({
+  animateArrows,
+  precision,
+  stats,
+  unit,
+}: {
+  animateArrows: boolean;
+  precision: TrafficPrecision;
+  stats: NetworkStats;
+  unit: TrafficDisplayUnit;
+}) {
   const downloadActive = animateArrows && stats.download_active;
   const uploadActive = animateArrows && stats.upload_active;
   const title = stats.available ? 'Network activity on selected interface' : 'No traffic data for selected interface';
+  const download = formatTrafficRate(stats.download_mbps, unit, precision);
+  const upload = formatTrafficRate(stats.upload_mbps, unit, precision);
 
   return (
     <span className="traffic-stats" data-testid="traffic-stats" aria-label={title} data-tooltip={title}>
@@ -78,7 +110,7 @@ function TrafficStats({ animateArrows, stats }: { animateArrows: boolean; stats:
         <span className="traffic-arrow">
           <ArrowDown size={12} />
         </span>
-        <span>{stats.download_mbps.toFixed(2)}</span>
+        <span>{download}</span>
       </span>
       <span
         className={`traffic-rate ${uploadActive ? 'active' : ''}`}
@@ -89,9 +121,14 @@ function TrafficStats({ animateArrows, stats }: { animateArrows: boolean; stats:
         <span className="traffic-arrow">
           <ArrowUp size={12} />
         </span>
-        <span>{stats.upload_mbps.toFixed(2)}</span>
+        <span>{upload}</span>
       </span>
-      <span className="traffic-unit">Mbps</span>
+      <span className="traffic-unit">{unit}</span>
     </span>
   );
+}
+
+function formatTrafficRate(valueMbps: number, unit: TrafficDisplayUnit, precision: TrafficPrecision): string {
+  const value = unit === 'Gbps' ? valueMbps / 1000 : unit === 'Kbps' ? valueMbps * 1000 : valueMbps;
+  return value.toFixed(precision);
 }

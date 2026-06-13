@@ -13,6 +13,10 @@
   border: 2px solid var(--bg-base);
 }
 
+::-webkit-scrollbar-corner {
+  background: var(--bg-base);
+}
+
 @media (max-width: 760px) {
   .app-frame {
     flex-basis: 32px;
@@ -23,16 +27,19 @@
   }
 
   .toolbar {
-    flex-wrap: wrap;
-    min-height: 78px;
-    padding: 7px 10px;
+    flex-wrap: nowrap;
+    flex-basis: 45px;
+    min-height: 45px;
+    padding: 0 10px;
   }
 
   .filter-control {
-    order: 2;
-    width: 100%;
+    flex: 1 1 180px;
+    order: 0;
+    width: auto;
     max-width: none;
     min-width: 0;
+    margin-top: 0;
   }
 
   .filter-advanced-popover {
@@ -71,15 +78,54 @@
   }
 
   .statusbar {
-    align-items: flex-start;
-    flex-direction: column;
-    height: auto;
-    padding: 6px 10px;
+    align-items: center;
+    flex-direction: row;
+    height: 27px;
+    min-height: 27px;
+    gap: 8px;
+    padding: 0 10px;
+  }
+
+  .status-left {
+    flex: 1 1 auto;
+    width: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .status-text {
+    display: none;
+  }
+
+  .status-text,
+  .status-interface-name,
+  .traffic-stats,
+  .status-right {
+    white-space: nowrap;
+  }
+
+  .status-interface-address {
+    min-width: 0;
+    max-width: min(34vw, 300px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .status-right {
+    flex: 0 0 auto;
+    width: auto;
+    max-width: none;
+    min-width: max-content;
+    justify-content: flex-end;
     margin-left: 0;
-    flex-wrap: wrap;
+    overflow: visible;
+    text-overflow: clip;
+    flex-wrap: nowrap;
+    white-space: nowrap;
   }
 }
 
@@ -97,5 +143,51 @@
 
   .filter-section code {
     justify-self: start;
+  }
+
+  .statusbar {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    height: 27px;
+    min-height: 27px;
+    padding: 0 8px;
+  }
+
+  .status-left {
+    flex: 1 1 auto;
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+
+  .status-interface-name {
+    flex: 0 1 auto;
+    max-width: 86px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .status-interface-address {
+    flex: 1 1 auto;
+    min-width: 42px;
+    max-width: 30vw;
+    margin-left: 0;
+  }
+
+  .traffic-stats {
+    flex: 0 0 auto;
+  }
+
+  .status-right {
+    flex: 0 0 auto;
+    max-width: none;
+    min-width: max-content;
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  .operation-status {
+    display: none;
   }
 }

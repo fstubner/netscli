@@ -77,9 +77,18 @@ export async function exerciseMenusAndToolbar(driver) {
     'Export Selected CSV',
     'Clear Current Results',
   ]);
-  await assertMenuItems(driver, 'Scan', ['Run Active Tab', 'Cancel Active Tab', 'Port Scan', 'Discover', 'Inspect', 'Sweep']);
+  await assertMenuItems(driver, 'Scan', [
+    'Run Active Tab',
+    'Cancel Active Tab',
+    'Port Scan',
+    'Ping',
+    'Trace Route',
+    'Discover',
+    'Inspect',
+    'Sweep',
+  ]);
   await waitForText(driver, '.menu-popover', /Operations/i);
-  await assertMenuIncludes(driver, 'Tools', ['DNS Lookup', 'Interfaces', 'ARP Table']);
+  await assertMenuIncludes(driver, 'Tools', ['DNS Lookup', 'Reverse DNS', 'mDNS Discovery', 'Interfaces', 'ARP Table']);
   await waitForText(driver, '.menu-popover', /Tools and inventory/i);
   await assertMenuItems(driver, 'History', [/netscli scan/i, 'Clear History']);
   await assertSettingsDialog(driver);

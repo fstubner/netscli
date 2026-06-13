@@ -1,4 +1,4 @@
-import { useState, type MouseEvent } from 'react';
+import { useRef, useState, type MouseEvent } from 'react';
 
 import './App.css';
 
@@ -13,6 +13,7 @@ import { SettingsDialog } from './components/shell/SettingsDialog';
 import { StatusBar } from './components/shell/StatusBar';
 import { TabStrip } from './components/shell/TabStrip';
 import { Toolbar } from './components/shell/Toolbar';
+import { WorkspaceSearchDialog } from './components/shell/WorkspaceSearchDialog';
 import { DetailPane } from './components/results/DetailPane';
 import { EmptyWorkspace } from './components/results/EmptyWorkspace';
 import { OperationProgress } from './components/results/OperationProgress';
@@ -46,8 +47,12 @@ function App() {
     setOperationToasts,
     setPersistentHistory,
     setReleaseNotifications,
+    setTrafficDisplayUnit,
     setTrafficIndicators,
+    setTrafficPrecision,
+    trafficDisplayUnit,
     trafficIndicators,
+    trafficPrecision,
   } = usePreferences();
   const workspace = useWorkspace({ interactionToasts, operationToasts, persistentHistory });
   const activeTab = workspace.activeTab;
@@ -61,13 +66,16 @@ function App() {
     chooseSaveFolder,
     clearSaveFolder,
     fileSavePreferences,
-    pcapAvailable,
+    pcapCapability,
+    toolCapabilities,
     toggleFileSaveAskEachTime,
   } = useTauriRuntimeState();
   const [dismissedWarningKeys, setDismissedWarningKeys] = useState<Record<string, true>>({});
   const [aboutOpen, setAboutOpen] = useState(false);
   const [pendingRun, setPendingRun] = useState<{ tabId: string; guard: OperationGuard } | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [workspaceSearchOpen, setWorkspaceSearchOpen] = useState(false);
+  const filterInputRef = useRef<HTMLInputElement | null>(null);
 
   useReleaseNotifications({
     appVersion: APP_VERSION,
@@ -78,10 +86,23 @@ function App() {
   });
 
   usePopoverDismissal({ contentContextMenu, openMenu, setContentContextMenu, setOpenMenu });
-  useKeyboardShortcuts({ openMenu, setOpenMenu, setSettingsOpen, settingsOpen, workspace });
+  useKeyboardShortcuts({
+    focusResultFilter: () => {
+      filterInputRef.current?.focus({ preventScroll: true });
+      filterInputRef.current?.select();
+    },
+    openMenu,
+    setOpenMenu,
+    setSettingsOpen,
+    settingsOpen,
+    setWorkspaceSearchOpen,
+    workspace,
+    workspaceSearchOpen,
+  });
 
   function requestRun(tabId: string) {
     const tab = workspace.tabs.find((item) => item.id === tabId);
+    if (tab?.kind === 'pcap' && !pcapCapability.available) return;
     const guard = guardForOperation(tab);
     if (guard) {
       setPendingRun({ tabId, guard });
@@ -124,6 +145,10 @@ function App() {
   const warningMessage = !activeTab?.error ? warningMessageFor(activeTab?.result?.warnings) : null;
   const warningKey = activeTab && warningMessage ? `${activeTab.id}:${workspace.commandPreview}:${warningMessage}` : null;
   const showWarning = Boolean(warningKey && !dismissedWarningKeys[warningKey]);
+  const pcapUnavailableReason =
+    activeTab?.kind === 'pcap' && !pcapCapability.available
+      ? packetCaptureUnavailableMessage(pcapCapability.message)
+      : null;
 
   return (
     <div className={`container ${darkMode ? 'theme-dark' : 'theme-light'}`} data-testid="app-shell">
@@ -132,9 +157,9 @@ function App() {
           activeTab={activeTab}
           history={workspace.history}
           openMenu={openMenu}
-          pcapAvailable={pcapAvailable}
           setOpenMenu={setOpenMenu}
           tabCount={workspace.tabs.length}
+          toolCapabilities={toolCapabilities}
           onAddTab={workspace.addTab}
           onAbout={() => setAboutOpen(true)}
           onOpenSettings={() => setSettingsOpen(true)}
@@ -153,6 +178,8 @@ function App() {
           onExport={workspace.exportCurrent}
           onExportSelectedJson={workspace.exportSelectedJson}
           onExportSelectedCsv={workspace.exportSelectedCsv}
+          onOpenResultBundle={() => void workspace.openResultBundle()}
+          onSaveResultBundle={() => void workspace.saveResultBundle()}
           onOpenHistoryEntry={workspace.openHistoryEntry}
           onRunActive={runActive}
         />
@@ -160,6 +187,7 @@ function App() {
 
       <Toolbar
         activeTab={activeTab}
+        filterInputRef={filterInputRef}
         filterText={workspace.filterText}
         openMenu={openMenu}
         setOpenMenu={setOpenMenu}
@@ -168,13 +196,14 @@ function App() {
         onExportCsv={() => workspace.exportCurrent('csv')}
         onExportJson={() => workspace.exportCurrent('json')}
         onRunActive={runActive}
+        runDisabledReason={pcapUnavailableReason ?? undefined}
       />
 
       <TabStrip
         activeTabId={workspace.activeTabId}
         openMenu={openMenu}
-        pcapAvailable={pcapAvailable}
         tabs={workspace.tabs}
+        toolCapabilities={toolCapabilities}
         onAddScanTab={() => workspace.addTab('scan')}
         onAddToolTab={workspace.addTab}
         onCloseTab={workspace.closeTab}
@@ -201,12 +230,12 @@ function App() {
                 onDismiss={() => setDismissedWarningKeys((prev) => ({ ...prev, [warningKey]: true }))}
               />
             ) : null}
-            {activeTab.busy && <OperationProgress tab={activeTab} />}
-
             <section className="result-region">
+              {activeTab.busy && <OperationProgress tab={activeTab} />}
               <ResultTable
                 activeTab={activeTab}
                 columns={workspace.columns}
+                pcapCapability={pcapCapability}
                 rows={workspace.rows}
                 onContentContextMenu={openContentContextMenu}
                 onSelectAllRows={workspace.selectAllRows}
@@ -230,7 +259,7 @@ function App() {
           </>
         ) : (
           <EmptyWorkspace
-            pcapAvailable={pcapAvailable}
+            toolCapabilities={toolCapabilities}
             onAddToolTab={workspace.addTab}
           />
         )}
@@ -243,6 +272,8 @@ function App() {
         networkStats={workspace.networkStats}
         rowCount={workspace.rows.length}
         selectedCount={workspace.selectedRows.length}
+        trafficDisplayUnit={trafficDisplayUnit}
+        trafficPrecision={trafficPrecision}
       />
 
       <ToastHost
@@ -282,13 +313,17 @@ function App() {
           operationToasts={operationToasts}
           persistentHistory={persistentHistory}
           releaseNotifications={releaseNotifications}
+          trafficDisplayUnit={trafficDisplayUnit}
           fileSavePreferences={fileSavePreferences}
+          trafficPrecision={trafficPrecision}
           trafficInterfaceName={workspace.trafficInterfaceName}
           onClose={() => setSettingsOpen(false)}
           onChooseSaveFolder={() => void chooseSaveFolder()}
           onClearSaveFolder={() => void clearSaveFolder()}
           onSelectTrafficInterface={workspace.setTrafficInterfaceName}
           onSetDarkMode={setDarkMode}
+          onSetTrafficDisplayUnit={setTrafficDisplayUnit}
+          onSetTrafficPrecision={setTrafficPrecision}
           onToggleFileSaveAskEachTime={() => void toggleFileSaveAskEachTime()}
           onToggleInteractionToasts={() => setInteractionToasts((prev) => !prev)}
           onToggleOperationToasts={() => setOperationToasts((prev) => !prev)}
@@ -296,6 +331,19 @@ function App() {
           onToggleReleaseNotifications={() => setReleaseNotifications((prev) => !prev)}
           onToggleCommandBar={() => setCommandBarVisible((prev) => !prev)}
           onToggleTrafficArrowAnimation={() => setTrafficIndicators((prev) => !prev)}
+        />
+      )}
+      {workspaceSearchOpen && (
+        <WorkspaceSearchDialog
+          history={workspace.history}
+          tabs={workspace.tabs}
+          onClose={() => setWorkspaceSearchOpen(false)}
+          onOpenHistoryEntry={workspace.openHistoryEntry}
+          onSelectTab={workspace.setActiveTabId}
+          onSelectRow={(tabId, rowIndex) => {
+            workspace.setActiveTabId(tabId);
+            window.setTimeout(() => workspace.selectRow(rowIndex), 0);
+          }}
         />
       )}
       {aboutOpen && <AboutDialog appVersion={APP_VERSION} onClose={() => setAboutOpen(false)} />}
@@ -315,6 +363,13 @@ function App() {
       <AppTooltip />
     </div>
   );
+}
+
+function packetCaptureUnavailableMessage(message?: string | null): string {
+  if (message?.includes("built without feature 'pcap'")) {
+    return 'Packet Capture is not included in this build.';
+  }
+  return 'Packet Capture needs Npcap/libpcap before it can run.';
 }
 
 export default App;

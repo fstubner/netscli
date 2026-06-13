@@ -3,32 +3,42 @@ import {
   Database,
   Globe2,
   HardDrive,
+  Map,
   Network,
   Radio,
+  Radar,
+  Route,
   Search,
 } from 'lucide-react';
 
-import type { ToolConfig, ToolKind, WorkspaceTab } from './types';
+import type { ToolCapabilityMap, ToolConfig, ToolKind, WorkspaceTab } from './types';
 
 export const DEFAULT_PORTS = '22,80,443,8080,8443';
 
 export const TOOL_KINDS: ToolKind[] = [
   'scan',
+  'ping',
+  'trace',
   'discover',
   'dns',
+  'reverse',
   'inspect',
   'sweep',
+  'mdns',
   'interfaces',
   'arp',
   'pcap',
 ];
 
-export const SCAN_TOOL_KINDS: ToolKind[] = ['scan', 'discover', 'inspect', 'sweep'];
+export const SCAN_TOOL_KINDS: ToolKind[] = ['scan', 'ping', 'trace', 'discover', 'inspect', 'sweep'];
 
-export const LOOKUP_TOOL_KINDS: ToolKind[] = ['dns', 'interfaces', 'arp', 'pcap'];
+export const LOOKUP_TOOL_KINDS: ToolKind[] = ['dns', 'reverse', 'mdns', 'interfaces', 'arp', 'pcap'];
 
-export function availableToolKinds(kinds: ToolKind[], pcapAvailable: boolean): ToolKind[] {
-  return pcapAvailable ? kinds : kinds.filter((kind) => kind !== 'pcap');
+export function availableToolKinds(
+  kinds: ToolKind[],
+  capabilities: ToolCapabilityMap,
+): ToolKind[] {
+  return kinds.filter((kind) => capabilities[kind] ?? true);
 }
 
 export const TOOL_CONFIG: Record<ToolKind, ToolConfig> = {
@@ -40,6 +50,33 @@ export const TOOL_CONFIG: Record<ToolKind, ToolConfig> = {
     fields: [
       { key: 'host', label: 'Host', placeholder: '127.0.0.1', required: true },
       { key: 'ports', label: 'Ports', placeholder: DEFAULT_PORTS },
+    ],
+  },
+  ping: {
+    label: 'Ping',
+    shortLabel: 'ping',
+    Icon: Radar,
+    action: 'Ping',
+    fields: [
+      { key: 'host', label: 'Host', placeholder: '127.0.0.1', required: true },
+      { key: 'count', label: 'Count', type: 'number', compact: true, placeholder: '4', min: 1, max: 50, step: 1 },
+    ],
+  },
+  trace: {
+    label: 'Trace Route',
+    shortLabel: 'trace',
+    Icon: Route,
+    action: 'Trace',
+    fields: [
+      { key: 'host', label: 'Host', placeholder: '1.1.1.1', required: true },
+      { key: 'max_hops', label: 'Hops', type: 'number', compact: true, placeholder: '30', min: 1, max: 255, step: 1 },
+      {
+        key: 'resolve',
+        label: 'Names',
+        type: 'select',
+        compact: true,
+        options: ['Off', 'On'],
+      },
     ],
   },
   discover: {
@@ -65,6 +102,13 @@ export const TOOL_CONFIG: Record<ToolKind, ToolConfig> = {
       },
     ],
   },
+  reverse: {
+    label: 'Reverse DNS',
+    shortLabel: 'reverse',
+    Icon: Globe2,
+    action: 'Lookup',
+    fields: [{ key: 'ip', label: 'IP', placeholder: '192.168.1.1', required: true }],
+  },
   inspect: {
     label: 'Inspect',
     shortLabel: 'inspect',
@@ -85,6 +129,15 @@ export const TOOL_CONFIG: Record<ToolKind, ToolConfig> = {
       { key: 'ports', label: 'Ports', placeholder: '22,80,443' },
     ],
   },
+  mdns: {
+    label: 'mDNS Discovery',
+    shortLabel: 'mdns',
+    Icon: Radio,
+    action: 'Discover',
+    fields: [
+      { key: 'service_types', label: 'Service Types', placeholder: '_http._tcp.local., _ssh._tcp.local.' },
+    ],
+  },
   interfaces: {
     label: 'Interfaces',
     shortLabel: 'interfaces',
@@ -102,34 +155,43 @@ export const TOOL_CONFIG: Record<ToolKind, ToolConfig> = {
   pcap: {
     label: 'Packet Capture',
     shortLabel: 'capture',
-    Icon: Activity,
+    Icon: Map,
     action: 'Capture',
     fields: [
+      { key: 'mode', label: 'Mode', type: 'select', compact: true, options: ['Capture', 'Open File'] },
       { key: 'interface', label: 'Interface', type: 'select', placeholder: 'Select interface', required: true },
-      { key: 'duration', label: 'Seconds', type: 'number', compact: true, placeholder: '5' },
+      { key: 'duration', label: 'Seconds', type: 'number', compact: true, placeholder: '5', min: 1, max: 3600, step: 1 },
       { key: 'filter', label: 'Filter', placeholder: 'tcp port 443' },
-      { key: 'max_packets', label: 'Packets', type: 'number', compact: true, placeholder: '1000' },
+      { key: 'max_packets', label: 'Packets', type: 'number', compact: true, placeholder: '1000', min: 1, max: 100000, step: 1 },
     ],
   },
 };
 
 export const DEFAULT_FORM: Record<ToolKind, Record<string, string>> = {
   scan: { host: '127.0.0.1', ports: DEFAULT_PORTS },
+  ping: { host: '127.0.0.1', count: '4' },
+  trace: { host: '1.1.1.1', max_hops: '30', resolve: 'Off' },
   discover: { subnet: '' },
   dns: { host: 'netscli.com', record: 'ALL' },
+  reverse: { ip: '127.0.0.1' },
   inspect: { host: '127.0.0.1', ports: DEFAULT_PORTS },
   sweep: { subnet: '', ports: '22,80,443' },
+  mdns: { timeout_ms: '3000', service_types: '' },
   interfaces: {},
   arp: {},
-  pcap: { interface: '', duration: '5', filter: '', max_packets: '1000' },
+  pcap: { mode: 'Capture', interface: '', duration: '5', filter: '', max_packets: '1000' },
 };
 
 export const DEFAULT_SORT: Record<ToolKind, string> = {
   scan: 'port',
+  ping: 'metric',
+  trace: 'hop',
   discover: 'ip',
   dns: 'record_type',
+  reverse: 'ip',
   inspect: 'port',
   sweep: 'ip',
+  mdns: 'hostname',
   interfaces: 'name',
   arp: 'ip',
   pcap: 'no',

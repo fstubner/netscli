@@ -5,14 +5,19 @@ import type { PortResult } from '../types/netscli';
 
 export type ToolKind =
   | 'scan'
+  | 'ping'
+  | 'trace'
   | 'discover'
   | 'dns'
+  | 'reverse'
   | 'inspect'
   | 'sweep'
+  | 'mdns'
   | 'interfaces'
   | 'arp'
   | 'pcap';
 
+export type ToolCapabilityMap = Partial<Record<ToolKind, boolean>>;
 export type DetailTab = 'details' | 'overview' | 'ports' | 'banner' | 'headers' | 'tls' | 'selection' | 'raw';
 export type SortDir = 'asc' | 'desc';
 export type RowSelectionMode = 'single' | 'toggle' | 'range' | 'focus';
@@ -23,6 +28,9 @@ export interface ToolField {
   placeholder?: string;
   type?: 'text' | 'number' | 'select';
   options?: string[];
+  min?: number;
+  max?: number;
+  step?: number;
   required?: boolean;
   compact?: boolean;
 }

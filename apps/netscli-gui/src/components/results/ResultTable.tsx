@@ -13,11 +13,14 @@ import {
 
 import { copyContextForCell, renderValue } from '../../tools/presentation';
 import type { ResultCellContext, ResultColumn, ResultRow, RowSelectionMode, WorkspaceTab } from '../../tools/types';
+import type { PcapCapability } from '../../types/netscli';
+import { PcapUnavailableState } from './PcapUnavailableState';
 import { StatusPill } from './StatusPill';
 
 interface ResultTableProps {
   activeTab: WorkspaceTab;
   columns: ResultColumn[];
+  pcapCapability?: PcapCapability;
   rows: ResultRow[];
   onContentContextMenu: (event: MouseEvent<HTMLElement>, cell?: ResultCellContext) => void;
   onSelectAllRows: () => void;
@@ -28,6 +31,7 @@ interface ResultTableProps {
 export function ResultTable({
   activeTab,
   columns,
+  pcapCapability,
   rows,
   onContentContextMenu,
   onSelectAllRows,
@@ -36,7 +40,14 @@ export function ResultTable({
 }: ResultTableProps) {
   const tableShellRef = useRef<HTMLDivElement | null>(null);
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
-  const [overflow, setOverflow] = useState({ top: false, bottom: false, vertical: false });
+  const [overflow, setOverflow] = useState({
+    top: false,
+    right: false,
+    bottom: false,
+    left: false,
+    vertical: false,
+    horizontal: false,
+  });
   const effectiveColumns = useMemo(
     () => columns.map((column) => ({ ...column, width: columnWidths[column.key] ?? column.width })),
     [columns, columnWidths],
@@ -57,6 +68,10 @@ export function ResultTable({
   }, [rows.length, activeTab.result]);
 
   if (!activeTab.result) {
+    if (activeTab.kind === 'pcap' && !activeTab.result && pcapCapability && !pcapCapability.available) {
+      return <PcapUnavailableState capability={pcapCapability} />;
+    }
+
     return (
       <div className="empty-workspace" tabIndex={0} onContextMenu={onContentContextMenu}>
         <Terminal size={28} />
@@ -71,8 +86,11 @@ export function ResultTable({
       className={[
         'table-shell',
         overflow.vertical ? 'has-vertical-overflow' : '',
+        overflow.horizontal ? 'has-horizontal-overflow' : '',
         overflow.top ? 'has-top-overflow' : '',
+        overflow.right ? 'has-right-overflow' : '',
         overflow.bottom ? 'has-bottom-overflow' : '',
+        overflow.left ? 'has-left-overflow' : '',
       ].filter(Boolean).join(' ')}
       data-testid="result-table"
       ref={tableShellRef}
@@ -83,6 +101,10 @@ export function ResultTable({
       onContextMenu={onContentContextMenu}
       onKeyDown={(event) => handleTableKeyDown(event, activeTab.selectedIndex, rows.length, onSelectAllRows, onSelectRow)}
     >
+      <span className="table-overflow-shadow top" aria-hidden="true" />
+      <span className="table-overflow-shadow right" aria-hidden="true" />
+      <span className="table-overflow-shadow bottom" aria-hidden="true" />
+      <span className="table-overflow-shadow left" aria-hidden="true" />
       <table className="result-table">
         <colgroup>
           {effectiveColumns.map((column) => (
@@ -189,13 +211,23 @@ function openCellContextMenu(
 
 function updateOverflowState(
   element: HTMLDivElement | null,
-  setOverflow: (state: { top: boolean; bottom: boolean; vertical: boolean }) => void,
+  setOverflow: (state: {
+    top: boolean;
+    right: boolean;
+    bottom: boolean;
+    left: boolean;
+    vertical: boolean;
+    horizontal: boolean;
+  }) => void,
 ) {
   if (!element) return;
   const vertical = element.scrollHeight > element.clientHeight + 1;
+  const horizontal = element.scrollWidth > element.clientWidth + 1;
   const top = element.scrollTop > 1;
+  const left = element.scrollLeft > 1;
   const bottom = element.scrollTop + element.clientHeight < element.scrollHeight - 1;
-  setOverflow({ top, bottom, vertical });
+  const right = element.scrollLeft + element.clientWidth < element.scrollWidth - 1;
+  setOverflow({ top, right, bottom, left, vertical, horizontal });
 }
 
 function handleColumnResizeKeyDown(

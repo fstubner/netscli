@@ -97,16 +97,22 @@ export async function exerciseArp(driver) {
 
 export async function exercisePcapValidation(driver) {
   await clickButtonText(driver, '.menu-button', 'Tools');
-  const pcapAvailable = await driver.executeScript(
+  const pcapVisible = await driver.executeScript(
     "return Array.from(document.querySelectorAll('.menu-popover-item')).some((button) => button.textContent.trim() === 'Packet Capture');",
   );
-  if (!pcapAvailable) {
+  if (!pcapVisible) {
     await driver.findElement(By.css('.workspace')).click();
     await waitForNoElement(driver, '.menu-popover');
     return false;
   }
   await clickButtonText(driver, '.menu-popover-item', 'Packet Capture');
   await withElement(driver, '[data-testid="pcap-interface-input"]');
+  const unavailable = await driver.findElements(By.css('[data-testid="pcap-unavailable-state"]'));
+  if (unavailable.length > 0) {
+    await waitForText(driver, '[data-testid="pcap-unavailable-state"]', /Packet Capture/i);
+    await assertNoErrorStrip(driver);
+    return false;
+  }
   const initialCommand = await driver.findElement(By.css('[data-testid="command-strip"]')).getText();
   assert.match(initialCommand, /netscli pcap/);
   if (!/--interface/.test(initialCommand)) {

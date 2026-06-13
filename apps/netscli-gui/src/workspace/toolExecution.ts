@@ -43,6 +43,21 @@ export async function executeTool(tab: WorkspaceTab, opId: string): Promise<Tool
         kind: 'scan',
         data: await netscli.scanPorts(tab.form.host.trim(), emptyToUndefined(tab.form.ports), opId),
       };
+    case 'ping':
+      return {
+        kind: 'ping',
+        data: await netscli.pingHost(tab.form.host.trim(), boundedNumberOrUndefined(tab, 'count'), opId),
+      };
+    case 'trace':
+      return {
+        kind: 'trace',
+        data: await netscli.traceRoute(
+          tab.form.host.trim(),
+          boundedNumberOrUndefined(tab, 'max_hops'),
+          tab.form.resolve === 'On',
+          opId,
+        ),
+      };
     case 'discover':
       return {
         kind: 'discover',
@@ -50,6 +65,11 @@ export async function executeTool(tab: WorkspaceTab, opId: string): Promise<Tool
       };
     case 'dns':
       return executeDns(tab, opId);
+    case 'reverse':
+      return {
+        kind: 'reverse',
+        data: await netscli.reverseDnsLookup(tab.form.ip.trim(), opId),
+      };
     case 'inspect':
       return {
         kind: 'inspect',
@@ -65,24 +85,59 @@ export async function executeTool(tab: WorkspaceTab, opId: string): Promise<Tool
           true,
         ),
       };
+    case 'mdns':
+      return {
+        kind: 'mdns',
+        data: await netscli.discoverMdns(
+          numberOrUndefined(tab.form.timeout_ms),
+          serviceTypes(tab.form.service_types),
+          opId,
+        ),
+      };
     case 'interfaces':
       return { kind: 'interfaces', data: await netscli.listInterfaces(opId) };
     case 'arp':
       return { kind: 'arp', data: await netscli.getArpTable(opId) };
     case 'pcap':
+      if (tab.form.mode === 'Open File') {
+        return {
+          kind: 'pcap',
+          data: await netscli.openPcapFile(boundedNumberOrUndefined(tab, 'max_packets')),
+        };
+      }
       return {
         kind: 'pcap',
         data: await netscli.capturePcap(
           {
             interface: tab.form.interface.trim(),
-            duration: numberOrUndefined(tab.form.duration),
+            duration: boundedNumberOrUndefined(tab, 'duration'),
             filter: emptyToUndefined(tab.form.filter),
-            max_packets: numberOrUndefined(tab.form.max_packets),
+            max_packets: boundedNumberOrUndefined(tab, 'max_packets'),
           },
           opId,
         ),
       };
   }
+}
+
+function boundedNumberOrUndefined(tab: WorkspaceTab, key: string): number | undefined {
+  const parsed = numberOrUndefined(tab.form[key]);
+  if (parsed === undefined) return undefined;
+  const field = TOOL_CONFIG[tab.kind].fields.find((candidate) => candidate.key === key);
+  if (!field) return parsed;
+
+  const step = field.step ?? 1;
+  const stepped = Number.isInteger(step) ? Math.trunc(parsed) : parsed;
+  const lowerBounded = field.min === undefined ? stepped : Math.max(field.min, stepped);
+  return field.max === undefined ? lowerBounded : Math.min(field.max, lowerBounded);
+}
+
+function serviceTypes(value: string | undefined): string[] | undefined {
+  const items = value
+    ?.split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+  return items && items.length > 0 ? items : undefined;
 }
 
 async function executeDns(tab: WorkspaceTab, opId: string): Promise<ToolResult> {
@@ -125,6 +180,9 @@ function failureRecordTypes(failures: string[]): string {
 }
 
 export function validateTab(tab: WorkspaceTab): string | null {
+  if (tab.kind === 'pcap' && tab.form.mode === 'Open File') {
+    return null;
+  }
   const missing = TOOL_CONFIG[tab.kind].fields.find(
     (field) => field.required && !tab.form[field.key]?.trim(),
   );

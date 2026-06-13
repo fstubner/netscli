@@ -11,8 +11,9 @@ import {
 } from 'lucide-react';
 
 import type { DefaultInterfaceInfo, FileSavePreferences, InterfaceInfo } from '../../types/netscli';
+import type { TrafficDisplayUnit, TrafficPrecision } from '../../hooks/usePreferences';
 import { useModalFocus } from '../primitives/focus';
-import { NetworkInterfacePicker, SettingsSwitch } from './SettingsControls';
+import { NetworkInterfacePicker, SettingsSelect, SettingsSwitch } from './SettingsControls';
 
 interface SettingsDialogProps {
   animateTrafficArrows: boolean;
@@ -25,12 +26,16 @@ interface SettingsDialogProps {
   operationToasts: boolean;
   persistentHistory: boolean;
   releaseNotifications: boolean;
+  trafficDisplayUnit: TrafficDisplayUnit;
   trafficInterfaceName: string | null;
+  trafficPrecision: TrafficPrecision;
   onClose: () => void;
   onChooseSaveFolder: () => void;
   onClearSaveFolder: () => void;
   onSelectTrafficInterface: (name: string) => void;
   onSetDarkMode: (enabled: boolean) => void;
+  onSetTrafficDisplayUnit: (unit: TrafficDisplayUnit) => void;
+  onSetTrafficPrecision: (precision: TrafficPrecision) => void;
   onToggleFileSaveAskEachTime: () => void;
   onToggleInteractionToasts: () => void;
   onToggleOperationToasts: () => void;
@@ -51,12 +56,16 @@ export function SettingsDialog({
   operationToasts,
   persistentHistory,
   releaseNotifications,
+  trafficDisplayUnit,
   trafficInterfaceName,
+  trafficPrecision,
   onClose,
   onChooseSaveFolder,
   onClearSaveFolder,
   onSelectTrafficInterface,
   onSetDarkMode,
+  onSetTrafficDisplayUnit,
+  onSetTrafficPrecision,
   onToggleFileSaveAskEachTime,
   onToggleInteractionToasts,
   onToggleOperationToasts,
@@ -216,12 +225,53 @@ export function SettingsDialog({
               testId="settings-activity-animation-toggle"
               onClick={onToggleTrafficArrowAnimation}
             />
-            <NetworkInterfacePicker
-              defaultInterface={defaultInterface}
-              interfaces={interfaces}
-              selectedName={trafficInterfaceName}
-              onSelect={onSelectTrafficInterface}
-            />
+            <div className="settings-row">
+              <div className="settings-row-copy">
+                <span>Traffic Units</span>
+                <small>Unit shown beside status-bar upload and download rates.</small>
+              </div>
+              <SettingsSelect
+                label="Traffic Units"
+                testId="settings-traffic-unit"
+                value={trafficDisplayUnit}
+                options={[
+                  { value: 'Gbps', label: 'Gbps' },
+                  { value: 'Mbps', label: 'Mbps' },
+                  { value: 'Kbps', label: 'Kbps' },
+                ]}
+                onSelect={(value) => onSetTrafficDisplayUnit(value as TrafficDisplayUnit)}
+              />
+            </div>
+            <div className="settings-row">
+              <div className="settings-row-copy">
+                <span>Traffic Precision</span>
+                <small>Decimal places for status-bar traffic rates.</small>
+              </div>
+              <SettingsSelect
+                label="Traffic Precision"
+                testId="settings-traffic-precision"
+                value={String(trafficPrecision)}
+                options={[
+                  { value: '0', label: '0 decimals' },
+                  { value: '1', label: '1 decimal' },
+                  { value: '2', label: '2 decimals' },
+                ]}
+                onSelect={(value) => onSetTrafficPrecision(Number(value) as TrafficPrecision)}
+              />
+            </div>
+            <div className="settings-row">
+              <div className="settings-row-copy">
+                <span>Network Interface</span>
+                <small>Interface used for status-bar traffic rates.</small>
+              </div>
+              <NetworkInterfacePicker
+                compact
+                defaultInterface={defaultInterface}
+                interfaces={interfaces}
+                selectedName={trafficInterfaceName}
+                onSelect={onSelectTrafficInterface}
+              />
+            </div>
           </section>
         </div>
       </section>

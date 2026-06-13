@@ -1,5 +1,7 @@
 import { ChevronDown, ChevronUp, Square } from 'lucide-react';
 import {
+  useEffect,
+  useRef,
   useState,
   type KeyboardEvent,
   type MouseEvent as ReactMouseEvent,
@@ -92,7 +94,20 @@ export function DetailPane({
   const activeDetail = tabSet.includes(activeTab.detailTab) ? activeTab.detailTab : tabSet[0];
   const [height, setHeight] = useState(184);
   const [mode, setMode] = useState<'normal' | 'collapsed' | 'expanded'>('normal');
+  const detailBodyRef = useRef<HTMLDivElement | null>(null);
+  const [overflow, setOverflow] = useState({
+    top: false,
+    right: false,
+    bottom: false,
+    left: false,
+    vertical: false,
+    horizontal: false,
+  });
   const flexBasis = mode === 'collapsed' ? 35 : mode === 'expanded' ? 'min(62vh, 560px)' : height;
+
+  useEffect(() => {
+    updateDetailOverflowState(detailBodyRef.current, setOverflow);
+  }, [activeDetail, activeTab.result, mode, selectedCount, selectedRow?.id]);
 
   return (
     <div
@@ -134,7 +149,7 @@ export function DetailPane({
             data-tooltip={mode === 'expanded' ? 'Restore Details Size' : 'Maximize Details Pane'}
             onClick={() => setMode(mode === 'expanded' ? 'normal' : 'expanded')}
           >
-            <Square size={12} />
+            <Square size={mode === 'expanded' ? 10 : 12} />
           </button>
           <button
             aria-label={mode === 'collapsed' ? 'Open Details Pane' : 'Collapse Details Pane'}
@@ -147,10 +162,20 @@ export function DetailPane({
       </div>
       {mode !== 'collapsed' && (
         <div
-          className="detail-body"
+          className={[
+            'detail-body',
+            overflow.vertical ? 'has-vertical-overflow' : '',
+            overflow.horizontal ? 'has-horizontal-overflow' : '',
+            overflow.top ? 'has-top-overflow' : '',
+            overflow.right ? 'has-right-overflow' : '',
+            overflow.bottom ? 'has-bottom-overflow' : '',
+            overflow.left ? 'has-left-overflow' : '',
+          ].filter(Boolean).join(' ')}
+          ref={detailBodyRef}
           tabIndex={0}
           onContextMenu={onContentContextMenu}
           onKeyDown={selectDetailBodyOnShortcut}
+          onScroll={() => updateDetailOverflowState(detailBodyRef.current, setOverflow)}
           onMouseDown={(event) => {
             event.currentTarget.focus({ preventScroll: true });
           }}
@@ -183,6 +208,27 @@ export function DetailPane({
       )}
     </div>
   );
+}
+
+function updateDetailOverflowState(
+  element: HTMLDivElement | null,
+  setOverflow: (state: {
+    top: boolean;
+    right: boolean;
+    bottom: boolean;
+    left: boolean;
+    vertical: boolean;
+    horizontal: boolean;
+  }) => void,
+) {
+  if (!element) return;
+  const vertical = element.scrollHeight > element.clientHeight + 1;
+  const horizontal = element.scrollWidth > element.clientWidth + 1;
+  const top = element.scrollTop > 1;
+  const left = element.scrollLeft > 1;
+  const bottom = element.scrollTop + element.clientHeight < element.scrollHeight - 1;
+  const right = element.scrollLeft + element.clientWidth < element.scrollWidth - 1;
+  setOverflow({ top, right, bottom, left, vertical, horizontal });
 }
 
 function selectionBreakdownLines(rows: ResultRow[], columns: ResultColumn[]): Array<{ label: string; value: string; muted?: boolean }> {
