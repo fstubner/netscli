@@ -63,12 +63,13 @@ Before the first automated release runs, add these secrets at
 
    The published desktop GUI installers are intentionally built without
    `--features pcap`. This keeps the GUI install path free of libpcap/Npcap
-   runtime dependencies and avoids redistributing Npcap. Packet Capture is
-   available in local GUI builds only when the Tauri backend is built with
-   `--features pcap` and the user has installed the required system runtime
-   themselves. If a future release adds PCAP-enabled GUI installers, validate
-   launch behavior on Windows with and without Npcap installed before
-   publishing that flavor. For local Windows PCAP GUI experiments, use
+   runtime dependencies and avoids redistributing Npcap. The GUI may still
+   show the Packet Capture tool, but it must present setup guidance and remain
+   non-runnable unless the backend is PCAP-capable and the user has installed
+   the required system runtime themselves. If a future release adds
+   PCAP-enabled GUI installers, validate launch behavior on Windows with and
+   without Npcap installed before publishing that flavor. For local Windows
+   PCAP GUI experiments, use
    `scripts/dev-gui-pcap.ps1` or otherwise set `CARGO_TARGET_DIR=target-pcap`
    so a PCAP-linked debug binary does not replace the normal non-PCAP
    `target/debug/netscli-gui.exe`.
@@ -82,7 +83,19 @@ Before the first automated release runs, add these secrets at
    the full gate before tagging.
 2. **Tag and draft the release.** Either `gh release create vX.Y.Z --draft
    --generate-notes` or use the web UI's "Draft a new release" button.
-3. **Promote the draft to public.** This is the one human action that
+3. **Edit the release notes.** The public changelog page renders the GitHub
+   release body directly, so do not publish PR-title-only notes for a visible
+   product milestone. Add a short human-written overview before the generated
+   change list:
+   - what changed for users,
+   - why it changed,
+   - who benefits,
+   - upgrade, packaging, or runtime caveats.
+
+   For example, the GUI redesign release should explain the move from the
+   simple dashboard-style shell to the tabbed desktop workflow, why richer
+   result details and filters were added, and what stayed compatible.
+4. **Promote the draft to public.** This is the one human action that
    stays in the loop.
    ```bash
    gh release edit vX.Y.Z --draft=false --repo fstubner/netscli
@@ -90,7 +103,7 @@ Before the first automated release runs, add these secrets at
    This single event fires both `release.yml` (builds binaries + GUI
    installers, attaches them to the release) and `publish.yml` (fans out
    to package managers).
-4. **Watch the dashboard.** From the release page or the Actions tab:
+5. **Watch the dashboard.** From the release page or the Actions tab:
    - `Release` workflow: 13 CLI assets + 4 GUI installers attached.
    - `Publish to package managers` workflow: 5 jobs, one per channel.
 
@@ -98,7 +111,7 @@ Before the first automated release runs, add these secrets at
    (up to 15 minutes) so they tolerate the parallel race against
    `release.yml`.
 
-5. **If something fails**, re-run just that job from the Actions tab —
+6. **If something fails**, re-run just that job from the Actions tab —
    `workflow_dispatch` accepts a tag input so you can re-run a specific
    channel without rebuilding binaries or re-running the others.
 

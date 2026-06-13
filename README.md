@@ -196,9 +196,10 @@ Prebuilt installers are attached to every [GitHub release](https://github.com/fs
 - **Linux**: `netscli-gui-linux-x86_64.deb` (Debian/Ubuntu) or `netscli-gui-linux-x86_64.AppImage` (any distro; `chmod +x` and run).
 
 The published desktop GUI installers are built without packet capture support
-so they do not depend on or redistribute Npcap/libpcap. Packet Capture appears
-only in local desktop builds compiled with the `pcap` feature and a working
-Npcap/libpcap runtime.
+so they do not depend on or redistribute Npcap/libpcap. The Packet Capture
+tool is visible in the GUI, but it shows setup guidance and cannot run unless
+the desktop backend was built with the `pcap` feature and a working
+Npcap/libpcap runtime is installed.
 
 To build from source instead:
 
@@ -243,7 +244,7 @@ PCAP capture is optional and disabled in the default builds for portability. To 
 - **Via installer (recommended)**: `NETSCLI_PCAP=1` does everything. It picks the pcap-enabled binary variant *and* installs the system library (`libpcap` on Linux/macOS, Npcap on Windows).
   - Add `NETSCLI_SKIP_LIBPCAP=1` (POSIX) or `NETSCLI_SKIP_NPCAP=1` (Windows) if you manage the system library yourself.
 - **From source**: `cargo build --features pcap` (see [Building](#building) for the full command with OS-specific deps).
-- **Desktop GUI**: published GUI installers are intentionally non-PCAP. Use `npm run tauri:dev:pcap` or `npm run tauri build -- --features pcap` for local packet-capture GUI builds.
+- **Desktop GUI**: published GUI installers are intentionally non-PCAP. The Packet Capture tab shows setup guidance in those builds. Use `npm run tauri:dev:pcap` or `npm run tauri build -- --features pcap` for local packet-capture GUI builds.
 - **Capture parsing**: pcap-enabled CLI builds can also summarize existing capture files with `netscli pcap --read <file> --json` or `--yaml`.
 - **On Windows runtime**: ensure `wpcap.dll` is on PATH. Npcap installs it to `C:\Windows\System32\Npcap\` which isn't on PATH by default. Add that directory to your PATH, or the installer does it for you when you set `NETSCLI_PCAP=1`.
 - **On Windows source builds**: install the [Npcap SDK](https://npcap.com/#download) as well as the runtime. MSVC needs the SDK import library (`wpcap.lib`) at link time:

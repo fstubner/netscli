@@ -29,7 +29,7 @@ categories:
       - dependencies
       - refactor
 
-change-template: "- $TITLE (#$NUMBER) @$AUTHOR"
+change-template: "- $TITLE (#$NUMBER) by @$AUTHOR"
 change-title-escapes: '\<*_&'
 
 version-resolver:
@@ -42,9 +42,25 @@ version-resolver:
   default: patch
 
 template: |
+  <!--
+  Before publishing, add a short human-written overview above "What's changed".
+  Good release notes should explain:
+  - what changed for users,
+  - why the change was made,
+  - who benefits,
+  - any upgrade or packaging caveats.
+
+  The changelog page on netscli.com renders this GitHub Markdown directly,
+  so avoid terse PR-title-only releases for visible product milestones.
+  -->
+
   ## What's new in $RESOLVED_VERSION
 
   $CHANGES
+
+  ## Upgrade notes
+
+  No migration is required unless a note above says otherwise.
 
   ---
   **Full changelog:** https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
