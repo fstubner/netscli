@@ -16,6 +16,10 @@ const labels = { windows: 'Windows', macos: 'macOS', linux: 'Linux' };
           <button
             class={`os-tab ${os === 'macos' ? 'active' : ''}`}
             role="tab"
+            id={`install-tab-${os}`}
+            aria-selected={os === 'macos' ? 'true' : 'false'}
+            aria-controls={`install-panel-${os}`}
+            tabindex={os === 'macos' ? '0' : '-1'}
             data-os={os}
           >{labels[os]}</button>
         ))}
@@ -23,7 +27,14 @@ const labels = { windows: 'Windows', macos: 'macOS', linux: 'Linux' };
 
       <div class="install-content">
         {oses.map((os) => (
-          <div class={`os-panel ${os === 'macos' ? 'active' : ''}`} data-os={os}>
+          <div
+            class={`os-panel ${os === 'macos' ? 'active' : ''}`}
+            role="tabpanel"
+            id={`install-panel-${os}`}
+            aria-labelledby={`install-tab-${os}`}
+            data-os={os}
+            hidden={os !== 'macos'}
+          >
             <div class="reco">
               <div class="reco-meta">{byPlatform[os][0].label}</div>
               <div class="cmd big has-copy always-show">{byPlatform[os][0].command}</div>
@@ -46,8 +57,9 @@ const labels = { windows: 'Windows', macos: 'macOS', linux: 'Linux' };
       <div class="try">
         <h3 class="try-title">Try it</h3>
         {tryCommands.map((c) => (
-          <div class="try-cmd has-copy">
-            <span class="p">$</span><span class="t">{c}</span>
+          <div class="try-cmd has-copy" data-copy={c.command}>
+            <span class="try-comment"># {c.comment}</span>
+            <span class="try-line"><span class="p">$</span><span class="t">{c.command}</span></span>
           </div>
         ))}
       </div>

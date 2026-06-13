@@ -1,42 +1,103 @@
 ---
 import { site } from '../data/site';
-const { hero, social } = site;
+const { hero, social, version } = site;
 ---
 <div class="hero">
-  <div class="badge">{hero.badge}</div>
   <h1>{hero.heading}</h1>
   <p class="sub">{hero.subhead}</p>
 
   <div class="social-proof" id="social-proof" aria-live="polite">
-    <a href={`https://github.com/${social.repo}/stargazers`} id="stars">&mdash; stars</a>
+    <a href={`https://github.com/${social.repo}/stargazers`} id="stars" hidden>
+      <span id="stars-count"></span>
+      <span aria-hidden="true">★</span>
+    </a>
+    <span class="sep" id="metrics-sep" hidden>·</span>
+    <a href={`https://github.com/${social.repo}/releases`} id="downloads" hidden></a>
+    <span class="sep" id="version-sep" hidden>·</span>
+    <a href={`https://github.com/${social.repo}/releases/latest`} id="latest-version">v{version}</a>
     <span class="sep">·</span>
-    <a href={`https://github.com/${social.repo}/releases`} id="downloads">&mdash; downloads</a>
-  </div>
-
-  <!-- Install command right in the hero so visitors don't scroll for it. -->
-  <div class="quick-install has-copy">
-    <span>{hero.quickInstall}</span>
-  </div>
-
-  <!-- Secondary path: desktop app downloads. Surfaced in the hero so
-       visitors who want a GUI don't have to scroll to discover it. -->
-  <div class="hero-desktop">
-    <span class="hero-desktop-label">Or get the desktop app:</span>
-    <a href="https://github.com/fstubner/netscli/releases/latest/download/netscli-gui-windows-x86_64.msi">Windows</a>
-    <span class="hero-desktop-sep">·</span>
-    <a href="https://github.com/fstubner/netscli/releases/latest/download/netscli-gui-macos-aarch64.dmg">macOS</a>
-    <span class="hero-desktop-sep">·</span>
-    <a href="https://github.com/fstubner/netscli/releases/latest/download/netscli-gui-linux-x86_64.AppImage">Linux</a>
-  </div>
-
-  <div class="links">
-    <a href="#install">{hero.installLinkLabel}</a>
     <a class="plain" href={hero.sourceUrl}>
       <svg class="gh-icon" viewBox="0 0 16 16" fill="currentColor" style="vertical-align:-2px;margin-right:3px">
         <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
       </svg>
       View source
     </a>
+  </div>
+
+  <div class="hero-cta">
+    <div class="hero-cta-main">
+      <div class="hero-primary-wrap">
+        <a
+          class="hero-primary"
+          id="hero-desktop-download"
+          href="https://github.com/fstubner/netscli/releases/latest/download/netscli-gui-windows-x86_64.msi"
+        >
+          <span class="hero-primary-label">Desktop app</span>
+        </a>
+        <button
+          class="hero-primary-menu"
+          id="hero-desktop-menu-button"
+          type="button"
+          aria-label="Choose desktop installer"
+          aria-expanded="false"
+          aria-controls="hero-desktop-menu"
+        ></button>
+        <div class="hero-desktop-menu" id="hero-desktop-menu" hidden>
+          <a href="https://github.com/fstubner/netscli/releases/latest/download/netscli-gui-windows-x86_64.msi">
+            <span class="platform-mark platform-windows" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+            <span class="installer-copy">
+              <span class="installer-name">Windows</span>
+              <span class="installer-meta">AMD64</span>
+            </span>
+            <span class="installer-ext">msi</span>
+          </a>
+          <a href="https://github.com/fstubner/netscli/releases/latest/download/netscli-gui-macos-aarch64.dmg">
+            <span class="platform-mark platform-macos" aria-hidden="true"></span>
+            <span class="installer-copy">
+              <span class="installer-name">macOS</span>
+              <span class="installer-meta">Apple silicon</span>
+            </span>
+            <span class="installer-ext">dmg</span>
+          </a>
+          <a href="https://github.com/fstubner/netscli/releases/latest/download/netscli-gui-macos-x86_64.dmg">
+            <span class="platform-mark platform-macos" aria-hidden="true"></span>
+            <span class="installer-copy">
+              <span class="installer-name">macOS</span>
+              <span class="installer-meta">Intel x86_64</span>
+            </span>
+            <span class="installer-ext">dmg</span>
+          </a>
+          <a href="https://github.com/fstubner/netscli/releases/latest/download/netscli-gui-linux-x86_64.AppImage">
+            <span class="platform-mark platform-linux" aria-hidden="true"></span>
+            <span class="installer-copy">
+              <span class="installer-name">Linux</span>
+              <span class="installer-meta">x86_64 portable</span>
+            </span>
+            <span class="installer-ext">AppImage</span>
+          </a>
+          <a href="https://github.com/fstubner/netscli/releases/latest/download/netscli-gui-linux-x86_64.deb">
+            <span class="platform-mark platform-linux" aria-hidden="true"></span>
+            <span class="installer-copy">
+              <span class="installer-name">Debian / Ubuntu</span>
+              <span class="installer-meta">AMD64</span>
+            </span>
+            <span class="installer-ext">deb</span>
+          </a>
+        </div>
+      </div>
+      <div
+        class="hero-command hero-command-wide has-copy hero-copy"
+        data-copy={hero.quickInstall}
+      >
+        <code>{hero.quickInstall}</code>
+      </div>
+    </div>
+    <div class="hero-cta-sub">
+      <div class="hero-command has-copy hero-copy" data-copy="winget install fstubner.netscli">
+        <code>winget install fstubner.netscli</code>
+      </div>
+      <a class="hero-install-link" href="#install">{hero.installLinkLabel}</a>
+    </div>
   </div>
 </div>
 

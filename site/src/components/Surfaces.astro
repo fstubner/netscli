@@ -2,10 +2,12 @@
 import { site } from '../data/site';
 const { surfaces, copy } = site;
 ---
-<section id="surfaces">
+<section id="surfaces" class="surfaces-section">
   <div class="w">
-    <h2>{copy.surfaces.heading}</h2>
-    <p class="lead" set:html={copy.surfaces.leadHtml} />
+    <div class="surfaces-intro">
+      <h2>{copy.surfaces.heading}</h2>
+      <p class="lead" set:html={copy.surfaces.leadHtml} />
+    </div>
 
     <div class="surfaces">
       {surfaces.map((s) => (

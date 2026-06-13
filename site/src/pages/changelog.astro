@@ -1,0 +1,271 @@
+---
+import Page from '../layouts/Page.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import { site } from '../data/site';
+
+const { hero, social } = site;
+const title = 'NetsCLI changelog - release notes and product updates';
+const description =
+  'Release notes for the NetsCLI desktop app, CLI, terminal UI, MCP server, and shared Rust network diagnostics core.';
+---
+
+<Page
+  title={title}
+  description={description}
+  canonicalPath="/changelog/"
+  ogDescription="Recent NetsCLI release notes loaded from GitHub Releases."
+  includeFaqSchema={false}
+>
+  <Nav />
+  <main class="changelog-shell">
+    <header class="changelog-hero">
+      <p class="changelog-kicker">Changelog</p>
+      <h1>NetsCLI changelog.</h1>
+      <p>
+        Follow what changed across the desktop app, CLI, terminal UI, MCP
+        server, and shared Rust core. These entries come from GitHub Releases,
+        so the changelog matches the installers and binaries users download.
+      </p>
+      <div class="changelog-actions">
+        <a class="external-link" href={`${hero.sourceUrl}/releases`}>GitHub releases</a>
+        <a href="/docs/">Documentation</a>
+      </div>
+    </header>
+
+    <section id="release-list" class="release-list" aria-live="polite">
+      <div class="release-empty">Loading latest GitHub releases...</div>
+    </section>
+  </main>
+  <Footer />
+
+  <script is:inline define:vars={{ repo: social.repo }}>
+    document.getElementById("y").textContent = new Date().getFullYear();
+
+    function el(tag, className, text) {
+      const node = document.createElement(tag);
+      if (className) node.className = className;
+      if (text) node.textContent = text;
+      return node;
+    }
+
+    function safeHref(href) {
+      try {
+        const url = new URL(href, window.location.origin);
+        return ["http:", "https:"].includes(url.protocol) ? url.href : null;
+      } catch {
+        return null;
+      }
+    }
+
+    function appendInline(parent, text) {
+      const token = /(\[([^\]]+)\]\(([^)]+)\)|`([^`]+)`|\*\*([^*]+)\*\*|(https?:\/\/[^\s)]+))/g;
+      let cursor = 0;
+      let match;
+      while ((match = token.exec(text))) {
+        if (match.index > cursor) {
+          parent.append(document.createTextNode(text.slice(cursor, match.index)));
+        }
+
+        if (match[2] && match[3]) {
+          const href = safeHref(match[3]);
+          if (href) {
+            const link = document.createElement("a");
+            link.href = href;
+            link.className = "external-link";
+            link.textContent = match[2];
+            parent.append(link);
+          } else {
+            parent.append(document.createTextNode(match[0]));
+          }
+        } else if (match[4]) {
+          parent.append(el("code", "", match[4]));
+        } else if (match[5]) {
+          parent.append(el("strong", "", match[5]));
+        } else if (match[6]) {
+          const href = safeHref(match[6]);
+          if (href) {
+            const link = document.createElement("a");
+            link.href = href;
+            link.className = "external-link";
+            link.textContent = match[6];
+            parent.append(link);
+          } else {
+            parent.append(document.createTextNode(match[6]));
+          }
+        }
+
+        cursor = match.index + match[0].length;
+      }
+      if (cursor < text.length) parent.append(document.createTextNode(text.slice(cursor)));
+    }
+
+    function addParagraph(root, lines) {
+      const text = lines.join(" ").replace(/\s+/g, " ").trim();
+      if (!text) return;
+      const paragraph = el("p", "release-paragraph");
+      appendInline(paragraph, text);
+      root.append(paragraph);
+    }
+
+    function addList(root, lines, ordered) {
+      const list = document.createElement(ordered ? "ol" : "ul");
+      list.className = "release-note-list";
+      for (const line of lines) {
+        const item = el("li", "");
+        appendInline(item, line);
+        list.append(item);
+      }
+      root.append(list);
+    }
+
+    function renderMarkdown(markdown) {
+      const root = el("div", "release-body");
+      const lines = (markdown || "")
+        .replace(/<!--[\s\S]*?-->/g, "")
+        .replace(/\r\n/g, "\n")
+        .split("\n");
+      let i = 0;
+
+      while (i < lines.length) {
+        const raw = lines[i];
+        const trimmed = raw.trim();
+        if (!trimmed || trimmed === "---" || trimmed.startsWith("<!--")) {
+          i += 1;
+          continue;
+        }
+
+        if (trimmed.startsWith("```")) {
+          const lang = trimmed.replace(/^```/, "").trim();
+          const code = [];
+          i += 1;
+          while (i < lines.length && !lines[i].trim().startsWith("```")) {
+            code.push(lines[i]);
+            i += 1;
+          }
+          i += 1;
+          const pre = document.createElement("pre");
+          const codeNode = document.createElement("code");
+          if (lang) codeNode.dataset.lang = lang;
+          codeNode.textContent = code.join("\n");
+          pre.append(codeNode);
+          root.append(pre);
+          continue;
+        }
+
+        const heading = trimmed.match(/^(#{1,4})\s+(.+)$/);
+        if (heading) {
+          const depth = Math.min(heading[1].length + 2, 5);
+          const node = el(`h${depth}`, "release-heading");
+          appendInline(node, heading[2]);
+          root.append(node);
+          i += 1;
+          continue;
+        }
+
+        if (/^[-*]\s+/.test(trimmed)) {
+          const items = [];
+          while (i < lines.length && /^[-*]\s+/.test(lines[i].trim())) {
+            items.push(lines[i].trim().replace(/^[-*]\s+/, ""));
+            i += 1;
+          }
+          addList(root, items, false);
+          continue;
+        }
+
+        if (/^\d+\.\s+/.test(trimmed)) {
+          const items = [];
+          while (i < lines.length && /^\d+\.\s+/.test(lines[i].trim())) {
+            items.push(lines[i].trim().replace(/^\d+\.\s+/, ""));
+            i += 1;
+          }
+          addList(root, items, true);
+          continue;
+        }
+
+        if (trimmed.startsWith(">")) {
+          const quote = [];
+          while (i < lines.length && lines[i].trim().startsWith(">")) {
+            quote.push(lines[i].trim().replace(/^>\s?/, ""));
+            i += 1;
+          }
+          const blockquote = el("blockquote", "release-quote");
+          appendInline(blockquote, quote.join(" "));
+          root.append(blockquote);
+          continue;
+        }
+
+        const paragraph = [];
+        while (
+          i < lines.length &&
+          lines[i].trim() &&
+          !lines[i].trim().startsWith("```") &&
+          !/^(#{1,4})\s+/.test(lines[i].trim()) &&
+          !/^[-*]\s+/.test(lines[i].trim()) &&
+          !/^\d+\.\s+/.test(lines[i].trim()) &&
+          !lines[i].trim().startsWith(">")
+        ) {
+          paragraph.push(lines[i].trim());
+          i += 1;
+        }
+        addParagraph(root, paragraph);
+      }
+
+      if (!root.children.length) {
+        root.append(el("p", "release-paragraph", "No release notes were published for this release."));
+      }
+
+      return root;
+    }
+
+    fetch(`https://api.github.com/repos/${repo}/releases?per_page=8`)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((releases) => {
+        const list = document.getElementById("release-list");
+        if (!list || !Array.isArray(releases) || releases.length === 0) return;
+        list.textContent = "";
+        const dateFormat = new Intl.DateTimeFormat(undefined, {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        });
+
+        for (const release of releases) {
+          const item = document.createElement("article");
+          item.className = "release-item";
+
+          const header = el("div", "release-head");
+          const headingGroup = el("div", "release-title-group");
+          const heading = document.createElement("h2");
+          const link = document.createElement("a");
+          link.href = release.html_url;
+          link.className = "external-link";
+          link.textContent = release.name || release.tag_name || "Release";
+          heading.appendChild(link);
+
+          const meta = document.createElement("p");
+          meta.className = "release-meta";
+          const published = release.published_at
+            ? dateFormat.format(new Date(release.published_at))
+            : "";
+          meta.textContent = [release.tag_name, published].filter(Boolean).join(" · ");
+          headingGroup.append(heading, meta);
+
+          const viewLink = el("a", "release-view", "View on GitHub");
+          viewLink.classList.add("external-link");
+          viewLink.href = release.html_url;
+          header.append(headingGroup, viewLink);
+
+          item.append(header, renderMarkdown(release.body));
+          list.appendChild(item);
+        }
+      })
+      .catch(() => {
+        const list = document.getElementById("release-list");
+        if (list) {
+          list.innerHTML =
+            '<div class="release-empty">Could not load releases from GitHub right now. Use the releases link above.</div>';
+        }
+      });
+  </script>
+</Page>

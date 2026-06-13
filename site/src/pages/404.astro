@@ -1,0 +1,28 @@
+---
+import Page from '../layouts/Page.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Page
+  title="Page not found | NetsCLI"
+  description="The requested NetsCLI page could not be found."
+  canonicalPath="/404"
+  includeFaqSchema={false}
+>
+  <Nav />
+  <main class="not-found">
+    <section class="not-found-inner">
+      <p class="eyebrow">404</p>
+      <h1>Page not found</h1>
+      <p>The page you requested does not exist. Use the docs, changelog, or GitHub repository to find the current NetsCLI information.</p>
+      <div class="not-found-actions">
+        <a href="/docs/">Open docs</a>
+        <a href="/">Return home</a>
+        <a href="https://github.com/fstubner/netscli">GitHub</a>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Page>
+

@@ -27,10 +27,9 @@
     <text x="600" y="216" xml:space="preserve">╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚══════╝ ╚═════╝╚══════╝╚═╝</text>
   </g>
 
-  <!-- Single subtitle line: tagline + version together, centered -->
+  <!-- Evergreen subtitle line: no embedded version, so the asset does not age out. -->
   <text x="600" y="250" class="mono text" font-size="16" text-anchor="middle">
     <tspan>A modern network scanner</tspan>
-    <tspan class="label">  ·  v0.1.0</tspan>
   </text>
 
   <!-- Command output container -->
@@ -38,7 +37,7 @@
   <text x="195" y="334" class="mono" font-size="16">
     <tspan class="label">&gt; </tspan>
     <tspan fill="#1edcff">/discover</tspan>
-    <tspan class="label"> 192.168.1.0/24</tspan>
+    <tspan class="label"> lab-network</tspan>
   </text>
 
   <!--
@@ -48,32 +47,32 @@
   -->
   <g class="mono" font-size="14">
     <text y="372">
-      <tspan x="195" class="label">IP Address</tspan>
-      <tspan x="350" class="label">MAC Address</tspan>
+      <tspan x="195" class="label">Host</tspan>
+      <tspan x="350" class="label">Device ID</tspan>
       <tspan x="535" class="label">Vendor</tspan>
       <tspan x="700" class="label">Hostname</tspan>
     </text>
     <text y="402">
-      <tspan x="195" fill="#0aae7a">192.168.1.10</tspan>
-      <tspan x="350" fill="#f5c84c">00:17:8B:6E:6C:5C</tspan>
+      <tspan x="195" fill="#0aae7a">workstation.local</tspan>
+      <tspan x="350" fill="#f5c84c">lab-node-01</tspan>
       <tspan x="535" class="value">Dell Inc.</tspan>
       <tspan x="700" class="value">workstation</tspan>
     </text>
     <text y="426">
-      <tspan x="195" fill="#0aae7a">192.168.1.21</tspan>
-      <tspan x="350" fill="#f5c84c">7E:6B:4E:32:0D:3E</tspan>
+      <tspan x="195" fill="#0aae7a">phone.local</tspan>
+      <tspan x="350" fill="#f5c84c">lab-node-02</tspan>
       <tspan x="535" class="value">Apple, Inc.</tspan>
       <tspan x="700" class="value">iphone</tspan>
     </text>
     <text y="450">
-      <tspan x="195" fill="#0aae7a">192.168.1.57</tspan>
-      <tspan x="350" fill="#f5c84c">94:C9:8B:92:49:83</tspan>
+      <tspan x="195" fill="#0aae7a">pi.local</tspan>
+      <tspan x="350" fill="#f5c84c">lab-node-03</tspan>
       <tspan x="535" class="value">Raspberry Pi</tspan>
       <tspan x="700" class="value">pi</tspan>
     </text>
     <text y="474">
-      <tspan x="195" fill="#0aae7a">192.168.1.125</tspan>
-      <tspan x="350" fill="#f5c84c">00:17:8B:6E:6C:5C</tspan>
+      <tspan x="195" fill="#0aae7a">nas.local</tspan>
+      <tspan x="350" fill="#f5c84c">lab-node-04</tspan>
       <tspan x="535" class="value">Dell Inc.</tspan>
       <tspan x="700" class="value">nas</tspan>
     </text>
@@ -92,7 +91,7 @@
   <text x="195" y="630" class="mono" font-size="14">
     <tspan class="label">host </tspan><tspan class="value">workstation</tspan>
     <tspan class="label"> · </tspan>
-    <tspan class="label">ip </tspan><tspan class="value">192.168.1.10</tspan>
+    <tspan class="label">target </tspan><tspan class="value">workstation.local</tspan>
   </text>
   <text x="1005" y="630" class="mono" font-size="14" text-anchor="end">
     <tspan fill="#1edcff">↑ </tspan><tspan class="value">0.03</tspan><tspan class="label"> Mbps</tspan>

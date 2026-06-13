@@ -1,0 +1,91 @@
+---
+import Pagination from 'virtual:starlight/components/Pagination';
+import { site } from '../../data/site';
+
+const { meta, hero, builtWith } = site;
+const year = new Date().getFullYear();
+---
+
+<footer class="docs-footer">
+  <Pagination />
+
+  <div class="docs-footer-inner">
+    <div>&copy; {year} {meta.author.name} · MIT</div>
+    <div class="docs-footer-links">
+      <a class="external-link" href={hero.sourceUrl}>GitHub</a>
+      <a class="external-link" href={`${hero.sourceUrl}/releases`}>Releases</a>
+      <a href="/docs/">Docs</a>
+      <a href="/changelog/">Changelog</a>
+    </div>
+    {builtWith.length > 0 && (
+      <div class="docs-built-with">
+        Built with{' '}
+        <span class="docs-built-with-items">
+        {builtWith.map((b, i) => (
+          <>
+            {i > 0 && <span>{i === builtWith.length - 1 ? ', and ' : ', '}</span>}
+            <a class="external-link" href={b.url}>{b.name}</a>
+          </>
+        ))}
+        </span>.
+      </div>
+    )}
+  </div>
+</footer>
+
+<style>
+  @layer starlight.core {
+    .docs-footer {
+      display: flex;
+      flex-direction: column;
+      gap: 1.75rem;
+      margin-top: 4rem;
+      padding-top: 1.75rem;
+      border-top: 1px solid var(--sl-color-hairline);
+    }
+
+    .docs-footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.9rem 1.25rem;
+      width: 100%;
+      max-width: 1060px;
+      margin-inline: auto;
+      padding-inline: 1.5rem;
+      color: var(--sl-color-gray-3);
+      font-size: 0.75rem;
+    }
+
+    .docs-footer :global(.pagination-links) {
+      width: 100%;
+      max-width: 1060px;
+      margin-inline: auto;
+      padding-inline: 1.5rem;
+    }
+
+    .docs-footer-links {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .docs-footer a {
+      color: var(--sl-color-gray-3);
+      text-decoration: none;
+    }
+
+    .docs-footer a:hover {
+      color: var(--sl-color-gray-1);
+    }
+
+    .docs-built-with {
+      width: 100%;
+      padding-top: 1rem;
+      border-top: 1px solid var(--sl-color-hairline);
+      text-align: center;
+      color: var(--sl-color-gray-3);
+    }
+  }
+</style>

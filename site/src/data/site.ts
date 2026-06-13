@@ -1,6 +1,21 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 // All project-specific content lives here. Fork the site and this is
 // the one file you edit to retarget it at a different product. Every
 // component reads from this module.
+
+function readProductVersion(): string {
+  const packagePath = [
+    join(process.cwd(), '..', 'apps', 'netscli-gui', 'package.json'),
+    join(process.cwd(), 'apps', 'netscli-gui', 'package.json'),
+  ].find((candidate) => existsSync(candidate));
+  if (!packagePath) return '0.0.0';
+  const packageJson = JSON.parse(readFileSync(packagePath, 'utf8')) as { version?: unknown };
+  return typeof packageJson.version === 'string' ? packageJson.version : '0.0.0';
+}
+
+const productVersion = readProductVersion();
 
 export interface Meta {
   /** Canonical site URL without trailing slash. */
@@ -100,7 +115,15 @@ export interface InstallEntry {
   hint?: string;
 }
 
+export interface TryCommand {
+  /** Short comment rendered above the command. */
+  comment: string;
+  /** Shell command copied by the row-level copy button. */
+  command: string;
+}
+
 export interface FaqItem {
+  group: string;
   q: string;
   /** Plain text used verbatim in both the visible section and JSON-LD. */
   a: string;
@@ -144,7 +167,7 @@ export interface SiteData {
     /** Per-OS arrays. Position 0 is the recommended (hero) entry; the
      *  rest render as alternative rows below it in array order. */
     byPlatform: Record<Platform, InstallEntry[]>;
-    tryCommands: string[];
+    tryCommands: TryCommand[];
     binariesNote: string;
   };
   faq: FaqItem[];
@@ -159,14 +182,14 @@ export const site: SiteData = {
   meta: {
     domain: 'https://netscli.com',
     title:
-      'netscli — Rust network scanner with CLI, TUI, desktop app, and MCP server',
+      'NetsCLI - Modern Network Scanner and Diagnostics Toolkit',
     description:
-      'Open-source network scanner written in Rust. Discover hosts, scan ports, resolve DNS, and capture packets from a CLI, a terminal UI, a desktop app, or an MCP server that your AI agent can call directly. Free, MIT-licensed, runs on Windows, Linux, and macOS.',
+      'NetsCLI is a Rust-based network scanner for LAN discovery, TCP port scans, DNS, trace routes, host inspection, packet capture, and desktop, terminal, CLI, and MCP workflows.',
     ogDescription:
-      'Open-source network scanner. Discover hosts, scan ports, resolve DNS. Four interfaces, one Rust library. Includes an MCP server so AI agents can query your network directly.',
+      'Discover LAN devices, scan TCP ports, query DNS, trace routes, inspect hosts, and capture packets from the desktop app, terminal UI, CLI, or MCP server backed by one Rust core.',
     keywords:
       'network scanner, rust, cli, tui, mcp server, model context protocol, port scan, host discovery, dns lookup, arp table, bonjour, mdns, packet capture, claude, cursor, ai agent, network tool, cross-platform',
-    siteName: 'netscli',
+    siteName: 'NetsCLI',
     author: { name: 'Felix Stubner', url: 'https://github.com/fstubner' },
     ogImage: 'https://netscli.com/assets/tui-discover.png',
     faviconPath: '/favicon.svg',
@@ -175,7 +198,7 @@ export const site: SiteData = {
 
   branding: {
     wordmark: '/assets/netscli-wordmark.png',
-    wordmarkAlt: 'netscli',
+    wordmarkAlt: 'NetsCLI',
     accentGradient: 'linear-gradient(90deg,#059669,#0aae7a 50%,#1edcff)',
     bg: '#111',
     fg: '#d4d4d4',
@@ -183,16 +206,16 @@ export const site: SiteData = {
 
   hero: {
     badge: 'Open source · MIT · Rust · Windows, Linux, macOS',
-    heading: 'A network scanner you can talk to',
+    heading: 'A modern network scanner',
     subhead:
-      'Discover hosts, scan ports, resolve DNS, capture packets. Drive it from an interactive terminal UI with autocomplete, the command line, or let your AI agent call the MCP server directly.',
+      'Discover LAN devices, scan TCP ports, query DNS, trace routes, inspect hosts, and capture packets from the desktop app, terminal UI, CLI, or MCP server. Each interface calls the same Rust core, so results stay consistent.',
     quickInstall:
       'curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash',
-    installLinkLabel: 'Windows & Cargo options ↓',
+    installLinkLabel: 'More install options ↓',
     heroImage: '/assets/tui-discover.png',
     heroImageWebp: '/assets/tui-discover.webp',
     heroImageAlt:
-      'netscli terminal UI running /discover: list of live hosts on the local subnet with IP addresses, hostnames, and response times',
+      'netscli terminal UI running /discover with sanitized lab hostnames, vendors, and response times',
     heroImageWidth: 1640,
     heroImageHeight: 930,
     sourceUrl: 'https://github.com/fstubner/netscli',
@@ -200,14 +223,14 @@ export const site: SiteData = {
 
   copy: {
     surfaces: {
-      heading: 'Four interfaces, one library',
+      heading: 'Choose how to work with your network',
       leadHtml:
-        'Every surface calls the same <code>netscli-core</code>. <a href="https://github.com/fstubner/netscli#usage">Full docs →</a>',
+        'Use the desktop app for review, the terminal UI for live sessions, the CLI for scripts, and MCP for agent workflows. They all call the same Rust core, so results stay consistent no matter which interface you choose. <a href="/docs/">Full docs →</a>',
     },
     install: {
       heading: 'Get started',
       leadHtml:
-        'Install, then run. <a href="https://github.com/fstubner/netscli#readme">Full README →</a>',
+        'Install NetsCLI, then run a scan or lookup from the desktop app, TUI, or CLI. <a href="/docs/">Full docs →</a>',
     },
     faq: {
       heading: 'FAQ',
@@ -217,14 +240,27 @@ export const site: SiteData = {
 
   surfaces: [
     {
+      title: 'Desktop app',
+      body:
+        'Use the desktop app when you want tabs, sortable tables, filters, row details, history, and exports. It is the best interface for comparing results across scans, discovery, DNS, route checks, local inventory, and packet capture when available.',
+      image: {
+        src: '/gui-scan.png',
+        webp: '/gui-scan.webp',
+        alt:
+          'NetsCLI Desktop dark theme port scan view showing a local scan result, enriched detail tabs, command preview, and status bar',
+        width: 1375,
+        height: 1000,
+      },
+    },
+    {
       title: 'Terminal UI',
       body:
-        'An interactive terminal interface. Type <code>/</code> to see available commands, use tab to autocomplete, arrow keys to browse history. The status bar shows your IP and live traffic rates.',
+        'Run <code>netscli</code> with no subcommand to start the terminal UI. Use it when you want an interactive session without leaving the terminal, with command history, autocomplete, readable status colors, and local interface activity close to the current investigation.',
       image: {
         src: '/assets/tui-discover.png',
         webp: '/assets/tui-discover.webp',
         alt:
-          'netscli terminal UI running /discover: list of live hosts on the local subnet with IP addresses, hostnames, and response times',
+          'netscli terminal UI running /discover with sanitized lab hostnames, vendors, and response times',
         width: 1640,
         height: 930,
       },
@@ -233,22 +269,22 @@ export const site: SiteData = {
     {
       title: 'Command line',
       body:
-        'Every scan ships as a standalone subcommand with <code>--json</code> and <code>--yaml</code> output. Pipe results into jq, call it from a shell script, or have an agent invoke it directly without the full MCP server.',
-      codeHtml: `<span style="color:#888">$</span> netscli scan 1.1.1.1 -p 80,443 --json
+        'Use the CLI for repeatable diagnostics and automation. Network operations expose <code>--json</code> and <code>--yaml</code> output, so scripts and other tools can consume the same data the desktop app displays.',
+      codeHtml: `<span style="color:#888">$</span> netscli scan demo.local -p 80,443 --json
 <span style="color:#555">[</span>
   <span style="color:#555">{</span> <span style="color:#7c9fc7">"port"</span>: 80,  <span style="color:#7c9fc7">"open"</span>: true, <span style="color:#7c9fc7">"service"</span>: <span style="color:#8fbc7f">"http"</span>  <span style="color:#555">}</span>,
   <span style="color:#555">{</span> <span style="color:#7c9fc7">"port"</span>: 443, <span style="color:#7c9fc7">"open"</span>: true, <span style="color:#7c9fc7">"service"</span>: <span style="color:#8fbc7f">"https"</span> <span style="color:#555">}</span>
 <span style="color:#555">]</span>
 
-<span style="color:#888">$</span> netscli discover --json | jq '.[].ip'
-<span style="color:#8fbc7f">"192.168.1.10"</span>
-<span style="color:#8fbc7f">"192.168.1.21"</span>
-<span style="color:#8fbc7f">"192.168.1.57"</span>`,
+<span style="color:#888">$</span> netscli discover --json | jq '.[].hostname'
+<span style="color:#8fbc7f">"workstation.local"</span>
+<span style="color:#8fbc7f">"phone.local"</span>
+<span style="color:#8fbc7f">"pi.local"</span>`,
     },
     {
       title: 'MCP server',
       body:
-        'Run <code>netscli serve</code> and point Claude Desktop or Cursor at it. Your agent gets nine tools — host discovery, port scanning, DNS, ARP, mDNS, and more — over standard JSON-RPC. The pcap-enabled build adds a tenth tool for packet capture.',
+        'Run <code>netscli serve</code> when an MCP client needs local network tools. The server exposes structured operations for discovery, scanning, ping, DNS, ARP, inspect, sweep, and interfaces, with optional feature-gated tools where available.',
       codeHtml: `<span style="color:#888">// claude_desktop_config.json</span>
 <span style="color:#555">{</span>
   <span style="color:#7c9fc7">"mcpServers"</span>: <span style="color:#555">{</span>
@@ -259,46 +295,6 @@ export const site: SiteData = {
   <span style="color:#555">}</span>
 <span style="color:#555">}</span>`,
       flip: true,
-    },
-    {
-      title: 'Desktop app',
-      body:
-        'A standalone desktop application for when you would rather not open a terminal. Scan ports, discover hosts, look up DNS records, and inspect your ARP table. On Windows, use <code>winget install fstubner.netscli.gui</code> for the hash-verified install path. Direct installers are attached to every <a href="https://github.com/fstubner/netscli/releases/latest">GitHub release</a>; Windows direct downloads are currently unsigned and may show publisher warnings until Authenticode signing is added later.',
-      image: {
-        src: '/gui-scan.png',
-        webp: '/gui-scan.webp',
-        alt:
-          'netscli desktop app port scan view: scanning 1.1.1.1 for ports 80 and 443 returns both as open with http and https service labels',
-        width: 1375,
-        height: 1000,
-      },
-      downloads: [
-        {
-          label: 'Windows',
-          hint: '.msi',
-          url: 'https://github.com/fstubner/netscli/releases/latest/download/netscli-gui-windows-x86_64.msi',
-        },
-        {
-          label: 'macOS',
-          hint: 'Apple Silicon .dmg',
-          url: 'https://github.com/fstubner/netscli/releases/latest/download/netscli-gui-macos-aarch64.dmg',
-        },
-        {
-          label: 'macOS',
-          hint: 'Intel .dmg',
-          url: 'https://github.com/fstubner/netscli/releases/latest/download/netscli-gui-macos-x86_64.dmg',
-        },
-        {
-          label: 'Linux',
-          hint: '.deb',
-          url: 'https://github.com/fstubner/netscli/releases/latest/download/netscli-gui-linux-x86_64.deb',
-        },
-        {
-          label: 'Linux',
-          hint: '.AppImage',
-          url: 'https://github.com/fstubner/netscli/releases/latest/download/netscli-gui-linux-x86_64.AppImage',
-        },
-      ],
     },
   ],
 
@@ -360,11 +356,30 @@ export const site: SiteData = {
       ],
     },
     tryCommands: [
-      'netscli discover',
-      'netscli scan 192.168.1.1 -p 22,80,443',
-      'netscli dns google.com',
-      'netscli serve',
-      'netscli --help',
+      {
+        comment: 'Find live hosts on your current network',
+        command: 'netscli discover',
+      },
+      {
+        comment: 'Open the interactive terminal UI',
+        command: 'netscli',
+      },
+      {
+        comment: 'Check common TCP services on a router or host',
+        command: 'netscli scan router.local -p 22,80,443',
+      },
+      {
+        comment: 'Resolve DNS records with structured output available',
+        command: 'netscli dns google.com',
+      },
+      {
+        comment: 'Expose NetsCLI tools to Claude, Cursor, and other MCP clients',
+        command: 'netscli serve',
+      },
+      {
+        comment: 'List every CLI command and option',
+        command: 'netscli --help',
+      },
     ],
     binariesNote:
       'Or grab CLI binaries and desktop installers (<code>.msi</code> / <code>.dmg</code> / <code>.deb</code> / <code>.AppImage</code>) from <a href="https://github.com/fstubner/netscli/releases/latest" style="color:#ccc;text-decoration:underline;text-underline-offset:3px">the latest release</a>.',
@@ -372,89 +387,115 @@ export const site: SiteData = {
 
   faq: [
     {
-      q: 'What is netscli?',
-      a: 'netscli is an open-source network scanner written in Rust. It discovers hosts on a subnet, scans TCP ports, resolves DNS (including mDNS/Bonjour), reads the ARP table with vendor lookup, and optionally captures packets via libpcap/Npcap. The same functionality is available from a command line, a terminal UI with autocomplete, a desktop app, or a Model Context Protocol (MCP) server that AI agents like Claude Code and Cursor can call directly.',
+      group: 'What it is',
+      q: 'What is NetsCLI?',
+      a: 'NetsCLI is an open-source network scanner and diagnostics toolkit written in Rust. It discovers hosts on a subnet, scans TCP ports, queries DNS, traces routes, reads local interfaces and the ARP neighbor cache, and can capture packets when packet-capture support and the required system library are available. You can use it from the desktop app, terminal UI, CLI, or Model Context Protocol (MCP) server.',
       aHtml:
-        'netscli is an open-source network scanner written in Rust. It discovers hosts on a subnet, scans TCP ports, resolves DNS (including mDNS/Bonjour), reads the ARP table with vendor lookup, and optionally captures packets via libpcap or Npcap. The same functionality is available from a command line, a <a href="#surfaces">terminal UI</a> with autocomplete, a desktop app, or a Model Context Protocol (MCP) server that AI agents like Claude Code and Cursor can call directly.',
+        'NetsCLI is an open-source network scanner and diagnostics toolkit written in Rust. It discovers hosts on a subnet, scans TCP ports, queries DNS, traces routes, reads local interfaces and the ARP neighbor cache, and can capture packets when packet-capture support and the required system library are available. You can use it from the desktop app, <a href="#surfaces">terminal UI</a>, CLI, or Model Context Protocol (MCP) server.',
     },
     {
-      q: 'How do I install netscli?',
-      a: 'On Linux or macOS run: curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash. On Windows run: iwr -useb https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.ps1 | iex. With Rust installed you can also run: cargo install netscli. Prebuilt binaries for Windows, Linux (x86_64/aarch64/musl), and macOS (x86_64/aarch64) are attached to every GitHub release.',
+      group: 'Install and updates',
+      q: 'How do I install NetsCLI?',
+      a: 'Install the netscli package for the CLI, terminal UI, and MCP server. On Windows, run: winget install fstubner.netscli. On Linux or macOS, run: curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash. For the Windows desktop app, run: winget install fstubner.netscli.gui. With Rust installed you can also run: cargo install netscli. Prebuilt binaries and desktop installers are attached to every GitHub release.',
       aHtml: `
-        <p>Choose the installer for your platform:</p>
+        <p>Install the <code>netscli</code> package for the CLI, terminal UI, and MCP server:</p>
         <div class="faq-command-list" aria-label="Install commands">
+          <div class="faq-command"><span>Windows</span><code>winget install fstubner.netscli</code></div>
           <div class="faq-command"><span>Linux/macOS</span><code>curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash</code></div>
-          <div class="faq-command"><span>Windows</span><code>iwr -useb https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.ps1 | iex</code></div>
-          <div class="faq-command"><span>Windows CLI</span><code>winget install fstubner.netscli</code></div>
-          <div class="faq-command"><span>Windows GUI</span><code>winget install fstubner.netscli.gui</code></div>
           <div class="faq-command"><span>Rust</span><code>cargo install netscli</code></div>
         </div>
-        <p>Prebuilt binaries for Windows, Linux (<code>x86_64</code>/<code>aarch64</code>/<code>musl</code>), and macOS (<code>x86_64</code>/<code>aarch64</code>) are attached to every <a href="https://github.com/fstubner/netscli/releases/latest">GitHub release</a>.</p>
+        <p>Install the Windows desktop app separately:</p>
+        <div class="faq-command-list" aria-label="Desktop app install command">
+          <div class="faq-command"><span>Windows app</span><code>winget install fstubner.netscli.gui</code></div>
+        </div>
+        <p>Prebuilt binaries and desktop installers for Windows, Linux, and macOS are attached to every <a href="https://github.com/fstubner/netscli/releases/latest">GitHub release</a>.</p>
       `,
     },
     {
-      q: 'Can I use netscli with Claude Code, Cursor, or another AI agent?',
-      a: 'Yes. Running `netscli serve` starts a Model Context Protocol (MCP) server over stdio exposing ten tools: discover_network, scan_ports, ping_host, dns_lookup, get_arp_table, inspect_host, sweep_network, list_network_interfaces, discover_mdns, and capture_pcap. Point your MCP client at the netscli binary and your agent can query the local network with structured JSON responses, no parsing required.',
+      group: 'Interfaces and integrations',
+      q: 'Can I use NetsCLI with Claude Code, Cursor, or another AI agent?',
+      a: 'Yes. Running `netscli serve` starts a Model Context Protocol (MCP) server over stdio. It exposes structured local-network tools for host discovery, port scanning, ping, DNS, ARP, host inspection, network sweep, and interface listing. Feature builds can expose mDNS discovery and packet capture. Packet capture uses a job-style flow for long-running work: start the capture, poll status, then fetch the result.',
       aHtml:
-        'Yes. Running <code>netscli serve</code> starts a Model Context Protocol (MCP) server over stdio, exposing ten tools: <code>discover_network</code>, <code>scan_ports</code>, <code>ping_host</code>, <code>dns_lookup</code>, <code>get_arp_table</code>, <code>inspect_host</code>, <code>sweep_network</code>, <code>list_network_interfaces</code>, <code>discover_mdns</code>, and <code>capture_pcap</code>. Point your MCP client at the <code>netscli</code> binary and your agent can query the local network with structured JSON responses, no parsing required.',
+        'Yes. Running <code>netscli serve</code> starts a Model Context Protocol (MCP) server over stdio. It exposes structured local-network tools for host discovery, port scanning, ping, DNS, ARP, host inspection, network sweep, and interface listing. Feature builds can expose mDNS discovery and packet capture. Packet capture uses a job-style flow for long-running work: start the capture, poll status, then fetch the result.',
     },
     {
-      q: 'Does netscli work on Windows, macOS, and Linux?',
-      a: 'Yes. Every release ships binaries for Windows x86_64, Linux x86_64 (glibc and musl), Linux aarch64, macOS x86_64, and macOS aarch64, with and without packet-capture support. The desktop app is built for Windows (.exe/.msi), macOS (.app bundle), and Linux (.AppImage/.deb).',
+      group: 'Install and updates',
+      q: 'Does NetsCLI work on Windows, macOS, and Linux?',
+      a: 'Yes. Release artifacts target Windows, macOS, and Linux. CLI/TUI binaries are published for common x86_64 and aarch64 targets, including macOS Intel and Apple Silicon. The desktop app is published as Windows, macOS, and Linux installers where the release workflow supports that platform.',
       aHtml:
-        'Yes. Every release ships binaries for Windows <code>x86_64</code>, Linux <code>x86_64</code> (glibc and musl), Linux <code>aarch64</code>, macOS <code>x86_64</code>, and macOS <code>aarch64</code>, with and without packet-capture support. The desktop app is built for Windows (<code>.exe</code>/<code>.msi</code>), macOS (<code>.app</code> bundle), and Linux (<code>.AppImage</code>/<code>.deb</code>).',
+        'Yes. Release artifacts target Windows, macOS, and Linux. CLI/TUI binaries are published for common <code>x86_64</code> and <code>aarch64</code> targets, including macOS Intel and Apple Silicon. The desktop app is published as Windows, macOS, and Linux installers where the release workflow supports that platform.',
     },
     {
-      q: 'Is netscli open source?',
-      a: 'Yes. netscli is MIT-licensed. Source, issue tracker, and releases are at https://github.com/fstubner/netscli. The library (netscli-core) and MCP server (netscli-mcp) are published to crates.io so other Rust projects can build on them.',
+      group: 'What it is',
+      q: 'Is NetsCLI open source?',
+      a: 'Yes. NetsCLI is MIT-licensed. Source, issue tracker, and releases are at https://github.com/fstubner/netscli. The library (netscli-core) and MCP server (netscli-mcp) are published to crates.io so other Rust projects can build on them.',
       aHtml:
-        'Yes. netscli is MIT-licensed. Source, issue tracker, and releases are at <a href="https://github.com/fstubner/netscli">github.com/fstubner/netscli</a>. The library (<a href="https://crates.io/crates/netscli-core">netscli-core</a>) and MCP server (<a href="https://crates.io/crates/netscli-mcp">netscli-mcp</a>) are published to crates.io so other Rust projects can build on them.',
+        'Yes. NetsCLI is MIT-licensed. Source, issue tracker, and releases are at <a href="https://github.com/fstubner/netscli">github.com/fstubner/netscli</a>. The library (<a href="https://crates.io/crates/netscli-core">netscli-core</a>) and MCP server (<a href="https://crates.io/crates/netscli-mcp">netscli-mcp</a>) are published to crates.io so other Rust projects can build on them.',
     },
     {
-      q: 'Does netscli require libpcap or other system dependencies?',
-      a: 'Not for the default build. Host discovery, port scan, DNS, and ARP inspection all work with zero non-Rust runtime dependencies. Packet capture is a feature-gated extra that requires libpcap (Linux/macOS) or Npcap (Windows) at runtime. The install script installs the right library for you when you pass NETSCLI_PCAP=1.',
+      group: 'Limits and dependencies',
+      q: 'Does NetsCLI require libpcap or other system dependencies?',
+      a: 'Not for the normal scan, discovery, DNS, ARP, ping, trace, or interface workflows. Packet capture is the exception: it requires libpcap on Linux/macOS or Npcap on Windows at runtime, and only works in builds compiled with packet-capture support.',
       aHtml:
-        'Not for the default build. Host discovery, port scan, DNS, ARP, and mDNS discovery all work with zero non-Rust runtime dependencies. Packet capture is a feature-gated extra that needs libpcap (Linux/macOS) or Npcap (Windows) at runtime. The install script installs the right library for you when you pass <code>NETSCLI_PCAP=1</code>.',
+        'Not for the normal scan, discovery, DNS, ARP, ping, trace, or interface workflows. Packet capture is the exception: it requires libpcap on Linux/macOS or Npcap on Windows at runtime, and only works in builds compiled with packet-capture support.',
     },
     {
-      q: 'Is netscli an alternative to Angry IP Scanner or Advanced IP Scanner?',
-      a: 'Yes. netscli does the same core jobs as Angry IP Scanner (host discovery, port scan, hostname lookup) and Advanced IP Scanner (LAN device discovery with vendor lookup), and adds JSON/YAML output on every command, an MCP server for AI agents, and a scriptable terminal interface. Unlike Advanced IP Scanner, which is Windows-only and closed-source, netscli ships native binaries for Windows, macOS, and Linux under an MIT license. Unlike Angry IP Scanner, every subcommand outputs structured JSON so you can pipe results into jq, grep, or any other tool.',
+      group: 'Network workflows',
+      q: 'Is NetsCLI an alternative to Angry IP Scanner or Advanced IP Scanner?',
+      a: 'NetsCLI overlaps with those tools for common LAN discovery tasks: finding live hosts, scanning TCP ports, resolving hostnames, and showing MAC vendors from the local ARP cache. It is not a drop-in clone of either application. The main differences are cross-platform desktop app/TUI/CLI/MCP interfaces, structured JSON/YAML output, and an MIT-licensed Rust core.',
       aHtml:
-        'Yes. netscli does the same core jobs as Angry IP Scanner (host discovery, port scan, hostname lookup) and Advanced IP Scanner (LAN device discovery with vendor lookup), and adds <code>--json</code>/<code>--yaml</code> output on every command, an MCP server for AI agents, and a scriptable terminal interface. Unlike Advanced IP Scanner, which is Windows-only and closed-source, netscli ships native binaries for Windows, macOS, and Linux under an MIT license. Unlike Angry IP Scanner, every subcommand outputs structured JSON so you can pipe results into <code>jq</code>, <code>grep</code>, or any other tool.',
+        'NetsCLI overlaps with those tools for common LAN discovery tasks: finding live hosts, scanning TCP ports, resolving hostnames, and showing MAC vendors from the local ARP cache. It is not a drop-in clone of either application. The main differences are cross-platform desktop app/TUI/CLI/MCP interfaces, structured <code>--json</code>/<code>--yaml</code> output, and an MIT-licensed Rust core.',
     },
     {
-      q: 'How do I find devices on my home network with netscli?',
-      a: 'Run `netscli discover` from any machine on the network. netscli auto-detects a sensible subnet from your default interface and pings every host in that range, then runs reverse DNS, ARP-table lookups for MAC addresses, and OUI vendor matching to identify devices like your router, NAS, smart TV, printer, and IoT gear. Override the subnet with `netscli discover 192.168.1.0/24`, or run `netscli serve` to let an AI agent answer questions about your LAN directly.',
+      group: 'Network workflows',
+      q: 'How do I find devices on my home network with NetsCLI?',
+      a: 'Run `netscli discover` from a machine on the network, or pass a subnet explicitly with `netscli discover <subnet>`. NetsCLI probes the range, then adds reverse DNS, ARP cache data, MAC addresses, and OUI vendor names when the operating system has that information available.',
       aHtml: `
         <p>Run discovery from any machine on the network:</p>
         <div class="faq-command-list" aria-label="Discovery commands">
           <div class="faq-command"><span>Auto-detect</span><code>netscli discover</code></div>
-          <div class="faq-command"><span>Specific subnet</span><code>netscli discover 192.168.1.0/24</code></div>
+          <div class="faq-command"><span>Specific subnet</span><code>netscli discover &lt;subnet&gt;</code></div>
         </div>
-        <p>netscli pings the range, then runs reverse DNS, ARP-table lookups for MAC addresses, and OUI vendor matching to identify devices like your router, NAS, smart TV, printer, and IoT gear. Run <code>netscli serve</code> to let an AI agent answer questions about your LAN directly.</p>
+        <p>NetsCLI probes the range, then adds reverse DNS, ARP cache data, MAC addresses, and OUI vendor names when the operating system has that information available.</p>
       `,
     },
     {
-      q: 'Is netscli a free network scanner for Windows, macOS, or Linux?',
-      a: 'Yes. netscli is MIT-licensed and free for any use, including commercial. On Windows: `winget install fstubner.netscli` for the CLI/TUI, `winget install fstubner.netscli.gui` for the desktop GUI, or `scoop install netscli`. On macOS: `brew tap fstubner/tap && brew install netscli`. On Linux: the install script (`curl -fsSL ... | bash`), the AUR (`yay -S netscli-bin`), or Homebrew on Linux. The default build has no driver or installer dependencies; only the optional packet-capture feature uses libpcap (Linux/macOS) or Npcap (Windows), and only if you opt in with NETSCLI_PCAP=1.',
+      group: 'Install and updates',
+      q: 'Is NetsCLI a free network scanner for Windows, macOS, or Linux?',
+      a: 'Yes. NetsCLI is MIT-licensed and free for personal, open-source, and commercial use. Windows users can install the CLI/TUI with `winget install fstubner.netscli` and the desktop app with `winget install fstubner.netscli.gui`. macOS and Linux users can install through the script, Homebrew, Cargo, or packaged release artifacts.',
       aHtml: `
-        <p>Yes. netscli is MIT-licensed and free for any use, including commercial.</p>
+        <p>Yes. NetsCLI is MIT-licensed and free for personal, open-source, and commercial use.</p>
         <div class="faq-command-list" aria-label="Package manager commands">
-          <div class="faq-command"><span>Windows CLI</span><code>winget install fstubner.netscli</code></div>
-          <div class="faq-command"><span>Windows GUI</span><code>winget install fstubner.netscli.gui</code></div>
+          <div class="faq-command"><span>Windows CLI/TUI/MCP</span><code>winget install fstubner.netscli</code></div>
+          <div class="faq-command"><span>Windows app</span><code>winget install fstubner.netscli.gui</code></div>
           <div class="faq-command"><span>Windows</span><code>scoop install netscli</code></div>
           <div class="faq-command"><span>macOS</span><code>brew tap fstubner/tap &amp;&amp; brew install netscli</code></div>
           <div class="faq-command"><span>Linux</span><code>curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash</code></div>
           <div class="faq-command"><span>Arch Linux</span><code>yay -S netscli-bin</code></div>
         </div>
-        <p>The default build has no driver or installer dependencies. Only the optional packet-capture feature uses libpcap (Linux/macOS) or Npcap (Windows), and only if you opt in with <code>NETSCLI_PCAP=1</code>.</p>
+        <p>Packet capture is the only workflow that needs a system capture library: libpcap on Linux/macOS or Npcap on Windows.</p>
       `,
     },
     {
-      q: 'Can netscli replace nmap for simple network scans?',
-      a: 'For host discovery, basic TCP port scans, DNS lookups, and ARP-table inspection on a local network, yes. netscli is faster to learn (one subcommand per task — `netscli discover`, `netscli scan`, `netscli dns`), outputs JSON or YAML on every command, and ships with shell completions and a man page. For advanced workflows — service version detection, NSE scripts, OS fingerprinting, raw packet crafting — nmap remains the right tool. netscli focuses on the 80% of network-discovery tasks that do not need that depth.',
+      group: 'Network workflows',
+      q: 'Can NetsCLI replace nmap for simple network scans?',
+      a: 'For host discovery, basic TCP port scans, DNS lookups, and ARP-table inspection on a local network, NetsCLI can cover the simpler cases with direct subcommands and structured output. For advanced service detection, NSE scripts, OS fingerprinting, and raw packet workflows, nmap remains the better tool.',
       aHtml:
-        'For host discovery, basic TCP port scans, DNS lookups, and ARP-table inspection on a local network, yes. netscli is faster to learn (one subcommand per task — <code>netscli discover</code>, <code>netscli scan</code>, <code>netscli dns</code>), outputs JSON or YAML on every command, and ships with shell completions and a man page. For advanced workflows — service version detection, NSE scripts, OS fingerprinting, raw packet crafting — nmap remains the right tool. netscli focuses on the 80% of network-discovery tasks that don\'t need that depth.',
+        'For host discovery, basic TCP port scans, DNS lookups, and ARP-table inspection on a local network, NetsCLI can cover the simpler cases with direct subcommands and structured output. For advanced service detection, NSE scripts, OS fingerprinting, and raw packet workflows, nmap remains the better tool.',
+    },
+    {
+      group: 'Network workflows',
+      q: 'What is the difference between scan, inspect, discover, and sweep?',
+      a: 'Use scan when you already know a host and want TCP port status. Use inspect when you want a host profile that combines reachability, reverse DNS, and optional port checks. Use discover to find reachable devices on a subnet. Use sweep when you want discovery plus open-port checks across the discovered hosts.',
+      aHtml:
+        'Use <code>scan</code> when you already know a host and want TCP port status. Use <code>inspect</code> when you want a host profile that combines reachability, reverse DNS, and optional port checks. Use <code>discover</code> to find reachable devices on a subnet. Use <code>sweep</code> when you want discovery plus open-port checks across the discovered hosts.',
+    },
+    {
+      group: 'Limits and dependencies',
+      q: 'What does filtered mean in a port scan?',
+      a: 'Filtered means NetsCLI could not complete the TCP connection before the timeout. In practice, the packet may have been dropped by a firewall, blocked by a router, or ignored by the host. It is different from closed, where the host actively refused the connection.',
+      aHtml:
+        '<code>filtered</code> means NetsCLI could not complete the TCP connection before the timeout. In practice, the packet may have been dropped by a firewall, blocked by a router, or ignored by the host. It is different from <code>closed</code>, where the host actively refused the connection.',
     },
   ],
 
@@ -472,5 +513,5 @@ export const site: SiteData = {
     cloudflareToken: 'c03201f65f6d41aa843c81f259a1ac06',
   },
 
-  version: '0.2.6',
+  version: productVersion,
 };
