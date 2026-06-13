@@ -108,7 +108,7 @@ pub fn tools_list() -> serde_json::Value {
         let mut tools = tools;
         tools.push(json!({
             "name": "capture_pcap",
-            "description": "Capture network packets to a PCAP file (may require root/admin)",
+            "description": "Capture network packets to a PCAP file in one blocking tool call (may require root/admin). For longer captures, prefer start_pcap_capture then poll status and fetch the result.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -119,6 +119,43 @@ pub fn tools_list() -> serde_json::Value {
                     "maxPackets": { "type": "number" }
                 },
                 "required": ["interface"]
+            }
+        }));
+        tools.push(json!({
+            "name": "start_pcap_capture",
+            "description": "Start packet capture as a background MCP job. Poll with get_pcap_capture_status, then fetch output with get_pcap_capture_result.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "interface": { "type": "string" },
+                    "filter": { "type": "string" },
+                    "duration": { "type": "number", "default": 10 },
+                    "outputFile": { "type": "string", "default": "capture.pcap" },
+                    "maxPackets": { "type": "number" }
+                },
+                "required": ["interface"]
+            }
+        }));
+        tools.push(json!({
+            "name": "get_pcap_capture_status",
+            "description": "Get the running/completed/failed status for a packet capture job.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "jobId": { "type": "string" }
+                },
+                "required": ["jobId"]
+            }
+        }));
+        tools.push(json!({
+            "name": "get_pcap_capture_result",
+            "description": "Fetch the result for a completed packet capture job, including parsed packet summaries when available.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "jobId": { "type": "string" }
+                },
+                "required": ["jobId"]
             }
         }));
         tools

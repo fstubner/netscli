@@ -15,6 +15,7 @@ pub mod ping;
 pub mod scan;
 pub mod stats;
 pub mod sweep;
+pub mod trace;
 
 pub use error::{Error, Result};
 
@@ -44,3 +45,4 @@ pub use scan::{
 };
 pub use stats::{NetworkMonitor, NetworkStats};
 pub use sweep::{SweepEngine, SweepEntry, SweepPhase, SweepProgress};
+pub use trace::{trace_route, TraceResult};

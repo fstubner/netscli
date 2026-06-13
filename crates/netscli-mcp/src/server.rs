@@ -1,5 +1,7 @@
 mod dispatch;
 mod errors;
+#[cfg(feature = "pcap")]
+mod jobs;
 mod operations;
 mod protocol;
 mod schemas;

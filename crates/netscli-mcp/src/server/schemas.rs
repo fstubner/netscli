@@ -133,6 +133,13 @@ pub(super) struct PcapParams {
     pub(super) max_packets: Option<u64>,
 }
 
+#[derive(Deserialize)]
+#[cfg_attr(not(feature = "pcap"), allow(dead_code))]
+pub(super) struct PcapJobParams {
+    #[serde(rename = "jobId")]
+    pub(super) job_id: String,
+}
+
 #[cfg(feature = "mdns")]
 #[derive(Deserialize, Default)]
 pub(super) struct MdnsParams {

@@ -137,7 +137,26 @@ pub(super) fn op_list_interfaces() -> Vec<netscli_core::InterfaceInfo> {
 }
 
 #[cfg(feature = "pcap")]
-pub(super) async fn op_capture_pcap(p: PcapParams) -> Result<netscli_core::PcapResult, RpcError> {
+#[derive(Debug)]
+pub(super) struct PcapCaptureRequest {
+    interface: String,
+    filter: Option<String>,
+    duration: Option<u64>,
+    output_file: Option<String>,
+    max_packets: Option<usize>,
+}
+
+#[cfg(feature = "pcap")]
+impl PcapCaptureRequest {
+    pub(super) fn ensure_default_output_file(&mut self, output_file: String) {
+        if self.output_file.is_none() {
+            self.output_file = Some(output_file);
+        }
+    }
+}
+
+#[cfg(feature = "pcap")]
+pub(super) fn validate_pcap_capture_params(p: PcapParams) -> Result<PcapCaptureRequest, RpcError> {
     if p.interface.trim().is_empty() {
         return Err(RpcError::InvalidParams("interface is required".to_string()));
     }
@@ -160,10 +179,35 @@ pub(super) async fn op_capture_pcap(p: PcapParams) -> Result<netscli_core::PcapR
         .output_file
         .map(validate_mcp_pcap_output_file)
         .transpose()?;
+    Ok(PcapCaptureRequest {
+        interface: p.interface,
+        filter: p.filter,
+        duration,
+        output_file,
+        max_packets,
+    })
+}
+
+#[cfg(feature = "pcap")]
+pub(super) async fn run_pcap_capture(
+    request: PcapCaptureRequest,
+) -> Result<netscli_core::PcapResult, RpcError> {
     let ops = netscli_core::Ops::default();
-    ops.capture_pcap_async(p.interface, p.filter, duration, output_file, max_packets)
-        .await
-        .map_err(|e| RpcError::ToolError(e.to_string()))
+    ops.capture_pcap_async(
+        request.interface,
+        request.filter,
+        request.duration,
+        request.output_file,
+        request.max_packets,
+    )
+    .await
+    .map_err(|e| RpcError::ToolError(e.to_string()))
+}
+
+#[cfg(feature = "pcap")]
+pub(super) async fn op_capture_pcap(p: PcapParams) -> Result<netscli_core::PcapResult, RpcError> {
+    let request = validate_pcap_capture_params(p)?;
+    run_pcap_capture(request).await
 }
 
 #[cfg(feature = "pcap")]
