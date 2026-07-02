@@ -3,6 +3,7 @@ import { site } from '../data/site';
 const { hero, social, version } = site;
 ---
 <div class="hero">
+  <p class="badge">{hero.badge}</p>
   <h1>{hero.heading}</h1>
   <p class="sub">{hero.subhead}</p>
 
@@ -88,12 +89,13 @@ const { hero, social, version } = site;
       <div
         class="hero-command hero-command-wide has-copy hero-copy"
         data-copy={hero.quickInstall}
+        id="hero-quick-install"
       >
         <code>{hero.quickInstall}</code>
       </div>
     </div>
     <div class="hero-cta-sub">
-      <div class="hero-command has-copy hero-copy" data-copy="winget install fstubner.netscli">
+      <div class="hero-command has-copy hero-copy" id="hero-package-install" data-copy="winget install fstubner.netscli">
         <code>winget install fstubner.netscli</code>
       </div>
       <a class="hero-install-link" href="#install">{hero.installLinkLabel}</a>

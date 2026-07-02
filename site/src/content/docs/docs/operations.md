@@ -42,6 +42,8 @@ netscli scan 192.168.1.1 -p 22,80,443
 
 Port statuses are:
 
+<div data-netscli-table="row-headers"></div>
+
 | Status | Meaning |
 | --- | --- |
 | `open` | TCP connect succeeded. NetsCLI may attempt bounded banner, HTTP, or TLS enrichment. |
@@ -99,7 +101,7 @@ Use `trace` to inspect route hops to a host.
 netscli trace 1.1.1.1 --max-hops 30
 ```
 
-On Windows, NetsCLI uses the platform `tracert` behavior. On Unix-like systems, it uses the available raw-socket path. Some hops may time out because routers often deprioritize or block TTL-expired replies.
+On Windows, NetsCLI runs the platform `tracert` command. On Unix-like systems, it tries `traceroute` and then `tracepath` when available. Some hops may time out because routers often deprioritize or block TTL-expired replies.
 
 ## DNS, Reverse DNS, and mDNS
 
@@ -117,7 +119,7 @@ Use `reverse` when you already have an IP address:
 netscli reverse 192.168.1.1
 ```
 
-Use `mdns` for local multicast DNS service announcements when the build includes mDNS support:
+Use `mdns` for local multicast DNS service announcements:
 
 ```bash
 netscli mdns --timeout-ms 3000
@@ -143,7 +145,7 @@ ARP is not a full network scan. It shows neighbors your machine already knows ab
 
 ## Packet capture
 
-Packet capture is optional and requires a build with the `pcap` feature plus libpcap or Npcap at runtime.
+Packet capture is optional and requires a build with packet-capture support plus libpcap or Npcap at runtime.
 
 ```bash
 netscli pcap --interface "Eth 2.5G" --duration 5 --max-packets 1000

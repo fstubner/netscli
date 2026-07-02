@@ -38,16 +38,17 @@ Example client configuration:
 | `inspect_host` | Build a host profile from reachability, DNS, and ports. |
 | `sweep_network` | Discover hosts and scan selected ports. |
 | `list_network_interfaces` | List local network interfaces. |
-| `capture_pcap` | Capture packets when the build and runtime support packet capture. |
-| `start_pcap_capture` | Start a packet capture job when the feature build supports packet capture. |
-| `get_pcap_capture_status` | Poll a packet capture job. |
-| `get_pcap_capture_result` | Fetch a completed packet capture result. |
+| `discover_mdns` | Discover local mDNS/DNS-SD services. |
+| `capture_pcap` | Capture packets in one blocking call when the MCP build includes packet-capture support. |
+| `start_pcap_capture` | Start a packet capture job when the MCP build includes packet-capture support. |
+| `get_pcap_capture_status` | Poll a packet capture job when packet-capture support is enabled. |
+| `get_pcap_capture_result` | Fetch a completed packet capture result when packet-capture support is enabled. |
 
 Tool inputs stay stable. Structured output may gain additive fields as the shared core result model improves.
 
 ## Packet capture jobs
 
-Packet capture is available only in MCP builds that include packet-capture support. Captures also need Npcap on Windows or libpcap on Linux/macOS. Supported builds expose two packet-capture styles.
+Packet-capture tools appear only in MCP builds that include packet-capture support. Captures also need Npcap on Windows or libpcap on Linux/macOS. Supported builds expose two packet-capture styles.
 
 Use the job-style flow by default: start the capture, poll status, then fetch the completed result. This avoids MCP client and stdio transport timeouts when captures run longer than expected.
 
@@ -75,4 +76,4 @@ If an MCP client cannot start NetsCLI:
 1. Confirm `netscli --help` works in the same shell environment.
 2. Use an absolute path to the `netscli` binary in the client config if PATH is different.
 3. Run `netscli serve` directly to see startup errors.
-4. Use CLI `doctor` or setup commands for local dependency checks.
+4. Use CLI `doctor` or `setup` commands for local dependency checks.

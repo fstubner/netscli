@@ -11,15 +11,15 @@ const labels = { windows: 'Windows', macos: 'macOS', linux: 'Linux' };
     <p class="lead" set:html={copy.install.leadHtml} />
 
     <div class="install-grid">
-      <div class="os-tabs" role="tablist">
+      <div class="os-tabs" role="tablist" aria-label="Choose operating system">
         {oses.map((os) => (
           <button
-            class={`os-tab ${os === 'macos' ? 'active' : ''}`}
+            class={`os-tab ${os === 'windows' ? 'active' : ''}`}
             role="tab"
             id={`install-tab-${os}`}
-            aria-selected={os === 'macos' ? 'true' : 'false'}
+            aria-selected={os === 'windows' ? 'true' : 'false'}
             aria-controls={`install-panel-${os}`}
-            tabindex={os === 'macos' ? '0' : '-1'}
+            tabindex={os === 'windows' ? '0' : '-1'}
             data-os={os}
           >{labels[os]}</button>
         ))}
@@ -28,12 +28,12 @@ const labels = { windows: 'Windows', macos: 'macOS', linux: 'Linux' };
       <div class="install-content">
         {oses.map((os) => (
           <div
-            class={`os-panel ${os === 'macos' ? 'active' : ''}`}
+            class={`os-panel ${os === 'windows' ? 'active' : ''}`}
             role="tabpanel"
             id={`install-panel-${os}`}
             aria-labelledby={`install-tab-${os}`}
             data-os={os}
-            hidden={os !== 'macos'}
+            hidden={os !== 'windows'}
           >
             <div class="reco">
               <div class="reco-meta">{byPlatform[os][0].label}</div>

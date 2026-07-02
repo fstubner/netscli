@@ -7,22 +7,27 @@ import Footer from '../components/Footer.astro';
 <Page
   title="Page not found | NetsCLI"
   description="The requested NetsCLI page could not be found."
-  canonicalPath="/404"
+  canonicalPath="/404.html"
   includeFaqSchema={false}
+  bodyClass="not-found-page"
 >
   <Nav />
-  <main class="not-found">
-    <section class="not-found-inner">
-      <p class="eyebrow">404</p>
-      <h1>Page not found</h1>
-      <p>The page you requested does not exist. Use the docs, changelog, or GitHub repository to find the current NetsCLI information.</p>
-      <div class="not-found-actions">
-        <a href="/docs/">Open docs</a>
-        <a href="/">Return home</a>
-        <a href="https://github.com/fstubner/netscli">GitHub</a>
+  <main class="not-found" aria-labelledby="not-found-title">
+    <section class="not-found-shell">
+      <div class="not-found-copy">
+        <p class="eyebrow">HTTP 404</p>
+        <h1 id="not-found-title">Page not found</h1>
+        <p>
+          We could not find that page. Use the links below to get back
+          to the docs or installation guide.
+        </p>
+        <div class="not-found-actions" aria-label="Recovery actions">
+          <a class="primary" href="/docs/">Open docs</a>
+          <a href="/docs/install/">Installation</a>
+          <a href="/">Return home</a>
+        </div>
       </div>
     </section>
   </main>
   <Footer />
 </Page>
-

@@ -55,10 +55,15 @@ Use the install script:
 curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash
 ```
 
-Other common paths:
+Install with Homebrew on Linux when you use Linuxbrew:
 
 ```bash
 brew tap fstubner/tap && brew install netscli
+```
+
+On Arch-based systems with an AUR helper:
+
+```bash
 yay -S netscli-bin
 ```
 
@@ -76,18 +81,27 @@ Cargo installs the CLI/TUI binary. It does not install the desktop app.
 
 ## Updating
 
-Package managers handle updates through their normal flows:
+Use the same package manager you installed with.
+
+Update the CLI and TUI on Windows:
 
 ```powershell
 winget upgrade fstubner.netscli
+```
+
+Update the desktop app on Windows:
+
+```powershell
 winget upgrade fstubner.netscli.gui
 ```
+
+Update a Homebrew install:
 
 ```bash
 brew upgrade netscli
 ```
 
-For direct release artifacts, download the new version from the latest GitHub release and replace the previous install.
+For direct release artifacts, download the [latest GitHub release](https://github.com/fstubner/netscli/releases/latest) and replace the previous install with the matching package for your platform.
 
 ## Packet capture requirements
 
@@ -97,6 +111,6 @@ Packet capture is the exception:
 
 - Windows requires Npcap at runtime.
 - Linux requires libpcap and appropriate capture permissions.
-- macOS uses platform packet-capture support and may require permissions.
+- macOS requires libpcap availability and may require capture permissions.
 
 If a build does not include packet capture support, the desktop app hides Packet Capture and the CLI omits that command path. If support is included but the runtime library is missing, only packet capture is unavailable.

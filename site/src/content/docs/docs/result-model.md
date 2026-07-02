@@ -18,6 +18,8 @@ Structured output is designed to be additive:
 
 Port scans include the existing compatibility fields plus richer status data.
 
+<div data-netscli-table="row-headers"></div>
+
 | Field | Meaning |
 | --- | --- |
 | `port` | TCP port number. |
@@ -28,7 +30,8 @@ Port scans include the existing compatibility fields plus richer status data.
 | `banner` | Bounded plaintext banner when captured. |
 | `http` | HTTP status/header data when a HTTP-like probe succeeds. |
 | `tls` | TLS metadata when a TLS probe succeeds. |
-| `raw_preview` | Bounded raw diagnostic preview when available. |
+| `raw` | Bounded raw diagnostic preview when available. |
+| `error` | Probe error text when the scanner could not complete a normal open, closed, or filtered result. |
 
 `filtered` means the connection attempt timed out or was blocked before connect.
 
@@ -38,15 +41,16 @@ Banner, HTTP, TLS, and raw preview data are probe results. They are useful diagn
 
 Discovery and sweep results describe hosts.
 
+<div data-netscli-table="row-headers"></div>
+
 | Field | Meaning |
 | --- | --- |
 | `ip` | Host address. |
 | `hostname` | Reverse DNS or local name when available. |
 | `mac` | MAC address when present in ARP/vendor data. |
 | `vendor` | OUI vendor lookup. |
-| `rtt` | Reachability latency. |
-| `open_ports` | Sweep-only exposed service count. |
-| `ports` | Sweep-only open port list. |
+| `rtt_ms` | Reachability latency. |
+| `open_ports` | Sweep-only list of open port rows for that host. |
 
 Discovery prioritizes inventory. Sweep adds exposed-service data by scanning selected ports on discovered hosts.
 
@@ -54,9 +58,11 @@ Discovery prioritizes inventory. Sweep adds exposed-service data by scanning sel
 
 DNS records expose type and value first, then additive metadata when the resolver provides it.
 
+<div data-netscli-table="row-headers"></div>
+
 | Field | Meaning |
 | --- | --- |
-| `record_type` | A, AAAA, MX, NS, TXT, SOA, CAA, and related record families. |
+| `record_type` | A, AAAA, CNAME, MX, NS, TXT, SRV, PTR, SOA, CAA, or another supported record family. |
 | `value` | Display value for the record. |
 | `ttl_seconds` | TTL when available. |
 | `name` | Owner name when available. |
@@ -68,18 +74,37 @@ When `ALL` records are requested, some record families can fail while others suc
 
 Inspect is a host profile. It combines host-level data with optional port scan data.
 
+<div data-netscli-table="row-headers"></div>
+
 | Field | Meaning |
 | --- | --- |
 | `host` | Original target. |
 | `ip` | Resolved IP address. |
 | `hostname` | Reverse DNS name when available. |
-| `status` | Reachability status. |
-| `latency_ms` | Reachability latency when available. |
-| `ports` | Optional port scan rows using the same model as `scan`. |
+| `ping` | Reachability object with `alive`, `method`, `rtt_ms`, `seq`, and optional `error`. |
+| `ports` | Port scan rows using the same model as `scan`. |
+| `open_ports` | Convenience list containing only open port rows. |
+
+## mDNS services
+
+mDNS/DNS-SD returns service announcements rather than generic host rows. A single device can announce multiple services.
+
+<div data-netscli-table="row-headers"></div>
+
+| Field | Meaning |
+| --- | --- |
+| `full_name` | Full service instance name. |
+| `hostname` | Host that owns the service. |
+| `service_type` | DNS-SD service type, such as `_http._tcp.local.`. |
+| `addresses` | IPv4 and IPv6 addresses resolved for the service host. |
+| `port` | Service port. |
+| `properties` | TXT record key/value properties. |
 
 ## Interfaces and ARP
 
 Interface rows describe local network interfaces. ARP rows describe the local neighbor cache.
+
+<div data-netscli-table="row-headers"></div>
 
 | Field | Meaning |
 | --- | --- |
@@ -94,16 +119,23 @@ ARP is not full discovery. It reports entries already known to the operating sys
 
 ## Packet capture results
 
-Packet capture results are available only in feature-enabled builds.
+Packet capture results are available only in builds compiled with packet-capture support.
+
+<div data-netscli-table="row-headers"></div>
 
 | Field | Meaning |
 | --- | --- |
-| `number` | Packet number within the capture. |
-| `time` | Packet timestamp or relative time where available. |
+| `index` | Packet number within the capture. |
+| `timestamp` | Packet timestamp where available. |
 | `source` | Best parsed source endpoint. |
 | `destination` | Best parsed destination endpoint. |
 | `protocol` | Parsed protocol family. |
 | `length` | Captured packet length. |
+| `captured_length` | Number of bytes captured for this packet. |
 | `info` | Human-oriented packet summary. |
-| `fields` | Optional parsed Ethernet/IP/TCP/UDP/ICMP/ARP fields. |
+| `source_port` / `destination_port` | Transport ports when parsed. |
+| `tcp_flags` | TCP flags when parsed. |
+| `icmp_type` / `icmp_code` | ICMP metadata when parsed. |
+| `arp_operation` | ARP operation when parsed. |
+| `ethernet_source` / `ethernet_destination` | Ethernet addresses when parsed. |
 | `hex_preview` | Bounded byte preview for quick inspection. |

@@ -44,10 +44,10 @@ Supported operations include:
 - Sweep
 - DNS Lookup
 - Reverse DNS
-- mDNS Discovery when available in the build
+- mDNS Discovery
 - Interfaces
 - ARP Table
-- Packet Capture when available in the build
+- Packet Capture when packet-capture support is enabled
 
 ## Filters
 
@@ -107,16 +107,19 @@ Settings control:
 - Theme.
 - CLI command bar visibility.
 - Toast and operation notifications.
+- Release notifications.
+- Maximum concurrent probes for scan, discover, and sweep operations.
 - History persistence.
 - Default save folder and ask-before-save behavior.
 - Network interface used for local status indicators.
+- Address family preference for the selected interface display.
 - Traffic unit and precision display.
 
 ## Build and runtime availability
 
-Most desktop tools are available in every build. Optional tools are handled explicitly:
+Most desktop tools are available in the standard desktop build. Packet capture is handled explicitly:
 
 - Packet Capture appears only in builds that include packet-capture support. Capturing packets also needs Npcap on Windows or libpcap on Linux/macOS.
-- mDNS Discovery appears only in builds that include mDNS support.
+- mDNS Discovery is included in the standard published desktop build.
 - If a feature is not available in the current build, the desktop app hides that tool.
 - If a required runtime library is missing, only that feature is unavailable. The rest of the desktop app keeps working and shows setup guidance for the missing dependency.

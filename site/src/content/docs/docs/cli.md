@@ -61,12 +61,14 @@ The CLI exposes shared network operations plus command-line maintenance workflow
 | `trace` | Show route hops to a host. |
 | `dns` | Query DNS records. |
 | `reverse` | Reverse lookup an IP address. |
+| `mdns` | Discover local mDNS/DNS-SD service announcements. |
 | `interfaces` | List local network interfaces. |
 | `arp` | Read the local ARP neighbor cache. |
 | `pcap` | Capture or parse packets when built with packet-capture support. |
 | `serve` | Run the MCP server over stdio. |
+| `mcp-service` | Manage MCP server auto-start on supported systems. |
 | `setup` / `doctor` | Check local environment and dependencies. |
-| `config` / `export` | CLI configuration and export workflows. |
+| `completions` / `man` | Generate shell completions or a man page. |
 
 ## Help and flags
 
@@ -78,6 +80,8 @@ netscli scan --help
 netscli dns --help
 ```
 
+`--concurrency` / `-j` is a global option for limiting in-flight network work. It is useful on fragile gateways or when scanning larger local ranges.
+
 The help output is the source of truth for flags. The docs explain workflow and intent; the binary explains exact syntax.
 
 ## CLI-only workflows
@@ -85,9 +89,8 @@ The help output is the source of truth for flags. The docs explain workflow and 
 Some workflows intentionally stay in the command-line interface:
 
 - `setup` and `doctor` for local environment checks.
-- `config` for shell-friendly configuration.
-- `serve` and MCP service management.
-- Shell completions, manpages, and release helper output.
+- `serve` and `mcp-service` for MCP server launch and supported service management.
+- Shell completions and manpage generation.
 
 The desktop app exposes shared network operations and result exploration. It does not duplicate maintenance workflows unless they become shared core operations with a clear interactive use case.
 

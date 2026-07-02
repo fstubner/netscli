@@ -7,13 +7,23 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "check": "astro check"
+    "check": "astro check",
+    "test:a11y": "npm run build && node ./scripts/a11y.mjs"
   },
   "dependencies": {
     "@astrojs/starlight": "^0.39.3",
-    "astro": "^6.1.10"
+    "astro": "^6.4.8"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.9",
+    "@axe-core/cli": "^4.11.3",
     "typescript": "^5.5.0"
+  },
+  "overrides": {
+    "esbuild": "0.28.1",
+    "js-yaml": "4.2.0",
+    "vite": "7.3.5",
+    "volar-service-yaml": "0.0.71",
+    "yaml-language-server": "1.23.0"
   }
 }

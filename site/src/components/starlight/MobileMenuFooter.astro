@@ -2,14 +2,20 @@
 import ThemeSelect from 'virtual:starlight/components/ThemeSelect';
 
 const pathname = Astro.url.pathname;
-const siteLinks = [
+type NavLink = {
+  href: string;
+  label: string;
+  external?: boolean;
+};
+
+const siteLinks: NavLink[] = [
   { href: '/#surfaces', label: 'Features' },
   { href: '/#install', label: 'Install' },
   { href: '/#faq', label: 'FAQ' },
   { href: '/docs/', label: 'Docs' },
 ];
 
-const projectLinks = [
+const projectLinks: NavLink[] = [
   { href: '/changelog/', label: 'Changelog' },
   { href: 'https://github.com/fstubner/netscli', label: 'GitHub', external: true },
 ];
@@ -81,16 +87,17 @@ const isActive = (href: string) => {
 
     .docs-mobile-site-nav div {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: 1fr;
       gap: 0.5rem;
     }
 
     .docs-mobile-site-nav a {
-      border: 1px solid var(--sl-color-hairline-light);
-      border-radius: 5px;
+      border: 0;
+      border-inline-start: 2px solid transparent;
+      border-radius: 0;
       color: var(--sl-color-gray-2);
       font-size: 0.9rem;
-      padding: 0.55rem 0.65rem;
+      padding: 0.65rem 0.8rem;
       text-decoration: none;
     }
 
@@ -98,7 +105,7 @@ const isActive = (href: string) => {
     .docs-mobile-site-nav a:focus-visible,
     .docs-mobile-site-nav a[aria-current='page'] {
       background: rgba(10, 174, 122, 0.12);
-      border-color: rgba(10, 174, 122, 0.28);
+      border-inline-start-color: #0aae7a;
       color: var(--sl-color-white);
     }
 
@@ -125,10 +132,5 @@ const isActive = (href: string) => {
       min-width: 0;
     }
 
-    @media (max-width: 25rem) {
-      .docs-mobile-site-nav div {
-        grid-template-columns: 1fr;
-      }
-    }
   }
 </style>

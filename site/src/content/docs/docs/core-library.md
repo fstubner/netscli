@@ -77,6 +77,7 @@ Exact method signatures can change as operations gain richer structured data. Pr
 | `inspect` | Host profile data built from reachability, reverse DNS, and port checks. |
 | `sweep` | Discovery plus per-host port checks. |
 | `dns` | Record lookup and reverse lookup behavior. |
+| `mdns` | Local mDNS/DNS-SD service discovery behind the `mdns` feature. |
 | `arp` | Local neighbor cache and MAC vendor enrichment. |
 | `stats` | Local interface traffic counters. |
 | `pcap` | Optional capture execution and packet parsing behind the `pcap` feature. |

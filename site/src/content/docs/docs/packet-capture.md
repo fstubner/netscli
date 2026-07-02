@@ -7,28 +7,49 @@ Packet capture is optional. It needs a build with packet-capture support and a s
 
 ## Requirements
 
+<div data-netscli-table="row-headers"></div>
+
 | Platform | Runtime requirement |
 | --- | --- |
 | Windows | Npcap installed. |
 | Linux | libpcap installed and capture permissions granted. |
-| macOS | Platform capture permissions granted where required. |
+| macOS | libpcap available and capture permissions granted where required. |
 
-If the desktop build does not include packet capture support, the Packet Capture tool is hidden. If support is included but the runtime library is missing, NetsCLI keeps the rest of the app usable and shows setup guidance for packet capture.
+If the desktop build does not include packet capture support, the Packet Capture tool is hidden. If support is included but the runtime library or permissions are missing, NetsCLI keeps the rest of the app usable and shows setup guidance for packet capture.
 
 ## CLI Capture
+
+Check packet-capture support and list available capture devices:
+
+```bash
+netscli pcap --check
+```
+
+Capture from an interface:
 
 ```bash
 netscli pcap --interface "Eth 2.5G" --duration 5 --max-packets 1000
 ```
 
+Parse an existing capture file:
+
+```bash
+netscli pcap --read capture.pcap --max-packets 100
+```
+
 Important options:
+
+<div data-netscli-table="row-headers"></div>
 
 | Option | Purpose |
 | --- | --- |
+| `--check` | Check packet-capture support and list capture devices. |
 | `--interface` | Capture interface name. |
+| `--read` | Parse an existing PCAP file instead of capturing live traffic. |
 | `--duration` | Capture duration in seconds. |
 | `--max-packets` | Maximum packet count before stopping. |
 | `--filter` | Optional capture filter when supported. |
+| `--output` | Output file for live captures. |
 
 ## Parsed Output
 

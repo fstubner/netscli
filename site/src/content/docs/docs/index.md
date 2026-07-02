@@ -43,7 +43,7 @@ Network tools can be easy to overuse. NetsCLI keeps expensive operations bounded
 - Maximum ports per scan is `4096`.
 - Default scan timeout is `500 ms`.
 - Default concurrency is `256`.
-- Optional packet capture requires a feature-enabled build and a system capture library.
+- Packet capture requires a packet-capture build and a system capture library.
 
 Interfaces may add confirmations or guidance, but they do not bypass the core limits.
 

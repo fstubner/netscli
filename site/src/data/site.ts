@@ -242,14 +242,14 @@ export const site: SiteData = {
     {
       title: 'Desktop app',
       body:
-        'Use the desktop app when you want tabs, sortable tables, filters, row details, history, and exports. It is the best interface for comparing results across scans, discovery, DNS, route checks, local inventory, and packet capture when available.',
+        'Use the desktop app when you want tabs, sortable tables, filters, row details, history, and exports. It is the best interface for comparing results across scans, discovery, DNS, route checks, local inventory, and packet capture in builds that include packet-capture support.',
       image: {
         src: '/gui-scan.png',
         webp: '/gui-scan.webp',
         alt:
-          'NetsCLI Desktop dark theme port scan view showing a local scan result, enriched detail tabs, command preview, and status bar',
-        width: 1375,
-        height: 1000,
+          'NetsCLI Desktop dark theme scan view showing sanitized demo port results, row details, command preview, and status bar',
+        width: 1377,
+        height: 862,
       },
     },
     {
@@ -284,7 +284,7 @@ export const site: SiteData = {
     {
       title: 'MCP server',
       body:
-        'Run <code>netscli serve</code> when an MCP client needs local network tools. The server exposes structured operations for discovery, scanning, ping, DNS, ARP, inspect, sweep, and interfaces, with optional feature-gated tools where available.',
+        'Run <code>netscli serve</code> when an MCP client needs local network tools. The server exposes structured operations for discovery, scanning, ping, DNS, ARP, inspect, sweep, interfaces, and mDNS, with packet-capture tools available in packet-capture builds.',
       codeHtml: `<span style="color:#888">// claude_desktop_config.json</span>
 <span style="color:#555">{</span>
   <span style="color:#7c9fc7">"mcpServers"</span>: <span style="color:#555">{</span>
@@ -382,7 +382,7 @@ export const site: SiteData = {
       },
     ],
     binariesNote:
-      'Or grab CLI binaries and desktop installers (<code>.msi</code> / <code>.dmg</code> / <code>.deb</code> / <code>.AppImage</code>) from <a href="https://github.com/fstubner/netscli/releases/latest" style="color:#ccc;text-decoration:underline;text-underline-offset:3px">the latest release</a>.',
+      'Or grab CLI binaries and desktop installers (<code>.msi</code> / <code>.dmg</code> / <code>.deb</code> / <code>.AppImage</code>) from <a href="https://github.com/fstubner/netscli/releases/latest">the latest release</a>.',
   },
 
   faq: [
@@ -396,7 +396,7 @@ export const site: SiteData = {
     {
       group: 'Install and updates',
       q: 'How do I install NetsCLI?',
-      a: 'Install the netscli package for the CLI, terminal UI, and MCP server. On Windows, run: winget install fstubner.netscli. On Linux or macOS, run: curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash. For the Windows desktop app, run: winget install fstubner.netscli.gui. With Rust installed you can also run: cargo install netscli. Prebuilt binaries and desktop installers are attached to every GitHub release.',
+      a: 'Install the netscli package for the CLI, terminal UI, and MCP server. On Windows, run: winget install fstubner.netscli. On Linux or macOS, run: curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash. For the Windows desktop app, run: winget install fstubner.netscli.gui. With Rust installed you can also run: cargo install netscli. Prebuilt binaries and desktop installers are attached to GitHub releases when available for that platform.',
       aHtml: `
         <p>Install the <code>netscli</code> package for the CLI, terminal UI, and MCP server:</p>
         <div class="faq-command-list" aria-label="Install commands">
@@ -408,15 +408,15 @@ export const site: SiteData = {
         <div class="faq-command-list" aria-label="Desktop app install command">
           <div class="faq-command"><span>Windows app</span><code>winget install fstubner.netscli.gui</code></div>
         </div>
-        <p>Prebuilt binaries and desktop installers for Windows, Linux, and macOS are attached to every <a href="https://github.com/fstubner/netscli/releases/latest">GitHub release</a>.</p>
+        <p>Prebuilt binaries and desktop installers for Windows, Linux, and macOS are attached to <a href="https://github.com/fstubner/netscli/releases/latest">GitHub releases</a> when available for that platform.</p>
       `,
     },
     {
       group: 'Interfaces and integrations',
       q: 'Can I use NetsCLI with Claude Code, Cursor, or another AI agent?',
-      a: 'Yes. Running `netscli serve` starts a Model Context Protocol (MCP) server over stdio. It exposes structured local-network tools for host discovery, port scanning, ping, DNS, ARP, host inspection, network sweep, and interface listing. Feature builds can expose mDNS discovery and packet capture. Packet capture uses a job-style flow for long-running work: start the capture, poll status, then fetch the result.',
+      a: 'Yes. Running `netscli serve` starts a Model Context Protocol (MCP) server over stdio. It exposes structured local-network tools for host discovery, port scanning, ping, DNS, ARP, host inspection, network sweep, interface listing, and mDNS discovery. Packet-capture builds can also expose capture tools. Packet capture uses a job-style flow for long-running work: start the capture, poll status, then fetch the result.',
       aHtml:
-        'Yes. Running <code>netscli serve</code> starts a Model Context Protocol (MCP) server over stdio. It exposes structured local-network tools for host discovery, port scanning, ping, DNS, ARP, host inspection, network sweep, and interface listing. Feature builds can expose mDNS discovery and packet capture. Packet capture uses a job-style flow for long-running work: start the capture, poll status, then fetch the result.',
+        'Yes. Running <code>netscli serve</code> starts a Model Context Protocol (MCP) server over stdio. It exposes structured local-network tools for host discovery, port scanning, ping, DNS, ARP, host inspection, network sweep, interface listing, and mDNS discovery. Packet-capture builds can also expose capture tools. Packet capture uses a job-style flow for long-running work: start the capture, poll status, then fetch the result.',
     },
     {
       group: 'Install and updates',
@@ -468,12 +468,12 @@ export const site: SiteData = {
         <div class="faq-command-list" aria-label="Package manager commands">
           <div class="faq-command"><span>Windows CLI/TUI/MCP</span><code>winget install fstubner.netscli</code></div>
           <div class="faq-command"><span>Windows app</span><code>winget install fstubner.netscli.gui</code></div>
-          <div class="faq-command"><span>Windows</span><code>scoop install netscli</code></div>
+          <div class="faq-command"><span>Windows</span><code>scoop bucket add fstubner https://github.com/fstubner/scoop-bucket &amp;&amp; scoop install netscli</code></div>
           <div class="faq-command"><span>macOS</span><code>brew tap fstubner/tap &amp;&amp; brew install netscli</code></div>
           <div class="faq-command"><span>Linux</span><code>curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash</code></div>
           <div class="faq-command"><span>Arch Linux</span><code>yay -S netscli-bin</code></div>
         </div>
-        <p>Packet capture is the only workflow that needs a system capture library: libpcap on Linux/macOS or Npcap on Windows.</p>
+        <p>Packet capture is the only workflow that needs a system capture library: libpcap on Linux/macOS or Npcap on Windows. mDNS discovery is pure Rust and is included in the published app, CLI, and MCP builds.</p>
       `,
     },
     {

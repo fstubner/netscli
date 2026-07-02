@@ -31,11 +31,14 @@ Common interactive commands mirror the CLI operations:
 ```text
 /discover 192.168.1.0/24
 /scan 192.168.1.1 -p 22,80,443
+/sweep 192.168.1.0/24 22,80,443
 /dns netscli.com
+/reverse 192.168.1.1
+/mdns --timeout 3000
 /interfaces
 ```
 
-Use the in-app command help and completion to discover available options. The exact command syntax follows the same operation model as the CLI.
+Use `/help` and completion to discover the available options. The TUI also includes `/config` for terminal-session settings and `/export` for saving the current session output.
 
 ## Session behavior
 
@@ -44,7 +47,7 @@ The TUI is designed for investigation sessions:
 - Command history stays close to the current result.
 - Status colors highlight open ports, filtered ports, host state, and errors.
 - Local interface and traffic status remain visible while you work.
-- Session export can preserve useful investigation output.
+- `/export md` or `/export json` can preserve useful investigation output.
 
 ## Output model
 

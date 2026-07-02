@@ -8,6 +8,7 @@ interface Props {
   canonicalPath?: string;
   ogDescription?: string;
   includeFaqSchema?: boolean;
+  bodyClass?: string;
 }
 
 const {
@@ -16,6 +17,7 @@ const {
   canonicalPath = '/',
   ogDescription,
   includeFaqSchema = true,
+  bodyClass,
 } = Astro.props;
 const { meta, analytics, faq, version, builtWith } = site;
 const canonicalUrl =
@@ -106,16 +108,12 @@ const shouldLoadAnalytics = import.meta.env.PROD && Boolean(analytics.cloudflare
   />
 )}
 </head>
-<body>
+<body class={bodyClass}>
+  <a class="skip-link" href="#main">Skip to content</a>
   <slot />
-  <script is:inline>
-    (() => {
-      const updateNavShadow = () => {
-        document.body.classList.toggle('nav-scrolled', window.scrollY > 2);
-      };
-      updateNavShadow();
-      window.addEventListener('scroll', updateNavShadow, { passive: true });
-    })();
+  <script>
+    import { initNavScrollShadow } from '../scripts/nav-scroll';
+    initNavScrollShadow();
   </script>
 </body>
 </html>

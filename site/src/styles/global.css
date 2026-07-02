@@ -7,6 +7,24 @@ body{
   -webkit-font-smoothing:antialiased;
 }
 a{color:inherit}
+.skip-link{
+  position:fixed;
+  top:.75rem;
+  left:.75rem;
+  z-index:1000;
+  transform:translateY(calc(-100% - 1rem));
+  padding:.45rem .7rem;
+  border:1px solid rgba(10,174,122,.5);
+  border-radius:6px;
+  background:#15191f;
+  color:#f4f4f4;
+  text-decoration:none;
+}
+.skip-link:focus-visible{
+  transform:translateY(0);
+  outline:2px solid #0aae7a;
+  outline-offset:2px;
+}
 code{
   font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.85em;
   background:rgba(255,255,255,.07);padding:2px 6px;border-radius:4px;
@@ -100,7 +118,8 @@ body.nav-scrolled nav::after{
   opacity:0;
 }
 .nav-inner{
-  max-width:1060px;margin:0 auto;padding:12px 24px;
+  max-width:1060px;margin:0 auto;padding:0 24px;
+  min-height:56px;
   display:flex;align-items:center;justify-content:space-between;gap:18px;
   flex-wrap:wrap;
   position:relative;
@@ -145,7 +164,7 @@ body.nav-scrolled nav::after{
 .nlinks{display:flex;gap:20px;font-size:.8125rem;flex-wrap:wrap;justify-content:flex-end}
 .nlinks a{
   color:#b0b0b0;text-decoration:none;
-  display:inline-flex;align-items:center;min-height:32px;
+  display:inline-flex;align-items:center;min-height:56px;
   border-bottom:2px solid transparent;
 }
 .nlinks a:hover{color:#e5e5e5}
@@ -172,12 +191,12 @@ body.nav-scrolled nav::after{
   opacity:.9;
 }
 @media(max-width:600px){
-  .nav-inner{padding:10px 18px;gap:10px 16px}
+  .nav-inner{padding:0 18px;gap:10px 10px}
   .nlinks{font-size:.8rem}
 }
 @media(max-width:760px){
   .nav-inner{flex-wrap:nowrap}
-  .nav-menu-toggle{display:inline-flex}
+  .nav-menu-toggle{display:inline-flex;margin-left:auto}
   .nlinks{
     display:none;
     position:absolute;
@@ -212,6 +231,20 @@ body.nav-scrolled nav::after{
   }
 }
 
+@media(min-width:761px) and (max-width:980px){
+  .nlinks{display:flex}
+}
+
+@media(max-width:760px){
+  nav[data-site-nav] .nav-inner{
+    min-height:56px;
+  }
+
+  nav[data-site-nav] .mark{
+    margin-right:auto;
+  }
+}
+
 /* buttons */
 .btn{
   display:inline-flex;align-items:center;gap:6px;
@@ -224,7 +257,7 @@ body.nav-scrolled nav::after{
 .btn-o:hover{color:#e5e5e5;border-color:rgba(255,255,255,.3);text-decoration:none}
 .gh-icon{width:16px;height:16px;fill:currentColor;flex-shrink:0}
 
-/* ─── HERO ─── */
+/* --- HERO --- */
 .hero{padding:72px 24px 0;text-align:center}
 .hero .badge{
   display:inline-block;font-size:.6875rem;font-weight:600;
@@ -484,7 +517,7 @@ body.nav-scrolled nav::after{
   }
 }
 
-/* ─── PRODUCT SHOT ─── */
+/* --- PRODUCT SHOT --- */
 .bigshot{
   margin:48px auto 78px;max-width:980px;
   border-radius:10px;overflow:hidden;
@@ -495,7 +528,7 @@ body.nav-scrolled nav::after{
 .bigshot img,
 .surface-visual img{cursor:zoom-in}
 
-/* ─── SECTIONS ─── */
+/* --- SECTIONS --- */
 section{
   padding:64px 0;
   position:relative;
@@ -519,7 +552,7 @@ section h2{font-size:1.5rem;font-weight:700;color:#f5f5f5;margin:0 0 6px}
 section .lead{color:#a3a3a3;font-size:.9375rem;margin:0 0 28px}
 section .lead a{color:#ccc;text-decoration:underline;text-underline-offset:3px}
 
-/* ─── SURFACE CARDS ─── */
+/* --- SURFACE CARDS --- */
 .surfaces-section{
   background:#141718;
   border-block:1px solid rgba(255,255,255,.045);
@@ -572,7 +605,7 @@ section .lead a{color:#ccc;text-decoration:underline;text-underline-offset:3px}
   .surface.flip{direction:ltr}
 }
 
-/* ─── GET STARTED ─── */
+/* --- GET STARTED --- */
 .install-grid{
   display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:8px;
 }
@@ -601,7 +634,7 @@ section .lead a{color:#ccc;text-decoration:underline;text-underline-offset:3px}
 }
 .tryblock .c{color:#555}
 
-/* ─── FAQ ─── */
+/* --- FAQ --- */
 .faq{display:grid;gap:22px;margin-top:14px}
 .faq-section{display:grid;gap:8px}
 .faq-section-title{
@@ -629,7 +662,7 @@ section .lead a{color:#ccc;text-decoration:underline;text-underline-offset:3px}
   color:#0aae7a;font-weight:700;width:14px;flex-shrink:0;
   transition:transform 150ms;
 }
-.faq details[open] summary::before{content:"−"}
+.faq details[open] summary::before{content:"-"}
 .faq .answer{
   color:#b0b0b0;font-size:.875rem;line-height:1.65;margin-top:12px;
   padding-left:24px;
@@ -677,7 +710,7 @@ section .lead a{color:#ccc;text-decoration:underline;text-underline-offset:3px}
 }
 .faq .answer a{color:#ccc;text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere}
 
-/* ─── COPY BUTTON ─── */
+/* --- COPY BUTTON --- */
 .has-copy{position:relative}
 .copy-btn{
   position:absolute;top:50%;right:5px;transform:translateY(-50%);
@@ -707,7 +740,7 @@ section .lead a{color:#ccc;text-decoration:underline;text-underline-offset:3px}
   .copy-btn:hover{opacity:1}
 }
 
-/* ─── FOOTER ─── */
+/* --- FOOTER --- */
 footer{
   border-top:1px solid rgba(255,255,255,.06);padding:0;
 }
@@ -720,7 +753,7 @@ footer a{color:#9a9a9a;text-decoration:none}
 footer a:hover{color:#ccc}
 .flinks{display:flex;gap:16px}
 
-/* ─── RESPONSIVE ─── */
+/* --- RESPONSIVE --- */
 @media(max-width:600px){
   .hero h1{font-size:1.625rem}
   .hero .sub{font-size:.9375rem}
@@ -734,18 +767,18 @@ footer a:hover{color:#ccc}
     bottom:auto;
     transform:translateY(-50%);
   }
-  /* Let the curl | bash command wrap instead of being ellipsed — losing
+  /* Let the curl | bash command wrap instead of being ellipsed - losing
      the "| bash" at the end made the command unusable on phones. */
   .hero .quick-install span{white-space:normal;overflow:visible;text-overflow:clip;word-break:break-all}
 }
 
-/* ─── TRY BLOCK TITLE ─── */
+/* --- TRY BLOCK TITLE --- */
 .try-title{
   font-size:.9375rem;font-weight:600;color:#e5e5e5;margin:0 0 8px;
 }
 .try-title + .tryblock{margin-top:0}
 
-/* ─── BUILT-WITH FOOTER ─── */
+/* --- BUILT-WITH FOOTER --- */
 .built-with{
   width:100%;font-size:.75rem;color:#888;text-align:center;
   padding-top:18px;border-top:1px solid rgba(255,255,255,.04);margin-top:12px;
@@ -753,7 +786,7 @@ footer a:hover{color:#ccc}
 .built-with a{color:#a8a8a8;text-decoration:none}
 .built-with a:hover{color:#ccc}
 
-/* ─── INSTALL SECTION: OS-tabbed redesign ───
+/* --- INSTALL SECTION: OS-tabbed redesign ---
    Two-row grid: OS tabs span row 1 col 1 only; install panels and Try it
    sit in row 2 so the Try it card is level with the recommended card. */
 .install-grid{
@@ -797,7 +830,7 @@ footer a:hover{color:#ccc}
 .footer-note{margin-top:14px;font-size:.8125rem;color:#777}
 .footer-note a{color:#9a9a9a;text-decoration:underline;text-underline-offset:3px}
 
-/* Try it sidebar — one row per command, each row gets .has-copy so the
+/* Try it sidebar - one row per command, each row gets .has-copy so the
    existing copy-button JS auto-attaches a button. */
 .try{
   background:#0a0a0a;border:1px solid rgba(255,255,255,.08);border-radius:10px;
@@ -878,7 +911,7 @@ footer a:hover{color:#ccc}
 }
 .surface-download-btn:hover .dl-hint{color:#9a9a9a}
 
-/* ─── IMAGE LIGHTBOX ─── */
+/* --- IMAGE LIGHTBOX --- */
 .image-lightbox{
   position:fixed;inset:0;z-index:1000;
   display:none;align-items:center;justify-content:center;
@@ -915,7 +948,7 @@ footer a:hover{color:#ccc}
 
 body.lightbox-open{overflow:hidden}
 
-/* ─── CHANGELOG ─── */
+/* --- CHANGELOG --- */
 .changelog-shell{
   max-width:1040px;margin:0 auto;padding:64px 24px 86px;
 }
@@ -1007,4 +1040,85 @@ body.lightbox-open{overflow:hidden}
 @media(max-width:640px){
   .release-head{display:grid}
   .release-view{justify-self:start}
+}
+
+/* Recovery stabilization: landing shell/navigation.
+   Keep this late so it wins over older recovered blocks until the CSS is split. */
+nav[data-site-nav] {
+  position: sticky;
+  top: 0;
+  z-index: 80;
+  min-height: 56px;
+  background: rgba(17, 19, 20, 0.96);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+}
+
+nav[data-site-nav] .nav-inner {
+  min-height: 56px;
+  padding-block: 0;
+}
+
+nav[data-site-nav] .nlinks a {
+  min-height: 56px;
+  border-bottom-width: 2px;
+}
+
+nav[data-site-nav] .nlinks a[aria-current="page"],
+nav[data-site-nav] .nlinks a[aria-current="location"] {
+  border-bottom-color: #0aae7a;
+}
+
+@media (max-width: 760px) {
+  nav[data-site-nav] .nav-inner {
+    flex-wrap: nowrap;
+    gap: 0.55rem;
+    padding-inline: 18px;
+  }
+
+  nav[data-site-nav] .mark {
+    margin-right: auto;
+  }
+
+  nav[data-site-nav] .nav-menu-toggle {
+    display: inline-flex;
+    margin-left: auto;
+  }
+
+  nav[data-site-nav] .nlinks {
+    top: calc(100% + 8px);
+    left: 18px;
+    right: 18px;
+    z-index: 100;
+    display: none;
+    grid-template-columns: 1fr;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 0.65rem;
+    background: #15191f;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.48);
+    backdrop-filter: none;
+  }
+
+  nav[data-site-nav][data-open='true'] .nlinks {
+    display: flex;
+  }
+
+  nav[data-site-nav] .nlinks a {
+    min-height: 2.45rem;
+    padding: 0 0.85rem;
+    border-bottom: 0;
+    border-left: 2px solid transparent;
+    background: transparent;
+  }
+
+  nav[data-site-nav] .nlinks a:hover,
+  nav[data-site-nav] .nlinks a[aria-current='page'],
+  nav[data-site-nav] .nlinks a[aria-current='location'] {
+    border-left-color: #0aae7a;
+    color: #f4f7f6;
+    background: rgba(10, 174, 122, 0.1);
+  }
 }
