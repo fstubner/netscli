@@ -5,6 +5,7 @@ import type { WorkspaceModel } from '../workspace/types';
 export function useKeyboardShortcuts({
   focusResultFilter,
   openMenu,
+  requestRun,
   setOpenMenu,
   setSettingsOpen,
   settingsOpen,
@@ -14,6 +15,7 @@ export function useKeyboardShortcuts({
 }: {
   focusResultFilter: () => void;
   openMenu: string | null;
+  requestRun: (tabId: string) => void;
   setOpenMenu: (menu: string | null) => void;
   setSettingsOpen: (open: boolean) => void;
   settingsOpen: boolean;
@@ -89,7 +91,7 @@ export function useKeyboardShortcuts({
 
       if (event.key === 'Enter') {
         event.preventDefault();
-        void workspace.runTab(activeTab.id);
+        requestRun(activeTab.id);
         return;
       }
 
@@ -114,6 +116,7 @@ export function useKeyboardShortcuts({
     activeTab,
     focusResultFilter,
     openMenu,
+    requestRun,
     setOpenMenu,
     setSettingsOpen,
     settingsOpen,

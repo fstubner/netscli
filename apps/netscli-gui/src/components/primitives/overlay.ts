@@ -76,6 +76,7 @@ export function useAnchoredPopoverPosition({
   estimatedHeight = 260,
   open,
   panelRef,
+  positionKey,
   width,
 }: {
   align?: 'start' | 'end';
@@ -83,6 +84,7 @@ export function useAnchoredPopoverPosition({
   estimatedHeight?: number;
   open: boolean;
   panelRef: RefObject<HTMLElement | null>;
+  positionKey?: unknown;
   width: number;
 }) {
   const [position, setPosition] = useState<PopoverPosition>({ left: 8, maxHeight: estimatedHeight, top: 8 });
@@ -114,7 +116,7 @@ export function useAnchoredPopoverPosition({
       window.removeEventListener('resize', update);
       document.removeEventListener('scroll', update, true);
     };
-  }, [align, anchorRef, estimatedHeight, open, panelRef, width]);
+  }, [align, anchorRef, estimatedHeight, open, panelRef, positionKey, width]);
 
   return position;
 }

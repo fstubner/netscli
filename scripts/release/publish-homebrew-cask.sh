@@ -77,7 +77,7 @@ cask "netscli" do
   end
 
   name "NetsCLI"
-  desc "Network scanner desktop app: discover hosts, scan ports, DNS, ARP"
+  desc "NetsCLI desktop app for reviewing network scans, DNS, ARP, and local inventory"
   homepage "https://netscli.com"
 
   app "NetsCLI.app"

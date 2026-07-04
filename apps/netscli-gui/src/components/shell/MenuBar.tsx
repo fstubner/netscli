@@ -70,6 +70,7 @@ interface MenuBarProps {
   onSaveResultBundle: () => void;
   onOpenHistoryEntry: (entry: HistoryEntry) => void;
   onRunActive: () => void;
+  runDisabledReason?: string;
 }
 
 export function MenuBar({
@@ -99,6 +100,7 @@ export function MenuBar({
   onSaveResultBundle,
   onOpenHistoryEntry,
   onRunActive,
+  runDisabledReason,
 }: MenuBarProps) {
   const menuPopoverOpen = openMenu !== null && MENU_POPOVER_LABELS.has(openMenu);
   const activeButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -110,6 +112,7 @@ export function MenuBar({
     estimatedHeight: 300,
     open: menuPopoverOpen,
     panelRef: popoverRef,
+    positionKey: openMenu,
     width: openMenu === 'History' ? 320 : 220,
   });
   const closeMenu = () => {
@@ -222,7 +225,7 @@ export function MenuBar({
       sections: [
         {
           items: [
-            { label: 'Run Active Tab', Icon: Play, action: onRunActive, disabled: !activeTab || activeTab.busy },
+            { label: 'Run Active Tab', Icon: Play, action: onRunActive, disabled: !activeTab || activeTab.busy || Boolean(runDisabledReason) },
             { label: 'Cancel Active Tab', Icon: Square, action: onCancelActive, disabled: !activeTab?.busy },
           ],
         },
@@ -315,6 +318,16 @@ export function MenuBar({
               }
               lastTriggerRef.current = event.currentTarget;
               setOpenMenu(openMenu === group.label ? null : group.label);
+            }}
+            onMouseEnter={(event) => {
+              if (!menuPopoverOpen || openMenu === group.label) return;
+              lastTriggerRef.current = event.currentTarget;
+              shouldRestoreFocusRef.current = false;
+              if (group.label === 'Settings') {
+                setOpenMenu(null);
+                return;
+              }
+              setOpenMenu(group.label);
             }}
             onKeyDown={(event) => {
               if (group.label === 'Settings') return;

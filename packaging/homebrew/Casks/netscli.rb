@@ -10,19 +10,19 @@
 # automatically).
 
 cask "netscli" do
-  version "0.2.4"
+  version "0.3.0"
 
   on_arm do
-    sha256 "a240ec0ce5a0bbe00226fc078a22a0acede4d320b05fce1d2a80690a136b6bd3"
+    sha256 "faf62fe3f56709b46865a6f35b5bcda4db6a37c4395eb904d1b73214f497e69e"
     url "https://github.com/fstubner/netscli/releases/download/v#{version}/netscli-gui-macos-aarch64.dmg"
   end
   on_intel do
-    sha256 "4dc2c7e76348165624fa4d26f8e78e7892b4f0b8d2762fd9884df524d19a8bdb"
+    sha256 "28354f51e623f9be5a875c6284df9ee1207ae182e0667293475d485a1bb41675"
     url "https://github.com/fstubner/netscli/releases/download/v#{version}/netscli-gui-macos-x86_64.dmg"
   end
 
   name "NetsCLI"
-  desc "Network scanner desktop app: discover hosts, scan ports, DNS, ARP"
+  desc "NetsCLI desktop app for reviewing network scans, DNS, ARP, and local inventory"
   homepage "https://netscli.com"
 
   app "NetsCLI.app"

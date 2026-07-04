@@ -1,13 +1,14 @@
 import { ArrowDown, ArrowUp } from 'lucide-react';
 
 import type { DefaultInterfaceInfo, NetworkStats } from '../../types/netscli';
-import type { TrafficDisplayUnit, TrafficPrecision } from '../../hooks/usePreferences';
+import type { AddressPreference, TrafficDisplayUnit, TrafficPrecision } from '../../hooks/usePreferences';
 import { resultSummary } from '../../tools/presentation';
 import { TOOL_CONFIG } from '../../tools/registry';
 import type { WorkspaceTab } from '../../tools/types';
 
 interface StatusBarProps {
   activeTab: WorkspaceTab | undefined;
+  addressPreference: AddressPreference;
   interfaceInfo: DefaultInterfaceInfo | null;
   animateTrafficArrows: boolean;
   networkStats: NetworkStats | null;
@@ -19,6 +20,7 @@ interface StatusBarProps {
 
 export function StatusBar({
   activeTab,
+  addressPreference,
   interfaceInfo,
   animateTrafficArrows,
   networkStats,
@@ -29,8 +31,10 @@ export function StatusBar({
 }: StatusBarProps) {
   const interfaceDown = Boolean(interfaceInfo && !interfaceInfo.is_up);
   const statusText = interfaceInfo ? (interfaceDown ? 'Interface down' : 'Interface up') : 'No interface';
+  const interfaceAddress = preferredStatusAddress(interfaceInfo?.ips ?? [], addressPreference);
   const resultText = activeTab ? footerResultText(activeTab, rowCount, selectedCount) : null;
   const operationText = activeTab?.busy ? `Running ${TOOL_CONFIG[activeTab.kind].label}` : null;
+  const showTrafficStats = Boolean(networkStats?.available);
 
   return (
     <footer className="statusbar" data-testid="statusbar">
@@ -46,10 +50,10 @@ export function StatusBar({
           <>
             <span className="divider" />
             <span className="status-interface-name">{interfaceInfo.name}</span>
-            <code className="status-interface-address">{interfaceInfo.ips[0] ?? 'no address'}</code>
+            <code className="status-interface-address">{interfaceAddress ?? 'no address'}</code>
           </>
         )}
-        {networkStats && (
+        {showTrafficStats && networkStats && (
           <>
             <span className="divider" />
             <TrafficStats
@@ -77,8 +81,22 @@ export function StatusBar({
   );
 }
 
+export function preferredStatusAddress(ips: string[], preference: AddressPreference): string | null {
+  const familyPreferred = preference === 'ipv6' ? isIpv6Cidr : isIpv4Cidr;
+  const fallbackFamily = preference === 'ipv6' ? isIpv4Cidr : isIpv6Cidr;
+  return ips.find(familyPreferred) ?? ips.find(fallbackFamily) ?? ips[0] ?? null;
+}
+
+function isIpv4Cidr(value: string): boolean {
+  return /^\d{1,3}(?:\.\d{1,3}){3}(?:\/\d{1,2})?$/.test(value);
+}
+
+function isIpv6Cidr(value: string): boolean {
+  return value.includes(':');
+}
+
 function footerResultText(tab: WorkspaceTab, rowCount: number, selectedCount: number): string {
-  if (selectedCount > 1 && rowCount > 0) return `${selectedCount} of ${rowCount} selected`;
+  if (selectedCount >= 1 && rowCount > 0) return `${selectedCount} of ${rowCount} selected`;
   return resultSummary(tab.result ?? null);
 }
 
@@ -95,7 +113,7 @@ function TrafficStats({
 }) {
   const downloadActive = animateArrows && stats.download_active;
   const uploadActive = animateArrows && stats.upload_active;
-  const title = stats.available ? 'Network activity on selected interface' : 'No traffic data for selected interface';
+  const title = 'Network activity on selected interface';
   const download = formatTrafficRate(stats.download_mbps, unit, precision);
   const upload = formatTrafficRate(stats.upload_mbps, unit, precision);
 

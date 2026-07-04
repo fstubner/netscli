@@ -2,18 +2,14 @@ import { useRef, useState, type MouseEvent } from 'react';
 
 import './App.css';
 
-import { AboutDialog } from './components/shell/AboutDialog';
+import { AppDialogs } from './components/shell/AppDialogs';
 import { AppFrame } from './components/shell/AppFrame';
 import { AppTooltip } from './components/shell/AppTooltip';
 import { CommandStrip } from './components/shell/CommandStrip';
-import { ConfirmDialog } from './components/shell/ConfirmDialog';
-import { ContentContextMenu } from './components/shell/ContentContextMenu';
 import { MenuBar } from './components/shell/MenuBar';
-import { SettingsDialog } from './components/shell/SettingsDialog';
 import { StatusBar } from './components/shell/StatusBar';
 import { TabStrip } from './components/shell/TabStrip';
 import { Toolbar } from './components/shell/Toolbar';
-import { WorkspaceSearchDialog } from './components/shell/WorkspaceSearchDialog';
 import { DetailPane } from './components/results/DetailPane';
 import { EmptyWorkspace } from './components/results/EmptyWorkspace';
 import { OperationProgress } from './components/results/OperationProgress';
@@ -35,15 +31,19 @@ const APP_VERSION = __APP_VERSION__;
 
 function App() {
   const {
+    addressPreference,
     commandBarVisible,
     darkMode,
     interactionToasts,
+    maxConcurrentProbes,
     operationToasts,
     persistentHistory,
     releaseNotifications,
+    setAddressPreference,
     setCommandBarVisible,
     setDarkMode,
     setInteractionToasts,
+    setMaxConcurrentProbes,
     setOperationToasts,
     setPersistentHistory,
     setReleaseNotifications,
@@ -54,8 +54,6 @@ function App() {
     trafficIndicators,
     trafficPrecision,
   } = usePreferences();
-  const workspace = useWorkspace({ interactionToasts, operationToasts, persistentHistory });
-  const activeTab = workspace.activeTab;
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [contentContextMenu, setContentContextMenu] = useState<{
     cell?: ResultCellContext;
@@ -73,9 +71,20 @@ function App() {
   const [dismissedWarningKeys, setDismissedWarningKeys] = useState<Record<string, true>>({});
   const [aboutOpen, setAboutOpen] = useState(false);
   const [pendingRun, setPendingRun] = useState<{ tabId: string; guard: OperationGuard } | null>(null);
+  const [pendingHistoryDisable, setPendingHistoryDisable] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [workspaceSearchOpen, setWorkspaceSearchOpen] = useState(false);
   const filterInputRef = useRef<HTMLInputElement | null>(null);
+  const requestRunRef = useRef<(tabId: string) => void>(() => {});
+
+  const workspace = useWorkspace({
+    interactionToasts,
+    maxConcurrentProbes,
+    operationToasts,
+    persistentHistory,
+    requestRun: (tabId) => requestRunRef.current(tabId),
+  });
+  const activeTab = workspace.activeTab;
 
   useReleaseNotifications({
     appVersion: APP_VERSION,
@@ -86,23 +95,13 @@ function App() {
   });
 
   usePopoverDismissal({ contentContextMenu, openMenu, setContentContextMenu, setOpenMenu });
-  useKeyboardShortcuts({
-    focusResultFilter: () => {
-      filterInputRef.current?.focus({ preventScroll: true });
-      filterInputRef.current?.select();
-    },
-    openMenu,
-    setOpenMenu,
-    setSettingsOpen,
-    settingsOpen,
-    setWorkspaceSearchOpen,
-    workspace,
-    workspaceSearchOpen,
-  });
 
   function requestRun(tabId: string) {
     const tab = workspace.tabs.find((item) => item.id === tabId);
-    if (tab?.kind === 'pcap' && !pcapCapability.available) return;
+    if (tab?.kind === 'pcap' && !pcapCapability.available) {
+      workspace.showInteractionToast(packetCaptureUnavailableMessage(pcapCapability.message));
+      return;
+    }
     const guard = guardForOperation(tab);
     if (guard) {
       setPendingRun({ tabId, guard });
@@ -110,6 +109,23 @@ function App() {
     }
     void workspace.runTab(tabId);
   }
+
+  requestRunRef.current = requestRun;
+
+  useKeyboardShortcuts({
+    focusResultFilter: () => {
+      filterInputRef.current?.focus({ preventScroll: true });
+      filterInputRef.current?.select();
+    },
+    openMenu,
+    requestRun,
+    setOpenMenu,
+    setSettingsOpen,
+    settingsOpen,
+    setWorkspaceSearchOpen,
+    workspace,
+    workspaceSearchOpen,
+  });
 
   function runActive() {
     if (activeTab) requestRun(activeTab.id);
@@ -182,6 +198,7 @@ function App() {
           onSaveResultBundle={() => void workspace.saveResultBundle()}
           onOpenHistoryEntry={workspace.openHistoryEntry}
           onRunActive={runActive}
+          runDisabledReason={pcapUnavailableReason ?? undefined}
         />
       </AppFrame>
 
@@ -267,8 +284,9 @@ function App() {
 
       <StatusBar
         activeTab={activeTab}
+        addressPreference={addressPreference}
         animateTrafficArrows={trafficIndicators}
-        interfaceInfo={workspace.trafficInterface ?? workspace.defaultInterface}
+        interfaceInfo={workspace.statusInterfaceInfo}
         networkStats={workspace.networkStats}
         rowCount={workspace.rows.length}
         selectedCount={workspace.selectedRows.length}
@@ -281,85 +299,56 @@ function App() {
         setActiveTabId={workspace.setActiveTabId}
         toast={workspace.toast}
       />
-      {contentContextMenu && (
-        <ContentContextMenu
-          canClear={Boolean(activeTab && (activeTab.result || activeTab.error))}
-          canUseSelection={Boolean(activeTab?.result)}
-          captureFilePath={activeTab?.result?.kind === 'pcap' ? activeTab.result.data.file_path : undefined}
-          cell={contentContextMenu.cell}
-          x={contentContextMenu.x}
-          y={contentContextMenu.y}
-          onClearResults={workspace.clearCurrentResults}
-          onClose={() => setContentContextMenu(null)}
-          onCopyCell={(cell) => void workspace.copyCellValue(cell.label, cell.value)}
-          onCopyDetails={() => void workspace.copySelectedDetails()}
-          onCopyRaw={() => void workspace.copySelectedRaw()}
-          onExportCsv={workspace.exportSelectedCsv}
-          onExportJson={workspace.exportSelectedJson}
-          onInspectHost={(host) => workspace.openHostTool('inspect', host)}
-          onOpenCaptureFile={(path) => void workspace.openCaptureFile(path)}
-          onRevealCaptureFile={(path) => void workspace.revealCaptureFile(path)}
-          onScanHost={(host) => workspace.openHostTool('scan', host)}
-        />
-      )}
-      {settingsOpen && (
-        <SettingsDialog
-          animateTrafficArrows={trafficIndicators}
-          commandBarVisible={commandBarVisible}
-          darkMode={darkMode}
-          defaultInterface={workspace.defaultInterface}
-          interactionToasts={interactionToasts}
-          interfaces={workspace.interfaces}
-          operationToasts={operationToasts}
-          persistentHistory={persistentHistory}
-          releaseNotifications={releaseNotifications}
-          trafficDisplayUnit={trafficDisplayUnit}
-          fileSavePreferences={fileSavePreferences}
-          trafficPrecision={trafficPrecision}
-          trafficInterfaceName={workspace.trafficInterfaceName}
-          onClose={() => setSettingsOpen(false)}
-          onChooseSaveFolder={() => void chooseSaveFolder()}
-          onClearSaveFolder={() => void clearSaveFolder()}
-          onSelectTrafficInterface={workspace.setTrafficInterfaceName}
-          onSetDarkMode={setDarkMode}
-          onSetTrafficDisplayUnit={setTrafficDisplayUnit}
-          onSetTrafficPrecision={setTrafficPrecision}
-          onToggleFileSaveAskEachTime={() => void toggleFileSaveAskEachTime()}
-          onToggleInteractionToasts={() => setInteractionToasts((prev) => !prev)}
-          onToggleOperationToasts={() => setOperationToasts((prev) => !prev)}
-          onTogglePersistentHistory={() => setPersistentHistory((prev) => !prev)}
-          onToggleReleaseNotifications={() => setReleaseNotifications((prev) => !prev)}
-          onToggleCommandBar={() => setCommandBarVisible((prev) => !prev)}
-          onToggleTrafficArrowAnimation={() => setTrafficIndicators((prev) => !prev)}
-        />
-      )}
-      {workspaceSearchOpen && (
-        <WorkspaceSearchDialog
-          history={workspace.history}
-          tabs={workspace.tabs}
-          onClose={() => setWorkspaceSearchOpen(false)}
-          onOpenHistoryEntry={workspace.openHistoryEntry}
-          onSelectTab={workspace.setActiveTabId}
-          onSelectRow={(tabId, rowIndex) => {
-            workspace.setActiveTabId(tabId);
-            window.setTimeout(() => workspace.selectRow(rowIndex), 0);
-          }}
-        />
-      )}
-      {aboutOpen && <AboutDialog appVersion={APP_VERSION} onClose={() => setAboutOpen(false)} />}
-      {pendingRun && (
-        <ConfirmDialog
-          confirmLabel={pendingRun.guard.confirmLabel}
-          message={pendingRun.guard.message}
-          title={pendingRun.guard.title}
-          onCancel={() => setPendingRun(null)}
-          onConfirm={() => {
-            const tabId = pendingRun.tabId;
-            setPendingRun(null);
-            void workspace.runTab(tabId);
-          }}
-        />
-      )}
+      <AppDialogs
+        aboutOpen={aboutOpen}
+        activeTab={activeTab}
+        addressPreference={addressPreference}
+        animateTrafficArrows={trafficIndicators}
+        appVersion={APP_VERSION}
+        chooseSaveFolder={chooseSaveFolder}
+        clearSaveFolder={clearSaveFolder}
+        commandBarVisible={commandBarVisible}
+        contentContextMenu={contentContextMenu}
+        darkMode={darkMode}
+        defaultInterface={workspace.defaultInterface}
+        fileSavePreferences={fileSavePreferences}
+        interactionToasts={interactionToasts}
+        interfaces={workspace.interfaces}
+        maxConcurrentProbes={maxConcurrentProbes}
+        onCloseAbout={() => setAboutOpen(false)}
+        onCloseContentContextMenu={() => setContentContextMenu(null)}
+        onCloseSettings={() => setSettingsOpen(false)}
+        onCloseWorkspaceSearch={() => setWorkspaceSearchOpen(false)}
+        onConfirmHistoryDisable={() => {
+          setPendingHistoryDisable(false);
+          setPersistentHistory(false);
+        }}
+        onConfirmPendingRun={(tabId) => void workspace.runTab(tabId)}
+        onSetAddressPreference={setAddressPreference}
+        onSetDarkMode={setDarkMode}
+        onSetMaxConcurrentProbes={setMaxConcurrentProbes}
+        onSetTrafficDisplayUnit={setTrafficDisplayUnit}
+        onSetTrafficPrecision={setTrafficPrecision}
+        onToggleCommandBar={() => setCommandBarVisible((prev) => !prev)}
+        onToggleFileSaveAskEachTime={() => void toggleFileSaveAskEachTime()}
+        onToggleInteractionToasts={() => setInteractionToasts((prev) => !prev)}
+        onToggleOperationToasts={() => setOperationToasts((prev) => !prev)}
+        onToggleReleaseNotifications={() => setReleaseNotifications((prev) => !prev)}
+        onToggleTrafficArrowAnimation={() => setTrafficIndicators((prev) => !prev)}
+        operationToasts={operationToasts}
+        pendingHistoryDisable={pendingHistoryDisable}
+        pendingRun={pendingRun}
+        persistentHistory={persistentHistory}
+        releaseNotifications={releaseNotifications}
+        setPendingHistoryDisable={setPendingHistoryDisable}
+        setPendingRun={setPendingRun}
+        setPersistentHistory={setPersistentHistory}
+        settingsOpen={settingsOpen}
+        trafficDisplayUnit={trafficDisplayUnit}
+        trafficPrecision={trafficPrecision}
+        workspace={workspace}
+        workspaceSearchOpen={workspaceSearchOpen}
+      />
       <AppTooltip />
     </div>
   );

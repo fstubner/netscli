@@ -16,7 +16,7 @@ mod tui_settings;
 use anyhow::Result;
 use args::Cli;
 use clap::Parser;
-use netscli_core::{Ops, OpsConfig, DEFAULT_CONCURRENCY};
+use netscli_core::{Ops, OpsConfig};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -26,7 +26,9 @@ async fn main() -> Result<()> {
 
     let db = commands::try_init_db().await;
     let ops = Ops::new(OpsConfig {
-        concurrency: cli.concurrency.unwrap_or(DEFAULT_CONCURRENCY),
+        concurrency: cli
+            .concurrency
+            .unwrap_or_else(|| tui_settings::load_settings().max_concurrent_probes),
         ..Default::default()
     });
     let local_addr = netscli_core::detect_default_ipv4_addr().map(|ip| ip.to_string());
@@ -42,7 +44,7 @@ async fn main() -> Result<()> {
         )
         .await?;
     } else {
-        tui::run_tui(cli.concurrency.unwrap_or(DEFAULT_CONCURRENCY)).await?;
+        tui::run_tui(cli.concurrency).await?;
     }
 
     Ok(())

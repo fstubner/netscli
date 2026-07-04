@@ -1,16 +1,17 @@
 import {
-  Activity,
-  Database,
-  Globe2,
-  HardDrive,
-  Map,
-  Network,
-  Radio,
-  Radar,
-  Route,
-  Search,
-} from 'lucide-react';
-
+  ArpTableIcon,
+  DiscoverIcon,
+  DnsLookupIcon,
+  InspectIcon,
+  InterfacesIcon,
+  MdnsDiscoveryIcon,
+  PacketCaptureIcon,
+  PingIcon,
+  PortScanIcon,
+  ReverseDnsIcon,
+  SweepIcon,
+  TraceRouteIcon,
+} from './operationIcons';
 import type { ToolCapabilityMap, ToolConfig, ToolKind, WorkspaceTab } from './types';
 
 export const DEFAULT_PORTS = '22,80,443,8080,8443';
@@ -45,7 +46,7 @@ export const TOOL_CONFIG: Record<ToolKind, ToolConfig> = {
   scan: {
     label: 'Port Scan',
     shortLabel: 'scan',
-    Icon: Search,
+    Icon: PortScanIcon,
     action: 'Scan',
     fields: [
       { key: 'host', label: 'Host', placeholder: '127.0.0.1', required: true },
@@ -55,7 +56,7 @@ export const TOOL_CONFIG: Record<ToolKind, ToolConfig> = {
   ping: {
     label: 'Ping',
     shortLabel: 'ping',
-    Icon: Radar,
+    Icon: PingIcon,
     action: 'Ping',
     fields: [
       { key: 'host', label: 'Host', placeholder: '127.0.0.1', required: true },
@@ -65,7 +66,7 @@ export const TOOL_CONFIG: Record<ToolKind, ToolConfig> = {
   trace: {
     label: 'Trace Route',
     shortLabel: 'trace',
-    Icon: Route,
+    Icon: TraceRouteIcon,
     action: 'Trace',
     fields: [
       { key: 'host', label: 'Host', placeholder: '1.1.1.1', required: true },
@@ -82,14 +83,14 @@ export const TOOL_CONFIG: Record<ToolKind, ToolConfig> = {
   discover: {
     label: 'Discover',
     shortLabel: 'discover',
-    Icon: Network,
+    Icon: DiscoverIcon,
     action: 'Discover',
     fields: [{ key: 'subnet', label: 'Subnet', placeholder: '192.168.1.0/24' }],
   },
   dns: {
     label: 'DNS Lookup',
     shortLabel: 'dns',
-    Icon: Globe2,
+    Icon: DnsLookupIcon,
     action: 'Lookup',
     fields: [
       { key: 'host', label: 'Host', placeholder: 'netscli.com', required: true },
@@ -105,14 +106,14 @@ export const TOOL_CONFIG: Record<ToolKind, ToolConfig> = {
   reverse: {
     label: 'Reverse DNS',
     shortLabel: 'reverse',
-    Icon: Globe2,
+    Icon: ReverseDnsIcon,
     action: 'Lookup',
     fields: [{ key: 'ip', label: 'IP', placeholder: '192.168.1.1', required: true }],
   },
   inspect: {
     label: 'Inspect',
     shortLabel: 'inspect',
-    Icon: Activity,
+    Icon: InspectIcon,
     action: 'Inspect',
     fields: [
       { key: 'host', label: 'Host', placeholder: '127.0.0.1', required: true },
@@ -122,7 +123,7 @@ export const TOOL_CONFIG: Record<ToolKind, ToolConfig> = {
   sweep: {
     label: 'Sweep',
     shortLabel: 'sweep',
-    Icon: Radio,
+    Icon: SweepIcon,
     action: 'Sweep',
     fields: [
       { key: 'subnet', label: 'Subnet', placeholder: '192.168.1.0/24' },
@@ -132,7 +133,7 @@ export const TOOL_CONFIG: Record<ToolKind, ToolConfig> = {
   mdns: {
     label: 'mDNS Discovery',
     shortLabel: 'mdns',
-    Icon: Radio,
+    Icon: MdnsDiscoveryIcon,
     action: 'Discover',
     fields: [
       { key: 'service_types', label: 'Service Types', placeholder: '_http._tcp.local., _ssh._tcp.local.' },
@@ -141,21 +142,21 @@ export const TOOL_CONFIG: Record<ToolKind, ToolConfig> = {
   interfaces: {
     label: 'Interfaces',
     shortLabel: 'interfaces',
-    Icon: HardDrive,
+    Icon: InterfacesIcon,
     action: 'Refresh',
     fields: [],
   },
   arp: {
     label: 'ARP Table',
     shortLabel: 'arp',
-    Icon: Database,
+    Icon: ArpTableIcon,
     action: 'Refresh',
     fields: [],
   },
   pcap: {
     label: 'Packet Capture',
     shortLabel: 'capture',
-    Icon: Map,
+    Icon: PacketCaptureIcon,
     action: 'Capture',
     fields: [
       { key: 'mode', label: 'Mode', type: 'select', compact: true, options: ['Capture', 'Open File'] },

@@ -1,7 +1,8 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
 
 import type { DefaultInterfaceInfo, InterfaceInfo } from '../../types/netscli';
+import { clampMaxConcurrentProbes, type MaxConcurrentProbes } from '../../hooks/usePreferences';
 import { useRovingFocus } from '../primitives/focus';
 import { useAnchoredPopoverPosition, useOverlayDismiss } from '../primitives/overlay';
 
@@ -21,11 +22,13 @@ export function SettingsSwitch({
   onClick,
 }: SettingsSwitchProps) {
   return (
-    <label
-      className="settings-checkbox-row"
-      data-testid={testId}
-    >
-      <input checked={checked} type="checkbox" onChange={onClick} />
+    <label className="settings-checkbox-row" data-testid={testId}>
+      <input
+        checked={checked}
+        className="settings-checkbox-native"
+        type="checkbox"
+        onChange={onClick}
+      />
       <span className="settings-row-copy">
         <span>{label}</span>
         <small>{note}</small>
@@ -57,6 +60,92 @@ interface SettingsSelectProps {
   testId: string;
   value: string;
   onSelect: (value: string) => void;
+}
+
+interface SettingsNumberInputProps {
+  label: string;
+  max?: number;
+  min?: number;
+  step?: number;
+  testId: string;
+  value: number;
+  onChange: (value: MaxConcurrentProbes) => void;
+}
+
+export function SettingsNumberInput({
+  label,
+  max = 1024,
+  min = 1,
+  step = 16,
+  testId,
+  value,
+  onChange,
+}: SettingsNumberInputProps) {
+  const [draft, setDraft] = useState(String(value));
+
+  useEffect(() => {
+    setDraft(String(value));
+  }, [value]);
+
+  const commitValue = (raw: string) => {
+    const trimmed = raw.trim();
+    if (!trimmed) {
+      setDraft(String(value));
+      return;
+    }
+    const parsed = Number(trimmed);
+    if (!Number.isFinite(parsed)) {
+      setDraft(String(value));
+      return;
+    }
+    const next = clampMaxConcurrentProbes(Math.min(max, Math.max(min, parsed)));
+    onChange(next);
+    setDraft(String(next));
+  };
+
+  return (
+    <div className="settings-number-field">
+      <button
+        aria-label={`Decrease ${label}`}
+        className="settings-number-stepper"
+        disabled={value <= min}
+        type="button"
+        onClick={() => commitValue(String(value - step))}
+      >
+        -
+      </button>
+      <label className="settings-number-input-wrap">
+        <input
+          aria-label={label}
+          data-testid={testId}
+          inputMode="numeric"
+          max={max}
+          min={min}
+          step={step}
+          type="number"
+          value={draft}
+          onBlur={(event) => commitValue(event.currentTarget.value)}
+          onChange={(event) => setDraft(event.currentTarget.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              commitValue(event.currentTarget.value);
+            }
+          }}
+        />
+        <span>probes</span>
+      </label>
+      <button
+        aria-label={`Increase ${label}`}
+        className="settings-number-stepper"
+        disabled={value >= max}
+        type="button"
+        onClick={() => commitValue(String(value + step))}
+      >
+        +
+      </button>
+    </div>
+  );
 }
 
 export function SettingsSelect({
@@ -159,7 +248,7 @@ export function NetworkInterfacePicker({
   const selectedInterface = interfaces.find((iface) => iface.name === selectedName);
   const selectedInterfaceName = selectedInterface?.name ?? selectedName ?? '';
   const selectedInterfaceDetail = selectedInterface
-    ? compact ? formatInterfaceMeta(selectedInterface, selectedInterface.name === defaultInterface?.name, true) : formatInterfaceDetail(selectedInterface)
+    ? compact ? formatSelectedInterfaceMeta(selectedInterface, selectedInterface.name === defaultInterface?.name) : formatInterfaceDetail(selectedInterface)
     : 'Detecting...';
 
   useOverlayDismiss({
@@ -237,21 +326,23 @@ export function NetworkInterfacePicker({
                 }}
               >
                 <span className="settings-interface-main">
-                  <span>{iface.name}</span>
-                  <small>{compact ? formatInterfaceMeta(iface, isDefault, selected) : formatInterfaceDetail(iface)}</small>
-                </span>
-                <span className="settings-interface-badges">
-                  <span className={`settings-interface-status ${iface.is_up ? 'up' : 'down'}`}>
-                    <span aria-hidden="true" />
-                    {iface.is_up ? 'Up' : 'Down'}
-                  </span>
-                  {isDefault && <span className="settings-interface-badge">Primary</span>}
-                  {selected && (
-                    <span className="settings-interface-badge selected">
-                      <Check size={11} />
-                      Selected
+                  <span className="settings-interface-title-row">
+                    <span className="settings-interface-name">{iface.name}</span>
+                    <span className="settings-interface-badges">
+                      {isDefault && <span className="settings-interface-badge">Primary</span>}
+                      {selected && (
+                        <span className="settings-interface-badge selected">
+                          <Check size={11} />
+                          Selected
+                        </span>
+                      )}
+                      <span className={`settings-interface-status ${iface.is_up ? 'up' : 'down'}`}>
+                        <span aria-hidden="true" />
+                        {iface.is_up ? 'Up' : 'Down'}
+                      </span>
                     </span>
-                  )}
+                  </span>
+                  <small>{compact ? formatInterfaceAddressSummary(iface) : formatInterfaceDetail(iface)}</small>
                 </span>
               </button>
             );
@@ -264,13 +355,17 @@ export function NetworkInterfacePicker({
 
 function formatInterfaceDetail(iface: InterfaceInfo): string {
   const status = iface.is_up ? 'Up' : 'Down';
-  const addresses = iface.ips.length > 0 ? iface.ips.slice(0, 2).join(', ') : 'No address';
+  const addresses = formatInterfaceAddressSummary(iface);
   return `${addresses} - ${status}`;
 }
 
-function formatInterfaceMeta(iface: InterfaceInfo, isDefault: boolean, selected: boolean): string {
+function formatInterfaceAddressSummary(iface: InterfaceInfo): string {
+  return iface.ips.length > 0 ? iface.ips.slice(0, 2).join(', ') : 'No address';
+}
+
+function formatSelectedInterfaceMeta(iface: InterfaceInfo, isDefault: boolean): string {
   return [
-    selected ? 'Selected' : '',
+    'Selected',
     isDefault ? 'Primary' : '',
     iface.is_up ? 'Up' : 'Down',
   ].filter(Boolean).join(' - ');

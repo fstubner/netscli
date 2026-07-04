@@ -1,7 +1,7 @@
 use super::super::{events, state::TuiApp};
 use super::SharedDb;
 use crate::tui_formatter::Formatter;
-use netscli_core::{Ops, PcapCancelToken};
+use netscli_core::{Ops, OpsConfig, PcapCancelToken};
 use ratatui::text::Line;
 use tokio::sync::watch;
 
@@ -82,8 +82,17 @@ impl TaskRuntime {
         }
     }
 
-    pub(super) fn spawn_command(&mut self, input: String, first: &str, ops: &Ops, db: &SharedDb) {
-        let ops = ops.clone();
+    pub(super) fn spawn_command(
+        &mut self,
+        input: String,
+        first: &str,
+        max_concurrent_probes: usize,
+        db: &SharedDb,
+    ) {
+        let ops = Ops::new(OpsConfig {
+            concurrency: max_concurrent_probes,
+            ..Default::default()
+        });
         let db = db.clone();
         let (progress_tx, rx) = watch::channel(String::new());
         self.progress_rx = Some(rx);

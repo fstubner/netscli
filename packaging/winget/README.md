@@ -15,6 +15,21 @@ winget install netscli           # resolves via moniker
 winget install fstubner.netscli  # canonical package id
 ```
 
+The CLI package is **portable**. The release asset is a single
+`netscli-windows-x86_64.exe`, not an installer EXE. Its initial Winget
+manifest must therefore use:
+
+```yaml
+InstallerType: portable
+Commands:
+  - netscli
+```
+
+The checked-in reference manifests under `cli/<version>/` capture that
+shape. The automated `winget-releaser` update should preserve the
+accepted manifest's installer type once the first CLI package is in
+`microsoft/winget-pkgs`.
+
 ## Tooling: wingetcreate
 
 Microsoft provides a CLI (`wingetcreate`) that generates the three
@@ -33,10 +48,12 @@ wingetcreate new `
 This pops an editor with the three YAML files. Verify:
 - `PackageIdentifier: fstubner.netscli`
 - `Moniker: netscli`
+- `InstallerType: portable`
+- `Commands: [netscli]`
 - `InstallerSha256` — compare against the `.sha256` on the release
 - `License: MIT`
 - `Homepage: https://netscli.com`
-- `ShortDescription: Network scanner with CLI, TUI, desktop app, and MCP server`
+- `ShortDescription: Network diagnostics CLI, terminal UI, and MCP server`
 
 Then:
 

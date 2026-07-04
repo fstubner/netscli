@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import {
+  Activity,
   Bell,
   FolderOpen,
   Moon,
@@ -11,18 +12,25 @@ import {
 } from 'lucide-react';
 
 import type { DefaultInterfaceInfo, FileSavePreferences, InterfaceInfo } from '../../types/netscli';
-import type { TrafficDisplayUnit, TrafficPrecision } from '../../hooks/usePreferences';
+import type {
+  AddressPreference,
+  MaxConcurrentProbes,
+  TrafficDisplayUnit,
+  TrafficPrecision,
+} from '../../hooks/usePreferences';
 import { useModalFocus } from '../primitives/focus';
-import { NetworkInterfacePicker, SettingsSelect, SettingsSwitch } from './SettingsControls';
+import { NetworkInterfacePicker, SettingsNumberInput, SettingsSelect, SettingsSwitch } from './SettingsControls';
 
 interface SettingsDialogProps {
   animateTrafficArrows: boolean;
+  addressPreference: AddressPreference;
   commandBarVisible: boolean;
   darkMode: boolean;
   defaultInterface: DefaultInterfaceInfo | null;
   fileSavePreferences: FileSavePreferences;
   interactionToasts: boolean;
   interfaces: InterfaceInfo[];
+  maxConcurrentProbes: MaxConcurrentProbes;
   operationToasts: boolean;
   persistentHistory: boolean;
   releaseNotifications: boolean;
@@ -33,7 +41,9 @@ interface SettingsDialogProps {
   onChooseSaveFolder: () => void;
   onClearSaveFolder: () => void;
   onSelectTrafficInterface: (name: string) => void;
+  onSetAddressPreference: (preference: AddressPreference) => void;
   onSetDarkMode: (enabled: boolean) => void;
+  onSetMaxConcurrentProbes: (value: MaxConcurrentProbes) => void;
   onSetTrafficDisplayUnit: (unit: TrafficDisplayUnit) => void;
   onSetTrafficPrecision: (precision: TrafficPrecision) => void;
   onToggleFileSaveAskEachTime: () => void;
@@ -45,14 +55,24 @@ interface SettingsDialogProps {
   onToggleTrafficArrowAnimation: () => void;
 }
 
+function defaultSaveFolderLabel(): string {
+  if (typeof navigator === 'undefined') return 'Downloads/NetsCLI';
+  const platform = navigator.platform || '';
+  if (/win/i.test(platform)) return 'Downloads\\NetsCLI';
+  if (/mac/i.test(platform)) return '~/Downloads/NetsCLI';
+  return '~/Downloads/NetsCLI';
+}
+
 export function SettingsDialog({
   animateTrafficArrows,
+  addressPreference,
   commandBarVisible,
   darkMode,
   defaultInterface,
   fileSavePreferences,
   interactionToasts,
   interfaces,
+  maxConcurrentProbes,
   operationToasts,
   persistentHistory,
   releaseNotifications,
@@ -63,7 +83,9 @@ export function SettingsDialog({
   onChooseSaveFolder,
   onClearSaveFolder,
   onSelectTrafficInterface,
+  onSetAddressPreference,
   onSetDarkMode,
+  onSetMaxConcurrentProbes,
   onSetTrafficDisplayUnit,
   onSetTrafficPrecision,
   onToggleFileSaveAskEachTime,
@@ -164,13 +186,32 @@ export function SettingsDialog({
 
           <section className="settings-section">
             <span className="settings-section-label">
+              <Activity size={13} />
+              Network Operations
+            </span>
+            <div className="settings-row">
+              <div className="settings-row-copy">
+                <span>Max Concurrent Probes</span>
+                <small>Upper limit for simultaneous scan, discover, and sweep probes.</small>
+              </div>
+              <SettingsNumberInput
+                label="Max Concurrent Probes"
+                testId="settings-max-concurrent-probes"
+                value={maxConcurrentProbes}
+                onChange={onSetMaxConcurrentProbes}
+              />
+            </div>
+          </section>
+
+          <section className="settings-section">
+            <span className="settings-section-label">
               <Shield size={13} />
               Privacy
             </span>
             <SettingsSwitch
               checked={persistentHistory}
               label="Save History"
-              note="Keep command history and result snapshots between app restarts."
+              note="Keep command history and result snapshots between app restarts. Turning this off clears saved runs immediately."
               testId="settings-persistent-history-toggle"
               onClick={onTogglePersistentHistory}
             />
@@ -191,7 +232,7 @@ export function SettingsDialog({
             <div className="settings-folder-row">
               <div className="settings-row-copy">
                 <span>Default Save Folder</span>
-                <small>{fileSavePreferences.default_directory ?? 'Downloads\\NetsCLI'}</small>
+                <small>{fileSavePreferences.default_directory ?? defaultSaveFolderLabel()}</small>
               </div>
               <div className="settings-folder-actions">
                 <button
@@ -270,6 +311,22 @@ export function SettingsDialog({
                 interfaces={interfaces}
                 selectedName={trafficInterfaceName}
                 onSelect={onSelectTrafficInterface}
+              />
+            </div>
+            <div className="settings-row">
+              <div className="settings-row-copy">
+                <span>Address Preference</span>
+                <small>Address family shown beside the selected interface.</small>
+              </div>
+              <SettingsSelect
+                label="Address Preference"
+                testId="settings-address-preference"
+                value={addressPreference}
+                options={[
+                  { value: 'ipv4', label: 'IPv4 first' },
+                  { value: 'ipv6', label: 'IPv6 first' },
+                ]}
+                onSelect={(value) => onSetAddressPreference(value as AddressPreference)}
               />
             </div>
           </section>

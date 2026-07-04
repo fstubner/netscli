@@ -62,7 +62,12 @@ nul
 
 # Local agent/browser tooling state
 .agents/
+.playwright-cli/
 .playwright-mcp/
+output/
+.preview-recovered/
+site/dist/
+site/.astro/
 skills-lock.json
 
 # Temp scripts / screenshots (root-level only)

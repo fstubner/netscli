@@ -1,7 +1,7 @@
 //! TUI in-app config screen state.
 //!
 //! Activated via `/config`, this is a small interactive picker that lets
-//! the user toggle the bottom-status-bar's stats interface, units,
+//! the user toggle max concurrent probes, the bottom-status-bar's stats interface, units,
 //! display interface, and display-IP preference. State lives in
 //! [`ConfigUiState`]; the TuiApp's outer [`UiMode`] toggles between
 //! `Normal` (history view) and `Config(ConfigUiState)`.
@@ -13,6 +13,7 @@
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum ConfigItemKind {
+    MaxConcurrentProbes,
     StatsInterface,
     StatsUnit,
     DisplayInterface,
@@ -35,6 +36,7 @@ impl ConfigUiState {
             selected: 0,
             scroll: 0,
             items: vec![
+                ConfigItemKind::MaxConcurrentProbes,
                 ConfigItemKind::StatsInterface,
                 ConfigItemKind::StatsUnit,
                 ConfigItemKind::DisplayInterface,

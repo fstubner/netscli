@@ -35,16 +35,18 @@ export async function discoverNetwork(
   subnet?: string,
   op_id?: string,
   resolve_hostnames?: boolean,
+  max_concurrent?: number,
 ): Promise<Host[]> {
-  return invoke<Host[]>('discover_network', { op_id, subnet, resolve_hostnames });
+  return invoke<Host[]>('discover_network', { op_id, subnet, resolve_hostnames, max_concurrent });
 }
 
 export async function scanPorts(
   host: string,
   ports?: string,
   op_id?: string,
+  max_concurrent?: number,
 ): Promise<PortResult[]> {
-  return invoke<PortResult[]>('scan_ports', { op_id, host, ports });
+  return invoke<PortResult[]>('scan_ports', { op_id, host, ports, max_concurrent });
 }
 
 export async function pingHost(
@@ -84,8 +86,9 @@ export async function sweepNetwork(
   ports?: string,
   op_id?: string,
   resolve_hostnames?: boolean,
+  max_concurrent?: number,
 ): Promise<SweepEntry[]> {
-  return invoke<SweepEntry[]>('sweep_network', { op_id, subnet, ports, resolve_hostnames });
+  return invoke<SweepEntry[]>('sweep_network', { op_id, subnet, ports, resolve_hostnames, max_concurrent });
 }
 
 export async function dnsLookup(

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { HistoryEntry } from '../tools/types';
-import { loadHistory, saveHistory } from './historyStorage';
+import { compactHistory, loadHistory, saveHistory } from './historyStorage';
 
 function storage() {
   const values = new Map<string, string>();
@@ -46,5 +46,26 @@ describe('history storage', () => {
     saveHistory([], fakeStorage);
 
     expect(loadHistory(fakeStorage)).toEqual([]);
+  });
+
+  it('keeps history bounded when a result payload is too large', () => {
+    const fakeStorage = storage();
+    const huge = historyEntry('huge');
+    huge.result = {
+      kind: 'scan',
+      data: [{ port: 80, status: 'open', banner: 'x'.repeat(600_000) }],
+    } as unknown as HistoryEntry['result'];
+
+    saveHistory([huge, historyEntry('small')], fakeStorage);
+
+    expect(loadHistory(fakeStorage).map((entry) => entry.id)).toEqual(['small']);
+  });
+
+  it('keeps persisted history to the newest 20 entries', () => {
+    const entries = Array.from({ length: 25 }, (_, index) => historyEntry(`entry-${index}`));
+
+    expect(compactHistory(entries).map((entry) => entry.id)).toEqual(
+      entries.slice(0, 20).map((entry) => entry.id),
+    );
   });
 });

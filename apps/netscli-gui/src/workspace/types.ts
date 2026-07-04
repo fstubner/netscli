@@ -49,12 +49,16 @@ export interface WorkspaceModel {
   openHistoryEntry: (entry: HistoryEntry) => void;
   clearHistory: () => void;
   clearCurrentResults: () => void;
+  showInteractionToast: (message: string) => void;
+  statusInterfaceInfo: DefaultInterfaceInfo | null;
 }
 
 export interface WorkspaceOptions {
   interactionToasts: boolean;
+  maxConcurrentProbes: number;
   operationToasts: boolean;
   persistentHistory: boolean;
+  requestRun?: (tabId: string) => void;
 }
 
 export interface WorkspaceToast {

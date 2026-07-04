@@ -41,7 +41,7 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.92.0
+          toolchain: 1.96.0
 
       - name: Install libpcap (workspace builds need pkg-config + libpcap headers)
         run: sudo apt-get update && sudo apt-get install -y libpcap-dev pkg-config
@@ -168,10 +168,15 @@ jobs:
             sha=$(curl -fsSL "$url" | awk '{print $1}')
             echo "${arch}=${sha}" >> "$GITHUB_OUTPUT"
           done
+          license_url="https://raw.githubusercontent.com/fstubner/netscli/${TAG}/LICENSE"
+          echo "→ ${license_url}"
+          license_sha=$(curl -fsSL "$license_url" | sha256sum | awk '{print $1}')
+          echo "license=${license_sha}" >> "$GITHUB_OUTPUT"
 
       - name: Render bumped PKGBUILD
         env:
           TAG: ${{ env.TAG }}
+          LICENSE_SHA: ${{ steps.shas.outputs.license }}
           SHA_X86_64: ${{ steps.shas.outputs.x86_64 }}
           SHA_AARCH64: ${{ steps.shas.outputs.aarch64 }}
         run: |
@@ -184,6 +189,7 @@ jobs:
           # error from the action's internal scripts.
           sed -E \
             -e "s|^pkgver=.*|pkgver=${version}|" \
+            -e "s|^sha256sums=.*|sha256sums=(${LICENSE_SHA})|" \
             -e "s|^sha256sums_x86_64=.*|sha256sums_x86_64=('${SHA_X86_64}')|" \
             -e "s|^sha256sums_aarch64=.*|sha256sums_aarch64=('${SHA_AARCH64}')|" \
             packaging/aur/PKGBUILD > packaging/aur/PKGBUILD.rendered
@@ -306,10 +312,20 @@ jobs:
           done
           sha=$(curl -fsSL "$url" | awk '{print $1}')
           echo "x86_64=${sha}" >> "$GITHUB_OUTPUT"
+          license_url="https://raw.githubusercontent.com/fstubner/netscli/${TAG}/LICENSE"
+          echo "→ ${license_url}"
+          license_sha=$(curl -fsSL "$license_url" | sha256sum | awk '{print $1}')
+          echo "license=${license_sha}" >> "$GITHUB_OUTPUT"
+          icon_url="https://raw.githubusercontent.com/fstubner/netscli/${TAG}/apps/netscli-gui/src-tauri/icons/128x128.png"
+          echo "→ ${icon_url}"
+          icon_sha=$(curl -fsSL "$icon_url" | sha256sum | awk '{print $1}')
+          echo "icon=${icon_sha}" >> "$GITHUB_OUTPUT"
 
       - name: Render bumped PKGBUILD
         env:
           TAG: ${{ env.TAG }}
+          LICENSE_SHA: ${{ steps.shas.outputs.license }}
+          ICON_SHA: ${{ steps.shas.outputs.icon }}
           SHA_X86_64: ${{ steps.shas.outputs.x86_64 }}
         run: |
           set -euo pipefail
@@ -318,6 +334,7 @@ jobs:
           # /tmp is invisible inside the AUR deploy action's Docker.
           sed -E \
             -e "s|^pkgver=.*|pkgver=${version}|" \
+            -e "s|^sha256sums=.*|sha256sums=(${LICENSE_SHA} ${ICON_SHA})|" \
             -e "s|^sha256sums_x86_64=.*|sha256sums_x86_64=('${SHA_X86_64}')|" \
             packaging/aur/netscli-gui-bin/PKGBUILD > packaging/aur/netscli-gui-bin/PKGBUILD.rendered
           mv packaging/aur/netscli-gui-bin/PKGBUILD.rendered packaging/aur/netscli-gui-bin/PKGBUILD

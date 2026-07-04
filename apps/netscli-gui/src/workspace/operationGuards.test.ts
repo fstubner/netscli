@@ -36,6 +36,13 @@ describe('operation guards', () => {
     expect(guardForOperation(tab)?.title).toBe('Confirm Public Range');
   });
 
+  it('warns before large IPv6 discovery ranges', () => {
+    const tab = createTab('discover');
+    tab.form.subnet = 'fd12:3456:789a::/48';
+
+    expect(guardForOperation(tab)?.title).toBe('Confirm Large Operation');
+  });
+
   it('uses the default port count when estimating blank sweep port probes', () => {
     const tab = createTab('sweep');
     tab.form.subnet = '10.0.0.0/20';

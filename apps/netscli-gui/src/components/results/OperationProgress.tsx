@@ -57,6 +57,10 @@ function operationTitle(tab: WorkspaceTab): string {
       return 'Reading ARP table';
     case 'pcap':
       return tab.form.mode === 'Open File' ? 'Opening packet capture' : 'Capturing packets';
+    default: {
+      const kind: never = tab.kind;
+      return kind;
+    }
   }
 }
 
@@ -90,6 +94,10 @@ function operationDetail(tab: WorkspaceTab): string {
       return tab.form.mode === 'Open File'
         ? `Parsing up to ${tab.form.max_packets || '1000'} packets`
         : `${tab.form.interface || 'selected interface'}, up to ${tab.form.max_packets || '1000'} packets`;
+    default: {
+      const kind: never = tab.kind;
+      return kind;
+    }
   }
 }
 

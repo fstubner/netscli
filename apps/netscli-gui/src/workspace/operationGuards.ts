@@ -28,18 +28,17 @@ export function guardForOperation(tab: WorkspaceTab | undefined): OperationGuard
   if (tab.kind !== 'discover' && tab.kind !== 'sweep') return null;
 
   const subnet = tab.form.subnet?.trim();
-  const parsed = parseIpv4Cidr(subnet);
+  const parsed = parseSubnet(subnet);
   if (!parsed) return null;
 
-  const hostCount = usableHostCount(parsed.prefix);
-  const publicRange = isPublicIpv4(parsed.octets);
+  const hostCount = parsed.hostCount;
   const ports = tab.kind === 'sweep' ? countPorts(tab.form.ports, 5) : 0;
   const probeCount = tab.kind === 'sweep' ? hostCount * Math.max(ports, 1) : hostCount;
 
-  if (publicRange && hostCount > 1) {
+  if (parsed.publicRange && hostCount > 1) {
     return {
       title: 'Confirm Public Range',
-      message: `${tab.kind === 'sweep' ? 'Sweeping' : 'Discovering'} ${subnet} touches about ${hostCount.toLocaleString()} public addresses. Continue only if you own or have permission to test this range.`,
+      message: `${tab.kind === 'sweep' ? 'Sweeping' : 'Discovering'} ${subnet} touches about ${formatHostCount(hostCount)} public addresses. Continue only if you own or have permission to test this range.`,
       confirmLabel: `Run ${tab.kind}`,
     };
   }
@@ -47,8 +46,33 @@ export function guardForOperation(tab: WorkspaceTab | undefined): OperationGuard
   if (hostCount > LARGE_PRIVATE_CONFIRM_HOSTS || probeCount > LARGE_SWEEP_CONFIRM_PROBES) {
     return {
       title: 'Confirm Large Operation',
-      message: `${tab.kind === 'sweep' ? 'Sweeping' : 'Discovering'} ${subnet} may send about ${probeCount.toLocaleString()} probes. This can be noisy on fragile networks.`,
+      message: `${tab.kind === 'sweep' ? 'Sweeping' : 'Discovering'} ${subnet} may send about ${formatHostCount(probeCount)} probes. This can be noisy on fragile networks.`,
       confirmLabel: `Run ${tab.kind}`,
+    };
+  }
+
+  return null;
+}
+
+interface ParsedSubnet {
+  hostCount: number;
+  publicRange: boolean;
+}
+
+function parseSubnet(value: string | undefined): ParsedSubnet | null {
+  const v4 = parseIpv4Cidr(value);
+  if (v4) {
+    return {
+      hostCount: usableIpv4HostCount(v4.prefix),
+      publicRange: isPublicIpv4(v4.octets),
+    };
+  }
+
+  const v6 = parseIpv6Cidr(value);
+  if (v6) {
+    return {
+      hostCount: usableIpv6HostCount(v6.prefix),
+      publicRange: isPublicIpv6(v6.address),
     };
   }
 
@@ -65,9 +89,28 @@ function parseIpv4Cidr(value: string | undefined): { octets: number[]; prefix: n
   return { octets, prefix };
 }
 
-function usableHostCount(prefix: number): number {
+function parseIpv6Cidr(value: string | undefined): { address: string; prefix: number } | null {
+  const trimmed = value?.trim();
+  if (!trimmed || !trimmed.includes(':')) return null;
+  const slash = trimmed.lastIndexOf('/');
+  if (slash <= 0) return null;
+  const address = trimmed.slice(0, slash).trim();
+  const prefix = Number(trimmed.slice(slash + 1));
+  if (!address || !Number.isInteger(prefix) || prefix < 0 || prefix > 128) return null;
+  if (!/^[\da-f:.]+$/i.test(address)) return null;
+  return { address: address.toLowerCase(), prefix };
+}
+
+function usableIpv4HostCount(prefix: number): number {
   if (prefix >= 31) return 1;
   return Math.max(1, 2 ** (32 - prefix) - 2);
+}
+
+function usableIpv6HostCount(prefix: number): number {
+  if (prefix >= 127) return 1;
+  const hostBits = 128 - prefix;
+  if (hostBits > 40) return Number.MAX_SAFE_INTEGER;
+  return Math.max(1, 2 ** hostBits);
 }
 
 function isPublicIpv4([a, b, c]: number[]): boolean {
@@ -79,6 +122,26 @@ function isPublicIpv4([a, b, c]: number[]): boolean {
   if (a === 198 && b === 51 && c === 100) return false;
   if (a === 203 && b === 0 && c === 113) return false;
   return true;
+}
+
+function isPublicIpv6(address: string): boolean {
+  const normalized = address.startsWith('::ffff:') ? address.slice('::ffff:'.length) : address;
+  if (/^\d{1,3}(?:\.\d{1,3}){3}$/.test(normalized)) {
+    const octets = normalized.split('.').map(Number);
+    return octets.length === 4 && isPublicIpv4(octets);
+  }
+
+  if (address === '::1' || address.startsWith('fe80:') || address.startsWith('fe8') || address.startsWith('fe9') || address.startsWith('fea') || address.startsWith('feb')) {
+    return false;
+  }
+  if (address.startsWith('fc') || address.startsWith('fd')) return false;
+  if (address.startsWith('::') && address.length <= 3) return false;
+  return true;
+}
+
+function formatHostCount(count: number): string {
+  if (count >= Number.MAX_SAFE_INTEGER) return 'a very large number of';
+  return count.toLocaleString();
 }
 
 function countPorts(value: string | undefined, fallback = 0): number {

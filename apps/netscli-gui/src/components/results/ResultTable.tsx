@@ -64,7 +64,15 @@ export function ResultTable({
   }, [activeTab.selectedIndex, rows.length]);
 
   useEffect(() => {
-    updateOverflowState(tableShellRef.current, setOverflow);
+    const shell = tableShellRef.current;
+    updateOverflowState(shell, setOverflow);
+    const frame = window.requestAnimationFrame(() => updateOverflowState(shell, setOverflow));
+    const resizeObserver = shell ? new ResizeObserver(() => updateOverflowState(shell, setOverflow)) : null;
+    if (shell) resizeObserver?.observe(shell);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      resizeObserver?.disconnect();
+    };
   }, [rows.length, activeTab.result]);
 
   if (!activeTab.result) {
@@ -101,10 +109,6 @@ export function ResultTable({
       onContextMenu={onContentContextMenu}
       onKeyDown={(event) => handleTableKeyDown(event, activeTab.selectedIndex, rows.length, onSelectAllRows, onSelectRow)}
     >
-      <span className="table-overflow-shadow top" aria-hidden="true" />
-      <span className="table-overflow-shadow right" aria-hidden="true" />
-      <span className="table-overflow-shadow bottom" aria-hidden="true" />
-      <span className="table-overflow-shadow left" aria-hidden="true" />
       <table className="result-table">
         <colgroup>
           {effectiveColumns.map((column) => (

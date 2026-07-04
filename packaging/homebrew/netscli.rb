@@ -1,8 +1,7 @@
 # Formula for Homebrew. After cutting release vX.Y.Z:
 # 1. Update `version`.
-# 2. Replace the `VERSION_SHA256_*` placeholders with the real SHA256
-#    of each platform asset (read from the `.sha256` files on the
-#    release page).
+# 2. Replace each `sha256` value with the real SHA256 of the matching
+#    platform asset (read from the `.sha256` files on the release page).
 # 3. Publish this file in fstubner/homebrew-tap (or submit to
 #    homebrew-core once the project has a few releases under its belt).
 #
@@ -11,30 +10,30 @@
 #   brew install netscli
 
 class Netscli < Formula
-  desc "Network scanner with CLI, TUI, desktop app, and MCP server"
+  desc "Network diagnostics CLI, terminal UI, and MCP server"
   homepage "https://netscli.com"
-  version "0.2.0"
+  version "0.3.0"
   license "MIT"
 
   on_macos do
     on_arm do
       url "https://github.com/fstubner/netscli/releases/download/v#{version}/netscli-macos-aarch64"
-      sha256 "8264ab3d3b37b9e9875e7900d948ac2518777de5644557e9a77a508eb202abdd"
+      sha256 "66935b1b627e5e58d7d24ef92f8153381dcbbf06ff79807314ddce47a73a7907"
     end
     on_intel do
       url "https://github.com/fstubner/netscli/releases/download/v#{version}/netscli-macos-x86_64"
-      sha256 "8d21893b7c0d1f150905c9d8e8d4a5bc4927edf5742001b21083375595fe9226"
+      sha256 "4e136a0b3fd287d7a86f70983c1be5bb4bd56f6c9d4f7b4da73e7bad23b644a3"
     end
   end
 
   on_linux do
     on_arm do
       url "https://github.com/fstubner/netscli/releases/download/v#{version}/netscli-linux-aarch64"
-      sha256 "a4016dd46f3f0de4a097f8ea035e432e8e4079838c45faa1145cf1ff8125b17c"
+      sha256 "26f3d174b533d826deff96dc095b2c6067029baaecf757aef2fc227fa846d924"
     end
     on_intel do
       url "https://github.com/fstubner/netscli/releases/download/v#{version}/netscli-linux-x86_64"
-      sha256 "94513c4aa989001ebeb4b32db063e92e09e5dbf5314bc41582859d4201b01f37"
+      sha256 "b3e7c97722982a1b7538866d05f7b51094a8b80fd049508e7e3f1f840e40e730"
     end
   end
 

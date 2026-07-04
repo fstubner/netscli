@@ -5,6 +5,9 @@ use std::fs;
 use std::net::IpAddr;
 use std::path::PathBuf;
 
+pub const DEFAULT_MAX_CONCURRENT_PROBES: usize = netscli_core::DEFAULT_CONCURRENCY;
+pub const MAX_CONCURRENT_PROBE_OPTIONS: [usize; 6] = [32, 64, 128, 256, 512, 1024];
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum StatsUnit {
@@ -32,13 +35,40 @@ impl StatsUnit {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TuiSettings {
     #[serde(default)]
     pub stats_unit: StatsUnit,
+    #[serde(default = "default_max_concurrent_probes")]
+    pub max_concurrent_probes: usize,
     pub stats_interface: Option<String>,
     pub display_interface: Option<String>,
     pub display_ip: Option<String>,
+}
+
+pub fn clamp_max_concurrent_probes(value: usize) -> usize {
+    value.clamp(1, 1024)
+}
+
+fn normalize_settings(mut settings: TuiSettings) -> TuiSettings {
+    settings.max_concurrent_probes = clamp_max_concurrent_probes(settings.max_concurrent_probes);
+    settings
+}
+
+fn default_max_concurrent_probes() -> usize {
+    DEFAULT_MAX_CONCURRENT_PROBES
+}
+
+impl Default for TuiSettings {
+    fn default() -> Self {
+        Self {
+            stats_unit: StatsUnit::default(),
+            max_concurrent_probes: DEFAULT_MAX_CONCURRENT_PROBES,
+            stats_interface: None,
+            display_interface: None,
+            display_ip: None,
+        }
+    }
 }
 
 fn settings_path() -> Option<PathBuf> {
@@ -57,7 +87,7 @@ pub fn load_settings() -> TuiSettings {
         return TuiSettings::default();
     };
     match serde_json::from_str::<TuiSettings>(&data) {
-        Ok(s) => s,
+        Ok(s) => normalize_settings(s),
         Err(e) => {
             eprintln!(
                 "netscli: warning: could not parse {} ({e}); using defaults. \

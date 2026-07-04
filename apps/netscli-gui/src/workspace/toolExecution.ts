@@ -32,7 +32,11 @@ export async function downloadText(filename: string, mime: string, content: stri
   return null;
 }
 
-export async function executeTool(tab: WorkspaceTab, opId: string): Promise<ToolResult> {
+export async function executeTool(
+  tab: WorkspaceTab,
+  opId: string,
+  maxConcurrentProbes: number,
+): Promise<ToolResult> {
   if (!isTauri()) {
     throw new Error("Tauri backend not available. Run 'npm run tauri dev' to execute tools.");
   }
@@ -41,7 +45,12 @@ export async function executeTool(tab: WorkspaceTab, opId: string): Promise<Tool
     case 'scan':
       return {
         kind: 'scan',
-        data: await netscli.scanPorts(tab.form.host.trim(), emptyToUndefined(tab.form.ports), opId),
+        data: await netscli.scanPorts(
+          tab.form.host.trim(),
+          emptyToUndefined(tab.form.ports),
+          opId,
+          maxConcurrentProbes,
+        ),
       };
     case 'ping':
       return {
@@ -61,7 +70,12 @@ export async function executeTool(tab: WorkspaceTab, opId: string): Promise<Tool
     case 'discover':
       return {
         kind: 'discover',
-        data: await netscli.discoverNetwork(emptyToUndefined(tab.form.subnet), opId, true),
+        data: await netscli.discoverNetwork(
+          emptyToUndefined(tab.form.subnet),
+          opId,
+          true,
+          maxConcurrentProbes,
+        ),
       };
     case 'dns':
       return executeDns(tab, opId);
@@ -83,6 +97,7 @@ export async function executeTool(tab: WorkspaceTab, opId: string): Promise<Tool
           emptyToUndefined(tab.form.ports),
           opId,
           true,
+          maxConcurrentProbes,
         ),
       };
     case 'mdns':

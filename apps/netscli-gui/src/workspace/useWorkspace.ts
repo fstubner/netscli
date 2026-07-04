@@ -4,12 +4,14 @@ import { isTauri } from '../services/env';
 import * as netscli from '../services/netscli';
 import { createTab, TOOL_CONFIG } from '../tools/registry';
 import { buildCommand, buildRows, columnsFor, filterAndSortRows } from '../tools/presentation';
-import type { ToolResult } from '../types/app';
-import type { HistoryEntry, OperationProgressState, ResultColumn, RowSelectionMode, ToolKind, WorkspaceTab } from '../tools/types';
+import type { HistoryEntry, ResultColumn, RowSelectionMode, ToolKind, WorkspaceTab } from '../tools/types';
 import { applyContextDefaults, shouldAutoRun } from './networkDefaults';
+import { createDemoScreenshotTabs, isDemoScreenshotMode } from './demoMode';
 import { cancelWorkspaceTab, runWorkspaceTab } from './operations';
 import { clampIndex, normalizeSelection, rangeBetween } from './selection';
 import { loadHistory, saveHistory } from './historyStorage';
+import { enrichInterfaceRows } from './interfaceRows';
+import { applyProgressUpdate } from './traceProgress';
 import {
   buildResultBundle,
   copyRowsDetails,
@@ -23,7 +25,10 @@ import { useNetworkStatus } from './useNetworkStatus';
 import { useWorkspaceToast } from './useWorkspaceToast';
 
 export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
-  const [tabs, setTabs] = useState<WorkspaceTab[]>(() => [createTab('scan')]);
+  const demoScreenshotMode = isDemoScreenshotMode();
+  const [tabs, setTabs] = useState<WorkspaceTab[]>(() =>
+    demoScreenshotMode ? createDemoScreenshotTabs() : [createTab('scan')],
+  );
   const [activeTabId, setActiveTabId] = useState(() => tabs[0]?.id ?? '');
   const [filterText, setFilterText] = useState('');
   const [history, setHistory] = useState<HistoryEntry[]>(() => (options.persistentHistory ? loadHistory() : []));
@@ -35,6 +40,7 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
     interfaces,
     networkStats,
     setTrafficInterfaceName,
+    statusInterfaceInfo,
     trafficInterface,
     trafficInterfaceName,
   } = useNetworkStatus(showToast);
@@ -80,8 +86,18 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
     if (!activeTab || !autoRunTabIds.current.has(activeTab.id)) return;
     if (activeTab.busy || activeTab.result) return;
     autoRunTabIds.current.delete(activeTab.id);
-    void runTab(activeTab.id);
-  }, [activeTab?.id, activeTab?.busy, activeTab?.result]);
+    const run = options.requestRun ?? ((tabId: string) => void runTab(tabId));
+    run(activeTab.id);
+  }, [activeTab?.id, activeTab?.busy, activeTab?.result, options.requestRun]);
+
+  useEffect(() => {
+    if (!activeTab) return;
+    patchTab(activeTab.id, {
+      selectedIndex: 0,
+      selectedIndices: [0],
+      selectionAnchor: 0,
+    });
+  }, [activeTab?.sortDir, activeTab?.sortKey, filterText]);
 
   useEffect(() => {
     if (!isTauri()) return;
@@ -120,20 +136,19 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
 
   function patchForm(id: string, key: string, value: string) {
     setTabs((prev) =>
-      prev.map((tab) =>
-        tab.id === id
-          ? {
-              ...tab,
-              detailTab: tab.kind === 'scan' ? 'banner' : tab.kind === 'inspect' ? 'overview' : 'details',
-              error: null,
-              form: { ...tab.form, [key]: value },
-              result: null,
-              selectedIndex: 0,
-              selectedIndices: [0],
-              selectionAnchor: 0,
-            }
-          : tab,
-      ),
+      prev.map((tab) => {
+        if (tab.id !== id || tab.busy) return tab;
+        return {
+          ...tab,
+          detailTab: tab.kind === 'scan' ? 'banner' : tab.kind === 'inspect' ? 'overview' : 'details',
+          error: null,
+          form: { ...tab.form, [key]: value },
+          result: null,
+          selectedIndex: 0,
+          selectedIndices: [0],
+          selectionAnchor: 0,
+        };
+      }),
     );
   }
 
@@ -260,6 +275,7 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
     }
     await runWorkspaceTab({
       activeOps,
+      maxConcurrentProbes: options.maxConcurrentProbes,
       patchTab,
       persistentHistory: options.persistentHistory,
       setHistory,
@@ -402,6 +418,7 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
     history,
     networkStats,
     defaultInterface,
+    statusInterfaceInfo,
     trafficInterface,
     trafficInterfaceName,
     interfaces,
@@ -441,71 +458,6 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
     openHistoryEntry,
     clearHistory,
     clearCurrentResults,
+    showInteractionToast: (message: string) => showToast({ message, kind: 'interaction' }),
   };
-}
-
-function applyProgressUpdate(tab: WorkspaceTab, progress: OperationProgressState): WorkspaceTab {
-  if (tab.kind !== 'trace') {
-    return { ...tab, progress };
-  }
-
-  const traceLine = traceLineFromProgress(progress.detail);
-  if (!traceLine) {
-    return { ...tab, progress };
-  }
-
-  const existing = tab.result?.kind === 'trace' ? tab.result : null;
-  const lines = existing?.data.lines ?? [];
-  if (lines.includes(traceLine)) {
-    return { ...tab, progress };
-  }
-
-  const result: ToolResult = {
-    kind: 'trace',
-    data: {
-      host: existing?.data.host ?? tab.form.host?.trim() ?? '',
-      tool: existing?.data.tool ?? 'trace',
-      exit_code: existing?.data.exit_code ?? null,
-      lines: [...lines, traceLine],
-    },
-  };
-  if (existing?.warnings) result.warnings = existing.warnings;
-
-  return {
-    ...tab,
-    progress,
-    result,
-    selectedIndex: tab.result ? tab.selectedIndex : 0,
-    selectedIndices: tab.result ? tab.selectedIndices : [0],
-  };
-}
-
-function traceLineFromProgress(detail: string | null | undefined): string | null {
-  const value = detail?.trim();
-  if (!value) return null;
-  const separator = ' - ';
-  const line = value.includes(separator)
-    ? value.slice(value.indexOf(separator) + separator.length).trim()
-    : value;
-  if (!line) return null;
-  const firstToken = line.split(/\s+/)[0];
-  return /^\d+$/.test(firstToken) ? line : null;
-}
-
-function enrichInterfaceRows(rows: ReturnType<typeof buildRows>, defaultName: string | undefined, selectedName: string | null) {
-  if (rows.length === 0 || rows[0]?.kind !== 'interfaces') return rows;
-  const activeName = selectedName || defaultName;
-  return rows.map((row) => {
-    const name = String(row.data.name ?? '');
-    const labels = [
-      activeName && name === activeName ? 'selected' : '',
-      defaultName && name === defaultName ? 'default' : '',
-    ].filter(Boolean);
-    const data = { ...row.data, app: labels.join(', ') };
-    return {
-      ...row,
-      data,
-      searchText: Object.values(data).join(' ').toLowerCase(),
-    };
-  });
 }

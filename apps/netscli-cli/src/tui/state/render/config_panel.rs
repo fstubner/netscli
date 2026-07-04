@@ -39,6 +39,10 @@ impl<'a> TuiApp<'a> {
 
             let selected = idx == state.selected;
             let (label, value) = match item {
+                ConfigItemKind::MaxConcurrentProbes => (
+                    "max concurrent probes",
+                    self.effective_concurrent_probes().to_string(),
+                ),
                 ConfigItemKind::StatsInterface => (
                     "stats interface",
                     self.settings

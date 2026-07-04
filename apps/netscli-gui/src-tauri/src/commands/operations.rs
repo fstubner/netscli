@@ -1,6 +1,6 @@
 use std::{future::Future, sync::Arc, time::Duration};
 
-use netscli_core::{parse_ports_checked, Ops, PcapCancelToken};
+use netscli_core::{parse_ports_checked, Ops, OpsConfig, PcapCancelToken};
 use tauri::{Emitter, Manager};
 use tauri_plugin_dialog::DialogExt;
 
@@ -26,6 +26,14 @@ struct OperationProgressPayload {
 
 fn emit_operation_progress(app: &tauri::AppHandle, payload: OperationProgressPayload) {
     let _ = app.emit(OPERATION_PROGRESS_EVENT, payload);
+}
+
+fn ops_with_concurrency(max_concurrent: Option<usize>) -> Ops {
+    let mut cfg = OpsConfig::default();
+    if let Some(max_concurrent) = max_concurrent {
+        cfg.concurrency = max_concurrent;
+    }
+    Ops::new(cfg)
 }
 
 #[derive(serde::Serialize)]
@@ -245,6 +253,7 @@ pub(crate) async fn discover_network(
     op_id: Option<String>,
     subnet: Option<String>,
     resolve_hostnames: Option<bool>,
+    max_concurrent: Option<usize>,
     manager: tauri::State<'_, OperationManager>,
 ) -> JsonResult {
     let progress = op_id.clone().map(|op_id| {
@@ -274,7 +283,7 @@ pub(crate) async fn discover_network(
     });
 
     run_json_operation(op_id, manager, None, move || async move {
-        let ops = Ops::default();
+        let ops = ops_with_concurrency(max_concurrent);
         let (_subnet, hosts) = ops
             .discover_ipv4_with_progress(subnet, resolve_hostnames.unwrap_or(false), progress)
             .await
@@ -290,6 +299,7 @@ pub(crate) async fn scan_ports(
     op_id: Option<String>,
     host: String,
     ports: Option<String>,
+    max_concurrent: Option<usize>,
     manager: tauri::State<'_, OperationManager>,
 ) -> JsonResult {
     let progress = op_id.clone().map(|op_id| {
@@ -315,7 +325,7 @@ pub(crate) async fn scan_ports(
     });
 
     run_json_operation(op_id, manager, None, move || async move {
-        let ops = Ops::default();
+        let ops = ops_with_concurrency(max_concurrent);
         let ports = parse_ports_checked(ports.as_deref()).map_err(|e| e.to_string())?;
         let (_ip, res) = ops
             .scan_ports_with_progress(&host, ports, progress)
@@ -352,6 +362,7 @@ pub(crate) async fn sweep_network(
     subnet: Option<String>,
     ports: Option<String>,
     resolve_hostnames: Option<bool>,
+    max_concurrent: Option<usize>,
     manager: tauri::State<'_, OperationManager>,
 ) -> JsonResult {
     let progress = op_id.clone().map(|op_id| {
@@ -387,7 +398,7 @@ pub(crate) async fn sweep_network(
     });
 
     run_json_operation(op_id, manager, None, move || async move {
-        let ops = Ops::default();
+        let ops = ops_with_concurrency(max_concurrent);
         let ports = parse_ports_checked(ports.as_deref()).map_err(|e| e.to_string())?;
         let (_subnet, res) = ops
             .sweep_ipv4_with_progress(subnet, ports, resolve_hostnames.unwrap_or(false), progress)

@@ -42,12 +42,10 @@ fn configure_dev_oui_path() {
 fn main() {
     configure_dev_oui_path();
 
-    let monitor = NetworkMonitor::new();
-
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .manage(Mutex::new(monitor))
+        .manage(Mutex::new(None::<NetworkMonitor>))
         .manage(OperationManager::default())
         .manage(ArtifactRegistry::default())
         .invoke_handler(tauri::generate_handler![

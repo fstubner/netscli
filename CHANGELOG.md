@@ -9,6 +9,8 @@ version and release together.
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-06-26
+
 ### Added
 
 - **Richer port scan results across every interface.** Port scans now
@@ -20,6 +22,13 @@ version and release together.
   render coverage for the diagnostic workspace, including tab layout,
   top menus, toolbar actions, filtering, row selection, detail panes,
   command preview, and status bar behavior.
+- **User-configurable probe concurrency.** The CLI and MCP server already
+  accepted concurrency limits; the desktop app settings and TUI settings
+  now expose the same control so users can reduce simultaneous probes on
+  fragile networks or raise them within the core safety cap.
+- **Address-family display preference in the desktop app.** The status bar
+  now prefers IPv4 by default and lets users choose IPv6-first display when
+  that better matches their environment.
 
 ### Changed
 
@@ -43,6 +52,14 @@ version and release together.
   installer hash verification as the recommended Windows path, while direct
   GitHub Windows installers remain unsigned and may show Windows warnings
   until code signing is added later.
+- **Website, docs, FAQ, 404 page, and changelog refreshed for the new
+  release.** The public site now uses a more consistent shell, unified code
+  and table styling, clearer search behavior, release-note summaries, and
+  a desktop-app screenshot captured from the real UI with representative
+  demo data.
+- **Linux/macOS install docs clarified.** mDNS is documented as the default
+  pure-Rust capability in published builds, while packet capture remains
+  the optional workflow that depends on libpcap/Npcap support.
 
 ### Changed (internal)
 
@@ -59,6 +76,11 @@ version and release together.
 - **CI tightened for future changes.** PR CI now includes GUI unit tests
   before the GUI build, and a separate Tauri render workflow can run
   manually, nightly, or on GUI/Tauri-related pull requests.
+- **Packaging templates and release workflows audited.** Release workflows
+  use the pinned Rust toolchain, AUR templates include runtime dependencies
+  and license installation, Winget/Scoop/Homebrew reference manifests were
+  refreshed, and packaging validation commands were added to the release
+  checklist.
 
 ## [0.2.6] — 2026-05-06
 
@@ -169,7 +191,7 @@ version and release together.
   invalid option` regression in its container entrypoint. Bumped to
   `@v4.1.3` (current stable, same input shape).
 
-### Notes on v0.2.3
+### Notes
 - CLI release shipped: 44 assets, sigstore-signed, on the v0.2.3
   release page.
 - Homebrew, Scoop, Winget, and crates.io all updated to 0.2.3.
@@ -195,7 +217,7 @@ version and release together.
   in `/tmp` are invisible inside the container. Render now writes to
   `packaging/aur/PKGBUILD` (workspace-relative) before handoff.
 
-### Notes on v0.2.2
+### Notes
 - CLI binaries shipped successfully on v0.2.2 — `cargo install`,
   `brew install netscli`, and `scoop install netscli` all give v0.2.2.
 - v0.2.2 GitHub release has CLI assets but no GUI installers.
@@ -215,7 +237,7 @@ version and release together.
 - 0.2.2 regenerates the lockfile so `socket2 0.6.3` is recorded
   alongside the existing `0.5.10`. No application code changes.
 
-### Notes on v0.2.1
+### Notes
 - Released to crates.io but the GitHub release page has no attached
   binaries (release.yml never produced any). `cargo install netscli`
   works because cargo regenerates the lockfile per-user; downloads
@@ -404,7 +426,14 @@ backed by the same core library.
 - Desktop app needs the WebView2 runtime on Windows. Most Windows
   10/11 systems have it preinstalled.
 
-[Unreleased]: https://github.com/fstubner/netscli/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/fstubner/netscli/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/fstubner/netscli/releases/tag/v0.3.0
+[0.2.6]: https://github.com/fstubner/netscli/releases/tag/v0.2.6
+[0.2.5]: https://github.com/fstubner/netscli/releases/tag/v0.2.5
+[0.2.4]: https://github.com/fstubner/netscli/releases/tag/v0.2.4
+[0.2.3]: https://github.com/fstubner/netscli/releases/tag/v0.2.3
+[0.2.2]: https://github.com/fstubner/netscli/releases/tag/v0.2.2
+[0.2.1]: https://github.com/fstubner/netscli/releases/tag/v0.2.1
 [0.2.0]: https://github.com/fstubner/netscli/releases/tag/v0.2.0
 [0.1.1]: https://github.com/fstubner/netscli/releases/tag/v0.1.1
 [0.1.0]: https://github.com/fstubner/netscli/releases/tag/v0.1.0

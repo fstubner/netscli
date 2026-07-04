@@ -50,8 +50,10 @@ export function ToolForm({ tab, interfaces = [], onPatchForm, onRun }: ToolFormP
 
   useEffect(() => setOpenField(null), [tab.id]);
 
+  const inputsDisabled = tab.busy;
+
   return (
-    <div className="form-row" ref={formRef}>
+    <div className={`form-row${inputsDisabled ? ' form-row-busy' : ''}`} ref={formRef}>
       {fieldsForTab(tab, config.fields).map((field) => {
         const options = selectOptionsForField(tab, field.key, field.options, interfaces);
         const selectedValue = tab.form[field.key] || field.placeholder || options[0]?.value || '';
@@ -62,6 +64,7 @@ export function ToolForm({ tab, interfaces = [], onPatchForm, onRun }: ToolFormP
             <span>{field.label}</span>
             {field.type === 'number' ? (
               <NumberField
+                disabled={inputsDisabled}
                 field={field}
                 tab={tab}
                 onPatchForm={onPatchForm}
@@ -75,9 +78,13 @@ export function ToolForm({ tab, interfaces = [], onPatchForm, onRun }: ToolFormP
                 aria-label={field.label}
                 className={`field-select-trigger ${openField === field.key ? 'active' : ''}`}
                 data-testid={`${tab.kind}-${field.key}-input`}
+                disabled={inputsDisabled}
                 ref={openField === field.key ? triggerRef : undefined}
                 type="button"
-                onClick={() => setOpenField(openField === field.key ? null : field.key)}
+                onClick={() => {
+                  if (inputsDisabled) return;
+                  setOpenField(openField === field.key ? null : field.key);
+                }}
                 onKeyDown={(event) => {
                   if (event.key === 'Escape') {
                     setOpenField(null);
@@ -133,6 +140,7 @@ export function ToolForm({ tab, interfaces = [], onPatchForm, onRun }: ToolFormP
               autoCapitalize="off"
               autoCorrect="off"
               data-testid={`${tab.kind}-${field.key}-input`}
+              disabled={inputsDisabled}
               spellCheck={false}
               type={field.type ?? 'text'}
               value={tab.form[field.key] ?? ''}
@@ -151,11 +159,13 @@ export function ToolForm({ tab, interfaces = [], onPatchForm, onRun }: ToolFormP
 }
 
 function NumberField({
+  disabled,
   field,
   tab,
   onPatchForm,
   onRun,
 }: {
+  disabled: boolean;
   field: ToolField;
   tab: WorkspaceTab;
   onPatchForm: (tabId: string, key: string, value: string) => void;
@@ -183,6 +193,7 @@ function NumberField({
         autoCapitalize="off"
         autoCorrect="off"
         data-testid={`${tab.kind}-${field.key}-input`}
+        disabled={disabled}
         inputMode="numeric"
         max={max}
         min={min}
@@ -204,7 +215,7 @@ function NumberField({
         <button
           aria-label={`Increase ${field.label}`}
           data-tooltip={`Increase ${field.label}`}
-          disabled={max !== undefined && numericValue !== null && numericValue >= max}
+          disabled={disabled || (max !== undefined && numericValue !== null && numericValue >= max)}
           tabIndex={-1}
           type="button"
           onClick={() => stepBy(1)}
@@ -214,7 +225,7 @@ function NumberField({
         <button
           aria-label={`Decrease ${field.label}`}
           data-tooltip={`Decrease ${field.label}`}
-          disabled={min !== undefined && numericValue !== null && numericValue <= min}
+          disabled={disabled || (min !== undefined && numericValue !== null && numericValue <= min)}
           tabIndex={-1}
           type="button"
           onClick={() => stepBy(-1)}
