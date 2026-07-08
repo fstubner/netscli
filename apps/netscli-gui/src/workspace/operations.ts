@@ -2,7 +2,7 @@ import type { Dispatch, RefObject, SetStateAction } from 'react';
 
 import { isTauri } from '../services/env';
 import * as netscli from '../services/netscli';
-import { generateId, TOOL_CONFIG } from '../tools/registry';
+import { defaultDetailTab, generateId, TOOL_CONFIG } from '../tools/registry';
 import { buildCommand } from '../tools/presentation';
 import type { HistoryEntry, WorkspaceTab } from '../tools/types';
 import { compactHistory } from './historyStorage';
@@ -64,7 +64,7 @@ export async function runWorkspaceTab({
       selectedIndex: 0,
       selectedIndices: [0],
       selectionAnchor: 0,
-      detailTab: tab.kind === 'scan' ? 'banner' : tab.kind === 'inspect' ? 'overview' : 'details',
+      detailTab: defaultDetailTab(tab.kind),
     });
     showToast({
       message: `${TOOL_CONFIG[tab.kind].label} complete`,

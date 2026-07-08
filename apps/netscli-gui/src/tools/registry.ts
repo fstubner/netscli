@@ -12,7 +12,7 @@ import {
   SweepIcon,
   TraceRouteIcon,
 } from './operationIcons';
-import type { ToolCapabilityMap, ToolConfig, ToolKind, WorkspaceTab } from './types';
+import type { DetailTab, ToolCapabilityMap, ToolConfig, ToolKind, WorkspaceTab } from './types';
 
 export const DEFAULT_PORTS = '22,80,443,8080,8443';
 
@@ -205,6 +205,15 @@ export function generateId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+/** The detail pane tab a newly-created or newly-populated tab should open
+ *  to: scan/inspect results default to their most relevant tab, everything
+ *  else defaults to the generic details view. */
+export function defaultDetailTab(kind: ToolKind): DetailTab {
+  if (kind === 'scan') return 'banner';
+  if (kind === 'inspect') return 'overview';
+  return 'details';
+}
+
 export function createTab(kind: ToolKind): WorkspaceTab {
   const config = TOOL_CONFIG[kind];
   return {
@@ -219,7 +228,7 @@ export function createTab(kind: ToolKind): WorkspaceTab {
     selectedIndex: 0,
     selectedIndices: [0],
     selectionAnchor: 0,
-    detailTab: kind === 'scan' ? 'banner' : kind === 'inspect' ? 'overview' : 'details',
+    detailTab: defaultDetailTab(kind),
     sortKey: DEFAULT_SORT[kind],
     sortDir: 'asc',
   };

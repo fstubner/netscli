@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { isTauri } from '../services/env';
 import * as netscli from '../services/netscli';
-import { createTab, TOOL_CONFIG } from '../tools/registry';
+import { createTab, defaultDetailTab, TOOL_CONFIG } from '../tools/registry';
 import { buildCommand, buildRows, columnsFor, filterAndSortRows } from '../tools/presentation';
 import type { HistoryEntry, ResultColumn, RowSelectionMode, ToolKind, WorkspaceTab } from '../tools/types';
 import { applyContextDefaults, shouldAutoRun } from './networkDefaults';
@@ -140,7 +140,7 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
         if (tab.id !== id || tab.busy) return tab;
         return {
           ...tab,
-          detailTab: tab.kind === 'scan' ? 'banner' : tab.kind === 'inspect' ? 'overview' : 'details',
+          detailTab: defaultDetailTab(tab.kind),
           error: null,
           form: { ...tab.form, [key]: value },
           result: null,
@@ -322,7 +322,6 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
       tab.title = bundle.title || TOOL_CONFIG[bundle.kind].shortLabel;
       tab.form = { ...tab.form, ...bundle.form };
       tab.result = bundle.result;
-      tab.detailTab = bundle.kind === 'scan' ? 'banner' : bundle.kind === 'inspect' ? 'overview' : 'details';
       setTabs((prev) => [...prev, tab]);
       setActiveTabId(tab.id);
       showToast({ message: 'Result bundle opened', kind: 'interaction' });
