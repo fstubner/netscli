@@ -50,6 +50,31 @@ jobs:
       - name: File size guard
         run: node scripts/check-file-size.mjs
 
+  # Installer scripts aren't exercised by any other job, so lint them
+  # directly. shellcheck and PSScriptAnalyzer are both preinstalled on
+  # ubuntu-latest/GitHub-hosted runners.
+  script-lint:
+    name: Installer Script Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: shellcheck install.sh
+        run: shellcheck scripts/install.sh
+      - name: PSScriptAnalyzer install.ps1
+        shell: pwsh
+        # Write-Host is intentional here (colored installer UX output, which
+        # Write-Output can't do); the empty catch blocks are documented
+        # best-effort fallbacks (e.g. TLS 1.2 opt-in on older PowerShell);
+        # and BOM-less UTF-8 is the existing, working file encoding. None of
+        # these are correctness bugs, so they're excluded rather than
+        # rewriting a working installer for style alone.
+        run: |
+          Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
+          $results = Invoke-ScriptAnalyzer -Path scripts/install.ps1 -Severity Warning,Error `
+            -ExcludeRule PSAvoidUsingWriteHost, PSAvoidUsingEmptyCatchBlock, PSUseBOMForUnicodeEncodedFile
+          $results | Format-Table -AutoSize
+          if ($results.Count -gt 0) { exit 1 }
+
   # Fast lint + format gate. Runs first because if `cargo fmt --check` is
   # going to fail there's no point firing up the matrix below.
   lint:

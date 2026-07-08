@@ -166,6 +166,21 @@ Windows CLI installer details:
 - When `NETSCLI_PCAP=1` is set: installs the `-pcap` asset and runs the Npcap installer (admin required; skip with `NETSCLI_SKIP_NPCAP=1`).
 - If the release publishes a matching `.sha256` asset, the script verifies the download automatically; you can also set `NETSCLI_SHA256` or `NETSCLI_SHA256_URL`.
 
+### Verifying Release Signatures
+
+Every CLI and GUI release asset is signed keylessly via [Sigstore cosign](https://docs.sigstore.dev/cosign/overview/) in CI, using the GitHub Actions OIDC identity — no key management, and the signature is bound to the exact workflow run that built the asset. Each asset ships with a `.sig` and `.pem` alongside it. To verify a downloaded asset:
+
+```bash
+cosign verify-blob \
+  --signature netscli-linux-x86_64.sig \
+  --certificate netscli-linux-x86_64.pem \
+  --certificate-identity-regexp 'https://github.com/fstubner/netscli/.*' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  netscli-linux-x86_64
+```
+
+Requires the [cosign CLI](https://docs.sigstore.dev/cosign/system_config/installation/). A successful verification confirms the asset was built and signed by this repository's release workflow and hasn't been tampered with since.
+
 ### From Source
 
 ```bash

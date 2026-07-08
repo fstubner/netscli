@@ -71,11 +71,6 @@ updates:
           - react
           - react-*
           - "@types/react*"
-      typescript-tooling:
-        patterns:
-          - typescript
-          - "@typescript-eslint/*"
-          - eslint*
       tauri-js:
         patterns:
           - "@tauri-apps/*"
