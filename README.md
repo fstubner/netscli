@@ -486,7 +486,7 @@ systemctl --user enable --now netscli-mcp.service
 
 ### Available Tools
 
-The MCP server exposes 9 tools by default (10 in `-pcap` builds, where `capture_pcap` is also available):
+The MCP server exposes 9 tools by default (13 in `-pcap` builds, which add `capture_pcap` plus three job-based tools for longer captures):
 1. `discover_network` - Discover live hosts on a network subnet
 2. `scan_ports` - Scan TCP ports on a host
 3. `ping_host` - Ping a host with statistics
@@ -496,7 +496,10 @@ The MCP server exposes 9 tools by default (10 in `-pcap` builds, where `capture_
 7. `sweep_network` - Sweep a network (discover hosts then scan ports)
 8. `list_network_interfaces` - List network interfaces with details
 9. `discover_mdns` - Discover devices via mDNS/DNS-SD (Bonjour), returning hostnames + resolved IPs + service metadata
-10. `capture_pcap` - Capture network packets to PCAP file
+10. `capture_pcap` - Capture network packets to a PCAP file in one blocking call (pcap builds only)
+11. `start_pcap_capture` - Start a packet capture as a background job (pcap builds only)
+12. `get_pcap_capture_status` - Poll the running/completed/failed status of a capture job (pcap builds only)
+13. `get_pcap_capture_result` - Fetch the result of a completed capture job (pcap builds only)
 
 ## Contributing
 

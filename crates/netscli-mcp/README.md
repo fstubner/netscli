@@ -19,8 +19,17 @@ same MCP surface inside a different host process.
 - `inspect_host` — comprehensive host inspection (ping + scan + DNS).
 - `sweep_network` — discovery + port scan in one call.
 - `list_network_interfaces` — interfaces with addresses and MAC.
-- `capture_pcap` — network packet capture to a `.pcap` file (requires
-  `pcap` feature in netscli-core and libpcap/Npcap at runtime).
+- `discover_mdns` — mDNS/DNS-SD (Bonjour) device discovery (requires the
+  `mdns` feature, enabled by default).
+
+With the `pcap` feature (requires libpcap/Npcap at runtime):
+- `capture_pcap` — network packet capture to a `.pcap` file in one
+  blocking tool call.
+- `start_pcap_capture` — start a capture as a background job for longer
+  captures.
+- `get_pcap_capture_status` — poll a capture job's running/completed/
+  failed status.
+- `get_pcap_capture_result` — fetch a completed capture job's result.
 
 All tool calls return structured JSON so agents don't have to scrape
 human-oriented output.

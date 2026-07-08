@@ -71,11 +71,16 @@ pub(super) fn should_use_public_fallback(host: &str) -> bool {
 
 fn is_local_or_internal_name(host: &str) -> bool {
     let name = host.trim().trim_end_matches('.').to_ascii_lowercase();
-    name == "localhost"
+    // Single-label names (no dot) are never public FQDNs — e.g. "nas" or
+    // "printer" resolved via mDNS/NetBIOS/local search domains — so treat
+    // them as local rather than leaking them to the public fallback.
+    !name.contains('.')
+        || name == "localhost"
         || name.ends_with(".localhost")
         || name.ends_with(".local")
         || name.ends_with(".lan")
         || name.ends_with(".home")
+        || name.ends_with(".home.arpa")
         || name.ends_with(".internal")
         || name.ends_with(".test")
 }
@@ -92,6 +97,9 @@ mod tests {
             "router.lan",
             "service.internal",
             "fixture.test.",
+            "nas",
+            "printer",
+            "router.home.arpa",
         ] {
             assert!(is_local_or_internal_name(host));
         }
