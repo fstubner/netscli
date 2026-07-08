@@ -4,7 +4,6 @@ import {
   Bell,
   FolderOpen,
   Moon,
-  Network,
   Palette,
   Shield,
   Sun,
@@ -19,7 +18,8 @@ import type {
   TrafficPrecision,
 } from '../../hooks/usePreferences';
 import { useModalFocus } from '../primitives/focus';
-import { NetworkInterfacePicker, SettingsNumberInput, SettingsSelect, SettingsSwitch } from './SettingsControls';
+import { NetworkActivitySection } from './NetworkActivitySection';
+import { SettingsNumberInput, SettingsSwitch } from './SettingsControls';
 
 interface SettingsDialogProps {
   animateTrafficArrows: boolean;
@@ -254,82 +254,20 @@ export function SettingsDialog({
             </div>
           </section>
 
-          <section className="settings-section">
-            <span className="settings-section-label">
-              <Network size={13} />
-              Network Activity
-            </span>
-            <SettingsSwitch
-              checked={animateTrafficArrows}
-              label="Activity Animation"
-              note="Flicker the status-bar arrows only when sampled traffic changes."
-              testId="settings-activity-animation-toggle"
-              onClick={onToggleTrafficArrowAnimation}
-            />
-            <div className="settings-row">
-              <div className="settings-row-copy">
-                <span>Traffic Units</span>
-                <small>Unit shown beside status-bar upload and download rates.</small>
-              </div>
-              <SettingsSelect
-                label="Traffic Units"
-                testId="settings-traffic-unit"
-                value={trafficDisplayUnit}
-                options={[
-                  { value: 'Gbps', label: 'Gbps' },
-                  { value: 'Mbps', label: 'Mbps' },
-                  { value: 'Kbps', label: 'Kbps' },
-                ]}
-                onSelect={(value) => onSetTrafficDisplayUnit(value as TrafficDisplayUnit)}
-              />
-            </div>
-            <div className="settings-row">
-              <div className="settings-row-copy">
-                <span>Traffic Precision</span>
-                <small>Decimal places for status-bar traffic rates.</small>
-              </div>
-              <SettingsSelect
-                label="Traffic Precision"
-                testId="settings-traffic-precision"
-                value={String(trafficPrecision)}
-                options={[
-                  { value: '0', label: '0 decimals' },
-                  { value: '1', label: '1 decimal' },
-                  { value: '2', label: '2 decimals' },
-                ]}
-                onSelect={(value) => onSetTrafficPrecision(Number(value) as TrafficPrecision)}
-              />
-            </div>
-            <div className="settings-row">
-              <div className="settings-row-copy">
-                <span>Network Interface</span>
-                <small>Interface used for status-bar traffic rates.</small>
-              </div>
-              <NetworkInterfacePicker
-                compact
-                defaultInterface={defaultInterface}
-                interfaces={interfaces}
-                selectedName={trafficInterfaceName}
-                onSelect={onSelectTrafficInterface}
-              />
-            </div>
-            <div className="settings-row">
-              <div className="settings-row-copy">
-                <span>Address Preference</span>
-                <small>Address family shown beside the selected interface.</small>
-              </div>
-              <SettingsSelect
-                label="Address Preference"
-                testId="settings-address-preference"
-                value={addressPreference}
-                options={[
-                  { value: 'ipv4', label: 'IPv4 first' },
-                  { value: 'ipv6', label: 'IPv6 first' },
-                ]}
-                onSelect={(value) => onSetAddressPreference(value as AddressPreference)}
-              />
-            </div>
-          </section>
+          <NetworkActivitySection
+            addressPreference={addressPreference}
+            animateTrafficArrows={animateTrafficArrows}
+            defaultInterface={defaultInterface}
+            interfaces={interfaces}
+            trafficDisplayUnit={trafficDisplayUnit}
+            trafficInterfaceName={trafficInterfaceName}
+            trafficPrecision={trafficPrecision}
+            onSelectTrafficInterface={onSelectTrafficInterface}
+            onSetAddressPreference={onSetAddressPreference}
+            onSetTrafficDisplayUnit={onSetTrafficDisplayUnit}
+            onSetTrafficPrecision={onSetTrafficPrecision}
+            onToggleTrafficArrowAnimation={onToggleTrafficArrowAnimation}
+          />
         </div>
       </section>
     </div>

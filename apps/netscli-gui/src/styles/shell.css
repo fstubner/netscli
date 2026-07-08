@@ -4,6 +4,9 @@
 @import './shell/tabs.css';
 @import './shell/command-status.css';
 @import './shell/context-menu.css';
+@import './shell/settings-controls.css';
 @import './shell/settings.css';
 @import './shell/window-controls.css';
+@import './shell/about-dialog.css';
 @import './shell/dialogs.css';
+@import './shell/search-dialog.css';
