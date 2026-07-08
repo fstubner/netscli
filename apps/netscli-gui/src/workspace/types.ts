@@ -32,6 +32,13 @@ export interface WorkspaceModel {
   closeTab: (id: string) => void;
   closeAllTabs: () => void;
   closeOtherTabs: () => void;
+  /** Whether this tab was auto-created (e.g. interfaces/arp) and still
+   *  needs its first run triggered. App.tsx's own requestRun (which applies
+   *  operation guards and capability checks) watches this and calls
+   *  clearAutoRun once it has acted on it — kept out of this hook so
+   *  auto-run still goes through the same guard path as a manual run. */
+  needsAutoRun: (tabId: string) => boolean;
+  clearAutoRun: (tabId: string) => void;
   runTab: (tabId: string) => Promise<void>;
   cancelTab: (tabId: string) => Promise<void>;
   exportCurrent: (format: 'json' | 'csv') => void;
@@ -58,7 +65,6 @@ export interface WorkspaceOptions {
   maxConcurrentProbes: number;
   operationToasts: boolean;
   persistentHistory: boolean;
-  requestRun?: (tabId: string) => void;
 }
 
 export interface WorkspaceToast {
