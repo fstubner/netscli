@@ -15,8 +15,19 @@ permissions:
   contents: read
 
 jobs:
+  maintainability:
+    name: File size guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - run: node scripts/check-file-size.mjs
+
   build:
     name: Build + typecheck
+    needs: maintainability
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -31,3 +42,5 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm run check
+      - name: Accessibility check
+        run: npm run test:a11y

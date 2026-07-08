@@ -97,7 +97,14 @@ const fallbackReleases = parseLocalChangelog(changelogText);
   <Footer />
 
   <script define:vars={{ repo: social.repo, fallbackReleases, releaseSummaries }}>
+    // define:vars scripts aren't run through Vite's import resolution, so a
+    // relative `import` here 404s at runtime. Stash the server-computed data
+    // on window and import the real module from a plain script below instead.
+    window.__netscliChangelogData = { repo, fallbackReleases, releaseSummaries };
+  </script>
+  <script>
     import { initChangelogPage } from '../scripts/changelog-page';
+    const { repo, fallbackReleases, releaseSummaries } = window.__netscliChangelogData;
     initChangelogPage(repo, fallbackReleases, releaseSummaries);
   </script>
 </Page>
