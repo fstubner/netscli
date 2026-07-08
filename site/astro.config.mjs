@@ -22,7 +22,42 @@ export default defineConfig({
         MobileMenuFooter: './src/components/starlight/MobileMenuFooter.astro',
         PageSidebar: './src/components/starlight/PageSidebar.astro',
       },
-      customCss: ['./src/styles/starlight.css'],
+      // Split from a single 4,965-line starlight.css into ordered per-pass
+      // files (see docs/ARCHITECTURE.md). Order matters: several later
+      // files intentionally override earlier ones at equal specificity, so
+      // this array must stay in the same relative order as the original
+      // file — do not alphabetize or reorder without checking the affected
+      // rules' cascade dependency first.
+      customCss: [
+        './src/styles/starlight/01-tokens-and-header.css',
+        './src/styles/starlight/02-search-and-sidebar-base.css',
+        './src/styles/starlight/03-shell-layout-base.css',
+        './src/styles/starlight/04-markdown-content-base.css',
+        './src/styles/starlight/05-docs-surfaces.css',
+        './src/styles/starlight/06-docs-interaction-a.css',
+        './src/styles/starlight/07-docs-interaction-b.css',
+        './src/styles/starlight/08-search-modal.css',
+        './src/styles/starlight/09-search-table-fit.css',
+        './src/styles/starlight/10-docs-feedback.css',
+        './src/styles/starlight/11-docs-chrome-consistency.css',
+        './src/styles/starlight/12-docs-toc-responsive.css',
+        './src/styles/starlight/13-docs-rail-alignment.css',
+        './src/styles/starlight/14-docs-nav-table.css',
+        './src/styles/starlight/15-responsive-containment.css',
+        './src/styles/starlight/16-shell-interaction-closeout.css',
+        './src/styles/starlight/17-mobile-shell-closeout-a.css',
+        './src/styles/starlight/18-mobile-shell-closeout-b.css',
+        './src/styles/starlight/19-markdown-tables.css',
+        './src/styles/starlight/20-docs-shell-closeout.css',
+        './src/styles/starlight/21-mobile-docs-shell-verified.css',
+        './src/styles/starlight/22-mobile-docs-correction.css',
+        './src/styles/starlight/23-regression-guardrails.css',
+        './src/styles/starlight/24-mobile-regression-guardrails.css',
+        './src/styles/starlight/25-mobile-overrides-final.css',
+        './src/styles/starlight/26-mobile-containment.css',
+        './src/styles/starlight/27-release-qa-overrides.css',
+        './src/styles/starlight/28-final-interaction-guardrails.css',
+      ],
       social: [
         {
           icon: 'github',

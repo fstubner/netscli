@@ -1,0 +1,297 @@
+/* Main-frame/sidebar responsive layout and main-pane/content-panel base overrides. */
+
+.right-sidebar-panel {
+  border-inline-start: 1px solid var(--sl-color-hairline);
+}
+
+@media (min-width: 72rem) {
+  nav.sidebar {
+    left: max(0px, calc((100vw - var(--netscli-docs-frame-width)) / 2));
+    inset-inline-start: max(0px, calc((100vw - var(--netscli-docs-frame-width)) / 2));
+    width: calc(var(--netscli-docs-sidebar-width) + var(--netscli-docs-shell-gutter));
+  }
+
+  .main-frame {
+    width: min(calc(100vw - (var(--netscli-docs-shell-gutter) * 2)), var(--netscli-docs-frame-width));
+    margin-inline: auto !important;
+  }
+
+  .sidebar-pane {
+    left: max(0px, calc((100vw - var(--netscli-docs-frame-width)) / 2));
+    flex-basis: var(--netscli-docs-sidebar-width);
+    width: var(--netscli-docs-sidebar-width);
+    margin-inline-start: 0;
+  }
+
+  main[data-has-sidebar] {
+    --sl-content-inline-start: calc(var(--netscli-docs-sidebar-width) + var(--netscli-docs-shell-gutter));
+  }
+
+  .right-sidebar-panel {
+    flex-basis: var(--netscli-docs-toc-width);
+    width: var(--netscli-docs-toc-width);
+  }
+
+  .content-panel {
+    padding-inline: clamp(1.75rem, 2.2vw, 2.5rem) !important;
+  }
+}
+
+@media (min-width: 108rem) {
+  :root {
+    --netscli-docs-shell-gutter: 2.5rem;
+  }
+
+  .main-frame {
+    width: var(--netscli-docs-frame-width);
+  }
+}
+
+@media (max-width: 71.99rem) {
+  html[data-has-toc] {
+    --sl-mobile-toc-height: 0rem;
+  }
+
+  .right-sidebar-container {
+    display: none !important;
+  }
+}
+
+@media (min-width: 72.01rem) {
+  starlight-menu-button {
+    display: none !important;
+  }
+}
+
+@media (min-width: 50rem) and (max-width: 71.99rem) {
+  :root,
+  main {
+    --sl-content-inline-start: 16rem;
+    --sl-sidebar-width: 16rem;
+  }
+
+  .sidebar-pane {
+    width: 16rem;
+  }
+
+  .sidebar-content {
+    padding-inline: 1.35rem 1.15rem;
+  }
+}
+
+.main-pane {
+  background: var(--sl-color-bg);
+}
+
+.main-pane > .content-panel:first-of-type,
+.main-pane > .content-panel:first-child {
+  padding: 0 !important;
+  border-bottom: 1px solid var(--sl-color-hairline);
+  background: var(--sl-color-bg);
+  isolation: isolate;
+  overflow: hidden;
+  position: relative;
+}
+
+.main-pane > .content-panel:first-of-type::before,
+.main-pane > .content-panel:first-child::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 0 0, rgba(10, 174, 122, 0.1), transparent 26rem),
+    linear-gradient(125deg, rgba(10, 174, 122, 0.04), rgba(255, 255, 255, 0.018) 38%, transparent 72%);
+}
+
+.main-pane > .content-panel:first-of-type > .sl-container,
+.main-pane > .content-panel:first-child > .sl-container {
+  max-width: var(--sl-content-width);
+  margin-inline: 0;
+  padding-block: clamp(3.45rem, 5vw, 4.8rem) clamp(2.25rem, 4vw, 3.35rem);
+  padding-inline: clamp(2rem, 4vw, 4rem);
+  position: relative;
+  z-index: 1;
+}
+
+html[data-theme='light'] .main-pane > .content-panel:first-of-type,
+html[data-theme='light'] .main-pane > .content-panel:first-child {
+  background: var(--sl-color-bg);
+}
+
+html[data-theme='light'] .main-pane {
+  background: var(--sl-color-bg);
+}
+
+html[data-theme='light'] .main-pane > .content-panel:first-of-type::before,
+html[data-theme='light'] .main-pane > .content-panel:first-child::before {
+  background:
+    radial-gradient(circle at 0 0, rgba(0, 122, 84, 0.08), transparent 25rem),
+    linear-gradient(125deg, rgba(0, 122, 84, 0.035), rgba(255, 255, 255, 0.38) 38%, transparent 72%);
+}
+
+.sl-markdown-content a {
+  color: #0aae7a;
+  text-underline-offset: 3px;
+}
+
+.external-link,
+.sl-markdown-content a[href^='http'] {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+}
+
+.sl-markdown-content {
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.sl-markdown-content p,
+.sl-markdown-content li,
+.sl-markdown-content td,
+.sl-markdown-content th {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.sl-markdown-content h2,
+.sl-markdown-content h3 {
+  letter-spacing: 0;
+}
+
+.sl-markdown-content :not(pre) > code {
+  border: 1px solid rgba(10, 174, 122, 0.18);
+  border-radius: 0.24rem;
+  background: var(--sl-color-bg-inline-code);
+  color: #9ff8de;
+  font-family: var(--__sl-font-mono);
+  font-size: 0.9em;
+  line-height: 1.45;
+  padding: 0.08em 0.34em;
+  white-space: nowrap;
+}
+
+.sl-markdown-content .expressive-code {
+  --ec-brdCol: rgba(140, 149, 166, 0.22);
+  --ec-codeBg: #10151b;
+  --ec-codeFg: #d7dce5;
+  --ec-codeLineHt: 1.64;
+  --ec-codePadBlk: 1rem;
+  --ec-codePadInl: 1.15rem;
+  --ec-focusBrd: #9ff8de;
+  --ec-sbThumbCol: rgba(140, 149, 166, 0.22);
+  --ec-sbThumbHoverCol: rgba(159, 248, 222, 0.32);
+  --ec-frm-frameBoxShdCssVal: 0 18px 46px rgba(0, 0, 0, 0.34);
+  --ec-frm-trmTtbBg: #202733;
+  --ec-frm-trmTtbBrdBtmCol: rgba(140, 149, 166, 0.2);
+  --ec-frm-trmTtbDotsFg: #8c95a6;
+  --ec-frm-trmTtbDotsOpa: 0.48;
+  --ec-frm-trmBg: #10151b;
+  --ec-frm-inlBtnFg: #9ff8de;
+  --ec-frm-inlBtnBg: #9ff8de;
+  --ec-frm-inlBtnBrd: #9ff8de;
+  --ec-frm-tooltipSuccessBg: #0aae7a;
+  margin-block: 1.15rem 1.75rem;
+}
+
+.sl-markdown-content .expressive-code .frame {
+  overflow: hidden;
+  border-radius: 8px !important;
+  border: 1px solid rgba(140, 149, 166, 0.18);
+  box-shadow:
+    0 18px 46px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.sl-markdown-content .expressive-code .frame.is-terminal .header {
+  min-height: 2.45rem;
+}
+
+.sl-markdown-content .expressive-code pre {
+  background:
+    linear-gradient(180deg, rgba(10, 174, 122, 0.035), transparent 14rem),
+    #10151b !important;
+}
+
+.sl-markdown-content .expressive-code .ec-line :where(span[style*='#8B949E']) {
+  --0: #818b9c !important;
+}
+
+.sl-markdown-content .expressive-code .ec-line :where(span[style*='#E6EDF3']) {
+  --0: #d7dce5 !important;
+}
+
+.sl-markdown-content .expressive-code .ec-line :where(span[style*='#FFA657']) {
+  --0: #f4d47c !important;
+}
+
+.sl-markdown-content .expressive-code .ec-line :where(span[style*='#A5D6FF']),
+.sl-markdown-content .expressive-code .ec-line :where(span[style*='#79C0FF']) {
+  --0: #6ee7f9 !important;
+}
+
+.sl-markdown-content .expressive-code .ec-line :where(span[style*='#FF7B72']) {
+  --0: #ff8d8d !important;
+}
+
+html[data-theme='light'] .sl-markdown-content .expressive-code .frame {
+  border-color: rgba(17, 24, 39, 0.12);
+  box-shadow:
+    0 12px 34px rgba(17, 24, 39, 0.11),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
+html[data-theme='light'] .sl-markdown-content :not(pre) > code {
+  border-color: rgba(0, 122, 84, 0.18);
+  color: #064934;
+}
+
+html[data-theme='light'] .sl-markdown-content .expressive-code {
+  --ec-brdCol: rgba(17, 24, 39, 0.12);
+  --ec-codeBg: #f7faf9;
+  --ec-codeFg: #243044;
+  --ec-frm-trmTtbBg: #edf2f3;
+  --ec-frm-trmTtbBrdBtmCol: rgba(17, 24, 39, 0.1);
+  --ec-frm-trmBg: #f7faf9;
+  --ec-frm-inlBtnFg: #007a54;
+  --ec-frm-inlBtnBg: #007a54;
+  --ec-frm-inlBtnBrd: #007a54;
+}
+
+html[data-theme='light'] .sl-markdown-content .expressive-code pre {
+  background:
+    linear-gradient(180deg, rgba(0, 122, 84, 0.035), transparent 14rem),
+    #f7faf9 !important;
+}
+
+html[data-theme='light'] .sl-markdown-content .expressive-code .ec-line :where(span[style*='#953800']) {
+  --1: #8b5a00 !important;
+}
+
+html[data-theme='light'] .sl-markdown-content .expressive-code .ec-line :where(span[style*='#0A3069']),
+html[data-theme='light'] .sl-markdown-content .expressive-code .ec-line :where(span[style*='#0550AE']) {
+  --1: #007a54 !important;
+}
+
+.sl-markdown-content table {
+  display: table;
+  width: 100%;
+  max-width: 100%;
+  margin: 1.2rem 0 2rem;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid rgba(140, 149, 166, 0.18);
+  border-radius: 8px;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.022), transparent 12rem),
+    rgba(20, 24, 31, 0.54);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.025) inset,
+    0 12px 28px rgba(0, 0, 0, 0.12);
+  font-size: 0.875rem;
+  table-layout: auto;
+}
+
