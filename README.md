@@ -35,7 +35,7 @@ npm run build      # static output into dist/
 npm run preview    # serve dist/
 ```
 
-Node 18+ is required. Astro 5.
+Node 22+ is required. Astro 6.
 
 ## How the download count works
 
