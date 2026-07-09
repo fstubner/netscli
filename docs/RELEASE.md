@@ -127,6 +127,26 @@ Before the first automated release runs, add these secrets at
   [`packaging/`](../packaging/) for reference; deployed copies live in
   the tap / bucket / AUR / winget-pkgs.
 
+## Sigstore signature verification
+
+`release.yml` signs every CLI and GUI asset keylessly via `cosign sign-blob`,
+using the GitHub Actions OIDC token as the signing identity (no cosign key
+material is stored anywhere). Each asset gets a `.sig` and `.pem` uploaded
+alongside it. This is documented for consumers in README.md's
+"Verifying Release Signatures" section, but nothing in the current install
+scripts or packaging manifests (Homebrew/Winget/Scoop/AUR) verifies it
+automatically — those channels rely on their own hash-verification instead
+(see below). If a downstream package manager integration is ever added that
+wants to verify the cosign signature automatically, the verify command is:
+
+```bash
+cosign verify-blob \
+  --signature <asset>.sig --certificate <asset>.pem \
+  --certificate-identity-regexp 'https://github.com/fstubner/netscli/.*' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  <asset>
+```
+
 ## Windows trust and signing policy
 
 Windows Authenticode signing is deferred for now. The recommended Windows
