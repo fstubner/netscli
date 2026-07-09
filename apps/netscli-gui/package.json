@@ -30,7 +30,7 @@
     "@vitejs/plugin-react": "^6.0.1",
     "edgedriver": "^6.3.0",
     "selenium-webdriver": "^4.44.0",
-    "typescript": "^6.0.3",
+    "typescript": "^7.0.2",
     "vite": "^8.0.16",
     "vitest": "^4.1.7"
   }
