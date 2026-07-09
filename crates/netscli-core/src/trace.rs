@@ -4,9 +4,6 @@ use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 use tokio::sync::watch;
 
-#[cfg(not(windows))]
-use std::io::ErrorKind;
-
 use crate::error::{Error, Result};
 
 #[derive(Debug, Clone, Serialize)]
