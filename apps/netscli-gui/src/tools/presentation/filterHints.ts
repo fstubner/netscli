@@ -15,17 +15,27 @@ export interface FilterHints {
 
 const FIELD_KEY_LABELS: Record<string, string> = {
   ip: 'IP address',
+  addresses: 'Addresses',
+  avg: 'Avg RTT',
+  hop: 'Hop',
   record_type: 'Record type',
   ips: 'Address',
+  loss: 'Packet loss',
+  metric: 'Metric',
   name: 'Interface',
   open_ports: 'Open ports',
   resolver: 'Resolver',
+  service_type: 'Service type',
   ttl: 'TTL',
   app: 'App marker',
+  address: 'Address / host',
+  best: 'Best RTT',
+  worst: 'Worst RTT',
 };
 
 const FIELD_KEY_ALIASES: Record<string, string> = {
   banner: 'banner',
+  addresses: 'addresses',
   app: 'app',
   duration: 'duration',
   file: 'file',
@@ -52,7 +62,18 @@ const FIELD_KEY_ALIASES: Record<string, string> = {
   info: 'info',
   kind: 'kind',
   length: 'length',
+  loss: 'loss',
   time: 'time',
+  hop: 'hop',
+  host: 'host',
+  address: 'address',
+  received: 'received',
+  sent: 'sent',
+  avg: 'avg',
+  best: 'best',
+  worst: 'worst',
+  range: 'range',
+  service_type: 'service_type',
   ttl: 'ttl',
   value: 'value',
   resolver: 'resolver',
@@ -61,10 +82,14 @@ const FIELD_KEY_ALIASES: Record<string, string> = {
 
 const SAMPLE_FIELDS: Record<ToolKind, string[]> = {
   scan: ['status', 'port', 'service', 'banner'],
+  ping: ['host', 'ip', 'loss', 'avg'],
+  trace: ['hop', 'status', 'address', 'avg'],
   discover: ['ip', 'hostname', 'vendor', 'mac'],
   dns: ['record_type', 'value', 'resolver', 'ttl'],
+  reverse: ['ip', 'hostname'],
   inspect: ['status', 'port', 'service', 'hostname'],
   sweep: ['ip', 'hostname', 'vendor', 'ports', 'mac'],
+  mdns: ['service_type', 'hostname', 'addresses', 'port'],
   interfaces: ['state', 'name', 'ips', 'kind'],
   arp: ['ip', 'interface', 'vendor', 'mac'],
   pcap: ['protocol', 'source', 'destination', 'info'],
@@ -99,11 +124,19 @@ function placeholderFor(kind: ToolKind): string {
     case 'scan':
     case 'inspect':
       return 'filter results: status:open port:<number>';
+    case 'ping':
+      return 'filter results: host:<name> loss:<percent>';
+    case 'trace':
+      return 'filter results: hop:<number> address:<host>';
     case 'dns':
       return 'filter results: type:A value:<text>';
+    case 'reverse':
+      return 'filter results: ip:<address> hostname:<name>';
     case 'discover':
     case 'sweep':
       return 'filter results: ip:<address> vendor:<name>';
+    case 'mdns':
+      return 'filter results: service_type:<type> hostname:<name>';
     case 'interfaces':
       return 'filter results: state:up interface:<name>';
     case 'arp':
@@ -118,11 +151,19 @@ function exampleFor(kind: ToolKind): string {
     case 'scan':
     case 'inspect':
       return 'status:open';
+    case 'ping':
+      return 'loss:0';
+    case 'trace':
+      return 'hop:1';
     case 'dns':
       return 'type:A';
+    case 'reverse':
+      return 'hostname:router';
     case 'discover':
     case 'sweep':
       return 'ip:192.168';
+    case 'mdns':
+      return 'service_type:_http';
     case 'interfaces':
       return 'state:up';
     case 'arp':

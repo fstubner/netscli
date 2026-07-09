@@ -9,11 +9,17 @@ import type {
   Host,
   InspectResult,
   InterfaceInfo,
+  MdnsService,
   NetworkStats,
+  OptionalCapability,
   PcapCapability,
+  PcapParseResult,
   PcapResult,
+  PingSummary,
   PortResult,
+  ReverseDnsResult,
   SweepEntry,
+  TraceResult,
 } from '../types/netscli';
 import type { OperationProgressState } from '../tools/types';
 
@@ -29,16 +35,42 @@ export async function discoverNetwork(
   subnet?: string,
   op_id?: string,
   resolve_hostnames?: boolean,
+  max_concurrent?: number,
 ): Promise<Host[]> {
-  return invoke<Host[]>('discover_network', { op_id, subnet, resolve_hostnames });
+  return invoke<Host[]>('discover_network', { op_id, subnet, resolve_hostnames, max_concurrent });
 }
 
 export async function scanPorts(
   host: string,
   ports?: string,
   op_id?: string,
+  max_concurrent?: number,
 ): Promise<PortResult[]> {
-  return invoke<PortResult[]>('scan_ports', { op_id, host, ports });
+  return invoke<PortResult[]>('scan_ports', { op_id, host, ports, max_concurrent });
+}
+
+export async function pingHost(
+  host: string,
+  count?: number,
+  op_id?: string,
+): Promise<PingSummary> {
+  return invoke<PingSummary>('ping_host', { op_id, host, count });
+}
+
+export async function traceRoute(
+  host: string,
+  max_hops?: number,
+  resolve?: boolean,
+  op_id?: string,
+): Promise<TraceResult> {
+  return invoke<TraceResult>('trace_route_cmd', { op_id, host, max_hops, resolve });
+}
+
+export async function reverseDnsLookup(
+  ip: string,
+  op_id?: string,
+): Promise<ReverseDnsResult> {
+  return invoke<ReverseDnsResult>('reverse_dns_lookup', { op_id, ip });
 }
 
 export async function inspectHost(
@@ -54,8 +86,9 @@ export async function sweepNetwork(
   ports?: string,
   op_id?: string,
   resolve_hostnames?: boolean,
+  max_concurrent?: number,
 ): Promise<SweepEntry[]> {
-  return invoke<SweepEntry[]>('sweep_network', { op_id, subnet, ports, resolve_hostnames });
+  return invoke<SweepEntry[]>('sweep_network', { op_id, subnet, ports, resolve_hostnames, max_concurrent });
 }
 
 export async function dnsLookup(
@@ -64,6 +97,14 @@ export async function dnsLookup(
   op_id?: string,
 ): Promise<DnsRecord[]> {
   return invoke<DnsRecord[]>('dns_lookup', { op_id, host, record });
+}
+
+export async function discoverMdns(
+  timeout_ms?: number,
+  service_types?: string[],
+  op_id?: string,
+): Promise<MdnsService[]> {
+  return invoke<MdnsService[]>('discover_mdns', { op_id, timeout_ms, service_types });
 }
 
 export async function listInterfaces(op_id?: string): Promise<InterfaceInfo[]> {
@@ -92,8 +133,16 @@ export async function capturePcap(
   });
 }
 
+export async function openPcapFile(max_packets?: number): Promise<PcapParseResult> {
+  return invoke<PcapParseResult>('open_pcap_file', { max_packets });
+}
+
 export async function getPcapCapability(): Promise<PcapCapability> {
   return invoke<PcapCapability>('pcap_capability');
+}
+
+export async function getMdnsCapability(): Promise<OptionalCapability> {
+  return invoke<OptionalCapability>('mdns_capability');
 }
 
 export async function getFileSavePreferences(): Promise<FileSavePreferences> {
@@ -129,6 +178,14 @@ export async function exportTextFile(
   contents: string,
 ): Promise<string> {
   return invoke<string>('export_text_file', { filename, contents, target_path: null });
+}
+
+export async function saveResultBundle(contents: string): Promise<string> {
+  return invoke<string>('save_result_bundle', { contents });
+}
+
+export async function openResultBundle(): Promise<unknown> {
+  return invoke<unknown>('open_result_bundle');
 }
 
 export async function openFilesystemPath(path: string): Promise<void> {

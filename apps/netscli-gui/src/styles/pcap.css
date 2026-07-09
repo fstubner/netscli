@@ -1,0 +1,59 @@
+.pcap-unavailable {
+  width: min(560px, calc(100% - 40px));
+  margin: auto;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: start;
+  gap: 12px 14px;
+  padding: 18px;
+  color: var(--text-secondary);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 12px 24px var(--shadow);
+}
+
+.pcap-unavailable > svg {
+  color: var(--amber);
+}
+
+.pcap-unavailable-copy {
+  min-width: 0;
+}
+
+.pcap-unavailable h2 {
+  margin: 0 0 6px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.pcap-unavailable p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.pcap-unavailable code {
+  display: block;
+  margin-top: 10px;
+  color: var(--text-muted);
+  white-space: normal;
+}
+
+.pcap-unavailable button {
+  grid-column: 2;
+  justify-self: start;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+}
+
+.pcap-unavailable button:hover {
+  border-color: color-mix(in srgb, var(--mint), transparent 35%);
+  color: var(--mint);
+}

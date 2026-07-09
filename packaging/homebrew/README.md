@@ -17,13 +17,25 @@ brew install netscli
 
 ## After each release
 
-1. Update `Formula/netscli.rb` in the tap repo:
-   - bump `version`
-   - replace the four `VERSION_SHA256_*` values with the SHA256s from
-     the new release's `.sha256` files
-2. `brew install --build-from-source ./Formula/netscli.rb` to verify
-   locally.
-3. Commit + push to the tap.
+`publish.yml` updates the tap through `scripts/release/publish-homebrew.sh`
+and `scripts/release/publish-homebrew-cask.sh`. The CLI formula installs
+prebuilt binaries from the GitHub release; it is not a source-build
+formula.
+
+Validate the pushed tap with:
+
+```bash
+brew audit --strict --online fstubner/tap/netscli
+brew install fstubner/tap/netscli
+brew test fstubner/tap/netscli
+
+brew audit --cask --strict fstubner/tap/netscli
+brew install --cask fstubner/tap/netscli
+```
+
+The Cask installs DMGs for the desktop app. macOS signing and
+notarization are separate release-trust work; the Cask can point at an
+unsigned DMG, but users may see Gatekeeper friction.
 
 ## Moving to homebrew-core later
 

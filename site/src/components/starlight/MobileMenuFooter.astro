@@ -1,0 +1,136 @@
+---
+import ThemeSelect from 'virtual:starlight/components/ThemeSelect';
+
+const pathname = Astro.url.pathname;
+type NavLink = {
+  href: string;
+  label: string;
+  external?: boolean;
+};
+
+const siteLinks: NavLink[] = [
+  { href: '/#surfaces', label: 'Features' },
+  { href: '/#install', label: 'Install' },
+  { href: '/#faq', label: 'FAQ' },
+  { href: '/docs/', label: 'Docs' },
+];
+
+const projectLinks: NavLink[] = [
+  { href: '/changelog/', label: 'Changelog' },
+  { href: 'https://github.com/fstubner/netscli', label: 'GitHub', external: true },
+];
+
+const isActive = (href: string) => {
+  if (href === '/docs/') return pathname.startsWith('/docs');
+  return pathname.replace(/\/$/, '') === href.replace(/\/$/, '');
+};
+---
+
+<div class="docs-mobile-footer">
+  <nav class="docs-mobile-site-nav" aria-label="Site navigation">
+    <p>Site</p>
+    <div>
+      {
+        siteLinks.map((link) => (
+          <a
+            href={link.href}
+            class={link.external ? 'external-link' : undefined}
+            aria-current={isActive(link.href) ? 'page' : undefined}
+          >
+            {link.label}
+          </a>
+        ))
+      }
+    </div>
+  </nav>
+
+  <nav class="docs-mobile-site-nav docs-mobile-project-nav" aria-label="Project links">
+    <p>Project</p>
+    <div>
+      {
+        projectLinks.map((link) => (
+          <a
+            href={link.href}
+            class={link.external ? 'external-link' : undefined}
+            aria-current={isActive(link.href) ? 'page' : undefined}
+          >
+            {link.label}
+          </a>
+        ))
+      }
+    </div>
+  </nav>
+
+  <div class="docs-mobile-preferences">
+    <span>Theme</span>
+    <ThemeSelect />
+  </div>
+</div>
+
+<style>
+  @layer starlight.core {
+    .docs-mobile-footer {
+      border-top: 1px solid var(--sl-color-hairline-light);
+      margin-top: 0.75rem;
+      padding: 1rem 0 1.25rem;
+    }
+
+    .docs-mobile-site-nav p,
+    .docs-mobile-preferences span {
+      color: var(--sl-color-gray-3);
+      font-size: 0.72rem;
+      font-weight: 760;
+      letter-spacing: 0.08em;
+      margin: 0 0 0.75rem;
+      text-transform: uppercase;
+    }
+
+    .docs-mobile-site-nav div {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.5rem;
+    }
+
+    .docs-mobile-site-nav a {
+      border: 0;
+      border-inline-start: 2px solid transparent;
+      border-radius: 0;
+      color: var(--sl-color-gray-2);
+      font-size: 0.9rem;
+      padding: 0.65rem 0.8rem;
+      text-decoration: none;
+    }
+
+    .docs-mobile-site-nav a:hover,
+    .docs-mobile-site-nav a:focus-visible,
+    .docs-mobile-site-nav a[aria-current='page'] {
+      background: rgba(10, 174, 122, 0.12);
+      border-inline-start-color: #0aae7a;
+      color: var(--sl-color-white);
+    }
+
+    .docs-mobile-project-nav {
+      margin-top: 1rem;
+    }
+
+    .docs-mobile-preferences {
+      align-items: center;
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-top: 1rem;
+      min-width: 0;
+    }
+
+    .docs-mobile-preferences span {
+      margin: 0;
+    }
+
+    .docs-mobile-preferences :global(starlight-theme-select),
+    .docs-mobile-preferences :global(starlight-theme-select label) {
+      max-width: 100%;
+      min-width: 0;
+    }
+
+  }
+</style>

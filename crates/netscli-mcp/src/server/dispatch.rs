@@ -1,12 +1,22 @@
 use serde::Deserialize;
 use serde_json::{json, Value};
+#[cfg(feature = "pcap")]
+use std::collections::HashMap;
+#[cfg(feature = "pcap")]
+use std::sync::{Arc, Mutex};
 
 use super::errors::RpcError;
+#[cfg(feature = "pcap")]
+use super::jobs::{PcapCaptureJob, PcapJobHandle};
 use super::operations::{
     op_capture_pcap, op_discover, op_dns_lookup, op_get_arp_table, op_inspect_host,
     op_list_interfaces, op_ping_host, op_scan_ports, op_sweep,
 };
+#[cfg(feature = "pcap")]
+use super::operations::{run_pcap_capture, validate_pcap_capture_params};
 use super::protocol::{JsonRpcError, JsonRpcRequest, JsonRpcResponse};
+#[cfg(feature = "pcap")]
+use super::schemas::PcapJobParams;
 use super::schemas::{
     parse_params, DiscoverParams, DnsParams, InitializeParams, PcapParams, PingHostParams,
     ScanParams, SweepParams,
@@ -18,9 +28,65 @@ use super::operations::op_discover_mdns;
 #[cfg(feature = "mdns")]
 use super::schemas::MdnsParams;
 
+#[cfg(feature = "pcap")]
+const MAX_RUNNING_PCAP_JOBS: usize = 4;
+#[cfg(feature = "pcap")]
+const MAX_STORED_PCAP_JOBS: usize = 16;
+#[cfg(feature = "pcap")]
+const MAX_COMPLETED_PCAP_JOBS: usize = 8;
+
 #[derive(Debug, Default)]
 pub(super) struct ServerState {
     pub(super) initialized: bool,
+    #[cfg(feature = "pcap")]
+    pcap_jobs: HashMap<String, PcapJobHandle>,
+    #[cfg(feature = "pcap")]
+    next_pcap_job_id: u64,
+}
+
+#[cfg(feature = "pcap")]
+impl ServerState {
+    fn allocate_pcap_job_id(&mut self) -> String {
+        self.next_pcap_job_id = self.next_pcap_job_id.saturating_add(1);
+        format!("pcap-{}", self.next_pcap_job_id)
+    }
+
+    fn pcap_job(&self, job_id: &str) -> Result<PcapJobHandle, RpcError> {
+        self.pcap_jobs
+            .get(job_id)
+            .cloned()
+            .ok_or_else(|| RpcError::InvalidParams(format!("unknown pcap jobId: {job_id}")))
+    }
+
+    fn running_pcap_jobs(&self) -> usize {
+        self.pcap_jobs
+            .values()
+            .filter(|job| job.lock().map(|guard| guard.is_running()).unwrap_or(true))
+            .count()
+    }
+
+    fn prune_pcap_jobs(&mut self) {
+        let mut finished: Vec<(String, std::time::Instant)> = self
+            .pcap_jobs
+            .iter()
+            .filter_map(|(job_id, job)| {
+                let finished_at = job.lock().ok()?.finished_at()?;
+                Some((job_id.clone(), finished_at))
+            })
+            .collect();
+
+        finished.sort_by_key(|(_, finished_at)| *finished_at);
+        let remove_count = self
+            .pcap_jobs
+            .len()
+            .saturating_sub(MAX_STORED_PCAP_JOBS)
+            .max(finished.len().saturating_sub(MAX_COMPLETED_PCAP_JOBS))
+            .min(finished.len());
+
+        for (job_id, _) in finished.into_iter().take(remove_count) {
+            self.pcap_jobs.remove(&job_id);
+        }
+    }
 }
 
 pub(super) async fn handle_request(
@@ -115,7 +181,7 @@ async fn handle_request_inner(
             }))
         }
         "tools/list" => Ok(tools_list()),
-        "tools/call" => handle_tools_call(params).await,
+        "tools/call" => handle_tools_call(state, params).await,
 
         // Backwards-compatible direct JSON-RPC methods
         "discover_network" => {
@@ -158,6 +224,12 @@ async fn handle_request_inner(
             let res = op_capture_pcap(p).await?;
             serde_json::to_value(res).map_err(|e| RpcError::Internal(e.to_string()))
         }
+        #[cfg(feature = "pcap")]
+        "start_pcap_capture" => start_pcap_capture_job(state, params).await,
+        #[cfg(feature = "pcap")]
+        "get_pcap_capture_status" => pcap_job_status(state, params),
+        #[cfg(feature = "pcap")]
+        "get_pcap_capture_result" => pcap_job_result(state, params),
         #[cfg(feature = "mdns")]
         "discover_mdns" => {
             let p: MdnsParams = parse_params(params)?;
@@ -168,7 +240,13 @@ async fn handle_request_inner(
     }
 }
 
-async fn handle_tools_call(params: Value) -> Result<serde_json::Value, RpcError> {
+async fn handle_tools_call(
+    state: &mut ServerState,
+    params: Value,
+) -> Result<serde_json::Value, RpcError> {
+    #[cfg(not(feature = "pcap"))]
+    let _ = state;
+
     #[derive(Deserialize)]
     struct ToolCallParams {
         name: String,
@@ -225,6 +303,12 @@ async fn handle_tools_call(params: Value) -> Result<serde_json::Value, RpcError>
             let res = op_capture_pcap(p).await?;
             json!(res)
         }
+        #[cfg(feature = "pcap")]
+        "start_pcap_capture" => start_pcap_capture_job(state, args).await?,
+        #[cfg(feature = "pcap")]
+        "get_pcap_capture_status" => pcap_job_status(state, args)?,
+        #[cfg(feature = "pcap")]
+        "get_pcap_capture_result" => pcap_job_result(state, args)?,
         #[cfg(feature = "mdns")]
         "discover_mdns" => {
             let p: MdnsParams = parse_params(args)?;
@@ -237,4 +321,59 @@ async fn handle_tools_call(params: Value) -> Result<serde_json::Value, RpcError>
     };
 
     Ok(mcp_tool_result_text(output))
+}
+
+#[cfg(feature = "pcap")]
+async fn start_pcap_capture_job(state: &mut ServerState, params: Value) -> Result<Value, RpcError> {
+    let p: PcapParams = parse_params(params)?;
+    let mut request = validate_pcap_capture_params(p)?;
+    state.prune_pcap_jobs();
+    if state.running_pcap_jobs() >= MAX_RUNNING_PCAP_JOBS {
+        return Err(RpcError::ToolError(format!(
+            "too many pcap captures are already running (max {MAX_RUNNING_PCAP_JOBS})"
+        )));
+    }
+    let job_id = state.allocate_pcap_job_id();
+    request.ensure_default_output_file(format!("netscli-{job_id}.pcap"));
+    let job = Arc::new(Mutex::new(PcapCaptureJob::new()));
+    state.pcap_jobs.insert(job_id.clone(), job.clone());
+
+    tokio::spawn(async move {
+        let outcome = run_pcap_capture(request).await;
+        let Ok(mut guard) = job.lock() else {
+            return;
+        };
+        match outcome {
+            Ok(result) => guard.complete(result),
+            Err(err) => guard.fail(err.to_string()),
+        }
+    });
+
+    let job = state.pcap_job(&job_id)?;
+    pcap_status_value(job_id, &job)
+}
+
+#[cfg(feature = "pcap")]
+fn pcap_job_status(state: &ServerState, params: Value) -> Result<Value, RpcError> {
+    let p: PcapJobParams = parse_params(params)?;
+    let job = state.pcap_job(&p.job_id)?;
+    pcap_status_value(p.job_id, &job)
+}
+
+#[cfg(feature = "pcap")]
+fn pcap_job_result(state: &ServerState, params: Value) -> Result<Value, RpcError> {
+    let p: PcapJobParams = parse_params(params)?;
+    let job = state.pcap_job(&p.job_id)?;
+    let guard = job
+        .lock()
+        .map_err(|_| RpcError::Internal("pcap job state lock poisoned".to_string()))?;
+    serde_json::to_value(guard.result(p.job_id)).map_err(|e| RpcError::Internal(e.to_string()))
+}
+
+#[cfg(feature = "pcap")]
+fn pcap_status_value(job_id: String, job: &PcapJobHandle) -> Result<Value, RpcError> {
+    let guard = job
+        .lock()
+        .map_err(|_| RpcError::Internal("pcap job state lock poisoned".to_string()))?;
+    serde_json::to_value(guard.status(job_id)).map_err(|e| RpcError::Internal(e.to_string()))
 }

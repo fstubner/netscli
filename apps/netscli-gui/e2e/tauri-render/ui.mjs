@@ -76,7 +76,7 @@ export async function clickButtonText(driver, selector, label) {
 
 export async function addToolTab(driver, label) {
   const menuLabel = label === 'PCAP' ? 'Packet Capture' : label;
-  const scanOperations = new Set(['Port Scan', 'Discover', 'Inspect', 'Sweep']);
+  const scanOperations = new Set(['Port Scan', 'Ping', 'Trace Route', 'Discover', 'Inspect', 'Sweep']);
   await clickButtonText(driver, '.menu-button', scanOperations.has(menuLabel) ? 'Scan' : 'Tools');
   await clickButtonText(driver, '.menu-popover-item', menuLabel);
 }

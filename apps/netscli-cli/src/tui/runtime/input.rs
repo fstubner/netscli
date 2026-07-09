@@ -2,7 +2,6 @@ use super::{tasks::TaskRuntime, SharedDb};
 use crate::tui_formatter::Formatter;
 use anyhow::Result;
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
-use netscli_core::Ops;
 use ratatui::text::Line;
 use std::time::{Duration, Instant};
 
@@ -42,7 +41,6 @@ impl InputRuntime {
         key: KeyEvent,
         app: &mut TuiApp<'_>,
         tasks: &mut TaskRuntime,
-        ops: &Ops,
         db: &SharedDb,
     ) -> Result<bool> {
         if matches!(key.kind, KeyEventKind::Release) || self.should_debounce_nav(key.code) {
@@ -101,7 +99,7 @@ impl InputRuntime {
                 self.navigate_input(app, 1);
                 Ok(false)
             }
-            KeyCode::Enter => self.submit_command(app, tasks, ops, db).await,
+            KeyCode::Enter => self.submit_command(app, tasks, db).await,
             _ => {
                 app.input.input(key);
                 app.reset_history_nav();
@@ -201,7 +199,6 @@ impl InputRuntime {
         &mut self,
         app: &mut TuiApp<'_>,
         tasks: &mut TaskRuntime,
-        ops: &Ops,
         db: &SharedDb,
     ) -> Result<bool> {
         let raw = app.input.lines().join("\n");
@@ -226,7 +223,7 @@ impl InputRuntime {
             return Ok(false);
         }
 
-        self.start_command(app, tasks, ops, db, input, &first);
+        self.start_command(app, tasks, db, input, &first);
         Ok(false)
     }
 
@@ -275,7 +272,6 @@ impl InputRuntime {
         &mut self,
         app: &mut TuiApp<'_>,
         tasks: &mut TaskRuntime,
-        ops: &Ops,
         db: &SharedDb,
         input: String,
         first: &str,
@@ -286,7 +282,7 @@ impl InputRuntime {
         app.push_command(input.clone());
         Self::remember_command(app, &input);
         Self::clear_input_state(app);
-        tasks.spawn_command(input, first, ops, db);
+        tasks.spawn_command(input, first, app.effective_concurrent_probes(), db);
     }
 
     fn remember_command(app: &mut TuiApp<'_>, input: &str) {

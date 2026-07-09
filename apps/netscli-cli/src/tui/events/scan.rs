@@ -40,7 +40,12 @@ pub(super) async fn handle_discover(
     });
 
     match commands::run_discover(ops, db, subnet, true, progress_cb).await {
-        Ok((_subnet, hosts)) => {
+        Ok((subnet_str, hosts)) => {
+            out.extend(Formatter::format_discover_summary(
+                &subnet_str,
+                true,
+                hosts.len(),
+            ));
             out.extend(Formatter::format_discovered_hosts(&hosts));
         }
         Err(e) => out.push(Formatter::format_error(&format!("{e}"))),

@@ -33,10 +33,10 @@ interface FilterToken {
 }
 
 const FIELD_ALIASES: Record<string, string[]> = {
-  address: ['ips'],
-  addresses: ['ips'],
+  address: ['ips', 'addresses'],
+  addresses: ['ips', 'addresses'],
   dns: ['record_type'],
-  host: ['ip'],
+  host: ['host', 'ip', 'hostname'],
   interface: ['interface', 'name'],
   record: ['record_type'],
   type: ['record_type'],

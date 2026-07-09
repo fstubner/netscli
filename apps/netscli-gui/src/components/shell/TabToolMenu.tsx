@@ -1,19 +1,19 @@
 import { useRef, type RefObject } from 'react';
 
 import { availableToolKinds, LOOKUP_TOOL_KINDS, SCAN_TOOL_KINDS, TOOL_CONFIG } from '../../tools/registry';
-import type { ToolKind } from '../../tools/types';
+import type { ToolCapabilityMap, ToolKind } from '../../tools/types';
 import { useRovingFocus } from '../primitives/focus';
 import { useOverlayDismiss, type PopoverPosition } from '../primitives/overlay';
 
 interface TabToolMenuProps {
   onAddToolTab: (kind: ToolKind) => void;
-  pcapAvailable: boolean;
   position: PopoverPosition;
   setOpenMenu: (menu: string | null) => void;
+  toolCapabilities: ToolCapabilityMap;
   triggerRef: RefObject<HTMLButtonElement | null>;
 }
 
-export function TabToolMenu({ onAddToolTab, pcapAvailable, position, setOpenMenu, triggerRef }: TabToolMenuProps) {
+export function TabToolMenu({ onAddToolTab, position, setOpenMenu, toolCapabilities, triggerRef }: TabToolMenuProps) {
   const menuRef = useRef<HTMLDivElement | null>(null);
   const closeMenu = () => setOpenMenu(null);
   const onKeyDown = useRovingFocus({
@@ -45,7 +45,7 @@ export function TabToolMenu({ onAddToolTab, pcapAvailable, position, setOpenMenu
         setOpenMenu={setOpenMenu}
       />
       <ToolMenuSection
-        kinds={availableToolKinds(LOOKUP_TOOL_KINDS, pcapAvailable)}
+        kinds={availableToolKinds(LOOKUP_TOOL_KINDS, toolCapabilities)}
         label="Lookups and inventory"
         onAddToolTab={onAddToolTab}
         setOpenMenu={setOpenMenu}

@@ -10,11 +10,11 @@
 # into the Winget catalog.
 
 PackageIdentifier: fstubner.netscli.gui
-PackageVersion: 0.2.6
+PackageVersion: 0.3.0
 Installers:
   - Architecture: x64
     InstallerType: wix
-    InstallerUrl: https://github.com/fstubner/netscli/releases/download/v0.2.6/netscli-gui-windows-x86_64.msi
+    InstallerUrl: https://github.com/fstubner/netscli/releases/download/v0.3.0/netscli-gui-windows-x86_64.msi
     InstallerSha256: 064EF2B5CDA0B70131D07002EA6A51FC0CEBEA863072211E6643A0BB5252FD7E
     Scope: user
 ManifestType: installer

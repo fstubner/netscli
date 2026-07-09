@@ -3,6 +3,7 @@ use super::config::{ConfigItemKind, ConfigUiState, UiMode};
 use super::history::HistoryEntry;
 use super::widgets::{configure_input, cycle_option, cycle_unit};
 use crate::tui_settings::TuiSettings;
+use crate::tui_settings::MAX_CONCURRENT_PROBE_OPTIONS;
 use netscli_core::{NetworkManager, NetworkMonitor};
 use ratatui_textarea::{CursorMove, TextArea};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -43,6 +44,7 @@ pub struct TuiApp<'a> {
     pub running_detail: Option<String>,
     pub spinner_idx: usize,
     pub settings: TuiSettings,
+    pub concurrency_override: Option<usize>,
     pub hostname: String,
     pub context_address: Option<String>,
     pub tip_index: usize,
@@ -87,6 +89,7 @@ impl<'a> TuiApp<'a> {
             running_detail: None,
             spinner_idx: 0,
             settings: TuiSettings::default(),
+            concurrency_override: None,
             hostname,
             context_address,
             tip_index: tip_seed % TIPS.len(),
@@ -99,6 +102,11 @@ impl<'a> TuiApp<'a> {
             input_scroll_x: 0,
             ui_mode: UiMode::Normal,
         }
+    }
+
+    pub fn effective_concurrent_probes(&self) -> usize {
+        self.concurrency_override
+            .unwrap_or(self.settings.max_concurrent_probes)
     }
 
     pub fn apply_settings(&mut self) {
@@ -169,6 +177,27 @@ impl<'a> TuiApp<'a> {
         };
 
         match item {
+            ConfigItemKind::MaxConcurrentProbes => {
+                let options = MAX_CONCURRENT_PROBE_OPTIONS;
+                let current = self.settings.max_concurrent_probes;
+                let idx = options
+                    .iter()
+                    .enumerate()
+                    .min_by_key(|(_, value)| value.abs_diff(current))
+                    .map(|(index, _)| index)
+                    .unwrap_or(3);
+                let next = if dir < 0 {
+                    if idx == 0 {
+                        options.len() - 1
+                    } else {
+                        idx - 1
+                    }
+                } else {
+                    (idx + 1) % options.len()
+                };
+                self.settings.max_concurrent_probes = options[next];
+                self.concurrency_override = None;
+            }
             ConfigItemKind::StatsInterface => {
                 let next = cycle_option(
                     self.settings.stats_interface.as_deref(),

@@ -22,6 +22,9 @@ import {
   exerciseSweep,
 } from './tauri-render/scenarios.mjs';
 
+const DESKTOP_WINDOW = { x: 0, y: 0, width: 1000, height: 970 };
+const NARROW_WINDOW = { width: 520, height: 720 };
+
 let tauriDriverProcess;
 let probeServer;
 
@@ -55,7 +58,7 @@ async function main() {
   const driver = await createDriver(webdriverPort, application);
 
   try {
-    await driver.manage().window().setRect({ x: 0, y: 0, width: 774, height: 970 });
+    await driver.manage().window().setRect(DESKTOP_WINDOW);
     await withElement(driver, '[data-testid="app-shell"]', 20_000);
 
     const shell = await withElement(driver, '[data-testid="app-shell"]');
@@ -118,7 +121,7 @@ async function main() {
     await assertTheme(driver, 'light');
     await saveScreenshot(driver, 'tauri-render-light.png');
 
-    await driver.manage().window().setRect({ width: 390, height: 720 });
+    await driver.manage().window().setRect(NARROW_WINDOW);
     await assertNoHorizontalOverflow(driver);
     await withElement(driver, '[data-testid="run-active-tab"]');
     await withElement(driver, '.workspace');

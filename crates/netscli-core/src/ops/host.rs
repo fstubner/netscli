@@ -32,6 +32,31 @@ impl Ops {
         Ok(PingSummary::new(host.to_string(), ip, sent, received, rtts))
     }
 
+    pub async fn trace_route(
+        &self,
+        host: &str,
+        max_hops: u32,
+        resolve: bool,
+    ) -> Result<crate::TraceResult> {
+        crate::trace_route(host, max_hops, resolve, None).await
+    }
+
+    pub async fn trace_route_with_progress(
+        &self,
+        host: &str,
+        max_hops: u32,
+        resolve: bool,
+        progress: Option<tokio::sync::watch::Sender<String>>,
+    ) -> Result<crate::TraceResult> {
+        crate::trace_route(host, max_hops, resolve, progress).await
+    }
+
+    pub async fn reverse_lookup(&self, ip: &str) -> Result<Option<String>> {
+        let ip = IpAddr::from_str(ip)
+            .map_err(|e| Error::invalid_input(format!("invalid IP address '{ip}': {e}")))?;
+        Ok(crate::dns::reverse_lookup_best_effort_timeout(ip, self.cfg.dns_timeout_ms).await)
+    }
+
     pub async fn dns_lookup(
         &self,
         host: &str,

@@ -3,7 +3,7 @@ import { ChevronDown, Plus, X } from 'lucide-react';
 
 import { TOOL_CONFIG } from '../../tools/registry';
 import { tabIdentity } from '../../tools/presentation';
-import type { ToolKind, WorkspaceTab } from '../../tools/types';
+import type { ToolCapabilityMap, ToolKind, WorkspaceTab } from '../../tools/types';
 import { computePopoverPosition } from '../primitives/overlay';
 import { tabDisplayFor } from './tabDisplay';
 import { TabToolMenu } from './TabToolMenu';
@@ -12,7 +12,7 @@ interface TabStripProps {
   tabs: WorkspaceTab[];
   activeTabId: string;
   openMenu: string | null;
-  pcapAvailable: boolean;
+  toolCapabilities: ToolCapabilityMap;
   onAddScanTab: () => void;
   onAddToolTab: (kind: ToolKind) => void;
   onCloseTab: (tabId: string) => void;
@@ -24,7 +24,7 @@ export function TabStrip({
   tabs,
   activeTabId,
   openMenu,
-  pcapAvailable,
+  toolCapabilities,
   onAddScanTab,
   onAddToolTab,
   onCloseTab,
@@ -283,9 +283,9 @@ export function TabStrip({
       {toolMenuOpen && (
         <TabToolMenu
           onAddToolTab={onAddToolTab}
-          pcapAvailable={pcapAvailable}
           position={toolMenuPosition}
           setOpenMenu={setOpenMenu}
+          toolCapabilities={toolCapabilities}
           triggerRef={chevronRef}
         />
       )}

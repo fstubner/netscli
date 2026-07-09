@@ -8,10 +8,12 @@ use std::sync::Mutex;
 
 use commands::{
     cancel_operation, capture_pcap, choose_file_save_default_directory,
-    clear_file_save_default_directory, discover_network, dns_lookup, export_text_file,
-    get_arp_table, get_default_interface, get_file_save_preferences, get_network_stats,
-    inspect_host_cmd, list_interfaces, open_saved_artifact, pcap_capability, reveal_saved_artifact,
-    scan_ports, set_file_save_ask_each_time, sweep_network,
+    clear_file_save_default_directory, discover_mdns, discover_network, dns_lookup,
+    export_text_file, get_arp_table, get_default_interface, get_file_save_preferences,
+    get_network_stats, inspect_host_cmd, list_interfaces, mdns_capability, open_pcap_file,
+    open_result_bundle, open_saved_artifact, pcap_capability, ping_host, reveal_saved_artifact,
+    reverse_dns_lookup, save_result_bundle, scan_ports, set_file_save_ask_each_time, sweep_network,
+    trace_route_cmd,
 };
 use netscli_core::NetworkMonitor;
 use state::{ArtifactRegistry, OperationManager};
@@ -40,16 +42,18 @@ fn configure_dev_oui_path() {
 fn main() {
     configure_dev_oui_path();
 
-    let monitor = NetworkMonitor::new();
-
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .manage(Mutex::new(monitor))
+        .manage(Mutex::new(None::<NetworkMonitor>))
         .manage(OperationManager::default())
         .manage(ArtifactRegistry::default())
         .invoke_handler(tauri::generate_handler![
             cancel_operation,
+            ping_host,
+            trace_route_cmd,
+            reverse_dns_lookup,
+            discover_mdns,
             discover_network,
             scan_ports,
             inspect_host_cmd,
@@ -57,9 +61,13 @@ fn main() {
             dns_lookup,
             list_interfaces,
             get_arp_table,
+            mdns_capability,
             pcap_capability,
             capture_pcap,
+            open_pcap_file,
             export_text_file,
+            save_result_bundle,
+            open_result_bundle,
             open_saved_artifact,
             reveal_saved_artifact,
             get_file_save_preferences,

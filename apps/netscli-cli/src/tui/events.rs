@@ -3,7 +3,7 @@
 //! `handle_command` is invoked by the TUI's main event loop in
 //! [`crate::tui::run_tui`] whenever the user submits a `/foo`-prefixed
 //! line. It parses the command, runs the matching `commands::run_*`
-//! against the shared `Ops` instance, persists results to the history
+//! against a per-command `Ops` built from TUI settings, persists results to the history
 //! database (if available), and returns a `Vec<Line<'static>>` ready for
 //! the TUI history pane.
 //!

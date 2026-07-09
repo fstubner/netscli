@@ -34,7 +34,10 @@ export function useReleaseNotifications({
         if (dismissed === release.version || !isNewerVersion(release.version, appVersion)) return;
         showUpdateToast(release.version, release.url);
       })
-      .catch(() => undefined);
+      .catch((error) => {
+        if (controller.signal.aborted) return;
+        console.error('Release check failed:', error);
+      });
 
     return () => controller.abort();
   }, [appVersion, enabled, showUpdateToast]);

@@ -117,6 +117,34 @@ const transitionExceptions = new Map([
       reason: 'TUI input runtime; split command/key families next',
     },
   ],
+  [
+    'site/src/scripts/changelog-page.ts',
+    {
+      maxLines: 760,
+      reason: 'changelog markdown renderer; split parser/render/timeline next',
+    },
+  ],
+  [
+    'site/src/scripts/docs-header.ts',
+    {
+      maxLines: 360,
+      reason: 'docs header/search/toc behaviors; split search vs toc vs tables next',
+    },
+  ],
+  [
+    'site/src/scripts/landing-page.ts',
+    {
+      maxLines: 310,
+      reason: 'landing interactions; split metrics/copy/lightbox/install next',
+    },
+  ],
+  [
+    'site/src/styles/starlight/starlight-07.css',
+    {
+      maxLines: 920,
+      reason: 'docs responsive override tail; dedupe EOF guardrails next',
+    },
+  ],
 ]);
 const roots = [
   'apps/netscli-cli/src',
@@ -128,6 +156,7 @@ const roots = [
   'crates/netscli-core/tests',
   'crates/netscli-mcp/src',
   'crates/netscli-mcp/tests',
+  'site/src',
 ];
 const extensions = new Set(['.css', '.mjs', '.rs', '.ts', '.tsx']);
 const ignoredDirs = new Set(['node_modules', 'dist', 'target']);

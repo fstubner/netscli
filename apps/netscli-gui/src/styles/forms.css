@@ -83,6 +83,63 @@
   appearance: none;
 }
 
+.number-field-control {
+  width: 100%;
+  height: 30px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 20px;
+  overflow: hidden;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  background: var(--bg-input);
+}
+
+.number-field-control:focus-within {
+  border-color: var(--mint);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--mint), transparent 78%);
+}
+
+.number-field-control input,
+.number-field-control input:focus {
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0 8px 0 10px;
+}
+
+.number-field-steppers {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  border-left: 1px solid var(--border-subtle);
+}
+
+.number-field-steppers button {
+  width: 20px;
+  height: 14px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 0;
+  cursor: default;
+}
+
+.number-field-steppers button:first-child {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.number-field-steppers button:hover:not(:disabled) {
+  background: var(--bg-selected);
+  color: var(--mint);
+}
+
+.number-field-steppers button:disabled {
+  opacity: 0.35;
+}
+
 .field-select {
   position: relative;
   min-width: 0;

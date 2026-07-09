@@ -1,6 +1,6 @@
 [package]
 name = "netscli-gui"
-version = "0.2.6"
+version = "0.3.0"
 description = "Tauri 2.0 desktop GUI for network discovery, scanning, and diagnostics"
 authors.workspace = true
 license.workspace = true
@@ -29,5 +29,7 @@ netscli-core = { path = "../../../crates/netscli-core", default-features = false
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem
 # DO NOT REMOVE!!
+default = ["mdns"]
 custom-protocol = ["tauri/custom-protocol"]
+mdns = ["netscli-core/mdns"]
 pcap = ["netscli-core/pcap"]

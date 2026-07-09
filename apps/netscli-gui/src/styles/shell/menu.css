@@ -54,6 +54,59 @@
   background: var(--bg-elevated);
 }
 
+@media (max-width: 720px) {
+  .menu-strip {
+    padding-left: 5px;
+  }
+
+  .menu-brand-mark {
+    width: 18px;
+    margin-right: 2px;
+  }
+
+  .menu-brand-mark svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .menu-button {
+    gap: 3px;
+    padding: 0 5px;
+  }
+}
+
+@media (max-width: 600px) {
+  .menu-strip {
+    font-size: 12px;
+  }
+
+  .menu-button {
+    gap: 2px;
+    padding: 0 4px;
+  }
+
+  .menu-button svg {
+    width: 9px;
+    height: 9px;
+  }
+}
+
+@media (max-width: 520px) {
+  .menu-brand-mark {
+    width: 14px;
+    margin-right: 1px;
+  }
+
+  .menu-brand-mark svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .menu-button {
+    padding: 0 3px;
+  }
+}
+
 .menu-popover {
   position: fixed;
   z-index: var(--z-dropdown);
@@ -65,6 +118,10 @@
   background: var(--bg-elevated);
   border: 1px solid var(--border-strong);
   box-shadow: 0 12px 30px var(--shadow);
+}
+
+.history-popover {
+  width: 320px;
 }
 
 .menu-popover-section + .menu-popover-section {
@@ -117,6 +174,13 @@
 
 .menu-popover-item svg {
   color: var(--text-muted);
+}
+
+.menu-popover-item-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .menu-popover-item:hover:not(:disabled) svg {

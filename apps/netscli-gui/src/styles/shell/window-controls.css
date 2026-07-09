@@ -21,3 +21,15 @@
   background: #d42136;
   color: #ffffff;
 }
+
+@media (max-width: 720px) {
+  .window-controls button {
+    width: 36px;
+  }
+}
+
+@media (max-width: 600px) {
+  .window-controls button {
+    width: 32px;
+  }
+}

@@ -29,6 +29,9 @@ fn tools_list_contains_expected_tools() {
     let expected = {
         let mut expected = expected;
         expected.push("capture_pcap");
+        expected.push("get_pcap_capture_result");
+        expected.push("get_pcap_capture_status");
+        expected.push("start_pcap_capture");
         expected
     };
 

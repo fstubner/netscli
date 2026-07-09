@@ -10,6 +10,7 @@ use crate::state::ArtifactRegistry;
 
 const SAVE_SETTINGS_FILE: &str = "gui-save-settings.json";
 const LEGACY_CAPTURE_SETTINGS_FILE: &str = "gui-capture-settings.json";
+const MAX_RESULT_BUNDLE_BYTES: u64 = 25 * 1024 * 1024;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub(crate) struct FileSavePreferences {
@@ -46,6 +47,59 @@ pub(crate) fn export_text_file(
     std::fs::write(&path, contents).map_err(|e| format!("Failed to write export: {e}"))?;
     artifact_registry.register(&path)?;
     Ok(path.display().to_string())
+}
+
+#[tauri::command]
+pub(crate) fn save_result_bundle(
+    app: tauri::AppHandle,
+    artifact_registry: State<'_, ArtifactRegistry>,
+    contents: String,
+) -> Result<String, String> {
+    if contents.len() as u64 > MAX_RESULT_BUNDLE_BYTES {
+        return Err(format!(
+            "Result bundle is too large (max {})",
+            format_byte_limit(MAX_RESULT_BUNDLE_BYTES)
+        ));
+    }
+    let filename = format!("netscli-result-{}.netscli-result.json", timestamp_millis());
+    export_text_file(app, artifact_registry, filename, contents, None)
+}
+
+#[tauri::command]
+pub(crate) fn open_result_bundle(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
+    let selected = app
+        .dialog()
+        .file()
+        .set_title("Open NetsCLI Result")
+        .add_filter("NetsCLI Result", &["json"])
+        .blocking_pick_file()
+        .ok_or_else(|| "Open result cancelled".to_string())?;
+    let path = selected
+        .into_path()
+        .map_err(|_| "Selected result is not a local filesystem path".to_string())?;
+    if !path.is_file() {
+        return Err("Result path must be a file".to_string());
+    }
+    ensure_file_size_limit(&path, MAX_RESULT_BUNDLE_BYTES, "Result bundle")?;
+    let text =
+        std::fs::read_to_string(&path).map_err(|e| format!("Failed to read result bundle: {e}"))?;
+    serde_json::from_str(&text).map_err(|e| format!("Failed to parse result bundle: {e}"))
+}
+
+pub(super) fn ensure_file_size_limit(
+    path: &Path,
+    max_bytes: u64,
+    label: &str,
+) -> Result<(), String> {
+    let metadata =
+        std::fs::metadata(path).map_err(|e| format!("Failed to inspect {label}: {e}"))?;
+    if metadata.len() > max_bytes {
+        return Err(format!(
+            "{label} is too large (max {})",
+            format_byte_limit(max_bytes)
+        ));
+    }
+    Ok(())
 }
 
 #[tauri::command]
@@ -466,4 +520,13 @@ fn timestamp_millis() -> u128 {
         .duration_since(UNIX_EPOCH)
         .map(|duration| duration.as_millis())
         .unwrap_or_default()
+}
+
+fn format_byte_limit(bytes: u64) -> String {
+    const MIB: u64 = 1024 * 1024;
+    if bytes >= MIB && bytes.is_multiple_of(MIB) {
+        format!("{} MiB", bytes / MIB)
+    } else {
+        format!("{bytes} bytes")
+    }
 }

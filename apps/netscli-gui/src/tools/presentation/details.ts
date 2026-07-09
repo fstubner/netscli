@@ -187,6 +187,19 @@ export function detailLinesForRow(row: ResultRow): DetailLine[] {
   }));
 
   switch (row.kind) {
+    case 'ping':
+      return pingDetailLines(row.raw);
+    case 'trace':
+      return traceDetailLines(row.raw);
+    case 'reverse':
+      return [
+        ...lines,
+        {
+          label: 'Summary',
+          value: row.data.hostname ? 'Reverse DNS name found for this IP.' : 'No reverse DNS name returned.',
+          muted: !row.data.hostname,
+        },
+      ];
     case 'discover':
       return [
         ...lines,
@@ -220,9 +233,68 @@ export function detailLinesForRow(row: ResultRow): DetailLine[] {
       ];
     case 'dns':
       return lines.filter((line) => line.value !== '-');
+    case 'mdns':
+      return mdnsDetailLines(row.raw);
     default:
       return lines;
   }
+}
+
+function pingDetailLines(raw: unknown): DetailLine[] {
+  const summary = raw as Record<string, unknown>;
+  const sent = Number(summary.sent ?? 0);
+  const received = Number(summary.received ?? 0);
+  const loss = Number(summary.loss_pct ?? 0);
+  return [
+    { label: 'Host', value: valueOrDash(summary.host) },
+    { label: 'Resolved IP', value: valueOrDash(summary.ip) },
+    { label: 'Sent', value: valueOrDash(summary.sent) },
+    { label: 'Received', value: valueOrDash(summary.received) },
+    { label: 'Packet Loss', value: `${formatNumeric(loss)}%`, muted: loss > 0 },
+    { label: 'RTT Average', value: optionalMs(summary.rtt_ms_avg) },
+    { label: 'RTT Min', value: optionalMs(summary.rtt_ms_min) },
+    { label: 'RTT Max', value: optionalMs(summary.rtt_ms_max) },
+    {
+      label: 'Summary',
+      value:
+        received > 0
+          ? `${received} of ${sent} probes replied.`
+          : 'No replies were received before timeout.',
+      muted: received === 0,
+    },
+  ];
+}
+
+function traceDetailLines(raw: unknown): DetailLine[] {
+  const hop = raw as Record<string, unknown>;
+  return [
+    { label: 'Hop', value: valueOrDash(hop.hop) },
+    { label: 'Status', value: valueOrDash(hop.status) },
+    { label: 'Best RTT', value: valueOrDash(hop.best) },
+    { label: 'Average RTT', value: valueOrDash(hop.avg) },
+    { label: 'Worst RTT', value: valueOrDash(hop.worst) },
+    { label: 'Address / Host', value: valueOrDash(hop.address) },
+    { label: 'Tool', value: valueOrDash(hop.tool) },
+    { label: 'Exit Code', value: valueOrDash(hop.exit_code) },
+    { label: 'Output', value: valueOrDash(hop.line) },
+  ];
+}
+
+function mdnsDetailLines(raw: unknown): DetailLine[] {
+  const service = raw as Record<string, unknown>;
+  const properties = service.properties && typeof service.properties === 'object'
+    ? Object.entries(service.properties as Record<string, unknown>)
+        .map(([key, value]) => `${key}=${String(value)}`)
+        .join(', ')
+    : '';
+  return [
+    { label: 'Service Type', value: valueOrDash(service.service_type) },
+    { label: 'Hostname', value: valueOrDash(service.hostname) },
+    { label: 'Addresses', value: Array.isArray(service.addresses) ? service.addresses.join(', ') : '-' },
+    { label: 'Port', value: valueOrDash(service.port) },
+    { label: 'Full Name', value: valueOrDash(service.full_name) },
+    { label: 'TXT Properties', value: properties || '-', muted: !properties },
+  ];
 }
 
 function pcapDetailLines(raw: unknown): DetailLine[] {
@@ -258,6 +330,14 @@ function addOptionalLine(lines: DetailLine[], label: string, value: unknown) {
 
 function valueOrDash(value: unknown): string {
   return value == null || value === '' ? '-' : String(value);
+}
+
+function optionalMs(value: unknown): string {
+  return typeof value === 'number' && Number.isFinite(value) ? `${formatNumeric(value)} ms` : '-';
+}
+
+function formatNumeric(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
 function bannerReason(port: PortResult): string {
@@ -363,14 +443,22 @@ function labelForKind(kind: string): string {
   switch (kind) {
     case 'scan':
       return 'Port scan';
+    case 'ping':
+      return 'Ping';
+    case 'trace':
+      return 'Trace route';
     case 'discover':
       return 'Discovery';
     case 'dns':
       return 'DNS lookup';
+    case 'reverse':
+      return 'Reverse DNS';
     case 'inspect':
       return 'Inspect';
     case 'sweep':
       return 'Sweep';
+    case 'mdns':
+      return 'mDNS discovery';
     case 'interfaces':
       return 'Interfaces';
     case 'arp':

@@ -5,11 +5,13 @@ import * as netscli from '../services/netscli';
 import { generateId, TOOL_CONFIG } from '../tools/registry';
 import { buildCommand } from '../tools/presentation';
 import type { HistoryEntry, WorkspaceTab } from '../tools/types';
+import { compactHistory } from './historyStorage';
 import { executeTool, validateTab } from './toolExecution';
 import type { WorkspaceToast } from './types';
 
 interface RunWorkspaceTabArgs {
   activeOps: RefObject<Record<string, string>>;
+  maxConcurrentProbes: number;
   patchTab: (id: string, patch: Partial<WorkspaceTab>) => void;
   persistentHistory: boolean;
   setHistory: Dispatch<SetStateAction<HistoryEntry[]>>;
@@ -19,6 +21,7 @@ interface RunWorkspaceTabArgs {
 
 export async function runWorkspaceTab({
   activeOps,
+  maxConcurrentProbes,
   patchTab,
   persistentHistory,
   setHistory,
@@ -50,14 +53,9 @@ export async function runWorkspaceTab({
     selectedIndices: [0],
     selectionAnchor: 0,
   });
-  showToast({
-    message: `${TOOL_CONFIG[tab.kind].label} started`,
-    kind: 'operation',
-    tabId: tab.id,
-  });
 
   try {
-    const result = await executeTool(tab, opId);
+    const result = await executeTool(tab, opId, maxConcurrentProbes);
     if (activeOps.current[tab.id] !== opId) return;
     patchTab(tab.id, {
       result,
@@ -75,7 +73,7 @@ export async function runWorkspaceTab({
     });
     if (persistentHistory) {
       setHistory((prev) =>
-        [
+        compactHistory([
           {
             id: generateId('history'),
             timestamp: new Date(),
@@ -85,7 +83,7 @@ export async function runWorkspaceTab({
             result,
           },
           ...prev,
-        ].slice(0, 40),
+        ]),
       );
     }
   } catch (error) {
@@ -93,7 +91,7 @@ export async function runWorkspaceTab({
     const message = error instanceof Error ? error.message : String(error);
     patchTab(tab.id, { error: message, busy: false, progress: null, result: null });
     showToast({
-      message: `${TOOL_CONFIG[tab.kind].label} failed`,
+      message: `${TOOL_CONFIG[tab.kind].label} failed: ${message}`,
       kind: 'operation',
       tabId: tab.id,
     });
@@ -106,33 +104,45 @@ export async function runWorkspaceTab({
 
 export async function cancelWorkspaceTab(
   tabId: string,
-  tab: WorkspaceTab | undefined,
   activeOps: RefObject<Record<string, string>>,
   patchTab: (id: string, patch: Partial<WorkspaceTab>) => void,
-  showToast: (toast: Omit<WorkspaceToast, 'id'>) => void,
 ) {
   const opId = activeOps.current[tabId];
   if (opId && isTauri()) {
     await netscli.cancelOperation(opId).catch(() => undefined);
   }
   delete activeOps.current[tabId];
-  patchTab(tabId, { busy: false, progress: null, error: 'Operation cancelled' });
-  showToast({
-    message: `${tab ? TOOL_CONFIG[tab.kind].label : 'Operation'} stopped`,
-    kind: 'operation',
-    tabId,
-  });
+  patchTab(tabId, { busy: false, progress: null, error: null });
 }
 
 function initialProgressDetail(tab: WorkspaceTab): string {
   switch (tab.kind) {
     case 'scan':
       return 'Preparing port probes';
+    case 'ping':
+      return 'Sending probes';
+    case 'trace':
+      return 'Starting route trace';
     case 'discover':
       return 'Preparing host discovery';
+    case 'dns':
+    case 'reverse':
+      return 'Querying DNS';
     case 'sweep':
       return 'Preparing network sweep';
-    default:
-      return 'Running operation';
+    case 'mdns':
+      return 'Listening for mDNS services';
+    case 'pcap':
+      return tab.form.mode === 'Open File' ? 'Opening capture file' : 'Starting packet capture';
+    case 'inspect':
+      return 'Inspecting host';
+    case 'interfaces':
+      return 'Refreshing interfaces';
+    case 'arp':
+      return 'Reading ARP table';
+    default: {
+      const kind: never = tab.kind;
+      return kind;
+    }
   }
 }

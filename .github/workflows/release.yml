@@ -104,7 +104,7 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.92.0
+          toolchain: 1.96.0
           targets: ${{ matrix.target }}
 
       - name: Install libpcap (Linux, pcap)
@@ -242,7 +242,7 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.92.0
+          toolchain: 1.96.0
           targets: ${{ matrix.target }}
 
       - uses: actions/setup-node@v6

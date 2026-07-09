@@ -2,5 +2,6 @@
 @import './styles/shell.css';
 @import './styles/forms.css';
 @import './styles/results.css';
+@import './styles/pcap.css';
 @import './styles/details.css';
 @import './styles/responsive.css';

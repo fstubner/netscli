@@ -51,6 +51,29 @@ export interface PingResult {
   method?: string;
 }
 
+export interface PingSummary {
+  host: string;
+  ip: string;
+  sent: number;
+  received: number;
+  loss_pct: number;
+  rtt_ms_min?: number | null;
+  rtt_ms_max?: number | null;
+  rtt_ms_avg?: number | null;
+}
+
+export interface TraceResult {
+  host: string;
+  tool: string;
+  exit_code?: number | null;
+  lines: string[];
+}
+
+export interface ReverseDnsResult {
+  ip: string;
+  hostname?: string | null;
+}
+
 export interface InspectResult {
   host: string;
   ip?: string | null;
@@ -59,6 +82,15 @@ export interface InspectResult {
   ports?: PortResult[];
   open_ports: PortResult[];
   hostname?: string | null;
+}
+
+export interface MdnsService {
+  full_name: string;
+  hostname: string;
+  service_type: string;
+  addresses: string[];
+  port: number;
+  properties: Record<string, string>;
 }
 
 export interface SweepEntry {
@@ -130,8 +162,15 @@ export interface PcapPacketSummary {
 }
 
 export interface PcapCapability {
+  compiled: boolean;
   available: boolean;
   interfaces: string[];
+  message?: string | null;
+}
+
+export interface OptionalCapability {
+  compiled: boolean;
+  available: boolean;
   message?: string | null;
 }
 
@@ -146,6 +185,14 @@ export interface PcapResult {
   file_path: string;
   packets: PcapPacketSummary[];
   packets_truncated: boolean;
+}
+
+export interface PcapParseResult {
+  file_path: string;
+  link_type: number;
+  total_packets: number;
+  packets: PcapPacketSummary[];
+  truncated: boolean;
 }
 
 export interface DnsRecord {

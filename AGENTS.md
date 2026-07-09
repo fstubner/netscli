@@ -181,11 +181,11 @@ Enforced in `ops.rs` and `server.rs`. Do not weaken without discussion.
 
 ## CLI Subcommands
 
-`discover`, `scan`, `inspect`, `sweep`, `ping`, `trace`, `dns`, `reverse`, `arp`, `interfaces`, `serve` (MCP server), `mcp-service`, `config`, `export`, `setup`, `doctor`
+`discover`, `scan`, `inspect`, `sweep`, `ping`, `trace`, `dns`, `reverse`, `arp`, `interfaces`, `mdns`, `pcap`, `serve` (MCP server), `mcp-service`, `config`, `export`, `setup`, `doctor`
 
-## MCP Tools (9)
+## MCP Tools (9 default, 13 with `pcap` feature)
 
-`discover_network`, `scan_ports`, `ping_host`, `dns_lookup`, `get_arp_table`, `inspect_host`, `sweep_network`, `list_network_interfaces`, `capture_pcap`
+`discover_network`, `scan_ports`, `ping_host`, `dns_lookup`, `get_arp_table`, `inspect_host`, `sweep_network`, `list_network_interfaces`, `discover_mdns` — plus `capture_pcap`, `start_pcap_capture`, `get_pcap_capture_status`, `get_pcap_capture_result` when built with the `pcap` feature
 
 ## Common Pitfalls
 

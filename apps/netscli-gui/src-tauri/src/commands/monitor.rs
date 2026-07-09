@@ -5,11 +5,12 @@ use netscli_core::{NetworkMonitor, Ops};
 #[tauri::command]
 pub(crate) async fn get_network_stats(
     interface: Option<String>,
-    monitor: tauri::State<'_, Mutex<NetworkMonitor>>,
+    monitor: tauri::State<'_, Mutex<Option<NetworkMonitor>>>,
 ) -> Result<serde_json::Value, String> {
-    let monitor = monitor
+    let mut monitor = monitor
         .lock()
         .map_err(|e| format!("Failed to acquire monitor lock: {e}"))?;
+    let monitor = monitor.get_or_insert_with(NetworkMonitor::new);
     let interface = interface.and_then(|name| {
         let name = name.trim().to_string();
         if name.is_empty() {

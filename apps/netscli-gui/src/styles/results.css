@@ -57,10 +57,10 @@
   flex: 0 0 auto;
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 170px;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
-  gap: 14px;
-  padding: 8px 14px;
+  gap: 5px;
+  padding: 10px 14px 7px;
   border-bottom: 1px solid var(--border-subtle);
   background: color-mix(in srgb, var(--mint), transparent 94%);
 }
@@ -87,10 +87,12 @@
 }
 
 .operation-progress-bar {
-  height: 3px;
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
   overflow: hidden;
-  background: var(--bg-input);
-  border: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--mint), transparent 88%);
+  border: 0;
 }
 
 .operation-progress-bar span {
@@ -145,6 +147,10 @@
 }
 
 .table-shell {
+  --table-shadow-top: 0 0 transparent;
+  --table-shadow-right: 0 0 transparent;
+  --table-shadow-bottom: 0 0 transparent;
+  --table-shadow-left: 0 0 transparent;
   flex: 1;
   width: 100%;
   height: 100%;
@@ -152,6 +158,11 @@
   overflow: auto;
   outline: 0;
   user-select: none;
+  box-shadow:
+    var(--table-shadow-top),
+    var(--table-shadow-right),
+    var(--table-shadow-bottom),
+    var(--table-shadow-left);
 }
 
 .table-shell.has-vertical-overflow {
@@ -159,7 +170,8 @@
 }
 
 .table-shell:focus-visible {
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mint), transparent 35%);
+  outline: 1px solid color-mix(in srgb, var(--mint), transparent 35%);
+  outline-offset: -1px;
 }
 
 .result-table {
@@ -221,34 +233,20 @@
   background: color-mix(in srgb, var(--mint), transparent 72%);
 }
 
-.table-shell::before,
-.table-shell::after {
-  content: "";
-  position: sticky;
-  left: 0;
-  display: block;
-  width: 100%;
-  height: 14px;
-  z-index: 4;
-  pointer-events: none;
-  opacity: 0;
+.table-shell.has-top-overflow {
+  --table-shadow-top: inset 0 18px 16px -16px color-mix(in srgb, var(--shadow), black 25%);
 }
 
-.table-shell::before {
-  top: 30px;
-  margin-bottom: -14px;
-  background: linear-gradient(to bottom, var(--shadow), transparent);
+.table-shell.has-right-overflow {
+  --table-shadow-right: inset -18px 0 16px -16px color-mix(in srgb, var(--shadow), black 25%);
 }
 
-.table-shell::after {
-  bottom: 0;
-  margin-top: -14px;
-  background: linear-gradient(to top, var(--shadow), transparent);
+.table-shell.has-bottom-overflow {
+  --table-shadow-bottom: inset 0 -18px 16px -16px color-mix(in srgb, var(--shadow), black 25%);
 }
 
-.table-shell.has-top-overflow::before,
-.table-shell.has-bottom-overflow::after {
-  opacity: 0.42;
+.table-shell.has-left-overflow {
+  --table-shadow-left: inset 18px 0 16px -16px color-mix(in srgb, var(--shadow), black 25%);
 }
 
 .result-table tbody tr {
@@ -296,6 +294,7 @@
 }
 
 .status-open .status-dot,
+.status-reply .status-dot,
 .status-up .status-dot,
 .run-dot {
   background: var(--mint);
@@ -306,7 +305,8 @@
   background: var(--red);
 }
 
-.status-filtered .status-dot {
+.status-filtered .status-dot,
+.status-timeout .status-dot {
   background: var(--amber);
 }
 

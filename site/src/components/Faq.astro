@@ -1,6 +1,27 @@
 ---
 import { site } from '../data/site';
 const { faq, copy } = site;
+const faqOrder = [
+  'What it is',
+  'Install and updates',
+  'Interfaces and integrations',
+  'Network workflows',
+  'Limits and dependencies',
+];
+
+const grouped = faq.reduce<Array<{ title: string; items: typeof faq }>>((groups, item) => {
+  const existing = groups.find((group) => group.title === item.group);
+  if (existing) {
+    existing.items.push(item);
+  } else {
+    groups.push({ title: item.group, items: [item] });
+  }
+  return groups;
+}, []);
+
+const faqGroups = grouped.sort(
+  (a, b) => faqOrder.indexOf(a.title) - faqOrder.indexOf(b.title),
+);
 ---
 <section id="faq">
   <div class="w">
@@ -8,11 +29,16 @@ const { faq, copy } = site;
     <p class="lead" set:html={copy.faq.leadHtml} />
 
     <div class="faq">
-      {faq.map((f) => (
-        <details>
-          <summary>{f.q}</summary>
-          <div class="answer" set:html={f.aHtml ?? f.a} />
-        </details>
+      {faqGroups.map((group) => (
+        <div class="faq-section">
+          <h3 class="faq-section-title">{group.title}</h3>
+          {group.items.map((f) => (
+            <details>
+              <summary>{f.q}</summary>
+              <div class="answer" set:html={f.aHtml ?? f.a} />
+            </details>
+          ))}
+        </div>
       ))}
     </div>
   </div>

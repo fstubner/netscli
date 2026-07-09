@@ -22,8 +22,8 @@ land in the next point release.
 
 | Version | Supported |
 |---------|-----------|
-| 0.1.x   | yes       |
-| < 0.1   | no        |
+| 0.3.x   | yes       |
+| < 0.3   | no        |
 
 ## Scope
 

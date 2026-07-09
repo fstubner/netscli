@@ -17,14 +17,28 @@ scoop install netscli
 
 ## After each release
 
-The manifest has `checkver` + `autoupdate` blocks, so if you install
-Scoop's `sfsu` or run `scoop bucket status` regularly, it can update
-itself — but manual is more reliable:
+`publish.yml` updates the bucket through `scripts/release/publish-scoop.sh`
+and `scripts/release/publish-scoop-gui.sh`. Both scripts wait for the
+release `.sha256` sidecar, parse the first field, and write the hash
+directly into the live bucket manifest. The checked-in JSON files here
+are reference snapshots.
 
-1. Update `version` in `netscli.json`.
-2. Replace `VERSION_SHA256_WINDOWS_X86_64` with the SHA256 of
-   `netscli-windows-x86_64.exe` from the new release.
-3. Commit + push.
+Validation still needs a real Scoop install because the CLI and GUI use
+different package mechanics:
+
+```powershell
+scoop bucket add fstubner https://github.com/fstubner/scoop-bucket
+scoop install netscli
+netscli --version
+scoop update netscli
+
+scoop install netscli-gui
+scoop uninstall netscli-gui
+```
+
+For the CLI, confirm the `#/netscli.exe` rename works and the
+PowerShell completion file is generated. For the GUI, confirm the MSI
+installs cleanly and the `NetsCLI` shortcut launches.
 
 ## Moving to extras later
 

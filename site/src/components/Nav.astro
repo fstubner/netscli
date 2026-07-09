@@ -1,17 +1,62 @@
 ---
 import { site } from '../data/site';
 const { branding, hero } = site;
+const onHome = Astro.url.pathname === '/';
+const pathname = Astro.url.pathname;
+const homeAnchor = (id: string) => (onHome ? `#${id}` : `/#${id}`);
+const links = [
+  { href: homeAnchor('surfaces'), label: 'Features', active: false, section: 'surfaces' },
+  { href: homeAnchor('install'), label: 'Install', active: false, section: 'install' },
+  { href: homeAnchor('faq'), label: 'FAQ', active: false, section: 'faq' },
+  { href: '/docs/', label: 'Docs', active: pathname.startsWith('/docs') },
+  { href: '/changelog/', label: 'Changelog', active: pathname.startsWith('/changelog') },
+  { href: hero.sourceUrl, label: 'GitHub', active: false, external: true },
+];
 ---
-<nav>
+<nav data-site-nav data-open="false">
   <div class="nav-inner">
-    <a class="mark" href="/" aria-label={branding.wordmarkAlt}>
-      <img src={branding.wordmark} alt={branding.wordmarkAlt} width="160" height="32" />
+    <a class="mark" href="/">
+      <img src={branding.wordmark} alt="" width="160" height="32" />
     </a>
-    <div class="nlinks">
-      <a href="#surfaces">Features</a>
-      <a href="#install">Install</a>
-      <a href="#faq">FAQ</a>
-      <a href={hero.sourceUrl}>GitHub</a>
+    <button
+      class="nav-menu-toggle"
+      type="button"
+      data-site-nav-toggle
+      aria-label="Open navigation"
+      aria-expanded="false"
+      aria-controls="site-nav-links"
+    >
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <div class="nlinks" id="site-nav-links" data-site-nav-links>
+      {links.map((link) => (
+        <a
+          href={link.href}
+          class={link.external ? 'external-link' : undefined}
+          data-section={link.section}
+          data-site-nav-link
+          aria-current={link.active ? 'page' : undefined}
+          {...(link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+        >
+          {link.label}
+        </a>
+      ))}
     </div>
   </div>
 </nav>
+
+{
+  onHome && (
+    <script>
+      import { initActiveNav } from '../scripts/site-nav';
+      initActiveNav();
+    </script>
+  )
+}
+
+<script>
+  import { initMobileNav } from '../scripts/site-nav';
+  initMobileNav();
+</script>

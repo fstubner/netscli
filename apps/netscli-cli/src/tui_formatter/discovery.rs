@@ -5,13 +5,29 @@ use ratatui::style::{Color, Style};
 use ratatui::text::{Line, Span};
 
 impl Formatter {
+    pub fn format_discover_summary(
+        subnet: &str,
+        resolve_hostnames: bool,
+        total_hosts: usize,
+    ) -> Vec<Line<'static>> {
+        vec![
+            Line::from(vec![
+                Span::styled("Discovered subnet ", Style::default().fg(Color::Green)),
+                Span::styled(subnet.to_string(), Style::default().fg(Color::Cyan)),
+            ]),
+            tree_child_line(
+                "resolve",
+                if resolve_hostnames { "on" } else { "off" },
+                false,
+                Color::Gray,
+            ),
+            tree_child_line("hosts", &total_hosts.to_string(), true, Color::Gray),
+            Line::default(),
+        ]
+    }
+
     pub fn format_discovered_hosts(hosts: &[Host]) -> Vec<Line<'static>> {
         let mut lines = Vec::new();
-        lines.push(Line::from(vec![
-            Span::styled("Discovered hosts ", Style::default().fg(Color::Green)),
-            Span::styled(hosts.len().to_string(), Style::default().fg(Color::White)),
-        ]));
-        lines.push(Line::default());
 
         if hosts.is_empty() {
             lines.push(Line::from(Span::styled(

@@ -39,6 +39,26 @@ export function columnsFor(
           ? { key: 'banner', label: 'Banner', grow: true }
           : { key: 'banner', label: 'Banner', width: 160 },
       ];
+    case 'ping':
+      return [
+        { key: 'metric', label: 'Metric', width: 120 },
+        { key: 'host', label: 'Host', mono: true, width: 220 },
+        { key: 'ip', label: 'Resolved IP', mono: true, width: 220 },
+        { key: 'sent', label: 'Sent', mono: true, width: 90 },
+        { key: 'received', label: 'Received', mono: true, width: 110 },
+        { key: 'loss', label: 'Loss', mono: true, width: 100 },
+        { key: 'avg', label: 'Avg RTT', mono: true, width: 120 },
+        { key: 'range', label: 'RTT Range', mono: true, grow: true },
+      ];
+    case 'trace':
+      return [
+        { key: 'hop', label: 'Hop', mono: true, width: 90 },
+        { key: 'status', label: 'Status', width: 120 },
+        { key: 'best', label: 'Best', mono: true, width: 120 },
+        { key: 'avg', label: 'Avg', mono: true, width: 120 },
+        { key: 'worst', label: 'Worst', mono: true, width: 120 },
+        { key: 'address', label: 'Address / Host', mono: true, grow: true },
+      ];
     case 'discover':
       return [
         { key: 'ip', label: 'IP', mono: true, width: 170 },
@@ -57,6 +77,11 @@ export function columnsFor(
         { key: 'value', label: 'Value', mono: true, grow: true },
         { key: 'ttl', label: 'TTL', mono: true, width: 90 },
         { key: 'resolver', label: 'Resolver', width: 130 },
+      ];
+    case 'reverse':
+      return [
+        { key: 'ip', label: 'IP', mono: true, width: 220 },
+        { key: 'hostname', label: 'Reverse Name', mono: true, grow: true },
       ];
     case 'sweep':
       return [
@@ -89,6 +114,14 @@ export function columnsFor(
         { key: 'mac', label: 'MAC', mono: true, width: 190 },
         { key: 'interface', label: 'Interface', width: 160 },
         { key: 'vendor', label: 'Vendor', grow: true },
+      ];
+    case 'mdns':
+      return [
+        { key: 'service_type', label: 'Service Type', mono: true, width: 210 },
+        { key: 'hostname', label: 'Hostname', width: 220 },
+        { key: 'addresses', label: 'Addresses', mono: true, grow: true },
+        { key: 'port', label: 'Port', mono: true, width: 90 },
+        { key: 'name', label: 'Name', mono: true, grow: true },
       ];
     case 'pcap':
       return [

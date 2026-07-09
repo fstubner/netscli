@@ -3,17 +3,25 @@ import { useEffect } from 'react';
 import type { WorkspaceModel } from '../workspace/types';
 
 export function useKeyboardShortcuts({
+  focusResultFilter,
   openMenu,
+  requestRun,
   setOpenMenu,
   setSettingsOpen,
   settingsOpen,
+  setWorkspaceSearchOpen,
   workspace,
+  workspaceSearchOpen,
 }: {
+  focusResultFilter: () => void;
   openMenu: string | null;
+  requestRun: (tabId: string) => void;
   setOpenMenu: (menu: string | null) => void;
   setSettingsOpen: (open: boolean) => void;
   settingsOpen: boolean;
+  setWorkspaceSearchOpen: (open: boolean) => void;
   workspace: WorkspaceModel;
+  workspaceSearchOpen: boolean;
 }) {
   const activeTab = workspace.activeTab;
 
@@ -28,6 +36,31 @@ export function useKeyboardShortcuts({
 
     function handleKeyboardShortcuts(event: KeyboardEvent) {
       if (event.defaultPrevented) return;
+      const ctrlOrMeta = event.ctrlKey || event.metaKey;
+
+      if (ctrlOrMeta && !event.shiftKey && event.key.toLowerCase() === 'f') {
+        event.preventDefault();
+        if (activeTab && !settingsOpen && !workspaceSearchOpen) {
+          setOpenMenu(null);
+          focusResultFilter();
+        }
+        return;
+      }
+
+      if (ctrlOrMeta && !event.shiftKey && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        if (!settingsOpen) {
+          setOpenMenu(null);
+          setWorkspaceSearchOpen(true);
+        }
+        return;
+      }
+
+      if (event.key === 'Escape' && workspaceSearchOpen) {
+        event.preventDefault();
+        setWorkspaceSearchOpen(false);
+        return;
+      }
 
       if (event.key === 'Escape' && openMenu) {
         event.preventDefault();
@@ -42,7 +75,6 @@ export function useKeyboardShortcuts({
       }
 
       if (!activeTab || isEditableTarget(event.target)) return;
-      const ctrlOrMeta = event.ctrlKey || event.metaKey;
 
       if (ctrlOrMeta && event.key.toLowerCase() === 'a' && !isScopedSelectTarget(event.target)) {
         event.preventDefault();
@@ -59,7 +91,7 @@ export function useKeyboardShortcuts({
 
       if (event.key === 'Enter') {
         event.preventDefault();
-        void workspace.runTab(activeTab.id);
+        requestRun(activeTab.id);
         return;
       }
 
@@ -80,6 +112,17 @@ export function useKeyboardShortcuts({
 
     document.addEventListener('keydown', handleKeyboardShortcuts);
     return () => document.removeEventListener('keydown', handleKeyboardShortcuts);
-  }, [activeTab, openMenu, setOpenMenu, setSettingsOpen, settingsOpen, workspace]);
+  }, [
+    activeTab,
+    focusResultFilter,
+    openMenu,
+    requestRun,
+    setOpenMenu,
+    setSettingsOpen,
+    settingsOpen,
+    setWorkspaceSearchOpen,
+    workspace,
+    workspaceSearchOpen,
+  ]);
 }
 

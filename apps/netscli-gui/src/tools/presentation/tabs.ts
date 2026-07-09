@@ -8,10 +8,14 @@ export interface TabIdentity {
 
 const TAB_LABELS: Record<WorkspaceTab['kind'], string> = {
   scan: 'Scan',
+  ping: 'Ping',
+  trace: 'Trace',
   discover: 'Discover',
   dns: 'DNS',
+  reverse: 'Reverse DNS',
   inspect: 'Inspect',
   sweep: 'Sweep',
+  mdns: 'mDNS',
   interfaces: 'Interfaces',
   arp: 'ARP',
   pcap: 'Packet Capture',
@@ -27,6 +31,10 @@ export function tabIdentity(tab: WorkspaceTab): TabIdentity {
         label,
         identifier: joinParts(clean(form.host), customPorts(form.ports)),
       };
+    case 'ping':
+      return { label, identifier: clean(form.host) || 'New' };
+    case 'trace':
+      return { label, identifier: clean(form.host) || 'New' };
     case 'discover':
       return { label, identifier: clean(form.subnet) || 'Default subnet' };
     case 'dns':
@@ -34,6 +42,8 @@ export function tabIdentity(tab: WorkspaceTab): TabIdentity {
         label,
         identifier: clean(form.host) ? joinParts(clean(form.host), dnsRecordLabel(form.record)) : 'New',
       };
+    case 'reverse':
+      return { label, identifier: clean(form.ip) || 'New' };
     case 'inspect':
       return {
         label,
@@ -44,6 +54,11 @@ export function tabIdentity(tab: WorkspaceTab): TabIdentity {
         label,
         identifier: joinParts(clean(form.subnet), customPorts(form.ports)),
       };
+    case 'mdns':
+      return {
+        label,
+        identifier: clean(form.service_types) || '',
+      };
     case 'interfaces':
       return { label, identifier: '' };
     case 'arp':
@@ -51,7 +66,12 @@ export function tabIdentity(tab: WorkspaceTab): TabIdentity {
     case 'pcap':
       return {
         label,
-        identifier: clean(form.interface) ? joinParts(clean(form.interface), clean(form.filter)) : 'New',
+        identifier:
+          form.mode === 'Open File'
+            ? 'Open File'
+            : clean(form.interface)
+              ? joinParts(clean(form.interface), clean(form.filter))
+              : 'New',
       };
   }
 }

@@ -15,7 +15,7 @@ pub struct PcapConfig {
     pub max_packets: Option<usize>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct PcapResult {
     pub packets_captured: usize,
     pub duration: Duration,

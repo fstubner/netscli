@@ -1,0 +1,103 @@
+---
+import Page from '../layouts/Page.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import { site } from '../data/site';
+import changelogText from '../../../CHANGELOG.md?raw';
+
+const { hero, social } = site;
+const title = 'NetsCLI release notes';
+const description = 'Versioned release notes for shipped NetsCLI changes, fixes, and packaging updates.';
+
+const releaseSummaries: Record<string, string> = {
+  'v0.3.0':
+    'This release ships the redesigned desktop workspace, richer scan status data, probe concurrency controls in interactive interfaces, refreshed public docs, and packaging fixes across release channels.',
+  'v0.2.6':
+    'This release fixes desktop version reporting and Windows title-bar controls, so installed GUI builds identify themselves correctly and basic window actions work as expected. It also completes CLI/TUI refactors that make future interface changes easier to review and test.',
+  'v0.2.5':
+    'This release closes a DNS resolver security advisory, fixes Windows subnet detection so discovery and sweep find real LAN hosts, resets desktop history row styling in WebView2, and extends package publishing for GUI installers.',
+  'v0.2.4':
+    'This release repairs GUI installer publishing after the previous release built packages but failed to attach them. It also updates the AUR deploy action so Linux package publishing can complete again.',
+  'v0.2.3':
+    'This release gets GUI installer builds moving again by aligning the Tauri JavaScript and Rust versions, and fixes the AUR packaging handoff. CLI packages were usable from v0.2.2, but GUI artifacts needed these release-pipeline fixes.',
+  'v0.2.2':
+    'This is a release-pipeline recovery build. It refreshes Cargo.lock so locked release builds can run reproducibly after dependency bumps, giving package-manager users a working replacement for the failed v0.2.1 artifacts.',
+  'v0.2.1':
+    'This release makes NetsCLI easier to install outside a Rust toolchain by publishing desktop installers and signed release assets. It also adds concurrency tuning for networks that struggle with large parallel scans.',
+  'v0.2.0':
+    'This release turns the initial scanner into a more complete distribution: mDNS discovery, shell completions, man pages, package-manager templates, signed artifacts, typed core errors, and leaner optional features make NetsCLI easier to install, automate, and integrate.',
+  'v0.1.1':
+    'This release cleans up the first public version with crate documentation, security notes, a structured changelog, and release workflow fixes so binaries and pcap variants can be produced reliably.',
+  'v0.1.0':
+    'This is the first public NetsCLI release: one Rust core powers the CLI, terminal UI, desktop app, and MCP server, with structured output and cross-platform binaries for early users.',
+};
+
+const parseLocalChangelog = (text: string) => {
+  const headings = [...text.matchAll(/^## \[([^\]]+)\](?:\s+(?:—|-)\s+(\d{4}-\d{2}-\d{2}))?/gm)];
+  return headings
+    .map((heading, index) => {
+      const version = heading[1]?.trim();
+      if (!version || version.toLowerCase() === 'unreleased') return null;
+
+      const tag = version.startsWith('v') ? version : `v${version}`;
+      const start = (heading.index ?? 0) + heading[0].length;
+      const end = headings[index + 1]?.index ?? text.length;
+      const body = text.slice(start, end).trim();
+      const date = heading[2] ? `${heading[2]}T00:00:00.000Z` : '';
+      return {
+        name: tag,
+        tag_name: tag,
+        published_at: date,
+        html_url: `${hero.sourceUrl}/releases/tag/${tag}`,
+        body,
+        summary: releaseSummaries[tag],
+      };
+    })
+    .filter(Boolean)
+    .slice(0, 8);
+};
+
+const fallbackReleases = parseLocalChangelog(changelogText);
+---
+
+<Page
+  title={title}
+  description={description}
+  canonicalPath="/changelog/"
+  ogDescription="Versioned NetsCLI release notes and shipped changes."
+  includeFaqSchema={false}
+>
+  <Nav />
+  <main class="changelog-shell">
+    <header class="changelog-hero">
+      <h1>Release notes</h1>
+      <p>
+        See what changed in each release, why it matters, and whether there
+        are install, compatibility, or security notes before you update.
+      </p>
+      <div class="changelog-actions">
+        <a class="external-link" href={`${hero.sourceUrl}/releases`}>GitHub releases</a>
+        <a href="/docs/">Docs</a>
+      </div>
+    </header>
+
+    <div class="changelog-content">
+      <section id="release-list" class="release-list" aria-live="polite">
+        <div class="release-empty">Loading release notes...</div>
+      </section>
+
+      <aside class="release-timeline" aria-label="Release timeline">
+        <p>Timeline</p>
+        <nav id="release-timeline" class="release-timeline-nav">
+          <span class="release-timeline-empty">Loading</span>
+        </nav>
+      </aside>
+    </div>
+  </main>
+  <Footer />
+
+  <script define:vars={{ repo: social.repo, fallbackReleases, releaseSummaries }}>
+    import { initChangelogPage } from '../scripts/changelog-page';
+    initChangelogPage(repo, fallbackReleases, releaseSummaries);
+  </script>
+</Page>

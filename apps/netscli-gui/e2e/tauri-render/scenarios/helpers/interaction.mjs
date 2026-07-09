@@ -4,6 +4,7 @@ import { clickButtonText, waitForText } from '../../ui.mjs';
 import { getActiveTabText, waitForNoElement } from './menu.mjs';
 
 async function assertCommandStatusAlignment(driver) {
+  await waitForText(driver, '[data-testid="statusbar"] .status-left', /Mbps/i, 6_000);
   const state = await driver.executeScript(`
     const terminal = document.querySelector('[data-testid="command-strip"] > svg');
     const copy = document.querySelector('[data-testid="command-strip"] button svg');

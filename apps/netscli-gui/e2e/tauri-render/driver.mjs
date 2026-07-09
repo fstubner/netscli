@@ -20,9 +20,10 @@ export function findApplication() {
 
   const appName = process.platform === 'win32' ? 'netscli-gui.exe' : 'netscli-gui';
   const candidates = [
+    process.env.CARGO_TARGET_DIR ? path.join(process.env.CARGO_TARGET_DIR, 'debug', appName) : null,
     path.join(repoRoot, 'target', 'debug', appName),
     path.join(guiRoot, 'src-tauri', 'target', 'debug', appName),
-  ];
+  ].filter(Boolean);
   const application = candidates.find((candidate) => fs.existsSync(candidate));
   if (!application) {
     throw new Error(`Could not find debug Tauri app binary. Checked: ${candidates.join(', ')}`);

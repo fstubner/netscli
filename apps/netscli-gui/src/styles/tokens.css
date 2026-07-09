@@ -67,6 +67,8 @@ button {
   --text-muted: #667085;
   --mint: #3eddb0;
   --mint-deep: #0aae7a;
+  --focus-ring: color-mix(in srgb, var(--mint), transparent 35%);
+  --focus-surface: color-mix(in srgb, var(--mint), transparent 88%);
   --cyan: #1edcff;
   --red: #ef4456;
   --amber: #f5a524;
@@ -146,6 +148,8 @@ button {
   --text-muted: #7b8797;
   --mint: #008a63;
   --mint-deep: #007052;
+  --focus-ring: color-mix(in srgb, var(--mint), transparent 24%);
+  --focus-surface: color-mix(in srgb, var(--mint), transparent 90%);
   --cyan: #0476a8;
   --red: #c6293d;
   --amber: #a96700;
@@ -156,6 +160,11 @@ button {
 code,
 pre {
   font-family: "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+}
+
+.container :focus-visible {
+  outline: 1px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 
 @keyframes spin {

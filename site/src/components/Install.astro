@@ -11,11 +11,15 @@ const labels = { windows: 'Windows', macos: 'macOS', linux: 'Linux' };
     <p class="lead" set:html={copy.install.leadHtml} />
 
     <div class="install-grid">
-      <div class="os-tabs" role="tablist">
+      <div class="os-tabs" role="tablist" aria-label="Choose operating system">
         {oses.map((os) => (
           <button
-            class={`os-tab ${os === 'macos' ? 'active' : ''}`}
+            class={`os-tab ${os === 'windows' ? 'active' : ''}`}
             role="tab"
+            id={`install-tab-${os}`}
+            aria-selected={os === 'windows' ? 'true' : 'false'}
+            aria-controls={`install-panel-${os}`}
+            tabindex={os === 'windows' ? '0' : '-1'}
             data-os={os}
           >{labels[os]}</button>
         ))}
@@ -23,7 +27,14 @@ const labels = { windows: 'Windows', macos: 'macOS', linux: 'Linux' };
 
       <div class="install-content">
         {oses.map((os) => (
-          <div class={`os-panel ${os === 'macos' ? 'active' : ''}`} data-os={os}>
+          <div
+            class={`os-panel ${os === 'windows' ? 'active' : ''}`}
+            role="tabpanel"
+            id={`install-panel-${os}`}
+            aria-labelledby={`install-tab-${os}`}
+            data-os={os}
+            hidden={os !== 'windows'}
+          >
             <div class="reco">
               <div class="reco-meta">{byPlatform[os][0].label}</div>
               <div class="cmd big has-copy always-show">{byPlatform[os][0].command}</div>
@@ -46,8 +57,9 @@ const labels = { windows: 'Windows', macos: 'macOS', linux: 'Linux' };
       <div class="try">
         <h3 class="try-title">Try it</h3>
         {tryCommands.map((c) => (
-          <div class="try-cmd has-copy">
-            <span class="p">$</span><span class="t">{c}</span>
+          <div class="try-cmd has-copy" data-copy={c.command}>
+            <span class="try-comment"># {c.comment}</span>
+            <span class="try-line"><span class="p">$</span><span class="t">{c.command}</span></span>
           </div>
         ))}
       </div>

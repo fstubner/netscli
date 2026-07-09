@@ -196,9 +196,10 @@ Prebuilt installers are attached to every [GitHub release](https://github.com/fs
 - **Linux**: `netscli-gui-linux-x86_64.deb` (Debian/Ubuntu) or `netscli-gui-linux-x86_64.AppImage` (any distro; `chmod +x` and run).
 
 The published desktop GUI installers are built without packet capture support
-so they do not depend on or redistribute Npcap/libpcap. Packet Capture appears
-only in local desktop builds compiled with the `pcap` feature and a working
-Npcap/libpcap runtime.
+so they do not depend on or redistribute Npcap/libpcap. The Packet Capture
+tool is visible in the GUI, but it shows setup guidance and cannot run unless
+the desktop backend was built with the `pcap` feature and a working
+Npcap/libpcap runtime is installed.
 
 To build from source instead:
 
@@ -243,7 +244,7 @@ PCAP capture is optional and disabled in the default builds for portability. To 
 - **Via installer (recommended)**: `NETSCLI_PCAP=1` does everything. It picks the pcap-enabled binary variant *and* installs the system library (`libpcap` on Linux/macOS, Npcap on Windows).
   - Add `NETSCLI_SKIP_LIBPCAP=1` (POSIX) or `NETSCLI_SKIP_NPCAP=1` (Windows) if you manage the system library yourself.
 - **From source**: `cargo build --features pcap` (see [Building](#building) for the full command with OS-specific deps).
-- **Desktop GUI**: published GUI installers are intentionally non-PCAP. Use `npm run tauri:dev:pcap` or `npm run tauri build -- --features pcap` for local packet-capture GUI builds.
+- **Desktop GUI**: published GUI installers are intentionally non-PCAP. The Packet Capture tab shows setup guidance in those builds. Use `npm run tauri:dev:pcap` or `npm run tauri build -- --features pcap` for local packet-capture GUI builds.
 - **Capture parsing**: pcap-enabled CLI builds can also summarize existing capture files with `netscli pcap --read <file> --json` or `--yaml`.
 - **On Windows runtime**: ensure `wpcap.dll` is on PATH. Npcap installs it to `C:\Windows\System32\Npcap\` which isn't on PATH by default. Add that directory to your PATH, or the installer does it for you when you set `NETSCLI_PCAP=1`.
 - **On Windows source builds**: install the [Npcap SDK](https://npcap.com/#download) as well as the runtime. MSVC needs the SDK import library (`wpcap.lib`) at link time:
@@ -485,7 +486,7 @@ systemctl --user enable --now netscli-mcp.service
 
 ### Available Tools
 
-The MCP server exposes 9 tools by default (10 in `-pcap` builds, where `capture_pcap` is also available):
+The MCP server exposes 9 tools by default (13 in `-pcap` builds, which add `capture_pcap` plus three job-based tools for longer captures):
 1. `discover_network` - Discover live hosts on a network subnet
 2. `scan_ports` - Scan TCP ports on a host
 3. `ping_host` - Ping a host with statistics
@@ -495,7 +496,10 @@ The MCP server exposes 9 tools by default (10 in `-pcap` builds, where `capture_
 7. `sweep_network` - Sweep a network (discover hosts then scan ports)
 8. `list_network_interfaces` - List network interfaces with details
 9. `discover_mdns` - Discover devices via mDNS/DNS-SD (Bonjour), returning hostnames + resolved IPs + service metadata
-10. `capture_pcap` - Capture network packets to PCAP file
+10. `capture_pcap` - Capture network packets to a PCAP file in one blocking call (pcap builds only)
+11. `start_pcap_capture` - Start a packet capture as a background job (pcap builds only)
+12. `get_pcap_capture_status` - Poll the running/completed/failed status of a capture job (pcap builds only)
+13. `get_pcap_capture_result` - Fetch the result of a completed capture job (pcap builds only)
 
 ## Contributing
 
