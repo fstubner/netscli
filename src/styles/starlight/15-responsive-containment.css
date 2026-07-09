@@ -1,0 +1,71 @@
+/* Final responsive containment. Tables should remain readable tables on
+   tablet and mobile, with their own horizontal scroll instead of widening the
+   page or collapsing into unlabelled cards. */
+@media (max-width: 71.99rem) {
+  .main-frame,
+  .main-pane,
+  .content-panel,
+  .content-panel > .sl-container,
+  .sl-markdown-content {
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .sl-markdown-content table {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    border: 1px solid rgba(140, 149, 166, 0.2) !important;
+    border-radius: 8px !important;
+    background: #20242b !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .sl-markdown-content table thead {
+    display: table-header-group !important;
+  }
+
+  .sl-markdown-content table tbody {
+    display: table-row-group !important;
+  }
+
+  .sl-markdown-content table tr {
+    display: table-row !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+  }
+
+  .sl-markdown-content table td,
+  .sl-markdown-content table th {
+    display: table-cell !important;
+    width: auto !important;
+    min-width: 8.5rem !important;
+    padding: 0.68rem 0.85rem !important;
+    border-bottom: 1px solid rgba(140, 149, 166, 0.11) !important;
+    white-space: normal !important;
+    overflow-wrap: normal !important;
+  }
+
+  .sl-markdown-content table td:first-child,
+  .sl-markdown-content table th:first-child {
+    min-width: 7.75rem !important;
+    width: auto !important;
+    padding-inline-start: 0.85rem !important;
+    white-space: nowrap !important;
+  }
+
+  .sl-markdown-content table td + td,
+  .sl-markdown-content table th + th {
+    border-inline-start: 1px solid rgba(140, 149, 166, 0.11) !important;
+  }
+}
+
+html[data-theme='light'] .sl-markdown-content table {
+  background: #f7faf9 !important;
+}
+

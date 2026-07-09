@@ -1,0 +1,93 @@
+/* Final search/table fit pass. Pagefind's default drawer is a flex layout with
+   filter-column spacing; NetsCLI search is a single-column modal. */
+#starlight__search .pagefind-ui__drawer {
+  display: block;
+  gap: 0;
+  box-sizing: border-box;
+  width: 100%;
+  padding-inline: 0 0.65rem;
+}
+
+#starlight__search .pagefind-ui__results-area,
+#starlight__search .pagefind-ui__results,
+#starlight__search .pagefind-ui__result,
+#starlight__search .pagefind-ui__result-inner,
+#starlight__search .pagefind-ui__button {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+#starlight__search .pagefind-ui__results-area {
+  flex: none;
+  margin-top: 1rem;
+}
+
+#starlight__search .pagefind-ui__result {
+  display: block;
+  padding: 0;
+  border: 0;
+}
+
+#starlight__search .pagefind-ui__result + .pagefind-ui__result {
+  margin-top: 1rem;
+}
+
+#starlight__search .pagefind-ui__result-inner {
+  margin-top: 0;
+}
+
+.sl-markdown-content [data-netscli-table] {
+  display: none !important;
+}
+
+.sl-markdown-content table,
+html[data-theme='light'] .sl-markdown-content table,
+.sl-markdown-content .expressive-code .frame,
+html[data-theme='light'] .sl-markdown-content .expressive-code .frame {
+  box-shadow: none !important;
+}
+
+.sl-markdown-content tbody tr,
+.sl-markdown-content tbody tr:hover {
+  background: #20242b !important;
+}
+
+.sl-markdown-content tbody tr:nth-child(even),
+.sl-markdown-content tbody tr:nth-child(even):hover {
+  background: #242932 !important;
+}
+
+html[data-theme='light'] .sl-markdown-content tbody tr,
+html[data-theme='light'] .sl-markdown-content tbody tr:hover {
+  background: #ffffff !important;
+}
+
+html[data-theme='light'] .sl-markdown-content tbody tr:nth-child(even),
+html[data-theme='light'] .sl-markdown-content tbody tr:nth-child(even):hover {
+  background: #f6f8fa !important;
+}
+
+html[data-theme='light'] .sl-markdown-content .expressive-code .copy button {
+  border-color: rgba(17, 24, 39, 0.14) !important;
+  background: #e9eef2 !important;
+  color: #243044 !important;
+  opacity: 1;
+  box-shadow: none !important;
+}
+
+html[data-theme='light'] .sl-markdown-content .expressive-code .copy button:hover,
+html[data-theme='light'] .sl-markdown-content .expressive-code .copy button:focus-visible {
+  border-color: rgba(0, 122, 84, 0.32) !important;
+  background: #dde6ea !important;
+}
+
+html[data-theme='light'] .sl-markdown-content .expressive-code .copy button::before {
+  border-color: rgba(17, 24, 39, 0.26) !important;
+}
+
+.sl-markdown-content .expressive-code .copy button {
+  box-shadow: none !important;
+}
+
