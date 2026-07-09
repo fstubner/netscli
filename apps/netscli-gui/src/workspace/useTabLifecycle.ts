@@ -1,0 +1,114 @@
+import { useRef, type Dispatch, type SetStateAction } from 'react';
+
+import { isTauri } from '../services/env';
+import * as netscli from '../services/netscli';
+import { createTab } from '../tools/registry';
+import type { ToolKind, WorkspaceTab } from '../tools/types';
+import type { DefaultInterfaceInfo, InterfaceInfo } from '../types/netscli';
+import { applyContextDefaults, shouldAutoRun } from './networkDefaults';
+
+interface UseTabLifecycleArgs {
+  tabs: WorkspaceTab[];
+  setTabs: Dispatch<SetStateAction<WorkspaceTab[]>>;
+  activeTabId: string;
+  setActiveTabId: (tabId: string) => void;
+  setFilterText: (filterText: string) => void;
+  defaultInterface: DefaultInterfaceInfo | null;
+  trafficInterfaceName: string | null;
+  interfaces: InterfaceInfo[];
+}
+
+/** Tab CRUD (create/close) plus the auto-run flag that App.tsx's own
+ *  requestRun effect consults — kept here alongside the tabs it applies to
+ *  rather than routed back through a ref, since only this hook knows which
+ *  tabs were auto-created and still need their first run triggered. */
+export function useTabLifecycle({
+  tabs,
+  setTabs,
+  activeTabId,
+  setActiveTabId,
+  setFilterText,
+  defaultInterface,
+  trafficInterfaceName,
+  interfaces,
+}: UseTabLifecycleArgs) {
+  const activeOps = useRef<Record<string, string>>({});
+  const autoRunTabIds = useRef<Set<string>>(new Set());
+
+  function addTab(kind: ToolKind) {
+    const tab = applyContextDefaults(createTab(kind), defaultInterface, trafficInterfaceName, interfaces);
+    if (shouldAutoRun(kind)) {
+      autoRunTabIds.current.add(tab.id);
+    }
+    setTabs((prev) => [...prev, tab]);
+    setActiveTabId(tab.id);
+  }
+
+  function openHostTool(kind: 'scan' | 'inspect', host: string) {
+    const value = host.trim();
+    if (!value) return;
+    const tab = applyContextDefaults(createTab(kind), defaultInterface, trafficInterfaceName, interfaces);
+    tab.form = { ...tab.form, host: value };
+    setTabs((prev) => [...prev, tab]);
+    setActiveTabId(tab.id);
+  }
+
+  function cancelOperationIds(tabIds: string[]) {
+    for (const tabId of tabIds) {
+      autoRunTabIds.current.delete(tabId);
+      const opId = activeOps.current[tabId];
+      if (opId && isTauri()) {
+        void netscli.cancelOperation(opId).catch(() => undefined);
+      }
+      delete activeOps.current[tabId];
+    }
+  }
+
+  function closeTab(id: string) {
+    cancelOperationIds([id]);
+    setTabs((prev) => {
+      const index = prev.findIndex((tab) => tab.id === id);
+      if (index < 0) return prev;
+      const next = prev.filter((tab) => tab.id !== id);
+      if (id === activeTabId) {
+        const replacement = next[Math.max(0, index - 1)] ?? next[0];
+        setActiveTabId(replacement?.id ?? '');
+      }
+      return next;
+    });
+  }
+
+  function closeAllTabs() {
+    cancelOperationIds(tabs.map((tab) => tab.id));
+    setTabs([]);
+    setActiveTabId('');
+    setFilterText('');
+  }
+
+  function closeOtherTabs(activeTab: WorkspaceTab | undefined) {
+    if (!activeTab) return;
+    cancelOperationIds(tabs.filter((tab) => tab.id !== activeTab.id).map((tab) => tab.id));
+    setTabs([activeTab]);
+    setActiveTabId(activeTab.id);
+  }
+
+  function needsAutoRun(tabId: string): boolean {
+    return autoRunTabIds.current.has(tabId);
+  }
+
+  function clearAutoRun(tabId: string): void {
+    autoRunTabIds.current.delete(tabId);
+  }
+
+  return {
+    activeOps,
+    addTab,
+    openHostTool,
+    cancelOperationIds,
+    closeTab,
+    closeAllTabs,
+    closeOtherTabs,
+    needsAutoRun,
+    clearAutoRun,
+  };
+}

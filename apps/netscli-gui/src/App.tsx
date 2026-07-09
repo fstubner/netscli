@@ -1,4 +1,4 @@
-import { useRef, useState, type MouseEvent } from 'react';
+import { useEffect, useRef, useState, type MouseEvent } from 'react';
 
 import './App.css';
 
@@ -75,14 +75,12 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [workspaceSearchOpen, setWorkspaceSearchOpen] = useState(false);
   const filterInputRef = useRef<HTMLInputElement | null>(null);
-  const requestRunRef = useRef<(tabId: string) => void>(() => {});
 
   const workspace = useWorkspace({
     interactionToasts,
     maxConcurrentProbes,
     operationToasts,
     persistentHistory,
-    requestRun: (tabId) => requestRunRef.current(tabId),
   });
   const activeTab = workspace.activeTab;
 
@@ -110,7 +108,12 @@ function App() {
     void workspace.runTab(tabId);
   }
 
-  requestRunRef.current = requestRun;
+  useEffect(() => {
+    if (!activeTab || !workspace.needsAutoRun(activeTab.id)) return;
+    if (activeTab.busy || activeTab.result) return;
+    workspace.clearAutoRun(activeTab.id);
+    requestRun(activeTab.id);
+  }, [activeTab?.id, activeTab?.busy, activeTab?.result]);
 
   useKeyboardShortcuts({
     focusResultFilter: () => {
