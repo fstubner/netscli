@@ -5,17 +5,11 @@ import './App.css';
 import { AppDialogs } from './components/shell/AppDialogs';
 import { AppFrame } from './components/shell/AppFrame';
 import { AppTooltip } from './components/shell/AppTooltip';
-import { CommandStrip } from './components/shell/CommandStrip';
 import { MenuBar } from './components/shell/MenuBar';
 import { StatusBar } from './components/shell/StatusBar';
 import { TabStrip } from './components/shell/TabStrip';
 import { Toolbar } from './components/shell/Toolbar';
-import { DetailPane } from './components/results/DetailPane';
-import { EmptyWorkspace } from './components/results/EmptyWorkspace';
-import { OperationProgress } from './components/results/OperationProgress';
-import { ResultTable } from './components/results/ResultTable';
-import { WarningStrip, warningMessageFor } from './components/results/WarningStrip';
-import { ToolForm } from './components/tools/ToolForm';
+import { WorkspaceView } from './components/shell/WorkspaceView';
 import { ToastHost } from './components/shell/ToastHost';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { usePopoverDismissal } from './hooks/usePopoverDismissal';
@@ -68,7 +62,6 @@ function App() {
     toolCapabilities,
     toggleFileSaveAskEachTime,
   } = useTauriRuntimeState();
-  const [dismissedWarningKeys, setDismissedWarningKeys] = useState<Record<string, true>>({});
   const [aboutOpen, setAboutOpen] = useState(false);
   const [pendingRun, setPendingRun] = useState<{ tabId: string; guard: OperationGuard } | null>(null);
   const [pendingHistoryDisable, setPendingHistoryDisable] = useState(false);
@@ -161,9 +154,6 @@ function App() {
     });
   }
 
-  const warningMessage = !activeTab?.error ? warningMessageFor(activeTab?.result?.warnings) : null;
-  const warningKey = activeTab && warningMessage ? `${activeTab.id}:${workspace.commandPreview}:${warningMessage}` : null;
-  const showWarning = Boolean(warningKey && !dismissedWarningKeys[warningKey]);
   const pcapUnavailableReason =
     activeTab?.kind === 'pcap' && !pcapCapability.available
       ? packetCaptureUnavailableMessage(pcapCapability.message)
@@ -231,59 +221,14 @@ function App() {
         setOpenMenu={setOpenMenu}
       />
 
-      <main className="workspace">
-        {activeTab ? (
-          <>
-            <section className="active-form">
-              <ToolForm
-                interfaces={workspace.interfaces}
-                tab={activeTab}
-                onPatchForm={workspace.patchForm}
-                onRun={requestRun}
-              />
-            </section>
-
-            {activeTab.error && <div className="error-strip">{activeTab.error}</div>}
-            {showWarning && warningKey ? (
-              <WarningStrip
-                message={warningMessage ?? ''}
-                onDismiss={() => setDismissedWarningKeys((prev) => ({ ...prev, [warningKey]: true }))}
-              />
-            ) : null}
-            <section className="result-region">
-              {activeTab.busy && <OperationProgress tab={activeTab} />}
-              <ResultTable
-                activeTab={activeTab}
-                columns={workspace.columns}
-                pcapCapability={pcapCapability}
-                rows={workspace.rows}
-                onContentContextMenu={openContentContextMenu}
-                onSelectAllRows={workspace.selectAllRows}
-                onSelectRow={workspace.selectRow}
-                onSort={workspace.sortBy}
-              />
-            </section>
-
-            <DetailPane
-              activeTab={activeTab}
-              columns={workspace.columns}
-              selectedRow={workspace.selectedRow}
-              selectedRows={workspace.selectedRows}
-              onContentContextMenu={openContentContextMenu}
-              onSetDetailTab={(detailTab) => workspace.patchTab(activeTab.id, { detailTab })}
-            />
-
-            {commandBarVisible && (
-              <CommandStrip command={workspace.commandPreview} onCopy={() => void workspace.copyCommand()} />
-            )}
-          </>
-        ) : (
-          <EmptyWorkspace
-            toolCapabilities={toolCapabilities}
-            onAddToolTab={workspace.addTab}
-          />
-        )}
-      </main>
+      <WorkspaceView
+        commandBarVisible={commandBarVisible}
+        pcapCapability={pcapCapability}
+        toolCapabilities={toolCapabilities}
+        workspace={workspace}
+        onContentContextMenu={openContentContextMenu}
+        onRequestRun={requestRun}
+      />
 
       <StatusBar
         activeTab={activeTab}

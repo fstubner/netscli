@@ -13,13 +13,6 @@ const transitionExceptions = new Map([
     },
   ],
   [
-    'apps/netscli-gui/src-tauri/src/commands/files.rs',
-    {
-      maxLines: 500,
-      reason: 'backend-owned file/export/capture dialogs; split by artifact family next',
-    },
-  ],
-  [
     'apps/netscli-gui/src/styles/results.css',
     {
       maxLines: 460,
@@ -29,15 +22,8 @@ const transitionExceptions = new Map([
   [
     'apps/netscli-gui/src/workspace/useWorkspace.ts',
     {
-      maxLines: 450,
-      reason: 'workspace orchestration hook; split tab history/progress/actions next',
-    },
-  ],
-  [
-    'apps/netscli-gui/src/tools/presentation/details.ts',
-    {
-      maxLines: 410,
-      reason: 'mode-specific detail models; split by operation family next',
+      maxLines: 325,
+      reason: 'workspace orchestration hook; tab lifecycle and result actions already extracted, split selection handling next',
     },
   ],
   [
@@ -48,31 +34,10 @@ const transitionExceptions = new Map([
     },
   ],
   [
-    'apps/netscli-gui/src/styles/shell/settings.css',
-    {
-      maxLines: 395,
-      reason: 'settings overlay styling; split sections/control primitives next',
-    },
-  ],
-  [
-    'apps/netscli-gui/src/components/results/DetailPane.tsx',
-    {
-      maxLines: 380,
-      reason: 'details, raw, selection, and packet panes; split pane bodies next',
-    },
-  ],
-  [
     'apps/netscli-cli/src/args.rs',
     {
       maxLines: 360,
       reason: 'Clap command surface; split command argument groups next',
-    },
-  ],
-  [
-    'apps/netscli-gui/src-tauri/src/commands/operations.rs',
-    {
-      maxLines: 350,
-      reason: 'Tauri operation adapters; split scan/lookup/capture commands next',
     },
   ],
   [
@@ -90,27 +55,6 @@ const transitionExceptions = new Map([
     },
   ],
   [
-    'apps/netscli-gui/src/App.tsx',
-    {
-      maxLines: 345,
-      reason: 'top-level GUI composition; continue extracting shell wiring next',
-    },
-  ],
-  [
-    'apps/netscli-cli/src/tui/state/mod.rs',
-    {
-      maxLines: 335,
-      reason: 'TUI state facade; split state families next',
-    },
-  ],
-  [
-    'apps/netscli-gui/src/components/results/ResultTable.tsx',
-    {
-      maxLines: 335,
-      reason: 'table selection/resize/keyboard behavior; split hooks next',
-    },
-  ],
-  [
     'apps/netscli-cli/src/tui/runtime/input.rs',
     {
       maxLines: 330,
@@ -118,10 +62,10 @@ const transitionExceptions = new Map([
     },
   ],
   [
-    'site/src/scripts/changelog-page.ts',
+    'apps/netscli-gui/src/App.tsx',
     {
-      maxLines: 760,
-      reason: 'changelog markdown renderer; split parser/render/timeline next',
+      maxLines: 320,
+      reason: 'top-level GUI composition; workspace view extracted, split dialog/preference wiring next',
     },
   ],
   [
@@ -129,13 +73,6 @@ const transitionExceptions = new Map([
     {
       maxLines: 360,
       reason: 'docs header/search/toc behaviors; split search vs toc vs tables next',
-    },
-  ],
-  [
-    'site/src/scripts/landing-page.ts',
-    {
-      maxLines: 310,
-      reason: 'landing interactions; split metrics/copy/lightbox/install next',
     },
   ],
   [
