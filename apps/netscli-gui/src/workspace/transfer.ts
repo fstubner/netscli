@@ -1,23 +1,10 @@
 import type { ToolKind, ResultColumn, ResultRow, WorkspaceTab } from '../tools/types';
 import type { ToolResult } from '../types/app';
 import { serializeRowsAsCsv } from '../tools/presentation';
+import { TOOL_KINDS } from '../tools/registry';
 import { downloadText } from './toolExecution';
 
 export const RESULT_BUNDLE_SCHEMA = 'netscli.result.v1';
-const TOOL_KINDS = [
-  'scan',
-  'ping',
-  'trace',
-  'discover',
-  'dns',
-  'reverse',
-  'inspect',
-  'sweep',
-  'mdns',
-  'interfaces',
-  'arp',
-  'pcap',
-] as const satisfies readonly ToolKind[];
 
 export interface ResultBundle {
   schema: typeof RESULT_BUNDLE_SCHEMA;
