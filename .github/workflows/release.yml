@@ -97,7 +97,7 @@ jobs:
     steps:
       # On workflow_dispatch we need the tag ref explicitly. On release
       # events the default ref is already the tag.
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.inputs.tag || github.ref }}
 
@@ -235,7 +235,7 @@ jobs:
             bundle_dir: bundle
             bundle_globs: "msi/*.msi"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.inputs.tag || github.ref }}
 
