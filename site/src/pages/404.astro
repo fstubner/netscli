@@ -31,3 +31,97 @@ import Footer from '../components/Footer.astro';
   </main>
   <Footer />
 </Page>
+
+<style is:global>
+.not-found{
+  padding:clamp(32px,5vh,60px) 24px;
+  background:
+    linear-gradient(180deg,rgba(10,174,122,.045),transparent 20rem),
+    #111;
+}
+.not-found-shell{
+  width:min(720px,100%);
+  margin:0 auto;
+  display:grid;
+  grid-template-columns:1fr;
+}
+.not-found .not-found-shell{
+  padding:0;
+  border:0;
+  background:transparent;
+  scroll-margin-top:0;
+}
+.not-found .not-found-shell::before{
+  content:none;
+}
+.not-found-copy{
+  min-width:0;
+}
+.not-found .eyebrow{
+  margin:0 0 12px;
+  color:#0aae7a;
+  font-size:.75rem;
+  font-weight:800;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+}
+.not-found h1{
+  margin:0;
+  color:#f5f5f5;
+  font-size:clamp(2.4rem,6vw,5rem);
+  line-height:1.05;
+  letter-spacing:-.035em;
+}
+.not-found p{
+  margin:20px 0 0;
+  max-width:43rem;
+  color:#bfc5cf;
+  font-size:clamp(1rem,1.6vw,1.18rem);
+}
+.not-found-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:30px;
+}
+.not-found-actions a{
+  min-height:42px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:9px 17px;
+  border:1px solid rgba(10,174,122,.35);
+  border-radius:7px;
+  color:#e5e5e5;
+  text-decoration:none;
+  background:rgba(255,255,255,.025);
+  font-weight:700;
+}
+.not-found-actions a.primary{
+  color:#06130f;
+  border-color:#0aae7a;
+  background:#0aae7a;
+}
+.not-found-actions a:hover,
+.not-found-actions a:focus-visible{
+  outline:0;
+  border-color:rgba(30,220,255,.62);
+  color:#fff;
+}
+.not-found-actions a.primary:hover,
+.not-found-actions a.primary:focus-visible{
+  color:#06130f;
+  background:#23d198;
+  border-color:#23d198;
+}
+@media(max-width:820px){
+  .not-found{
+    padding:56px 18px 68px;
+  }
+}
+@media(max-width:520px){
+  .not-found-actions a{
+    width:100%;
+  }
+}
+</style>

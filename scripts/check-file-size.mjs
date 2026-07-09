@@ -139,10 +139,11 @@ const transitionExceptions = new Map([
     },
   ],
   [
-    'site/src/styles/starlight/starlight-07.css',
+    'site/src/styles/starlight/20-docs-shell-closeout.css',
     {
-      maxLines: 920,
-      reason: 'docs responsive override tail; dedupe EOF guardrails next',
+      maxLines: 320,
+      reason:
+        'single cohesive docs shell close-out pass split from starlight.css; not further split to avoid fragmenting one cascade-ordered concern',
     },
   ],
 ]);

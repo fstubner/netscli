@@ -1,0 +1,131 @@
+/* Unified shell and interaction close-out. These final rules intentionally
+   sit last because Starlight and earlier feedback passes both style these
+   same surfaces. */
+.sidebar-content :where(details > ul) {
+  margin-inline-start: 0.75rem !important;
+  border-inline-start: 1px solid var(--sl-color-hairline) !important;
+}
+
+.sidebar-content :where(details > ul > li) {
+  margin-inline-start: 0 !important;
+  border-inline-start: 0 !important;
+}
+
+.sidebar-content a[aria-current='page'] {
+  border-inline-start: 2px solid #0aae7a !important;
+  box-shadow: none !important;
+  margin-inline-start: -1px !important;
+  padding-inline-start: 0.55rem !important;
+  width: calc(100% + 1px) !important;
+}
+
+.sidebar-content a[aria-current='page']::before {
+  content: none !important;
+}
+
+site-search button[data-open-modal],
+site-search button[data-open-modal]:hover {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015)),
+    rgba(17, 22, 29, 0.9) !important;
+}
+
+site-search button[data-open-modal]:hover {
+  border-color: rgba(10, 174, 122, 0.48) !important;
+  box-shadow:
+    0 0 0 1px rgba(10, 174, 122, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035) !important;
+}
+
+html[data-theme='light'] site-search button[data-open-modal],
+html[data-theme='light'] site-search button[data-open-modal]:hover {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(244, 246, 248, 0.92)),
+    var(--sl-color-bg) !important;
+}
+
+#starlight__search .pagefind-ui__drawer:has(.pagefind-ui__result)::before,
+#starlight__search .pagefind-ui__drawer:has(.pagefind-ui__result)::after {
+  height: 1.35rem !important;
+  opacity: 0;
+  transition: opacity 120ms linear;
+}
+
+#starlight__search .pagefind-ui__drawer:has(.pagefind-ui__result)::before {
+  margin-block-end: -1.35rem !important;
+  background:
+    linear-gradient(180deg, rgba(8, 12, 18, 0.58), rgba(8, 12, 18, 0.22) 44%, rgba(8, 12, 18, 0)) !important;
+}
+
+#starlight__search .pagefind-ui__drawer:has(.pagefind-ui__result)::after {
+  margin-block-start: -1.35rem !important;
+  background:
+    linear-gradient(0deg, rgba(8, 12, 18, 0.54), rgba(8, 12, 18, 0.2) 44%, rgba(8, 12, 18, 0)) !important;
+}
+
+#starlight__search .pagefind-ui__drawer.netscli-search-overflow-top::before,
+#starlight__search .pagefind-ui__drawer.netscli-search-overflow-bottom::after {
+  opacity: 1;
+}
+
+html[data-theme='light'] #starlight__search .pagefind-ui__drawer:has(.pagefind-ui__result)::before {
+  background:
+    linear-gradient(180deg, rgba(209, 213, 219, 0.9), rgba(209, 213, 219, 0.36) 44%, rgba(209, 213, 219, 0)) !important;
+}
+
+html[data-theme='light'] #starlight__search .pagefind-ui__drawer:has(.pagefind-ui__result)::after {
+  background:
+    linear-gradient(0deg, rgba(209, 213, 219, 0.86), rgba(209, 213, 219, 0.32) 44%, rgba(209, 213, 219, 0)) !important;
+}
+
+.pagination-links a:hover,
+.pagination-links a:focus-visible {
+  background: transparent !important;
+  border-color: rgba(10, 174, 122, 0.36) !important;
+  color: var(--sl-color-white) !important;
+  outline: 0 !important;
+}
+
+html[data-theme='light'] .pagination-links a:hover,
+html[data-theme='light'] .pagination-links a:focus-visible {
+  background: transparent !important;
+  border-color: rgba(0, 122, 84, 0.28) !important;
+  color: #111827 !important;
+}
+
+#starlight__search .pagefind-ui__button {
+  width: fit-content !important;
+  max-width: max-content !important;
+  min-height: 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 1rem auto 0 !important;
+  padding: 1px 0 2px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #0aae7a !important;
+  font: inherit !important;
+  font-size: 0.8rem !important;
+  font-weight: 400 !important;
+  line-height: 1.4 !important;
+  text-align: center !important;
+  text-decoration: underline !important;
+  text-decoration-thickness: 1px !important;
+  text-underline-offset: 4px !important;
+}
+
+#starlight__search .pagefind-ui__button:hover,
+#starlight__search .pagefind-ui__button:focus-visible {
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #23d198 !important;
+  outline: 0 !important;
+}
+
+#starlight__search .pagefind-ui__button.pagefind-ui__hidden {
+  display: none !important;
+}
+
