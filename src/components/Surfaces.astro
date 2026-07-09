@@ -39,7 +39,13 @@ const { surfaces, copy } = site;
                 />
               </picture>
             ) : s.codeHtml ? (
-              <div class="codeblock has-copy" set:html={s.codeHtml} />
+              <div
+                class="codeblock has-copy"
+                tabindex="0"
+                role="region"
+                aria-label="Code example"
+                set:html={s.codeHtml}
+              />
             ) : null}
           </div>
         </div>
