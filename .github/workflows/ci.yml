@@ -127,6 +127,10 @@ jobs:
         if: runner.os == 'Linux'
         run: cargo test -p netscli-core --features pcap --no-fail-fast
 
+      - name: cargo test netscli-mcp with pcap
+        if: runner.os == 'Linux'
+        run: cargo test -p netscli-mcp --features pcap --no-fail-fast
+
   gui-build:
     name: GUI Build (TypeScript + Vite)
     needs: lint
