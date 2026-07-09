@@ -1,4 +1,5 @@
 import { columnsFor } from './columns';
+import { FIELD_KEY_ALIASES, FIELD_KEY_LABELS } from './filterFieldLabels';
 import { buildRows } from './rows';
 import type { ResultColumn, ResultRow, ToolKind, WorkspaceTab } from '../types';
 
@@ -12,73 +13,6 @@ export interface FilterHints {
   example: string;
   sections: FilterSectionConfig[];
 }
-
-const FIELD_KEY_LABELS: Record<string, string> = {
-  ip: 'IP address',
-  addresses: 'Addresses',
-  avg: 'Avg RTT',
-  hop: 'Hop',
-  record_type: 'Record type',
-  ips: 'Address',
-  loss: 'Packet loss',
-  metric: 'Metric',
-  name: 'Interface',
-  open_ports: 'Open ports',
-  resolver: 'Resolver',
-  service_type: 'Service type',
-  ttl: 'TTL',
-  app: 'App marker',
-  address: 'Address / host',
-  best: 'Best RTT',
-  worst: 'Worst RTT',
-};
-
-const FIELD_KEY_ALIASES: Record<string, string> = {
-  banner: 'banner',
-  addresses: 'addresses',
-  app: 'app',
-  duration: 'duration',
-  file: 'file',
-  hostname: 'hostname',
-  interface: 'interface',
-  ip: 'ip',
-  ips: 'address',
-  mac: 'mac',
-  metric: 'metric',
-  no: 'no',
-  name: 'interface',
-  open_ports: 'open_ports',
-  packets: 'packets',
-  port: 'port',
-  ports: 'ports',
-  proto: 'proto',
-  protocol: 'protocol',
-  record_type: 'type',
-  service: 'service',
-  source: 'source',
-  state: 'state',
-  status: 'status',
-  destination: 'destination',
-  info: 'info',
-  kind: 'kind',
-  length: 'length',
-  loss: 'loss',
-  time: 'time',
-  hop: 'hop',
-  host: 'host',
-  address: 'address',
-  received: 'received',
-  sent: 'sent',
-  avg: 'avg',
-  best: 'best',
-  worst: 'worst',
-  range: 'range',
-  service_type: 'service_type',
-  ttl: 'ttl',
-  value: 'value',
-  resolver: 'resolver',
-  vendor: 'vendor',
-};
 
 const SAMPLE_FIELDS: Record<ToolKind, string[]> = {
   scan: ['status', 'port', 'service', 'banner'],

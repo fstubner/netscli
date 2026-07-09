@@ -175,6 +175,38 @@ fn config_modal_enters_and_exits() {
 }
 
 #[test]
+fn config_next_and_prev_move_selection_within_bounds() {
+    let mut app = TuiApp::new();
+    app.enter_config();
+    let len = app.config_state_mut().expect("config mode active").len();
+    assert!(
+        len > 1,
+        "config menu should have more than one item to navigate"
+    );
+
+    assert_eq!(app.config_state_mut().unwrap().selected, 0);
+
+    app.config_prev();
+    assert_eq!(
+        app.config_state_mut().unwrap().selected,
+        0,
+        "config_prev() at the first item should stay clamped at 0"
+    );
+
+    for _ in 0..(len + 2) {
+        app.config_next();
+    }
+    assert_eq!(
+        app.config_state_mut().unwrap().selected,
+        len - 1,
+        "config_next() should clamp at the last item, not wrap or overrun"
+    );
+
+    app.config_prev();
+    assert_eq!(app.config_state_mut().unwrap().selected, len - 2);
+}
+
+#[test]
 fn empty_suggestions_does_not_panic_on_tab() {
     let mut app = TuiApp::new();
     // No input, no suggestions → Tab should be a no-op, not a panic.

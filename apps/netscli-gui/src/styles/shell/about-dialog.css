@@ -1,0 +1,127 @@
+.about-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.about-dialog {
+  position: relative;
+  width: min(560px, calc(100vw - 32px));
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 14px 18px;
+  padding: 24px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated);
+  box-shadow: 0 24px 70px var(--shadow);
+}
+
+.about-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  border-radius: 4px;
+  padding: 0;
+  line-height: 0;
+}
+
+.about-close svg {
+  display: block;
+}
+
+.about-close:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-selected);
+  color: var(--text-primary);
+}
+
+.about-mark {
+  width: 58px;
+  height: 58px;
+  display: block;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.about-heading {
+  align-self: center;
+  min-width: 0;
+  padding-right: 42px;
+}
+
+.about-dialog h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.about-version {
+  margin: 2px 0 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.about-dialog > p:not(.about-version) {
+  grid-column: 1 / -1;
+  margin: 6px 0 0;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.about-meta {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 4px;
+}
+
+.about-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 7px;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.about-links {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.about-links button {
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  padding: 0 10px;
+  cursor: default;
+}
+
+.about-links button:hover {
+  border-color: color-mix(in srgb, var(--mint), transparent 40%);
+  color: var(--mint);
+  background: var(--bg-selected);
+}
