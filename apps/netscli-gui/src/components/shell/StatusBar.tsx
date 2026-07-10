@@ -96,7 +96,9 @@ function isIpv6Cidr(value: string): boolean {
 }
 
 function footerResultText(tab: WorkspaceTab, rowCount: number, selectedCount: number): string {
-  if (selectedCount >= 1 && rowCount > 0) return `${selectedCount} of ${rowCount} selected`;
+  // Every run auto-selects the first row, so a single selection carries no
+  // information — keep showing the result summary until the user multi-selects.
+  if (selectedCount > 1 && rowCount > 0) return `${selectedCount} of ${rowCount} selected`;
   return resultSummary(tab.result ?? null);
 }
 

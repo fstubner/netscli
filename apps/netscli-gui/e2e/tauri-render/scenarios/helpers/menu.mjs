@@ -150,7 +150,7 @@ async function assertSettingsDialog(driver) {
   await driver.findElement(By.css('[data-testid="settings-interface-trigger"]')).click();
   await waitForText(driver, '.settings-interface-list', /\S/);
   await waitForText(driver, '.settings-interface-list', /Selected/i);
-  await waitForText(driver, '.settings-interface-list', /Default/i);
+  await waitForText(driver, '.settings-interface-list', /Primary/i);
   await closeSettingsDialog(driver);
 }
 
