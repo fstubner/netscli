@@ -6,6 +6,20 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 const maxLines = 300;
 const transitionExceptions = new Map([
   [
+    'site/src/data/site.ts',
+    {
+      maxLines: 480,
+      reason: 'reverted to pre-redesign monolithic form (site/ rolled back to the 2026-06-02 deploy); re-split when the redesign is actually ready to ship',
+    },
+  ],
+  [
+    'site/src/styles/global.css',
+    {
+      maxLines: 410,
+      reason: 'reverted to pre-redesign monolithic form (site/ rolled back to the 2026-06-02 deploy); re-split when the redesign is actually ready to ship',
+    },
+  ],
+  [
     'apps/netscli-gui/src/tools/presentation.test.ts',
     {
       maxLines: 520,
