@@ -1,19 +1,21 @@
 name: Deploy GitHub Pages
 
 # Builds the Astro site in `site/` and deploys the static output to
-# GitHub Pages on every push to main. Also re-runs on manual trigger
-# (e.g. after updating analytics config).
+# GitHub Pages. Manual trigger ONLY (workflow_dispatch) — deployment is
+# deliberately NOT wired to push-to-main right now. site/ currently holds
+# a redesign that's still mid review/design-pass; auto-deploying on every
+# main merge shipped it to netscli.com prematurely once already. Restore
+# the `push: branches: [main], paths: ['site/**', ...]` trigger once the
+# redesign is actually approved to ship, then deploys resume automatically.
+#
+# Until then: Actions tab → Deploy GitHub Pages → Run workflow, or
+# `gh workflow run pages.yml`.
 #
 # Prerequisite: in the repo Settings → Pages, set "Source" to
 # "GitHub Actions" (NOT "Deploy from a branch"). This workflow expects
 # that mode.
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'site/**'
-      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
 permissions:
