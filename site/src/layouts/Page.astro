@@ -2,26 +2,7 @@
 import '../styles/global.css';
 import { site } from '../data/site';
 
-interface Props {
-  title?: string;
-  description?: string;
-  canonicalPath?: string;
-  ogDescription?: string;
-  includeFaqSchema?: boolean;
-  bodyClass?: string;
-}
-
-const {
-  title = site.meta.title,
-  description = site.meta.description,
-  canonicalPath = '/',
-  ogDescription,
-  includeFaqSchema = true,
-  bodyClass,
-} = Astro.props;
 const { meta, analytics, faq, version, builtWith } = site;
-const canonicalUrl =
-  canonicalPath === '/' ? meta.domain : `${meta.domain}${canonicalPath}`;
 
 // Build the JSON-LD from the same `site` data source that the visible
 // FAQ section reads from. Keeps them in lockstep — if the visible FAQ
@@ -57,11 +38,13 @@ const faqPage = {
   })),
 };
 
-const graph = includeFaqSchema ? [softwareApp, faqPage] : [softwareApp];
-const ldJson = JSON.stringify({ '@context': 'https://schema.org', '@graph': graph }, null, 2);
+const ldJson = JSON.stringify(
+  { '@context': 'https://schema.org', '@graph': [softwareApp, faqPage] },
+  null,
+  2,
+);
 
-const ogDesc = ogDescription ?? meta.ogDescription ?? description;
-const shouldLoadAnalytics = import.meta.env.PROD && Boolean(analytics.cloudflareToken);
+const ogDesc = meta.ogDescription ?? meta.description;
 ---
 
 <!doctype html>
@@ -70,21 +53,21 @@ const shouldLoadAnalytics = import.meta.env.PROD && Boolean(analytics.cloudflare
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <meta name="theme-color" content={meta.themeColor} />
-<title>{title}</title>
-<meta name="description" content={description} />
+<title>{meta.title}</title>
+<meta name="description" content={meta.description} />
 <meta name="author" content={meta.author.name} />
 <meta name="keywords" content={meta.keywords} />
 <meta property="og:type" content="website" />
-<meta property="og:title" content={title} />
+<meta property="og:title" content={meta.title} />
 <meta property="og:description" content={ogDesc} />
-<meta property="og:url" content={canonicalUrl} />
+<meta property="og:url" content={meta.domain} />
 <meta property="og:image" content={meta.ogImage} />
 <meta property="og:site_name" content={meta.siteName} />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content={title} />
+<meta name="twitter:title" content={meta.title} />
 <meta name="twitter:description" content={ogDesc} />
 <meta name="twitter:image" content={meta.ogImage} />
-<link rel="canonical" href={canonicalUrl} />
+<link rel="canonical" href={meta.domain} />
 <link rel="icon" type="image/svg+xml" href={meta.faviconPath} />
 <link rel="apple-touch-icon" href={meta.faviconPath} />
 
@@ -92,7 +75,7 @@ const shouldLoadAnalytics = import.meta.env.PROD && Boolean(analytics.cloudflare
      Shaves ~150-300ms off the first request to each by warming DNS +
      TLS in parallel with HTML parsing. -->
 <link rel="preconnect" href="https://api.github.com" crossorigin />
-{shouldLoadAnalytics && (
+{analytics.cloudflareToken && (
   <link rel="preconnect" href="https://static.cloudflareinsights.com" crossorigin />
 )}
 
@@ -100,7 +83,7 @@ const shouldLoadAnalytics = import.meta.env.PROD && Boolean(analytics.cloudflare
      cite these directly; the visible FAQ section below mirrors them. -->
 <script type="application/ld+json" set:html={ldJson} />
 
-{shouldLoadAnalytics && (
+{analytics.cloudflareToken && (
   <script
     defer
     src="https://static.cloudflareinsights.com/beacon.min.js"
@@ -108,12 +91,7 @@ const shouldLoadAnalytics = import.meta.env.PROD && Boolean(analytics.cloudflare
   />
 )}
 </head>
-<body class={bodyClass}>
-  <a class="skip-link" href="#main">Skip to content</a>
+<body>
   <slot />
-  <script>
-    import { initNavScrollShadow } from '../scripts/nav-scroll';
-    initNavScrollShadow();
-  </script>
 </body>
 </html>
