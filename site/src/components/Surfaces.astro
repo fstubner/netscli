@@ -2,12 +2,10 @@
 import { site } from '../data/site';
 const { surfaces, copy } = site;
 ---
-<section id="surfaces" class="surfaces-section">
+<section id="surfaces">
   <div class="w">
-    <div class="surfaces-intro">
-      <h2>{copy.surfaces.heading}</h2>
-      <p class="lead" set:html={copy.surfaces.leadHtml} />
-    </div>
+    <h2>{copy.surfaces.heading}</h2>
+    <p class="lead" set:html={copy.surfaces.leadHtml} />
 
     <div class="surfaces">
       {surfaces.map((s) => (
@@ -39,13 +37,7 @@ const { surfaces, copy } = site;
                 />
               </picture>
             ) : s.codeHtml ? (
-              <div
-                class="codeblock has-copy"
-                tabindex="0"
-                role="region"
-                aria-label="Code example"
-                set:html={s.codeHtml}
-              />
+              <div class="codeblock has-copy" set:html={s.codeHtml} />
             ) : null}
           </div>
         </div>
@@ -53,64 +45,3 @@ const { surfaces, copy } = site;
     </div>
   </div>
 </section>
-
-<style is:global>
-/* ─── SURFACE CARDS ─── */
-.surfaces-section{
-  background:#141718;
-  border-block:1px solid rgba(255,255,255,.045);
-}
-.surfaces-section::before{
-  content:none;
-}
-.surfaces-intro{
-  max-width:720px;
-  margin-bottom:84px;
-}
-.surfaces-intro .lead{
-  max-width:690px;
-  margin-bottom:0;
-}
-.surfaces{display:grid;gap:90px}
-.surface{
-  display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:start;
-}
-/* Grid children default to min-width:auto (content-based), which lets a
-   long <pre> codeblock force the grid wider than the viewport. Clamping
-   to 0 lets the codeblock's own overflow-x:auto contain the overflow. */
-.surface>*{min-width:0}
-.surface.flip{direction:rtl}
-.surface.flip>*{direction:ltr;min-width:0}
-.surface-text{padding-top:0}
-.surface-text h3{font-size:1.125rem;font-weight:700;color:#f5f5f5;margin:0 0 22px}
-.surface-text p{font-size:.875rem;color:#a8a8a8;margin:0;line-height:1.6}
-.surface-text code{font-size:.75rem}
-.surface-visual picture{
-  display:block;
-  line-height:0;
-}
-.surface-visual img{
-  display:block;
-  width:100%;height:auto;border-radius:10px;
-  border:1px solid rgba(255,255,255,.08);
-  box-shadow:0 12px 40px rgba(0,0,0,.4);
-}
-.surface-visual img:focus-visible,
-.bigshot img:focus-visible{
-  outline:2px solid #1edcff;
-  outline-offset:3px;
-}
-.surface-visual .codeblock{
-  background:#0b0d0e;border:1px solid rgba(255,255,255,.08);
-  border-radius:10px;padding:16px 58px 16px 20px;
-  font-family:ui-monospace,"SF Mono",Menlo,monospace;
-  font-size:.75rem;line-height:1.7;white-space:pre;overflow-x:auto;color:#ccc;
-  box-shadow:0 12px 40px rgba(0,0,0,.4);
-  position:relative;
-}
-@media(max-width:720px){
-  .surface{grid-template-columns:1fr}
-  .surface.flip{direction:ltr}
-}
-
-</style>
