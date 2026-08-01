@@ -34,7 +34,7 @@ jobs:
     name: crates.io
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ env.TAG }}
 
@@ -72,7 +72,7 @@ jobs:
     name: Homebrew tap
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ env.TAG }}
       - name: Update fstubner/homebrew-tap
@@ -85,7 +85,7 @@ jobs:
     name: Scoop bucket
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ env.TAG }}
       - name: Update fstubner/scoop-bucket
@@ -146,7 +146,7 @@ jobs:
     name: AUR
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ env.TAG }}
 
@@ -201,7 +201,7 @@ jobs:
         # v2.7.0 had a `bash: --command: invalid option` regression in
         # its container entrypoint; v4.1.3 has the same input shape and
         # is the current stable.
-        uses: KSXGitHub/github-actions-deploy-aur@v4.1.3
+        uses: KSXGitHub/github-actions-deploy-aur@v4.2.0
         with:
           pkgname: netscli-bin
           pkgbuild: packaging/aur/PKGBUILD
@@ -218,7 +218,7 @@ jobs:
     name: Homebrew Cask
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ env.TAG }}
       - name: Update fstubner/homebrew-tap (Cask)
@@ -234,7 +234,7 @@ jobs:
     name: Scoop bucket (GUI)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ env.TAG }}
       - name: Update fstubner/scoop-bucket (GUI)
@@ -292,7 +292,7 @@ jobs:
     name: AUR (GUI)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ env.TAG }}
 
@@ -342,7 +342,7 @@ jobs:
           cat packaging/aur/netscli-gui-bin/PKGBUILD
 
       - name: Push to AUR (netscli-gui-bin)
-        uses: KSXGitHub/github-actions-deploy-aur@v4.1.3
+        uses: KSXGitHub/github-actions-deploy-aur@v4.2.0
         with:
           pkgname: netscli-gui-bin
           pkgbuild: packaging/aur/netscli-gui-bin/PKGBUILD
