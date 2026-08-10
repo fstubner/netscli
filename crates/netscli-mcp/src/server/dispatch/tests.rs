@@ -63,6 +63,22 @@ async fn invalid_params_return_invalid_params_code() {
 }
 
 #[tokio::test]
+async fn trace_route_requires_host() {
+    let mut state = initialized_state().await;
+    let resp = handle_request(
+        &mut state,
+        request(
+            "tools/call",
+            Some(json!({"name": "trace_route", "arguments": {}})),
+            33,
+        ),
+    )
+    .await;
+    let err = resp.error.expect("expected invalid params error");
+    assert_eq!(err.code, -32602);
+}
+
+#[tokio::test]
 async fn unknown_tool_name_is_invalid_params() {
     let mut state = initialized_state().await;
     let resp = handle_request(

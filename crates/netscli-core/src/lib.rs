@@ -5,6 +5,7 @@ pub mod db;
 pub mod discover;
 pub mod dns;
 pub mod error;
+pub mod fingerprint;
 pub mod inspect;
 #[cfg(feature = "mdns")]
 pub mod mdns;
@@ -18,6 +19,8 @@ pub mod sweep;
 pub mod trace;
 
 pub use error::{Error, Result};
+pub use fingerprint::{fingerprint_device, DeviceCategory};
+
 
 pub use arp::{ArpEntry, InterfaceInfo, NetworkManager};
 pub use common::{
@@ -27,7 +30,8 @@ pub use common::{
     DEFAULT_SUBNET, MAX_PORTS_PER_SCAN,
 };
 #[cfg(feature = "db")]
-pub use db::{Database, HostRecord, ScanHistoryRecord};
+pub use db::{Database, HostRecord, NetworkDiff, ScanHistoryRecord};
+
 pub use discover::{DiscoverEngine, DiscoverPhase, DiscoverProgress, Host};
 pub use dns::{resolve_a, resolve_aaaa};
 pub use inspect::{InspectEngine, InspectResult};

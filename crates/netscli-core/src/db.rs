@@ -1,3 +1,4 @@
+mod diff;
 mod history;
 mod hosts;
 mod models;
@@ -11,7 +12,9 @@ use std::path::PathBuf;
 
 use crate::error::Result;
 
+pub use diff::NetworkDiff;
 pub use models::{HostRecord, ScanHistoryRecord};
+
 
 pub struct Database {
     pub(super) pool: SqlitePool,

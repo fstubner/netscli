@@ -23,6 +23,7 @@ fn tools_list_contains_expected_tools() {
         "ping_host",
         "scan_ports",
         "sweep_network",
+        "trace_route",
     ];
 
     #[cfg(feature = "pcap")]

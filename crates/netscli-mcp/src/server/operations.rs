@@ -1,7 +1,7 @@
 use super::errors::RpcError;
 use super::schemas::{
     clamp_concurrency, clamp_timeout_ms, normalize_ports, validate_subnet, DiscoverParams,
-    DnsParams, PcapParams, PingHostParams, ScanParams, SweepParams,
+    DnsParams, PcapParams, PingHostParams, ScanParams, SweepParams, TraceParams,
 };
 
 // NOTE: Hostname/IP resolution is shared in netscli-core (`netscli_core::resolve_host_ip`).
@@ -134,6 +134,18 @@ pub(super) fn op_get_arp_table() -> Result<Vec<netscli_core::ArpEntry>, RpcError
 pub(super) fn op_list_interfaces() -> Vec<netscli_core::InterfaceInfo> {
     let ops = netscli_core::Ops::default();
     ops.list_interfaces()
+}
+
+pub(super) async fn op_trace_route(p: TraceParams) -> Result<netscli_core::TraceResult, RpcError> {
+    if p.host.trim().is_empty() {
+        return Err(RpcError::InvalidParams("host is required".to_string()));
+    }
+    let max_hops = p.max_hops.unwrap_or(30).clamp(1, 255);
+    let resolve = p.resolve.unwrap_or(false);
+    let ops = netscli_core::Ops::default();
+    ops.trace_route(&p.host, max_hops, resolve)
+        .await
+        .map_err(|e| RpcError::ToolError(e.to_string()))
 }
 
 #[cfg(feature = "pcap")]

@@ -6,12 +6,12 @@ use super::errors::RpcError;
 use super::jobs::{pcap_job_result, pcap_job_status, start_pcap_capture_job, PcapJobMap};
 use super::operations::{
     op_capture_pcap, op_discover, op_dns_lookup, op_get_arp_table, op_inspect_host,
-    op_list_interfaces, op_ping_host, op_scan_ports, op_sweep,
+    op_list_interfaces, op_ping_host, op_scan_ports, op_sweep, op_trace_route,
 };
 use super::protocol::{JsonRpcError, JsonRpcRequest, JsonRpcResponse};
 use super::schemas::{
     parse_params, DiscoverParams, DnsParams, InitializeParams, PcapParams, PingHostParams,
-    ScanParams, SweepParams,
+    ScanParams, SweepParams, TraceParams,
 };
 use super::tools::{mcp_tool_result_text, tools_list};
 
@@ -182,6 +182,11 @@ async fn dispatch_tool(name: &str, params: Value) -> Result<Value, RpcError> {
         }
         "list_network_interfaces" => serde_json::to_value(op_list_interfaces())
             .map_err(|e| RpcError::Internal(e.to_string())),
+        "trace_route" => {
+            let p: TraceParams = parse_params(params)?;
+            let res = op_trace_route(p).await?;
+            serde_json::to_value(res).map_err(|e| RpcError::Internal(e.to_string()))
+        }
         "capture_pcap" => {
             let p: PcapParams = parse_params(params)?;
             let res = op_capture_pcap(p).await?;

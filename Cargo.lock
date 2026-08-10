@@ -3068,6 +3068,7 @@ dependencies = [
  "dirs",
  "ipnet",
  "netscli-core",
+ "open",
  "serde",
  "serde_json",
  "tauri",

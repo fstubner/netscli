@@ -11,23 +11,33 @@ pub(super) fn recommend_commands() -> Vec<String> {
     } else if cfg!(target_os = "linux") {
         vec!["sudo apt-get update && sudo apt-get install -y libpcap-dev tcpdump".to_string()]
     } else if cfg!(target_os = "windows") {
-        vec!["Install Wireshark (includes npcap) or `choco install wireshark`".to_string()]
+        vec!["choco install -y wireshark".to_string()]
     } else {
         vec!["Install libpcap/tcpdump using your package manager".to_string()]
     }
 }
 
 pub(super) async fn run_command_line(cmdline: &str) -> Result<Option<std::process::ExitStatus>> {
-    let mut parts =
-        shell_words::split(cmdline).map_err(|e| anyhow!("Failed to parse command: {}", e))?;
-    if parts.is_empty() {
+    let cmdline = cmdline.trim();
+    if cmdline.is_empty() {
         return Ok(None);
     }
 
-    let program = parts.remove(0);
-    run_command_with_timeout(&program, &parts, INSTALL_CMD_TIMEOUT)
-        .await
-        .map(Some)
+    if cfg!(windows) {
+        if cmdline.contains("&&") || cmdline.contains('|') {
+            return run_command_with_timeout("cmd", &["/c".to_string(), cmdline.to_string()], INSTALL_CMD_TIMEOUT).await.map(Some);
+        }
+        let parts = shell_words::split(cmdline).map_err(|e| anyhow!("Failed to parse command: {}", e))?;
+        if parts.is_empty() {
+            return Ok(None);
+        }
+        let mut parts = parts;
+        let program = parts.remove(0);
+        run_command_with_timeout(&program, &parts, INSTALL_CMD_TIMEOUT).await.map(Some)
+    } else {
+        // On Unix, use sh -c to reliably execute chained commands, pipes, and environment variables
+        run_command_with_timeout("sh", &["-c".to_string(), cmdline.to_string()], INSTALL_CMD_TIMEOUT).await.map(Some)
+    }
 }
 
 async fn run_command_with_timeout(

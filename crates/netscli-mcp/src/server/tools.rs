@@ -4,27 +4,57 @@ pub fn tools_list() -> serde_json::Value {
     let tools = vec![
         json!({
             "name": "discover_network",
-            "description": "Discover live hosts on a network subnet",
+            "description": "Discover live hosts on a network subnet (ICMP ping with TCP connect fallback)",
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "subnet": { "type": "string", "default": "192.168.1.0/24" },
-                    "resolveHostnames": { "type": "boolean", "default": false },
-                    "timeout": { "type": "number", "default": 1000 },
-                    "maxConcurrent": { "type": "number", "default": 256 }
+                    "subnet": {
+                        "type": "string",
+                        "description": "IPv4 subnet in CIDR notation (e.g. '192.168.1.0/24'). Omit to automatically detect local primary interface subnet."
+                    },
+                    "resolveHostnames": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether to perform reverse DNS lookups for discovered IP addresses."
+                    },
+                    "timeout": {
+                        "type": "number",
+                        "default": 1000,
+                        "description": "Per-host ping timeout in milliseconds (10-600000ms)."
+                    },
+                    "maxConcurrent": {
+                        "type": "number",
+                        "default": 256,
+                        "description": "Maximum number of simultaneous host discovery probes (1-4096)."
+                    }
                 }
             }
         }),
         json!({
             "name": "scan_ports",
-            "description": "Scan TCP ports on a host",
+            "description": "Scan TCP ports on a target host to identify listening network services",
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "host": { "type": "string" },
-                    "ports": { "type": "array", "items": { "type": "number" } },
-                    "timeout": { "type": "number", "default": 500 },
-                    "maxConcurrent": { "type": "number", "default": 256 }
+                    "host": {
+                        "type": "string",
+                        "description": "Target hostname or IP address (e.g. '192.168.1.1' or 'example.com')."
+                    },
+                    "ports": {
+                        "type": "array",
+                        "items": { "type": "number" },
+                        "description": "Array of TCP port numbers to scan (e.g. [22, 80, 443]). Omit to scan top common ports."
+                    },
+                    "timeout": {
+                        "type": "number",
+                        "default": 500,
+                        "description": "Per-port TCP connect timeout in milliseconds."
+                    },
+                    "maxConcurrent": {
+                        "type": "number",
+                        "default": 256,
+                        "description": "Maximum concurrent TCP connect probes."
+                    }
                 },
                 "required": ["host"]
             }
@@ -35,10 +65,27 @@ pub fn tools_list() -> serde_json::Value {
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "host": { "type": "string" },
-                    "count": { "type": "number", "default": 1, "minimum": 1, "maximum": 256 },
-                    "timeout": { "type": "number", "default": 1000 },
-                    "maxConcurrent": { "type": "number", "default": 64 }
+                    "host": {
+                        "type": "string",
+                        "description": "Target hostname or IP address to ping."
+                    },
+                    "count": {
+                        "type": "number",
+                        "default": 1,
+                        "minimum": 1,
+                        "maximum": 256,
+                        "description": "Number of ICMP/TCP probes to send."
+                    },
+                    "timeout": {
+                        "type": "number",
+                        "default": 1000,
+                        "description": "Per-probe timeout in milliseconds."
+                    },
+                    "maxConcurrent": {
+                        "type": "number",
+                        "default": 64,
+                        "description": "Maximum concurrent probes."
+                    }
                 },
                 "required": ["host"]
             }
@@ -49,11 +96,15 @@ pub fn tools_list() -> serde_json::Value {
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "host": { "type": "string" },
+                    "host": {
+                        "type": "string",
+                        "description": "Domain name or hostname to query."
+                    },
                     "type": {
                         "type": "string",
                         "default": "A",
-                        "enum": ["A", "AAAA", "CNAME", "MX", "NS", "TXT", "SRV", "PTR", "SOA", "CAA", "ALL", "ANY"]
+                        "enum": ["A", "AAAA", "CNAME", "MX", "NS", "TXT", "SRV", "PTR", "SOA", "CAA", "ALL", "ANY"],
+                        "description": "DNS record type to look up. Use ALL or ANY for comprehensive record retrieval."
                     }
                 },
                 "required": ["host"]
@@ -61,7 +112,7 @@ pub fn tools_list() -> serde_json::Value {
         }),
         json!({
             "name": "get_arp_table",
-            "description": "Get ARP/neighbor table with vendor information",
+            "description": "Get ARP/neighbor table with offline IEEE OUI vendor resolution",
             "inputSchema": {
                 "type": "object",
                 "properties": {}
@@ -69,33 +120,83 @@ pub fn tools_list() -> serde_json::Value {
         }),
         json!({
             "name": "inspect_host",
-            "description": "Inspect a host (ping + port scan + optional DNS resolution)",
+            "description": "Inspect a host (ping + TCP port scan + optional DNS resolution)",
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "host": { "type": "string" },
-                    "ports": { "type": "array", "items": { "type": "number" } }
+                    "host": {
+                        "type": "string",
+                        "description": "Target hostname or IP address."
+                    },
+                    "ports": {
+                        "type": "array",
+                        "items": { "type": "number" },
+                        "description": "Optional custom TCP ports to scan during inspection."
+                    }
                 },
                 "required": ["host"]
             }
         }),
         json!({
             "name": "sweep_network",
-            "description": "Sweep a network (discover hosts then scan ports)",
+            "description": "Sweep a network (discover live hosts then scan TCP ports on each discovered host)",
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "subnet": { "type": "string", "default": "192.168.1.0/24" },
-                    "ports": { "type": "array", "items": { "type": "number" } },
-                    "resolveHostnames": { "type": "boolean", "default": false },
-                    "timeout": { "type": "number", "default": 500 },
-                    "maxConcurrent": { "type": "number", "default": 256 }
+                    "subnet": {
+                        "type": "string",
+                        "description": "IPv4 subnet CIDR (e.g. '192.168.1.0/24'). Omit to auto-detect local primary subnet."
+                    },
+                    "ports": {
+                        "type": "array",
+                        "items": { "type": "number" },
+                        "description": "Array of TCP ports to scan per live host."
+                    },
+                    "resolveHostnames": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether to resolve hostnames for discovered hosts."
+                    },
+                    "timeout": {
+                        "type": "number",
+                        "default": 500,
+                        "description": "Per-probe timeout in milliseconds."
+                    },
+                    "maxConcurrent": {
+                        "type": "number",
+                        "default": 256,
+                        "description": "Maximum concurrent tasks."
+                    }
                 }
             }
         }),
         json!({
+            "name": "trace_route",
+            "description": "Trace network route hops to a destination host (tracert/traceroute)",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "host": {
+                        "type": "string",
+                        "description": "Target destination hostname or IP address."
+                    },
+                    "maxHops": {
+                        "type": "number",
+                        "default": 30,
+                        "description": "Maximum number of hops (TTL) to traverse (1-255)."
+                    },
+                    "resolve": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether to resolve IP addresses to hostnames for each hop."
+                    }
+                },
+                "required": ["host"]
+            }
+        }),
+        json!({
             "name": "list_network_interfaces",
-            "description": "List network interfaces with details",
+            "description": "List network interfaces with MAC addresses, IP assignments, and status flags",
             "inputSchema": {
                 "type": "object",
                 "properties": {}
@@ -112,11 +213,11 @@ pub fn tools_list() -> serde_json::Value {
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "interface": { "type": "string" },
-                    "filter": { "type": "string" },
-                    "duration": { "type": "number", "default": 10 },
-                    "outputFile": { "type": "string", "default": "capture.pcap" },
-                    "maxPackets": { "type": "number" }
+                    "interface": { "type": "string", "description": "Network interface name (e.g. 'eth0' or 'Ethernet')." },
+                    "filter": { "type": "string", "description": "Optional BPF packet filter expression (e.g. 'tcp port 80')." },
+                    "duration": { "type": "number", "default": 10, "description": "Capture duration limit in seconds." },
+                    "outputFile": { "type": "string", "default": "capture.pcap", "description": "Output .pcap filename." },
+                    "maxPackets": { "type": "number", "description": "Maximum number of packets to capture before stopping." }
                 },
                 "required": ["interface"]
             }
@@ -127,11 +228,11 @@ pub fn tools_list() -> serde_json::Value {
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "interface": { "type": "string" },
-                    "filter": { "type": "string" },
-                    "duration": { "type": "number", "default": 10 },
-                    "outputFile": { "type": "string", "default": "capture.pcap" },
-                    "maxPackets": { "type": "number" }
+                    "interface": { "type": "string", "description": "Network interface name." },
+                    "filter": { "type": "string", "description": "Optional BPF packet filter expression." },
+                    "duration": { "type": "number", "default": 10, "description": "Capture duration limit in seconds." },
+                    "outputFile": { "type": "string", "default": "capture.pcap", "description": "Output .pcap filename." },
+                    "maxPackets": { "type": "number", "description": "Maximum packets limit." }
                 },
                 "required": ["interface"]
             }
@@ -142,7 +243,7 @@ pub fn tools_list() -> serde_json::Value {
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "jobId": { "type": "string" }
+                    "jobId": { "type": "string", "description": "The background capture job ID returned by start_pcap_capture." }
                 },
                 "required": ["jobId"]
             }
@@ -153,7 +254,7 @@ pub fn tools_list() -> serde_json::Value {
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "jobId": { "type": "string" }
+                    "jobId": { "type": "string", "description": "The completed capture job ID." }
                 },
                 "required": ["jobId"]
             }

@@ -12,6 +12,7 @@ pub struct InspectResult {
     pub ports: Vec<PortResult>,
     pub open_ports: Vec<PortResult>,
     pub hostname: Option<String>,
+    pub category: crate::fingerprint::DeviceCategory,
 }
 
 pub struct InspectEngine {
@@ -64,7 +65,14 @@ impl InspectEngine {
         let (ping_res, ports_res, hostname) = tokio::join!(ping_fut, scan_fut, hostname_fut);
 
         let ports = ports_res;
-        let open_ports = ports.iter().filter(|p| p.open).cloned().collect();
+        let open_ports: Vec<PortResult> = ports.iter().filter(|p| p.open).cloned().collect();
+        let open_port_nums: Vec<u16> = open_ports.iter().map(|p| p.port).collect();
+
+        let category = crate::fingerprint::fingerprint_device(
+            None,
+            hostname.as_deref(),
+            &open_port_nums,
+        );
 
         Ok(InspectResult {
             host,
@@ -73,6 +81,7 @@ impl InspectEngine {
             ports,
             open_ports,
             hostname,
+            category,
         })
     }
 }

@@ -9,7 +9,7 @@ const MAX_SUBNET_ADDRESSES: u64 = 1 << 16; // /16
 
 pub(super) fn clamp_concurrency(max_concurrent: Option<usize>, default: usize) -> usize {
     let c = max_concurrent.unwrap_or(default);
-    c.clamp(1, 4096)
+    c.clamp(1, 1024)
 }
 
 pub(super) fn clamp_timeout_ms(timeout_ms: Option<u64>, default: u64) -> u64 {
@@ -138,6 +138,14 @@ pub(super) struct PcapParams {
 pub(super) struct PcapJobParams {
     #[serde(rename = "jobId")]
     pub(super) job_id: String,
+}
+
+#[derive(Deserialize)]
+pub(super) struct TraceParams {
+    pub(super) host: String,
+    #[serde(rename = "maxHops")]
+    pub(super) max_hops: Option<u32>,
+    pub(super) resolve: Option<bool>,
 }
 
 #[cfg(feature = "mdns")]

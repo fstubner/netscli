@@ -118,3 +118,68 @@ pub(crate) async fn get_arp_table(
     })
     .await
 }
+
+#[tauri::command]
+pub(crate) async fn open_host_action(target: String, action: String) -> Result<(), String> {
+    let target = target.trim();
+    if target.is_empty() {
+        return Err("Target is empty".to_string());
+    }
+
+    match action.as_str() {
+        "http" | "web" => {
+            let url = if target.starts_with("http://") || target.starts_with("https://") {
+                target.to_string()
+            } else {
+                format!("http://{target}")
+            };
+            open::that(&url).map_err(|e| e.to_string())?;
+        }
+        "ssh" => {
+            #[cfg(target_os = "windows")]
+            {
+                std::process::Command::new("cmd")
+                    .args(["/c", "start", "cmd", "/k", &format!("ssh {target}")])
+                    .spawn()
+                    .map_err(|e| e.to_string())?;
+            }
+            #[cfg(target_os = "macos")]
+            {
+                std::process::Command::new("osascript")
+                    .args(["-e", &format!("tell application \"Terminal\" to do script \"ssh {}\"", target)])
+                    .spawn()
+                    .map_err(|e| e.to_string())?;
+            }
+            #[cfg(target_os = "linux")]
+            {
+                std::process::Command::new("x-terminal-emulator")
+                    .args(["-e", &format!("ssh {target}")])
+                    .spawn()
+                    .or_else(|_| {
+                        std::process::Command::new("gnome-terminal")
+                            .args(["--", "ssh", target])
+                            .spawn()
+                    })
+                    .map_err(|e| e.to_string())?;
+            }
+        }
+        "rdp" => {
+            #[cfg(target_os = "windows")]
+            {
+                std::process::Command::new("mstsc")
+                    .arg(format!("/v:{target}"))
+                    .spawn()
+                    .map_err(|e| e.to_string())?;
+            }
+            #[cfg(not(target_os = "windows"))]
+            {
+                let url = format!("rdp://{target}");
+                open::that(&url).map_err(|e| e.to_string())?;
+            }
+        }
+        other => return Err(format!("Unsupported action: {other}")),
+    }
+
+    Ok(())
+}
+

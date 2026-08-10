@@ -26,6 +26,7 @@ pub async fn run_tui(concurrency: Option<usize>) -> Result<()> {
 
     loop {
         input.refresh_exit_confirmation(&mut app);
+        tasks.finish_ready_task(&mut app).await;
         tasks.refresh_running_detail(&mut app);
 
         app.draw(&mut terminal)?;
@@ -34,8 +35,6 @@ pub async fn run_tui(concurrency: Option<usize>) -> Result<()> {
         } else {
             app.update_suggestions();
         }
-
-        tasks.finish_ready_task(&mut app).await;
 
         if !event::poll(tick_rate)? {
             continue;
