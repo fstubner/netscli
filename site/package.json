@@ -7,12 +7,16 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "check": "astro check"
+    "check": "astro check",
+    "test:a11y": "npm run build && node ./scripts/a11y.mjs"
   },
   "dependencies": {
-    "astro": "^6.1.9"
+    "@astrojs/starlight": "^0.41.7",
+    "astro": "^7.2.0"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@axe-core/cli": "^4.12.1",
     "typescript": "^5.5.0"
   }
 }

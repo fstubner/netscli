@@ -1,0 +1,174 @@
+/* Final regression guardrails: keep these last. */
+.sidebar-content :where(details > ul) {
+  margin-inline-start: 1.15rem !important;
+  border-inline-start: 1px solid var(--sl-color-hairline) !important;
+}
+
+.sidebar-content :where(details > ul a) {
+  margin-inline-start: -1px !important;
+  width: calc(100% + 1px) !important;
+  padding-inline-start: 0.75rem !important;
+  border-inline-start: 2px solid transparent !important;
+}
+
+.sidebar-content :where(details > ul a[aria-current='page']) {
+  border-inline-start-color: #0aae7a !important;
+}
+
+.docs-mobile-section-nav summary,
+.docs-mobile-section-nav a,
+.netscli-mobile-toc-wrapper mobile-starlight-toc summary,
+.netscli-mobile-toc-wrapper mobile-starlight-toc .toggle,
+.netscli-mobile-toc-wrapper mobile-starlight-toc .display-current,
+.netscli-mobile-toc-wrapper mobile-starlight-toc .dropdown a {
+  cursor: pointer !important;
+}
+
+@media (max-width: 49.99rem) {
+  .docs-topbar {
+    gap: 0.2rem !important;
+  }
+
+  .docs-header-search {
+    display: flex !important;
+    margin-left: auto !important;
+    margin-right: 3rem !important;
+    flex: 0 0 2.75rem !important;
+    width: 2.75rem !important;
+    max-width: 2.75rem !important;
+    min-width: 2.75rem !important;
+  }
+
+  starlight-menu-button {
+    margin-left: 0 !important;
+  }
+
+  starlight-menu-button button {
+    inset-inline-end: max(0.65rem, env(safe-area-inset-right)) !important;
+  }
+
+  site-search dialog {
+    width: min(100vw - 1rem, 48rem) !important;
+    max-width: calc(100vw - 1rem) !important;
+    min-height: auto !important;
+    margin: 0.5rem auto !important;
+  }
+
+  site-search dialog .dialog-frame {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 0.85rem !important;
+    padding: 1rem !important;
+    align-items: start !important;
+  }
+
+  site-search button[data-close-modal] {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    justify-self: end !important;
+    align-self: center !important;
+    margin: 0 !important;
+    min-height: 2.75rem !important;
+  }
+
+  site-search dialog .search-container,
+  #starlight__search {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  #starlight__search .pagefind-ui__form {
+    width: 100% !important;
+  }
+
+  #starlight__search .pagefind-ui__drawer {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 9rem !important;
+  }
+
+  .sl-markdown-content .netscli-table-scroll {
+    display: block !important;
+    max-width: 100% !important;
+    margin-block: 1rem 1.35rem !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    border: 1px solid rgba(140, 149, 166, 0.2) !important;
+    border-radius: 8px !important;
+    background: #20242b !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .sl-markdown-content .netscli-table-scroll table {
+    display: table !important;
+    width: 36rem !important;
+    min-width: 36rem !important;
+    max-width: none !important;
+    table-layout: fixed !important;
+    border: 0 !important;
+    background: transparent !important;
+  }
+
+  .sl-markdown-content .netscli-table-scroll thead {
+    display: table-header-group !important;
+  }
+
+  .sl-markdown-content .netscli-table-scroll tbody {
+    display: table-row-group !important;
+  }
+
+  .sl-markdown-content .netscli-table-scroll tr {
+    display: table-row !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+  }
+
+  .sl-markdown-content .netscli-table-scroll th,
+  .sl-markdown-content .netscli-table-scroll td {
+    display: table-cell !important;
+    width: auto !important;
+    min-width: 0 !important;
+    padding: 0.85rem 1rem !important;
+    border-bottom: 1px solid rgba(140, 149, 166, 0.11) !important;
+    line-height: 1.42 !important;
+    white-space: normal !important;
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+    font-weight: 400 !important;
+  }
+
+  .sl-markdown-content .netscli-table-scroll thead th {
+    font-weight: 720 !important;
+  }
+
+  .sl-markdown-content .netscli-table-scroll tbody th {
+    font-weight: 400 !important;
+  }
+
+  .sl-markdown-content .netscli-table-scroll td::before {
+    content: none !important;
+    display: none !important;
+  }
+
+  .sl-markdown-content .netscli-table-scroll th:first-child,
+  .sl-markdown-content .netscli-table-scroll td:first-child,
+  .sl-markdown-content .netscli-table-scroll table.table-row-headers tbody td:first-child {
+    width: 11rem !important;
+    color: inherit !important;
+    font-weight: 400 !important;
+    background: transparent !important;
+  }
+
+  .sl-markdown-content .netscli-table-scroll thead th:first-child {
+    font-weight: 720 !important;
+  }
+
+  html[data-theme='light'] .sl-markdown-content .netscli-table-scroll {
+    background: #f7faf9 !important;
+  }
+}

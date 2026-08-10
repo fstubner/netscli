@@ -1,0 +1,42 @@
+/* Docs rail alignment. Starlight's default sidebar offset is wider than
+   NetsCLI's visible sidebar, which created a one-sided gutter before content.
+   Use the actual rail width so content padding becomes the left/right gap. */
+.main-frame {
+  padding-top: 0 !important;
+}
+
+.sidebar-pane,
+.sidebar-content,
+.right-sidebar,
+.right-sidebar-panel {
+  overflow-x: hidden !important;
+}
+
+@media (min-width: 72rem) {
+  html[data-has-sidebar] {
+    --sl-sidebar-width: var(--netscli-docs-sidebar-width) !important;
+  }
+}
+
+@media (min-width: 72rem) and (max-width: 86rem) {
+  html[data-has-sidebar] {
+    --sl-content-inline-start: var(--netscli-docs-sidebar-width) !important;
+  }
+
+  .main-frame {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline-start: var(--sl-content-inline-start) !important;
+  }
+}
+
+@media (min-width: 86.01rem) {
+  html[data-has-sidebar] {
+    --sl-content-inline-start: var(--netscli-docs-sidebar-width) !important;
+  }
+
+  .main-frame {
+    padding-inline-start: var(--sl-content-inline-start) !important;
+  }
+}

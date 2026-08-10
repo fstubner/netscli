@@ -1,0 +1,88 @@
+/* Final mobile containment pass. Keep page content inside the viewport while
+   allowing only explicit table/code wrappers to scroll horizontally. */
+@media (max-width: 49.99rem) {
+  html,
+  body {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+  }
+
+  .main-frame {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    min-width: 0 !important;
+    padding-inline-start: 0 !important;
+    overflow-x: hidden !important;
+  }
+
+  .main-pane,
+  .content-panel,
+  .content-panel > .sl-container,
+  .sl-markdown-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    overflow-wrap: anywhere;
+  }
+
+  .content-panel > .sl-container {
+    width: auto !important;
+    max-width: 100vw !important;
+    margin-inline: 0 !important;
+    padding-inline: clamp(1rem, 5vw, 1.5rem) !important;
+  }
+
+  .sl-markdown-content > * {
+    max-width: 100% !important;
+  }
+
+  starlight-menu-button {
+    display: block !important;
+    position: fixed !important;
+    inset-block-start: .625rem !important;
+    inset-inline-end: .75rem !important;
+    z-index: calc(var(--sl-z-index-navbar) + 2) !important;
+  }
+
+  starlight-menu-button button {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+    position: static !important;
+    inset: auto !important;
+  }
+
+  .docs-header-search {
+    position: fixed !important;
+    inset-block-start: .625rem !important;
+    inset-inline-end: 3.75rem !important;
+    z-index: calc(var(--sl-z-index-navbar) + 2) !important;
+    width: 2.5rem !important;
+    max-width: 2.5rem !important;
+    min-width: 2.5rem !important;
+  }
+
+  .sl-markdown-content .netscli-table-scroll,
+  .content-panel .netscli-table-scroll {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .sl-markdown-content .netscli-table-scroll table,
+  .content-panel .netscli-table-scroll table {
+    width: max-content !important;
+    min-width: 42rem !important;
+    max-width: none !important;
+  }
+
+  .sl-markdown-content .table-wrapper,
+  .content-panel .table-wrapper,
+  .sl-markdown-content :has(> table),
+  .content-panel :has(> table) {
+    max-width: 100% !important;
+  }
+}

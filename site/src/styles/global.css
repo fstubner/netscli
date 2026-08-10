@@ -1,45 +1,88 @@
 *,*::before,*::after{box-sizing:border-box}
-html{scroll-behavior:smooth}
+:root{
+  --netscli-shell-width:72rem;
+  --netscli-shell-gutter:24px;
+}
+html{
+  scroll-behavior:smooth;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(140,149,166,.5) #151515;
+}
+*{
+  scrollbar-width:thin;
+  scrollbar-color:rgba(140,149,166,.42) rgba(255,255,255,.035);
+}
+::-webkit-scrollbar{width:12px;height:12px}
+::-webkit-scrollbar-track{background:#151515}
+::-webkit-scrollbar-thumb{
+  background:rgba(140,149,166,.45);
+  border:3px solid #151515;
+  border-radius:999px;
+}
+::-webkit-scrollbar-thumb:hover{background:rgba(170,178,192,.62)}
+::-webkit-scrollbar-corner{background:#151515}
+html[data-theme='light']{
+  scrollbar-color:rgba(68,81,106,.42) rgba(241,245,249,.92);
+}
+html[data-theme='light'] *{
+  scrollbar-color:rgba(68,81,106,.36) rgba(17,24,39,.045);
+}
+html[data-theme='light'] ::-webkit-scrollbar-track{background:#f1f5f9}
+html[data-theme='light'] ::-webkit-scrollbar-thumb{
+  background:rgba(68,81,106,.36);
+  border-color:#f1f5f9;
+}
+html[data-theme='light'] ::-webkit-scrollbar-thumb:hover{background:rgba(68,81,106,.52)}
+html[data-theme='light'] ::-webkit-scrollbar-corner{background:#f1f5f9}
 body{
   margin:0;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
   background:#111;color:#d4d4d4;line-height:1.6;
   -webkit-font-smoothing:antialiased;
 }
+.skip-link{
+  position:fixed;
+  top:8px;
+  left:8px;
+  z-index:1000;
+  padding:8px 12px;
+  border:1px solid #2dd4bf;
+  border-radius:6px;
+  background:#111;
+  color:#fff;
+  transform:translateY(calc(-100% - 16px));
+  transition:transform .15s ease;
+}
+.skip-link:focus{transform:translateY(0)}
+html:has(> body.not-found-page){
+  height:100%;
+  overflow:hidden;
+}
+body.not-found-page{
+  min-height:100%;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+body.not-found-page nav,
+body.not-found-page footer{
+  flex:0 0 auto;
+}
+body.not-found-page .not-found{
+  flex:1 1 auto;
+  min-height:0;
+  display:grid;
+  align-content:center;
+}
 a{color:inherit}
 code{
   font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.85em;
-  background:rgba(255,255,255,.07);padding:2px 6px;border-radius:4px;
+  background:rgba(255,255,255,.07);padding:2px 6px;border-radius:4px;color:#23d198;
 }
 
 /* layout */
-.w{max-width:1060px;margin:0 auto;padding:0 24px}
-
-/* nav */
-nav{
-  position:sticky;top:0;z-index:10;
-  background:rgba(17,17,17,.85);backdrop-filter:blur(12px);
-  border-bottom:1px solid rgba(255,255,255,.06);
-}
-.nav-inner{
-  max-width:1060px;margin:0 auto;padding:12px 24px;
-  display:flex;align-items:center;justify-content:space-between;
-}
-.mark{
-  display:inline-block;line-height:0;text-decoration:none;
-  filter:brightness(1);transition:filter 200ms;
-}
-.mark img{
-  display:block;width:160px;height:auto;image-rendering:auto;
-}
-.mark:hover{filter:brightness(1.15) drop-shadow(0 0 10px rgba(10,174,122,.35))}
-@media(max-width:600px){
-  .mark img{width:132px}
-}
-.nlinks{display:flex;gap:20px;font-size:.8125rem}
-.nlinks a{color:#b0b0b0;text-decoration:none}
-.nlinks a:hover{color:#e5e5e5}
-@media(max-width:600px){.nlinks{display:none}}
+.w{max-width:var(--netscli-shell-width);margin:0 auto;padding:0 var(--netscli-shell-gutter)}
 
 /* buttons */
 .btn{
@@ -53,352 +96,68 @@ nav{
 .btn-o:hover{color:#e5e5e5;border-color:rgba(255,255,255,.3);text-decoration:none}
 .gh-icon{width:16px;height:16px;fill:currentColor;flex-shrink:0}
 
-/* ─── HERO ─── */
-.hero{padding:72px 24px 0;text-align:center}
-.hero .badge{
-  display:inline-block;font-size:.6875rem;font-weight:600;
-  letter-spacing:.06em;text-transform:uppercase;color:#9a9a9a;margin-bottom:16px;
-}
-.hero h1{
-  font-size:clamp(1.75rem,4vw,2.75rem);font-weight:700;color:#f5f5f5;
-  letter-spacing:-.02em;margin:0 auto;line-height:1.2;
-  max-width:15ch;
-}
-.hero .sub{font-size:1.0625rem;color:#a3a3a3;max-width:640px;margin:14px auto 0}
-.hero .social-proof{
-  margin:12px auto 0;font-size:.75rem;color:#9a9a9a;
-  display:flex;justify-content:center;align-items:center;gap:10px;
-  font-variant-numeric:tabular-nums;min-height:1em;
-}
-.hero .social-proof a{color:inherit;text-decoration:none}
-.hero .social-proof a:hover{color:#e5e5e5}
-.hero .social-proof .sep{color:#555}
-.hero .quick-install{
-  margin:28px auto 0;max-width:520px;
-  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
-  border-radius:10px;padding:12px 16px;
-  /* Soft green ring outside the element, matching the wordmark gradient */
-  box-shadow:0 0 0 1px rgba(10,174,122,.45),0 0 24px rgba(10,174,122,.15);
-  font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.8125rem;
-  color:#ccc;display:flex;align-items:center;justify-content:space-between;gap:12px;
-}
-.hero .quick-install span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-/* Secondary install offer: desktop app downloads. Smaller, quieter row
-   so the curl install above keeps primary visual weight. */
-.hero .hero-desktop{
-  margin:14px auto 0;font-size:.8125rem;color:#9a9a9a;
-  display:flex;justify-content:center;align-items:center;gap:8px;
-  flex-wrap:wrap;
-}
-.hero .hero-desktop-label{color:#888}
-.hero .hero-desktop a{
-  color:#cfcfcf;text-decoration:none;
-  border-bottom:1px dotted rgba(255,255,255,.22);padding-bottom:1px;
-}
-.hero .hero-desktop a:hover{color:#fff;border-bottom-color:rgba(255,255,255,.5)}
-.hero .hero-desktop-sep{color:#555}
-.hero .links{display:flex;gap:16px;justify-content:center;margin-top:16px;flex-wrap:wrap}
-.hero .links a{
-  font-size:.8125rem;color:#a3a3a3;text-decoration:none;
-  border-bottom:1px dotted rgba(255,255,255,.22);padding-bottom:1px;
-  display:inline-flex;align-items:center;gap:4px;
-}
-.hero .links a:hover{color:#e5e5e5;border-bottom-color:rgba(255,255,255,.5)}
-.hero .links a.plain{border-bottom:0}
-.hero .links a.plain:hover{border-bottom:0}
-
-/* ─── PRODUCT SHOT ─── */
-.bigshot{
-  margin:48px auto 0;max-width:980px;
-  border-radius:10px;overflow:hidden;
-  border:1px solid rgba(255,255,255,.08);
-  box-shadow:0 32px 80px rgba(0,0,0,.6);
-}
-.bigshot img{width:100%;height:auto;display:block}
 
 /* ─── SECTIONS ─── */
-section{padding:72px 0}
+section{
+  padding:64px 0;
+  position:relative;
+  scroll-margin-top:72px;
+}
+section:nth-of-type(even){
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.018),rgba(255,255,255,.006)),
+    #151515;
+  border-block:1px solid rgba(255,255,255,.045);
+}
+section:nth-of-type(even)::before{
+  content:"";
+  position:absolute;inset:0;
+  pointer-events:none;
+  z-index:0;
+  background:radial-gradient(circle at 18% 0%,rgba(10,174,122,.055),transparent 34rem);
+}
+section>.w{position:relative;z-index:1}
 section h2{font-size:1.5rem;font-weight:700;color:#f5f5f5;margin:0 0 6px}
 section .lead{color:#a3a3a3;font-size:.9375rem;margin:0 0 28px}
-section .lead a{color:#ccc;text-decoration:underline;text-underline-offset:3px}
+section .lead a{color:#0aae7a;text-decoration:underline;text-underline-offset:3px}
+section .lead a:hover{color:#23d198}
 
-/* ─── SURFACE CARDS ─── */
-.surfaces{display:grid;gap:48px}
-.surface{
-  display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;
-}
-/* Grid children default to min-width:auto (content-based), which lets a
-   long <pre> codeblock force the grid wider than the viewport. Clamping
-   to 0 lets the codeblock's own overflow-x:auto contain the overflow. */
-.surface>*{min-width:0}
-.surface.flip{direction:rtl}
-.surface.flip>*{direction:ltr;min-width:0}
-.surface-text h3{font-size:1.125rem;font-weight:700;color:#f5f5f5;margin:0 0 8px}
-.surface-text p{font-size:.875rem;color:#a8a8a8;margin:0;line-height:1.6}
-.surface-text code{font-size:.75rem}
-.surface-visual img{
-  width:100%;height:auto;border-radius:10px;
-  border:1px solid rgba(255,255,255,.08);
-  box-shadow:0 12px 40px rgba(0,0,0,.4);
-}
-.surface-visual .codeblock{
-  background:#0b0d0e;border:1px solid rgba(255,255,255,.08);
-  border-radius:10px;padding:16px 20px;
-  font-family:ui-monospace,"SF Mono",Menlo,monospace;
-  font-size:.75rem;line-height:1.7;white-space:pre;overflow-x:auto;color:#ccc;
-  box-shadow:0 12px 40px rgba(0,0,0,.4);
-  position:relative;
-}
-@media(max-width:720px){
-  .surface{grid-template-columns:1fr}
-  .surface.flip{direction:ltr}
-}
-
-/* ─── GET STARTED ─── */
-.install-grid{
-  display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:8px;
-}
-.install-grid>*{min-width:0}
-@media(max-width:860px){.install-grid{grid-template-columns:1fr}}
-.install-card{margin-bottom:16px;overflow:hidden}
-.install-card:last-child{margin-bottom:0}
-.install-label{font-size:.8125rem;font-weight:600;color:#e5e5e5;margin:0 0 6px}
-.install-hint{font-size:.6875rem;color:#8a8a8a;margin:4px 0 0}
-.cmd{
-  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
-  border-radius:8px;padding:12px 16px;
-  font-family:ui-monospace,"SF Mono",Menlo,monospace;
-  font-size:clamp(.6875rem,1.4vw,.8125rem);
-  overflow-x:auto;white-space:pre;color:#ccc;
-  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.15) transparent;
-  position:relative;
-}
-.tryblock{
-  background:#0b0d0e;border:1px solid rgba(255,255,255,.08);
-  border-radius:10px;padding:16px 20px;height:100%;
-  font-family:ui-monospace,"SF Mono",Menlo,monospace;
-  font-size:clamp(.6875rem,1.4vw,.8125rem);
-  line-height:1.9;white-space:pre;overflow-x:auto;color:#ccc;
-  position:relative;
-}
-.tryblock .c{color:#555}
-
-/* ─── FAQ ─── */
-.faq{display:grid;gap:8px;margin-top:8px}
-.faq details{
-  background:rgba(255,255,255,.025);
-  border:1px solid rgba(255,255,255,.08);
-  border-radius:10px;padding:14px 18px;
-  transition:background 150ms,border-color 150ms;
-}
-.faq details[open]{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.14)}
-.faq summary{
-  cursor:pointer;font-size:.9375rem;font-weight:600;color:#e5e5e5;
-  list-style:none;display:flex;align-items:center;gap:10px;
-}
-.faq summary::-webkit-details-marker{display:none}
-.faq summary::before{
-  content:"+";font-family:ui-monospace,"SF Mono",Menlo,monospace;
-  color:#0aae7a;font-weight:700;width:14px;flex-shrink:0;
-  transition:transform 150ms;
-}
-.faq details[open] summary::before{content:"−"}
-.faq .answer{
-  color:#b0b0b0;font-size:.875rem;line-height:1.65;margin-top:12px;
-  padding-left:24px;
-  /* Long URLs inside <code> spans don't break by default and force the
-     details card wider than the viewport. Allow breaks at any char so
-     FAQ answers respect the mobile viewport width. */
-  overflow-wrap:anywhere;
-  word-break:break-word;
-}
-.faq .answer p{margin:0 0 10px}
-.faq .answer p:last-child{margin-bottom:0}
-.faq-command-list{display:grid;gap:8px;margin:10px 0 12px}
-.faq-command{
-  display:grid;
-  grid-template-columns:112px minmax(0,1fr);
-  gap:10px;
-  align-items:start;
-}
-.faq-command span{
-  color:#8b95a8;
-  font-size:.78rem;
-  line-height:1.7;
-}
-.faq-command code{
-  display:block;
-  padding:5px 7px;
-  border:1px solid rgba(255,255,255,.07);
-  border-radius:5px;
-  background:rgba(255,255,255,.045);
-  white-space:normal;
-}
-.faq .answer code{
-  font-size:.8125rem;
-  overflow-wrap:anywhere;
-  word-break:break-all;
-}
-.faq .answer a{color:#ccc;text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere}
 
 /* ─── COPY BUTTON ─── */
 .has-copy{position:relative}
 .copy-btn{
-  position:absolute;top:8px;right:8px;
+  position:absolute;top:50%;right:5px;transform:translateY(-50%);
   /* Opaque background so text behind the button isn't visible through it */
-  background:#222;border:1px solid rgba(255,255,255,.22);
-  border-radius:6px;color:#c8c8c8;font-size:.6875rem;font-weight:600;
-  padding:5px 12px;cursor:pointer;opacity:0;
-  transition:opacity 150ms,background 120ms,color 120ms;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  background:#222;border:1px solid rgba(255,255,255,.12);
+  border-radius:6px;color:rgba(255,255,255,.34);
+  width:27px;height:27px;padding:0;
+  display:inline-flex;align-items:center;justify-content:center;
+  cursor:pointer;opacity:0;
+  transition:none;
 }
+.copy-btn svg{width:15px;height:15px;display:block;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .has-copy:hover .copy-btn,.has-copy:focus-within .copy-btn{opacity:1}
-.copy-btn:hover{background:#333;color:#eee}
+.faq-command:hover .copy-btn,.faq-command:focus-within .copy-btn{opacity:1}
+.faq-command .copy-btn{right:10px}
+.copy-btn:hover{background:#2a2d32;border-color:rgba(255,255,255,.18);color:rgba(255,255,255,.58)}
 .copy-btn.copied{color:#3fb950;border-color:rgba(63,185,80,.4)}
+.surface-visual .codeblock .copy-btn,
+.tryblock .copy-btn{
+  top:12px;
+  right:12px;
+  transform:none;
+}
 /* Touch devices don't have :hover; keep copy buttons visible so they're discoverable */
 @media (hover: none){
   .copy-btn{opacity:.7}
   .copy-btn:hover{opacity:1}
 }
 
-/* ─── FOOTER ─── */
-footer{
-  border-top:1px solid rgba(255,255,255,.06);padding:28px 24px;
-  display:flex;justify-content:space-between;align-items:center;
-  flex-wrap:wrap;gap:12px;font-size:.75rem;color:#888;
-}
-footer a{color:#9a9a9a;text-decoration:none}
-footer a:hover{color:#ccc}
-.flinks{display:flex;gap:16px}
 
 /* ─── RESPONSIVE ─── */
+/* Hero- and Faq-specific responsive rules moved into their own component
+   <style> blocks; only the shared cross-component `section` rules stay here. */
 @media(max-width:600px){
-  .hero h1{font-size:1.625rem}
-  .hero .sub{font-size:.9375rem}
-  section{padding:48px 0}
+  section{padding:44px 0}
   section h2{font-size:1.25rem}
-  .hero .quick-install{font-size:.75rem;padding:10px 12px}
-  .faq-command{grid-template-columns:1fr;gap:4px}
-  /* Let the curl | bash command wrap instead of being ellipsed — losing
-     the "| bash" at the end made the command unusable on phones. */
-  .hero .quick-install span{white-space:normal;overflow:visible;text-overflow:clip;word-break:break-all}
 }
-
-/* ─── TRY BLOCK TITLE ─── */
-.try-title{
-  font-size:.9375rem;font-weight:600;color:#e5e5e5;margin:0 0 8px;
-}
-.try-title + .tryblock{margin-top:0}
-
-/* ─── BUILT-WITH FOOTER ─── */
-.built-with{
-  width:100%;font-size:.75rem;color:#888;text-align:center;
-  padding-top:18px;border-top:1px solid rgba(255,255,255,.04);margin-top:12px;
-}
-.built-with a{color:#a8a8a8;text-decoration:none}
-.built-with a:hover{color:#ccc}
-
-/* ─── INSTALL SECTION: OS-tabbed redesign ───
-   Two-row grid: OS tabs span row 1 col 1 only; install panels and Try it
-   sit in row 2 so the Try it card is level with the recommended card. */
-.install-grid{
-  grid-template-columns:1fr 360px;gap:0 32px;align-items:start;
-}
-.os-tabs{
-  grid-column:1;grid-row:1;display:flex;gap:0;
-  border-bottom:1px solid #222;margin-bottom:20px;
-}
-.install-content{grid-column:1;grid-row:2}
-.try{grid-column:2;grid-row:2}
-.os-tab{
-  padding:12px 22px;color:#888;font-size:.9rem;cursor:pointer;user-select:none;
-  border:none;background:transparent;font-family:inherit;
-  border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s;
-}
-.os-tab:hover{color:#ccc}
-.os-tab.active{color:#fafafa;border-bottom-color:#0aae7a;font-weight:500}
-.os-panel{display:none}
-.os-panel.active{display:block}
-.reco{
-  background:#0d0d0d;border:1px solid #2a2a2a;border-radius:10px;
-  padding:14px 18px;margin-bottom:16px;
-}
-.reco-meta{font-size:.85rem;font-weight:500;color:#e0e0e0;margin-bottom:8px}
-.cmd.big{font-size:1.05rem;padding-right:74px}
-.alts{
-  display:flex;flex-direction:column;gap:1px;
-  background:#1a1a1a;border:1px solid #1a1a1a;border-radius:8px;overflow:hidden;
-}
-.alt{
-  display:grid;grid-template-columns:140px 1fr;gap:16px;align-items:center;
-  padding:11px 16px;background:#0c0c0c;transition:background .15s;position:relative;
-}
-.alt:hover{background:#0f0f0f}
-.alt-label{font-size:.85rem;color:#bcbcbc}
-.alt-cmd{
-  font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.82rem;
-  color:#ccc;word-break:break-all;padding-right:50px;
-}
-.footer-note{margin-top:14px;font-size:.8125rem;color:#777}
-.footer-note a{color:#9a9a9a;text-decoration:underline;text-underline-offset:3px}
-
-/* Try it sidebar — one row per command, each row gets .has-copy so the
-   existing copy-button JS auto-attaches a button. */
-.try{
-  background:#0a0a0a;border:1px solid rgba(255,255,255,.08);border-radius:10px;
-  padding:18px;
-}
-.try .try-title{margin:0 0 12px}
-.try-cmd{
-  display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:5px;
-  font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.83rem;
-  color:#bcbcbc;transition:background .15s;position:relative;
-}
-.try-cmd:hover{background:#101010}
-.try-cmd .p{color:#555;user-select:none}
-.try-cmd .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
-
-/* Always-visible Copy variant for the recommended hero card.
-   Tinted with the site's brand-green accent rgba(10,174,122,*). */
-.has-copy.always-show .copy-btn{
-  opacity:1;
-  background:rgba(10,174,122,.12);
-  border-color:rgba(10,174,122,.45);
-  color:#0aae7a;
-}
-.has-copy.always-show .copy-btn:hover{
-  background:rgba(10,174,122,.20);
-  color:#1ec88c;
-}
-
-/* Mobile: stack the grid into one column, Try it drops below. */
-@media(max-width:800px){
-  .install-grid{grid-template-columns:1fr}
-  .os-tabs{grid-column:1;grid-row:auto}
-  .install-content{grid-column:1;grid-row:auto}
-  .try{grid-column:1;grid-row:auto;margin-top:24px}
-}
-
-/* Per-platform download buttons inside a surface card body. Used by the
-   Desktop card to surface .msi / .dmg / .deb / .AppImage installers from
-   the latest release without leaving the page. */
-.surface-downloads{
-  display:flex;flex-wrap:wrap;gap:8px;margin-top:18px;
-}
-.surface-download-btn{
-  display:inline-flex;flex-direction:column;align-items:flex-start;gap:2px;
-  padding:9px 14px;border-radius:8px;
-  background:rgba(10,174,122,.10);border:1px solid rgba(10,174,122,.45);
-  color:#0aae7a;font-size:.85rem;font-weight:500;text-decoration:none;
-  transition:background .15s,color .15s,border-color .15s;
-}
-.surface-download-btn:hover{
-  background:rgba(10,174,122,.20);
-  border-color:rgba(10,174,122,.6);
-  color:#1ec88c;
-}
-.surface-download-btn .dl-label{font-size:.85rem;line-height:1.2}
-.surface-download-btn .dl-hint{
-  font-size:.7rem;color:#7a7a7a;font-weight:400;line-height:1.2;
-}
-.surface-download-btn:hover .dl-hint{color:#9a9a9a}

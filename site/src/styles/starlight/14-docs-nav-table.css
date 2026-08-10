@@ -1,0 +1,215 @@
+/* Final docs navigation/table pass. Keep rail indicators aligned, make the
+   mobile ToC behave like the desktop ToC, and preserve table headers on phones. */
+.sidebar-content {
+  --netscli-sidebar-rail-inset: clamp(2.2rem, 3vw, 3.15rem);
+  padding-inline-start: var(--netscli-sidebar-rail-inset) !important;
+}
+
+.sidebar-content :where(details > ul) {
+  margin-inline-start: 0.75rem !important;
+  border-inline-start: 1px solid var(--sl-color-hairline) !important;
+}
+
+.sidebar-content :where(a[aria-current='page']) {
+  position: relative;
+  box-shadow: none !important;
+}
+
+.sidebar-content :where(a[aria-current='page'])::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: -1.1rem;
+  width: 2px;
+  background: #0aae7a;
+}
+
+@media (max-width: 71.99rem) {
+  .right-sidebar-container {
+    display: block !important;
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    order: -1;
+    background: var(--sl-color-bg);
+    border-bottom: 1px solid var(--sl-color-hairline) !important;
+  }
+
+  mobile-starlight-toc {
+    display: block !important;
+    position: relative !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  .right-sidebar {
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    border: 0 !important;
+  }
+
+  mobile-starlight-toc nav {
+    position: static !important;
+    inset: auto !important;
+    width: 100% !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  mobile-starlight-toc summary {
+    height: 2.75rem !important;
+    padding-block: 0 !important;
+    padding-inline: clamp(1rem, 3.5vw, 1.75rem) !important;
+    gap: 0.8rem !important;
+    border: 0 !important;
+  }
+
+  mobile-starlight-toc summary:focus-visible {
+    outline: 1px solid rgba(159, 248, 222, 0.58) !important;
+    outline-offset: -3px !important;
+  }
+
+  mobile-starlight-toc .toggle {
+    min-width: auto !important;
+    min-height: 2rem !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: var(--sl-color-gray-1) !important;
+    font-weight: 720 !important;
+  }
+
+  mobile-starlight-toc details[open] .toggle,
+  mobile-starlight-toc details .toggle:hover,
+  mobile-starlight-toc summary:focus-visible .toggle {
+    border-color: transparent !important;
+    background: transparent !important;
+    color: var(--sl-color-white) !important;
+  }
+
+  mobile-starlight-toc .display-current {
+    color: var(--sl-color-gray-3) !important;
+    font-size: 0.84rem !important;
+  }
+
+  mobile-starlight-toc .dropdown {
+    margin: 0 !important;
+    max-height: min(48vh, 24rem) !important;
+    overflow-y: auto !important;
+    border-block: 1px solid var(--sl-color-hairline) !important;
+    border-inline: 0 !important;
+    background: #1b2028 !important;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.26) !important;
+  }
+
+  mobile-starlight-toc .dropdown ul {
+    padding-block: 0.35rem !important;
+  }
+
+  mobile-starlight-toc .dropdown a {
+    min-height: 2.45rem !important;
+    padding-block: 0.38rem !important;
+    padding-inline: clamp(1.15rem, 3.5vw, 1.75rem) !important;
+    border-inline-start: 2px solid transparent !important;
+    color: var(--sl-color-gray-2) !important;
+    background: transparent !important;
+  }
+
+  mobile-starlight-toc .dropdown a:hover,
+  mobile-starlight-toc .dropdown a:focus-visible {
+    color: var(--sl-color-white) !important;
+    background: rgba(255, 255, 255, 0.045) !important;
+    outline: 0 !important;
+  }
+
+  mobile-starlight-toc .dropdown a[aria-current='true'] {
+    color: #9ff8de !important;
+    border-inline-start-color: #0aae7a !important;
+    background: rgba(10, 174, 122, 0.08) !important;
+  }
+}
+
+@media (max-width: 49.99rem) {
+  .sidebar-content {
+    --netscli-sidebar-rail-inset: 1.35rem;
+    padding-inline: var(--netscli-sidebar-rail-inset) 1.35rem !important;
+    gap: 0.95rem !important;
+  }
+
+  .sidebar-content a {
+    min-height: 2.25rem;
+    padding-block: 0.3rem;
+  }
+}
+
+@media (max-width: 42rem) {
+  .sl-markdown-content table {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    border: 1px solid rgba(140, 149, 166, 0.2) !important;
+    border-radius: 8px !important;
+    background: #20242b !important;
+  }
+
+  .sl-markdown-content table thead {
+    display: table-header-group !important;
+  }
+
+  .sl-markdown-content table tbody {
+    display: table-row-group !important;
+  }
+
+  .sl-markdown-content table tr {
+    display: table-row !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+  }
+
+  .sl-markdown-content table td,
+  .sl-markdown-content table th {
+    display: table-cell !important;
+    width: auto !important;
+    min-width: 9rem;
+    padding: 0.68rem 0.85rem !important;
+    border-bottom: 1px solid rgba(140, 149, 166, 0.11) !important;
+    white-space: normal !important;
+    overflow-wrap: normal !important;
+  }
+
+  .sl-markdown-content table td:first-child,
+  .sl-markdown-content table th:first-child {
+    min-width: 8rem;
+    font-weight: inherit !important;
+    white-space: nowrap !important;
+  }
+
+  .sl-markdown-content table td + td,
+  .sl-markdown-content table th + th {
+    border-inline-start: 1px solid rgba(140, 149, 166, 0.11) !important;
+  }
+}
+
+html[data-theme='light'] mobile-starlight-toc .dropdown {
+  background: #ffffff !important;
+  box-shadow: 0 14px 32px rgba(17, 24, 39, 0.12) !important;
+}
+
+html[data-theme='light'] mobile-starlight-toc .dropdown a:hover,
+html[data-theme='light'] mobile-starlight-toc .dropdown a:focus-visible {
+  color: #111827 !important;
+  background: rgba(17, 24, 39, 0.045) !important;
+}
+
+html[data-theme='light'] mobile-starlight-toc .dropdown a[aria-current='true'] {
+  color: #064934 !important;
+  border-inline-start-color: #007a54 !important;
+  background: rgba(0, 122, 84, 0.08) !important;
+}

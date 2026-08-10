@@ -1,6 +1,27 @@
 ---
 import { site } from '../data/site';
 const { faq, copy } = site;
+const faqOrder = [
+  'What it is',
+  'Install and updates',
+  'Interfaces and integrations',
+  'Network workflows',
+  'Limits and dependencies',
+];
+
+const grouped = faq.reduce<Array<{ title: string; items: typeof faq }>>((groups, item) => {
+  const existing = groups.find((group) => group.title === item.group);
+  if (existing) {
+    existing.items.push(item);
+  } else {
+    groups.push({ title: item.group, items: [item] });
+  }
+  return groups;
+}, []);
+
+const faqGroups = grouped.sort(
+  (a, b) => faqOrder.indexOf(a.title) - faqOrder.indexOf(b.title),
+);
 ---
 <section id="faq">
   <div class="w">
@@ -8,12 +29,112 @@ const { faq, copy } = site;
     <p class="lead" set:html={copy.faq.leadHtml} />
 
     <div class="faq">
-      {faq.map((f) => (
-        <details>
-          <summary>{f.q}</summary>
-          <div class="answer" set:html={f.aHtml ?? f.a} />
-        </details>
+      {faqGroups.map((group) => (
+        <div class="faq-section">
+          <h3 class="faq-section-title">{group.title}</h3>
+          {group.items.map((f) => (
+            <details>
+              <summary>{f.q}</summary>
+              <div class="answer" set:html={f.aHtml ?? f.a} />
+            </details>
+          ))}
+        </div>
       ))}
     </div>
   </div>
 </section>
+
+<style is:global>
+/* ─── FAQ ─── */
+.faq{display:grid;gap:22px;margin-top:14px}
+.faq-section{display:grid;gap:8px}
+.faq-section-title{
+  margin:0 0 2px;
+  color:#8b95a8;
+  font-size:.72rem;
+  font-weight:600;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.faq details{
+  background:rgba(255,255,255,.025);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:10px;padding:14px 18px;
+  transition:background 150ms,border-color 150ms;
+}
+.faq details[open]{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.14)}
+.faq summary{
+  cursor:pointer;font-size:.9375rem;font-weight:600;color:#e5e5e5;
+  list-style:none;display:flex;align-items:center;gap:10px;
+}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::before{
+  content:"+";font-family:ui-monospace,"SF Mono",Menlo,monospace;
+  color:#0aae7a;font-weight:700;width:14px;flex-shrink:0;
+  transition:transform 150ms;
+}
+.faq details[open] summary::before{content:"−"}
+.faq .answer{
+  color:#b0b0b0;font-size:.875rem;line-height:1.65;margin-top:12px;
+  padding-left:24px;
+  /* Long URLs inside <code> spans don't break by default and force the
+     details card wider than the viewport. Allow breaks at any char so
+     FAQ answers respect the mobile viewport width. */
+  overflow-wrap:anywhere;
+  word-break:break-word;
+}
+.faq .answer p{margin:0 0 10px}
+.faq .answer p:last-child{margin-bottom:0}
+.faq-command-list{display:grid;gap:8px;margin:10px 0 12px}
+.faq-command{
+  display:grid;
+  grid-template-columns:112px minmax(0,1fr);
+  gap:10px;
+  align-items:center;
+  position:relative;
+}
+.faq-command span{
+  color:#8b95a8;
+  font-size:.78rem;
+  line-height:1.7;
+}
+.faq-command code{
+  display:flex;
+  align-items:center;
+  min-height:40px;
+  padding:8px 48px 8px 12px;
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:5px;
+  background:rgba(255,255,255,.045);
+  color:#d8dee8;
+  white-space:pre;
+  overflow-x:auto;
+}
+.faq .answer code{
+  font-size:.8125rem;
+  color:#23d198;
+  white-space:nowrap;
+  overflow-wrap:normal;
+  word-break:normal;
+}
+.faq .answer .faq-command code{
+  color:#e8edf4;
+  white-space:pre;
+  overflow-x:auto;
+  overflow-wrap:normal;
+  word-break:normal;
+}
+.faq .answer a{color:#0aae7a;text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere}
+.faq .answer a:hover{color:#23d198}
+
+
+@media(max-width:600px){
+  .faq-command{grid-template-columns:minmax(72px,.35fr) minmax(0,1fr);gap:8px}
+  .faq-command .copy-btn{
+    top:50%;
+    right:8px;
+    bottom:auto;
+    transform:translateY(-50%);
+  }
+}
+</style>

@@ -43,7 +43,4 @@ jobs:
       - run: npm run build
       - run: npm run check
       - name: Accessibility check
-        # site/ is currently reverted to a pre-redesign state that predates
-        # this script; skip rather than fail once until the redesign (and
-        # its a11y tooling) ships deliberately.
-        run: npm run test:a11y --if-present
+        run: npm run test:a11y
