@@ -1,0 +1,134 @@
+name: Site Preview
+
+# Per-PR preview deploys of site/ to Cloudflare Pages.
+#
+# PRODUCTION IS NOT TOUCHED BY THIS WORKFLOW. netscli.com is served from
+# GitHub Pages via pages.yml, which stays manual-only. This deploys to a
+# separate Cloudflare Pages project and always passes an explicit
+# `--branch=pr-<N>`, which Cloudflare treats as a *preview* deployment.
+# There is no code path here that produces a production deployment.
+#
+# Until the two repository secrets exist this workflow runs and cleanly
+# reports "not configured" rather than failing — see docs/PUBLISHING.md.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - '.github/workflows/site-preview.yml'
+
+concurrency:
+  group: site-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  preview:
+    name: Deploy preview
+    runs-on: ubuntu-latest
+    # Secrets are not exposed to pull_request runs from forks, so a fork PR
+    # would otherwise fail on an empty token. Skip rather than fail; the
+    # maintainer can deploy a preview from a local branch if needed.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      - name: Check configuration
+        id: cfg
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [[ -n "$CF_TOKEN" && -n "$CF_ACCOUNT" ]]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Cloudflare preview not configured — set CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID to enable. See docs/PUBLISHING.md."
+          fi
+
+      - name: npm ci
+        if: steps.cfg.outputs.configured == 'true'
+        run: npm ci
+        working-directory: site
+
+      # NETSCLI_PREVIEW=1 makes the build emit `robots: noindex, nofollow`
+      # and suppress the Web Analytics beacon. A preview is still a
+      # production Astro build, so without it every PR deploy would report
+      # into netscli.com's real analytics property and be crawlable.
+      - name: Build site (preview mode)
+        if: steps.cfg.outputs.configured == 'true'
+        run: npm run build
+        working-directory: site
+        env:
+          NETSCLI_PREVIEW: '1'
+
+      - name: Verify the preview build is not indexable
+        if: steps.cfg.outputs.configured == 'true'
+        working-directory: site
+        run: |
+          set -euo pipefail
+          missing=0
+          while IFS= read -r f; do
+            grep -q 'name="robots" content="noindex' "$f" || { echo "not noindexed: $f"; missing=1; }
+          done < <(find dist -name '*.html')
+          if [[ "$missing" -ne 0 ]]; then
+            echo "::error::Preview build produced indexable pages — refusing to deploy."
+            exit 1
+          fi
+          if grep -rq "cloudflareinsights" dist/ 2>/dev/null; then
+            echo "::error::Preview build still loads the analytics beacon — refusing to deploy."
+            exit 1
+          fi
+          echo "All $(find dist -name '*.html' | wc -l) pages are noindex, and no analytics beacon is present."
+
+      - name: Deploy to Cloudflare Pages (preview)
+        if: steps.cfg.outputs.configured == 'true'
+        id: deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        working-directory: site
+        run: |
+          set -euo pipefail
+          # --branch is what makes this a preview rather than a production
+          # deployment. Never pass the project's production branch here.
+          npx --yes wrangler@4 pages deploy dist \
+            --project-name=netscli-site-preview \
+            --branch="pr-${{ github.event.pull_request.number }}" \
+            --commit-dirty=true \
+            | tee deploy.log
+          url=$(grep -oE 'https://[a-z0-9.-]+\.pages\.dev' deploy.log | tail -1)
+          echo "url=${url}" >> "$GITHUB_OUTPUT"
+
+      - name: Comment the preview URL
+        if: steps.cfg.outputs.configured == 'true' && steps.deploy.outputs.url != ''
+        uses: actions/github-script@v7
+        env:
+          PREVIEW_URL: ${{ steps.deploy.outputs.url }}
+        with:
+          script: |
+            const url = process.env.PREVIEW_URL;
+            const marker = '<!-- netscli-site-preview -->';
+            const body = `${marker}\n**Site preview:** ${url}\n\n` +
+              `Built from ${context.sha.slice(0, 7)} with \`NETSCLI_PREVIEW=1\` — ` +
+              `noindex, and analytics disabled so it does not report into netscli.com's numbers.\n\n` +
+              `Production is unaffected: netscli.com is served from GitHub Pages via \`pages.yml\`, which is manual-only.`;
+            const { data: comments } = await github.rest.issues.listComments({
+              ...context.repo, issue_number: context.issue.number,
+            });
+            const existing = comments.find((c) => c.body?.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ ...context.repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: context.issue.number, body });
+            }
