@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import process from 'node:process';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -100,6 +101,41 @@ const THEMES = [
   { name: 'dark', chromeOptions: ['force-dark-mode'] },
 ];
 
+/**
+ * ChromeDriver has to match the installed Chrome's major version exactly.
+ * `@axe-core/cli` pulls in the `chromedriver` npm package, which fetches
+ * whatever is newest at install time — so the day ChromeDriver 151 ships
+ * and the runner image still has Chrome 150, every run dies with
+ * "session not created". Nothing about the site changed; the check just
+ * stops working.
+ *
+ * GitHub's Ubuntu images ship a Chrome and a ChromeDriver that are
+ * already matched, and point `CHROMEWEBDRIVER` at the directory holding
+ * the latter. Prefer that when it exists, and fall back to whatever
+ * axe resolves on its own (which is the right behaviour locally).
+ */
+function resolveChromedriverPath() {
+  const explicit = process.env.A11Y_CHROMEDRIVER_PATH;
+  const candidates = [
+    explicit,
+    process.env.CHROMEWEBDRIVER && join(process.env.CHROMEWEBDRIVER, 'chromedriver'),
+    process.env.CHROMEWEBDRIVER && join(process.env.CHROMEWEBDRIVER, 'chromedriver.exe'),
+  ].filter(Boolean);
+
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) return candidate;
+  }
+  if (explicit) {
+    console.warn(`A11Y_CHROMEDRIVER_PATH is set but ${explicit} does not exist; ignoring.`);
+  }
+  return null;
+}
+
+const chromedriverPath = resolveChromedriverPath();
+if (chromedriverPath) {
+  console.log(`Using runner-matched chromedriver: ${chromedriverPath}`);
+}
+
 function runAxe({ name, chromeOptions }) {
   const axeArgs = [
     ...urls,
@@ -109,6 +145,10 @@ function runAxe({ name, chromeOptions }) {
     '--load-delay',
     '300',
   ];
+
+  if (chromedriverPath) {
+    axeArgs.push('--chromedriver-path', chromedriverPath);
+  }
 
   const extraChromeOptions = process.env.A11Y_CHROME_OPTIONS
     ? process.env.A11Y_CHROME_OPTIONS.split(',').map((o) => o.trim()).filter(Boolean)
