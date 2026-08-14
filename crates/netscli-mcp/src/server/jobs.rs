@@ -162,7 +162,11 @@ impl ServerState {
     }
 }
 
-pub(super) async fn start_pcap_capture_job(
+// Not `async`: the body only spawns the capture and returns its initial
+// status. Keeping it synchronous lets the caller hold the (synchronous)
+// server-state lock across the whole call without making the enclosing
+// future non-`Send`.
+pub(super) fn start_pcap_capture_job(
     state: &mut ServerState,
     params: Value,
 ) -> Result<Value, RpcError> {
