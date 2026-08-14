@@ -83,7 +83,24 @@ async function ensurePreview() {
   await waitForServer();
 }
 
-function runAxe() {
+/**
+ * The site has a light and a dark theme with SEPARATE colour tokens, and
+ * Starlight picks one from `prefers-color-scheme`. That made this check
+ * silently environment-dependent: it only ever tested whichever theme
+ * the runner's Chrome happened to prefer. A developer on a dark-mode OS
+ * got a clean run while CI (Ubuntu, no preference, so light) failed —
+ * light-theme contrast bugs could sit unnoticed behind a green local
+ * check. Run both explicitly.
+ *
+ * Chrome has no "force light" switch because light IS the default with
+ * no OS preference; `--force-dark-mode` covers the other side.
+ */
+const THEMES = [
+  { name: 'light', chromeOptions: [] },
+  { name: 'dark', chromeOptions: ['force-dark-mode'] },
+];
+
+function runAxe({ name, chromeOptions }) {
   const axeArgs = [
     ...urls,
     '--tags',
@@ -93,20 +110,43 @@ function runAxe() {
     '300',
   ];
 
-  if (process.env.A11Y_CHROME_OPTIONS) {
-    axeArgs.push('--chrome-options', process.env.A11Y_CHROME_OPTIONS);
+  const extraChromeOptions = process.env.A11Y_CHROME_OPTIONS
+    ? process.env.A11Y_CHROME_OPTIONS.split(',').map((o) => o.trim()).filter(Boolean)
+    : [];
+  const allChromeOptions = [...chromeOptions, ...extraChromeOptions];
+  if (allChromeOptions.length) {
+    axeArgs.push('--chrome-options', allChromeOptions.join(','));
   }
 
-  console.log(`Running axe on ${urls.length} route(s):`);
+  console.log(`\n=== ${name} theme — ${urls.length} route(s) ===`);
   urls.forEach((url) => console.log(`- ${url}`));
 
   return new Promise((resolve) => {
     const axe = spawn(process.execPath, [axeCli, ...axeArgs], { stdio: 'inherit' });
     axe.on('close', resolve);
+    // Without this a missing/renamed axe binary leaves the promise
+    // pending and the job hangs until the CI timeout instead of failing.
+    axe.on('error', (error) => {
+      console.error(`Failed to start axe: ${error.message}`);
+      resolve(1);
+    });
   });
 }
 
 await ensurePreview();
-const exitCode = await runAxe();
+
+let failed = false;
+for (const theme of THEMES) {
+  const code = await runAxe(theme);
+  if (code !== 0) {
+    failed = true;
+    console.error(`\n✗ Accessibility violations in the ${theme.name} theme.`);
+  }
+}
+
 cleanup();
-process.exit(exitCode ?? 1);
+if (failed) {
+  process.exit(1);
+}
+console.log('\n✓ No accessibility violations in either theme.');
+process.exit(0);

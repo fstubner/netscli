@@ -31,7 +31,13 @@ html[data-theme='light'] ::backdrop {
   --sl-color-white: #111827;
   --sl-color-gray-1: #243044;
   --sl-color-gray-2: #44516a;
-  --sl-color-gray-3: #718096;
+  /* gray-3 is the secondary/small-text colour used by the docs footer,
+     built-with row, and mobile section labels — much of it at 12px. At
+     the previous #718096 that was 3.88:1 on --sl-color-bg (#fbfbfb),
+     under the 4.5:1 WCAG AA floor for normal-size text. #667387 is
+     4.65:1. Do not lighten this without re-checking the ratio; the dark
+     theme has its own gray-3 above and is unaffected. */
+  --sl-color-gray-3: #667387;
   --sl-color-gray-4: #c6d0dd;
   --sl-color-gray-5: #e3e8ef;
   --sl-color-gray-6: #f4f6f8;
