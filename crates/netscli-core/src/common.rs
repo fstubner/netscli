@@ -10,5 +10,7 @@ pub use constants::{
 pub use network::{
     default_ipv4_subnet_string, detect_default_ipv4_addr, detect_default_ipv4_subnet,
 };
-pub use ports::{default_ports, parse_ports, parse_ports_checked, MAX_PORTS_PER_SCAN};
+pub use ports::{
+    default_ports, parse_ports, parse_ports_checked, validate_ports, MAX_PORTS_PER_SCAN,
+};
 pub use terminal::sanitize_for_terminal;

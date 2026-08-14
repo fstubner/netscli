@@ -38,6 +38,14 @@ pub(super) fn validate_subnet(subnet: &str) -> Result<(), RpcError> {
     Ok(())
 }
 
+/// Normalize an MCP-supplied port list into what `Ops` expects.
+///
+/// The *rules* (port 0, the 4,096 cap) are not restated here — they live in
+/// `netscli_core::validate_ports` so every interface answers identically.
+/// This used to carry its own copy, which is how the CLI ended up accepting
+/// `-p 0` while this surface rejected it. Validating early still matters: it
+/// turns a core error into a proper `-32602` before the request reaches a
+/// tool, rather than surfacing as a generic tool failure.
 pub(super) fn normalize_ports(mut ports: Option<Vec<u16>>) -> Result<Option<Vec<u16>>, RpcError> {
     let Some(mut ps) = ports.take() else {
         return Ok(None);
@@ -45,18 +53,9 @@ pub(super) fn normalize_ports(mut ports: Option<Vec<u16>>) -> Result<Option<Vec<
     if ps.is_empty() {
         return Ok(None);
     }
-    if ps.len() > netscli_core::MAX_PORTS_PER_SCAN {
-        return Err(RpcError::InvalidParams(format!(
-            "too many ports requested ({} > {})",
-            ps.len(),
-            netscli_core::MAX_PORTS_PER_SCAN
-        )));
-    }
-    if ps.contains(&0) {
-        return Err(RpcError::InvalidParams("port 0 is invalid".to_string()));
-    }
     ps.sort_unstable();
     ps.dedup();
+    netscli_core::validate_ports(&ps).map_err(|e| RpcError::InvalidParams(e.to_string()))?;
     Ok(Some(ps))
 }
 

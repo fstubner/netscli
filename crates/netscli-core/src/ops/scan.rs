@@ -5,9 +5,28 @@ use super::config::Ops;
 use super::validation::parse_limited_ipv4_subnet;
 use crate::error::Result;
 use crate::{
-    default_ipv4_subnet_string, default_ports, DiscoverEngine, Host, InspectEngine, InspectResult,
-    PortResult, PortScanner, SweepEngine, SweepEntry,
+    default_ipv4_subnet_string, default_ports, validate_ports, DiscoverEngine, Host, InspectEngine,
+    InspectResult, PortResult, PortScanner, SweepEngine, SweepEntry,
 };
+
+/// Resolve the caller's port list, validating it.
+///
+/// Every scanning entry point funnels through here so the limits hold no
+/// matter which surface the call arrives on. Previously the 4,096 cap and
+/// the port-0 rejection lived only in the *parsers* — `parse_ports_checked`
+/// for the CLI/GUI and the MCP server's own `normalize_ports` — so the
+/// answers diverged (`netscli scan -p 0` reported "Scanned 1 port" while
+/// the MCP tool rejected the same input), and a library consumer calling
+/// `Ops` with a hand-built `Vec<u16>` bypassed both.
+fn resolve_ports(ports: Option<Vec<u16>>) -> Result<Vec<u16>> {
+    match ports {
+        Some(ports) => {
+            validate_ports(&ports)?;
+            Ok(ports)
+        }
+        None => Ok(default_ports()),
+    }
+}
 
 impl Ops {
     pub async fn discover_ipv4(
@@ -53,7 +72,7 @@ impl Ops {
         progress: Option<Arc<dyn Fn(crate::scan::PortScanProgress) + Send + Sync>>,
     ) -> Result<(IpAddr, Vec<PortResult>)> {
         let ip = self.resolve_host_ip(host).await?;
-        let ports = ports.unwrap_or_else(default_ports);
+        let ports = resolve_ports(ports)?;
         let scanner = PortScanner::new(self.cfg.concurrency);
         let results = scanner
             .scan_host_with_progress(ip, ports, self.cfg.scan_timeout_ms, progress)
@@ -66,7 +85,7 @@ impl Ops {
         host: String,
         ports: Option<Vec<u16>>,
     ) -> Result<InspectResult> {
-        let ports = ports.unwrap_or_else(default_ports);
+        let ports = resolve_ports(ports)?;
         let engine = InspectEngine::new_with_timeouts(
             self.cfg.concurrency,
             self.cfg.ping_timeout_ms,
@@ -95,7 +114,7 @@ impl Ops {
     ) -> Result<(String, Vec<SweepEntry>)> {
         let subnet_str = subnet.unwrap_or_else(default_ipv4_subnet_string);
         let net = parse_limited_ipv4_subnet(&subnet_str)?;
-        let ports = ports.unwrap_or_else(default_ports);
+        let ports = resolve_ports(ports)?;
         let engine = SweepEngine::new_with_timeouts(
             self.cfg.concurrency,
             self.cfg.ping_timeout_ms,
