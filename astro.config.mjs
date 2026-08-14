@@ -8,6 +8,14 @@ export default defineConfig({
   site: 'https://netscli.com',
   integrations: [
     starlight({
+      // Starlight renders the docs pages with its own layout, not
+      // src/layouts/Page.astro, so the noindex that layout emits for a
+      // preview build does not reach them. Inject it here too, or a
+      // preview deploy leaves 11 of 14 pages crawlable.
+      head:
+        process.env.NETSCLI_PREVIEW === '1'
+          ? [{ tag: 'meta', attrs: { name: 'robots', content: 'noindex, nofollow' } }]
+          : [],
       title: 'NetsCLI docs',
       description:
         'Technical documentation for NetsCLI, a Rust-based network scanner and diagnostics toolkit with a desktop app, terminal UI, CLI, MCP server, and shared core library.',
