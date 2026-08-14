@@ -55,7 +55,21 @@ async function main() {
   process.env.NETSCLI_EXPORT_DIR = artifactsDir;
   tauriDriverProcess = await startTauriDriver(nativeDriverPath, webdriverPort);
 
-  const driver = await createDriver(webdriverPort, application);
+  let driver;
+  try {
+    driver = await createDriver(webdriverPort, application);
+  } catch (error) {
+    // Session creation is where this harness fails most often, and the
+    // WebDriver error alone ("session not created: DevToolsActivePort
+    // file doesn't exist") says nothing about the cause. Everything
+    // useful is in the native driver's own output.
+    const driverLog = tauriDriverProcess?.getDriverOutput?.() ?? '';
+    console.error('\n--- tauri-driver / native driver output ---');
+    console.error(driverLog.trim() || '(no output captured)');
+    console.error('--- end driver output ---');
+    console.error(`app under test: ${application}`);
+    throw error;
+  }
 
   try {
     await driver.manage().window().setRect(DESKTOP_WINDOW);
