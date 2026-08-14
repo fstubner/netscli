@@ -12,7 +12,21 @@ export function usePopoverDismissal({
   setOpenMenu: (menu: string | null) => void;
 }) {
   useEffect(() => {
+    // Suppressing the webview's native menu everywhere also killed it inside
+    // text fields (B-22). The app's own context menu only covers result
+    // surfaces, so right-clicking a form input produced nothing at all and
+    // users lost their only mouse-driven cut/copy/paste affordance.
+    //
+    // Editable targets keep the native menu; everything else is still
+    // suppressed so the app can draw its own.
     function suppressWebviewContextMenu(event: Event) {
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        target.closest('input, textarea, [contenteditable="true"]')
+      ) {
+        return;
+      }
       event.preventDefault();
     }
 

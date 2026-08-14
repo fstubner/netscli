@@ -103,9 +103,25 @@ export function DetailPane({
         onKeyDown={(event) => handleDetailResizeKeyDown(event, height, setHeight, setMode)}
         onPointerDown={(event) => startDetailResize(event, setHeight, setMode)}
       />
-      <div className="detail-tabs">
+      {/*
+        C-13: these looked like tabs and behaved like tabs but carried no tab
+        semantics, so assistive tech announced a row of unrelated buttons with
+        no indication which was current. They are real buttons already, so
+        they are keyboard-reachable — this adds the missing relationship.
+        The landing page already does this correctly.
+      */}
+      <div className="detail-tabs" role="tablist" aria-label="Detail view">
         {tabSet.map((tab) => (
-          <button className={activeDetail === tab ? 'active' : ''} key={tab} onClick={() => onSetDetailTab(tab)}>
+          <button
+            className={activeDetail === tab ? 'active' : ''}
+            key={tab}
+            role="tab"
+            aria-selected={activeDetail === tab}
+            aria-controls="detail-panel"
+            id={`detail-tab-${tab}`}
+            type="button"
+            onClick={() => onSetDetailTab(tab)}
+          >
             {tab}
           </button>
         ))}
@@ -148,6 +164,12 @@ export function DetailPane({
             overflow.left ? 'has-left-overflow' : '',
           ].filter(Boolean).join(' ')}
           ref={detailBodyRef}
+          // Completes the tablist relationship above (C-13): the buttons
+          // point here via aria-controls, and this names the tab it belongs
+          // to so the panel is announced with its own label.
+          id="detail-panel"
+          role="tabpanel"
+          aria-labelledby={`detail-tab-${activeDetail}`}
           tabIndex={0}
           onContextMenu={onContentContextMenu}
           onKeyDown={selectDetailBodyOnShortcut}

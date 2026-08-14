@@ -8,10 +8,40 @@ interface ToastHostProps {
 }
 
 export function ToastHost({ dismissToast, setActiveTabId, toast }: ToastHostProps) {
-  if (!toast) return null;
+  const actionLabel = toast?.actionUrl ? 'View release' : toast?.tabId ? 'Open tab' : null;
 
-  const actionLabel = toast.actionUrl ? 'View release' : toast.tabId ? 'Open tab' : null;
+  // The live region is rendered unconditionally, even with no toast (B-21).
+  //
+  // Screen readers only announce changes *within* a region that already
+  // existed; inserting an element that itself carries `aria-live` is
+  // unreliable. Previously this component returned null with no toast, so
+  // operation-complete and operation-*failed* notices were silent.
+  //
+  // `.toast` is `position: absolute`, and a static wrapper does not create a
+  // containing block, so this does not move it.
+  return (
+    <div role="status" aria-live="polite" aria-atomic="true">
+      {toast && <ToastButton
+        actionLabel={actionLabel}
+        dismissToast={dismissToast}
+        setActiveTabId={setActiveTabId}
+        toast={toast}
+      />}
+    </div>
+  );
+}
 
+function ToastButton({
+  actionLabel,
+  dismissToast,
+  setActiveTabId,
+  toast,
+}: {
+  actionLabel: string | null;
+  dismissToast: () => void;
+  setActiveTabId: (tabId: string) => void;
+  toast: WorkspaceToast;
+}) {
   return (
     <button
       className={[

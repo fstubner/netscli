@@ -5,6 +5,8 @@ import { TOOL_CONFIG } from '../../tools/registry';
 import { tabIdentity } from '../../tools/presentation';
 import type { ToolCapabilityMap, ToolKind, WorkspaceTab } from '../../tools/types';
 import { computePopoverPosition } from '../primitives/overlay';
+import { handleTabStripKeyDown } from './tabStripKeyboard';
+import { useTabStripDrag } from './useTabStripDrag';
 import { tabDisplayFor } from './tabDisplay';
 import { TabToolMenu } from './TabToolMenu';
 
@@ -35,15 +37,10 @@ export function TabStrip({
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const activeTabRef = useRef<HTMLDivElement | null>(null);
   const chevronRef = useRef<HTMLButtonElement | null>(null);
-  const dragState = useRef({
-    active: false,
-    captured: false,
-    startX: 0,
-    scrollLeft: 0,
-    moved: false,
-    pointerId: 0,
+  const { dragHandlers, suppressNextClick } = useTabStripDrag(scrollRef, () => {
+    updateOverflowState();
+    updateToolMenuPosition();
   });
-  const suppressNextClick = useRef(false);
   const [toolMenuPosition, setToolMenuPosition] = useState({ left: 0, maxHeight: 360, top: 0 });
   const [overflowState, setOverflowState] = useState({
     overflow: false,
@@ -118,92 +115,14 @@ export function TabStrip({
       <div
         className="tab-scroll"
         ref={scrollRef}
-        onWheel={(event) => {
-          const scroll = scrollRef.current;
-          if (!scroll) return;
-          if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
-          const unit =
-            event.deltaMode === WheelEvent.DOM_DELTA_LINE
-              ? 16
-              : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
-                ? scroll.clientWidth
-                : 1;
-          scroll.scrollBy({ left: event.deltaY * unit, behavior: 'smooth' });
-          event.preventDefault();
-          window.requestAnimationFrame(() => {
-            updateOverflowState();
-            updateToolMenuPosition();
-          });
-        }}
-        onPointerDown={(event) => {
-          if (event.button !== 0 || (event.target as HTMLElement).closest('button')) return;
-          const scroll = scrollRef.current;
-          if (!scroll || scroll.scrollWidth <= scroll.clientWidth + 1) return;
-          dragState.current = {
-            active: true,
-            captured: false,
-            startX: event.clientX,
-            scrollLeft: scroll.scrollLeft,
-            moved: false,
-            pointerId: event.pointerId,
-          };
-        }}
-        onPointerMove={(event) => {
-          const state = dragState.current;
-          const scroll = scrollRef.current;
-          if (!state.active || !scroll) return;
-          const delta = event.clientX - state.startX;
-          if (Math.abs(delta) <= 6 && !state.moved) return;
-          state.moved = true;
-          if (!state.captured) {
-            scroll.setPointerCapture(event.pointerId);
-            state.captured = true;
-          }
-          scroll.scrollLeft = state.scrollLeft - delta;
-          event.preventDefault();
-          updateOverflowState();
-          updateToolMenuPosition();
-        }}
-        onPointerUp={(event) => {
-          const state = dragState.current;
-          const moved = state.active && state.moved;
-          if (state.captured && scrollRef.current?.hasPointerCapture(event.pointerId)) {
-            scrollRef.current.releasePointerCapture(event.pointerId);
-          }
-          dragState.current = {
-            active: false,
-            captured: false,
-            startX: 0,
-            scrollLeft: 0,
-            moved: false,
-            pointerId: 0,
-          };
-          if (moved) {
-            suppressNextClick.current = true;
-            window.setTimeout(() => {
-              suppressNextClick.current = false;
-            }, 0);
-          }
-        }}
-        onPointerCancel={(event) => {
-          if (dragState.current.captured && scrollRef.current?.hasPointerCapture(event.pointerId)) {
-            scrollRef.current.releasePointerCapture(event.pointerId);
-          }
-          dragState.current = {
-            active: false,
-            captured: false,
-            startX: 0,
-            scrollLeft: 0,
-            moved: false,
-            pointerId: 0,
-          };
-        }}
+        {...dragHandlers}
         onScroll={() => {
           updateOverflowState();
           updateToolMenuPosition();
         }}
       >
-        <div className="tab-list">
+        {/* Tablist semantics and roving tabindex — see tabStripKeyboard.ts. */}
+        <div className="tab-list" role="tablist" aria-label="Open tools">
           {tabs.map((tab, index) => {
             const config = TOOL_CONFIG[tab.kind];
             const Icon = config.Icon;
@@ -218,7 +137,10 @@ export function TabStrip({
                 ].filter(Boolean).join(' ')}
                 key={tab.id}
                 ref={tab.id === activeTabId ? activeTabRef : undefined}
+                role="tab"
+                aria-selected={tab.id === activeTabId}
                 aria-label={tooltip}
+                tabIndex={tab.id === activeTabId ? 0 : -1}
                 data-tooltip={tooltip}
                 data-tooltip-placement="bottom"
                 onClick={(event) => {
@@ -229,6 +151,7 @@ export function TabStrip({
                   }
                   onSelectTab(tab.id);
                 }}
+                onKeyDown={(event) => handleTabStripKeyDown(event, index, tabs, onSelectTab, onCloseTab)}
               >
                 <Icon size={14} />
                 <span className="tab-identity">
