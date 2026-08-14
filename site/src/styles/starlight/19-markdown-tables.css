@@ -1,0 +1,142 @@
+/* Keep markdown tables as semantic tables and put horizontal overflow on a
+   wrapper so mobile does not turn each row into a tall card. */
+.sl-markdown-content .netscli-table-scroll {
+  max-width: 100%;
+  margin-block: 1.2rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border: 1px solid rgba(140, 149, 166, 0.2);
+  border-radius: 8px;
+  background: #20242b;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sl-markdown-content .netscli-table-scroll table {
+  display: table !important;
+  width: 100% !important;
+  min-width: 42rem !important;
+  max-width: none !important;
+  margin: 0 !important;
+  overflow: visible !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.sl-markdown-content .netscli-table-scroll thead {
+  display: table-header-group !important;
+}
+
+.sl-markdown-content .netscli-table-scroll tbody {
+  display: table-row-group !important;
+}
+
+.sl-markdown-content .netscli-table-scroll tr {
+  display: table-row !important;
+  background: transparent !important;
+}
+
+.sl-markdown-content .netscli-table-scroll th,
+.sl-markdown-content .netscli-table-scroll td {
+  display: table-cell !important;
+  min-width: 0 !important;
+  white-space: normal !important;
+  overflow-wrap: normal !important;
+}
+
+html[data-theme='light'] .sl-markdown-content .netscli-table-scroll {
+  background: #f7faf9;
+}
+
+@media (min-width: 72rem) {
+  .sl-markdown-content .netscli-table-scroll table {
+    min-width: 100% !important;
+  }
+}
+
+.sl-markdown-content .netscli-table-scroll th {
+  font-weight: 720 !important;
+}
+
+@media (max-width: 49.99rem) {
+  .sl-markdown-content .netscli-table-scroll {
+    margin-block: 1rem 1.35rem !important;
+    overflow-x: hidden !important;
+    overflow-y: hidden !important;
+    border: 0 !important;
+    border-radius: 8px !important;
+    background: transparent !important;
+  }
+
+  .sl-markdown-content .netscli-table-scroll table {
+    display: block !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    table-layout: auto !important;
+    border: 0 !important;
+    background: transparent !important;
+  }
+
+  .sl-markdown-content .netscli-table-scroll thead {
+    display: none !important;
+  }
+
+  .sl-markdown-content .netscli-table-scroll tbody {
+    display: grid !important;
+    gap: 0.75rem !important;
+  }
+
+  .sl-markdown-content .netscli-table-scroll tr {
+    display: grid !important;
+    gap: 0.75rem !important;
+    padding: 0.95rem 1rem !important;
+    border: 1px solid rgba(140, 149, 166, 0.2) !important;
+    border-radius: 8px !important;
+    background: #252b34 !important;
+  }
+
+  .sl-markdown-content .netscli-table-scroll th,
+  .sl-markdown-content .netscli-table-scroll td {
+    display: block !important;
+    width: 100% !important;
+    padding: 0 !important;
+    border: 0 !important;
+    line-height: 1.42 !important;
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
+  }
+
+  .sl-markdown-content .netscli-table-scroll td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 0.32rem;
+    color: var(--sl-color-gray-3);
+    font-size: 0.72rem;
+    font-weight: 720;
+    letter-spacing: 0.02em;
+  }
+
+  .sl-markdown-content .netscli-table-scroll th:first-child,
+  .sl-markdown-content .netscli-table-scroll td:first-child {
+    width: 100% !important;
+  }
+
+  html[data-theme='light'] .sl-markdown-content .netscli-table-scroll tr {
+    background: #eef3f2 !important;
+  }
+}
+
+.pagination-links a:hover,
+.pagination-links a:focus-visible {
+  background: transparent !important;
+  background-image: none !important;
+  border-color: rgba(10, 174, 122, 0.28) !important;
+  box-shadow: none !important;
+}
+html[data-theme='light'] .pagination-links a:hover,
+html[data-theme='light'] .pagination-links a:focus-visible {
+  background: transparent !important;
+  background-image: none !important;
+  border-color: rgba(0, 122, 84, 0.22) !important;
+  box-shadow: none !important;
+}

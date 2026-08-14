@@ -1,0 +1,161 @@
+/* Mobile/docs correction pass: the docs section picker belongs above the page
+   title; the page ToC belongs below the title and then sticks while reading. */
+@media (max-width: 71.99rem) {
+  .main-frame {
+    overflow-x: clip !important;
+  }
+
+  .main-pane {
+    overflow-x: clip !important;
+  }
+
+  .main-pane > .content-panel:first-of-type,
+  .main-pane > .content-panel:first-child,
+  .main-pane > main > .content-panel:first-of-type,
+  .main-pane > main > .content-panel:first-child {
+    min-height: clamp(8rem, 18vw, 10.5rem) !important;
+    margin-top: 0 !important;
+  }
+
+  .main-pane > .content-panel:first-of-type > .sl-container,
+  .main-pane > .content-panel:first-child > .sl-container,
+  .main-pane > main > .content-panel:first-of-type > .sl-container,
+  .main-pane > main > .content-panel:first-child > .sl-container {
+    display: flex !important;
+    align-items: center !important;
+    min-height: clamp(8rem, 18vw, 10.5rem) !important;
+    padding-block: 1.25rem !important;
+  }
+
+  .main-pane > .content-panel:first-of-type h1,
+  .main-pane > .content-panel:first-child h1,
+  .main-pane > main > .content-panel:first-of-type h1,
+  .main-pane > main > .content-panel:first-child h1 {
+    margin: 0 !important;
+  }
+
+  .netscli-mobile-toc-wrapper {
+    display: block !important;
+    position: sticky !important;
+    top: calc(var(--sl-nav-height) + var(--netscli-mobile-docs-nav-height)) !important;
+    z-index: calc(var(--sl-z-index-navbar) - 2) !important;
+    width: 100% !important;
+    background: var(--sl-color-bg-nav) !important;
+    border-bottom: 1px solid var(--sl-color-hairline) !important;
+  }
+
+  .netscli-mobile-toc-wrapper mobile-starlight-toc {
+    height: var(--netscli-mobile-toc-bar-height) !important;
+  }
+
+  .netscli-mobile-toc-wrapper mobile-starlight-toc nav {
+    position: static !important;
+    inset: auto !important;
+    top: auto !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .netscli-mobile-toc-wrapper mobile-starlight-toc details[open] .dropdown {
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.34) !important;
+  }
+
+  .netscli-mobile-toc-wrapper mobile-starlight-toc .dropdown a,
+  .netscli-mobile-toc-wrapper mobile-starlight-toc .dropdown a:hover,
+  .netscli-mobile-toc-wrapper mobile-starlight-toc .dropdown a:focus-visible,
+  .netscli-mobile-toc-wrapper mobile-starlight-toc .dropdown a[aria-current='true'],
+  .netscli-mobile-toc-wrapper mobile-starlight-toc .dropdown a[aria-current='true']:hover,
+  .netscli-mobile-toc-wrapper mobile-starlight-toc .dropdown a[aria-current='true']:focus-visible {
+    border-inline-start-color: transparent !important;
+    background: transparent !important;
+  }
+
+  .netscli-mobile-toc-wrapper mobile-starlight-toc .dropdown a:hover,
+  .netscli-mobile-toc-wrapper mobile-starlight-toc .dropdown a:focus-visible,
+  .netscli-mobile-toc-wrapper mobile-starlight-toc .dropdown a[aria-current='true'] {
+    color: #9ff8de !important;
+  }
+
+  .docs-mobile-section-menu {
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.34) !important;
+  }
+}
+
+@media (max-width: 49.99rem) {
+  .main-frame {
+    padding-top: calc(var(--sl-nav-height) + var(--netscli-mobile-docs-nav-height)) !important;
+  }
+
+  .main-pane > .content-panel:first-of-type,
+  .main-pane > .content-panel:first-child,
+  .main-pane > main > .content-panel:first-of-type,
+  .main-pane > main > .content-panel:first-child {
+    min-height: 8.5rem !important;
+  }
+
+  .main-pane > .content-panel:first-of-type > .sl-container,
+  .main-pane > .content-panel:first-child > .sl-container,
+  .main-pane > main > .content-panel:first-of-type > .sl-container,
+  .main-pane > main > .content-panel:first-child > .sl-container {
+    min-height: 8.5rem !important;
+    padding-inline: clamp(1.25rem, 6.4vw, 1.75rem) !important;
+  }
+
+  .main-pane > .content-panel:first-of-type h1,
+  .main-pane > .content-panel:first-child h1,
+  .main-pane > main > .content-panel:first-of-type h1,
+  .main-pane > main > .content-panel:first-child h1 {
+    font-size: clamp(2.35rem, 12vw, 3.25rem) !important;
+    line-height: 1 !important;
+  }
+
+  .netscli-mobile-toc-wrapper {
+    margin-bottom: 1.15rem !important;
+  }
+}
+
+@media (max-width: 49.99rem) {
+  .docs-topbar {
+    width: calc(100vw - 3.35rem) !important;
+    max-width: calc(100vw - 3.35rem) !important;
+    gap: 0.35rem !important;
+  }
+
+  .docs-header-search {
+    margin-left: auto !important;
+  }
+
+  starlight-menu-button button {
+    inset-inline-end: max(0.5rem, env(safe-area-inset-right)) !important;
+  }
+
+  site-search dialog .search-container,
+  #starlight__search {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    min-width: 0 !important;
+  }
+
+  site-search button[data-close-modal] {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    align-self: center !important;
+  }
+
+  #starlight__search .pagefind-ui__drawer {
+    grid-column: 1 / -1 !important;
+  }
+}
+
+site-search button[data-open-modal]:hover,
+site-search button[data-open-modal]:focus-visible {
+  background: rgba(17, 22, 29, 0.9) !important;
+  border-color: rgba(106, 240, 208, 0.65) !important;
+}
+
+html[data-theme='light'] site-search button[data-open-modal]:hover,
+html[data-theme='light'] site-search button[data-open-modal]:focus-visible {
+  background: #ffffff !important;
+  border-color: rgba(0, 122, 84, 0.45) !important;
+}

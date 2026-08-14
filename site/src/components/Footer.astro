@@ -3,21 +3,38 @@ import { site } from '../data/site';
 const { meta, hero, builtWith } = site;
 ---
 <footer>
-  <div>© <span id="y"></span> {meta.author.name} · MIT</div>
-  <div class="flinks">
-    <a href={hero.sourceUrl}>GitHub</a>
-    <a href={`${hero.sourceUrl}/releases`}>Releases</a>
-    <a href={`${hero.sourceUrl}#readme`}>Docs</a>
-  </div>
-  {builtWith.length > 0 && (
-    <div class="built-with">
-      Built with
-      {builtWith.map((b, i) => (
-        <>
-          {i === 0 ? ' ' : i === builtWith.length - 1 ? ', and ' : ', '}
-          <a href={b.url}>{b.name}</a>
-        </>
-      ))}.
+  <div class="footer-inner">
+    <div>© <span id="y"></span> {meta.author.name} · MIT</div>
+    <div class="flinks">
+      <a class="external-link" href={hero.sourceUrl}>GitHub</a>
+      <a class="external-link" href={`${hero.sourceUrl}/releases`}>Releases</a>
+      <a href="/docs/">Docs</a>
+      <a href="/changelog/">Changelog</a>
     </div>
-  )}
+    {builtWith.length > 0 && (
+      <div class="built-with">
+        Built with
+        {builtWith.map((b, i) => (
+          <>
+            {i === 0 ? ' ' : i === builtWith.length - 1 ? ', and ' : ', '}
+            <a class="external-link" href={b.url}>{b.name}</a>
+          </>
+        ))}.
+      </div>
+    )}
+  </div>
 </footer>
+
+<style is:global>
+footer{
+  border-top:1px solid rgba(255,255,255,.06);padding:0;
+}
+.footer-inner{
+  max-width:1060px;margin:0 auto;padding:28px 24px;
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:12px;font-size:.75rem;color:#888;
+}
+footer a{color:#9a9a9a;text-decoration:none}
+footer a:hover{color:#ccc}
+.flinks{display:flex;gap:16px}
+</style>
