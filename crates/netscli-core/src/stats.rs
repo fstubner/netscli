@@ -46,7 +46,14 @@ impl NetworkMonitor {
 
         let (rx, tx, _) = sum_traffic(&networks, None);
         let now = Instant::now();
-        let inactive = now - Self::ACTIVE_HOLD - Self::ACTIVE_HOLD;
+        // `Instant - Duration` panics on underflow, and within ~360ms of the
+        // process's monotonic-clock origin `now` is smaller than the two
+        // holds we subtract (C-01). `checked_sub` degrades to "as early as
+        // representable", which reads as inactive exactly as intended.
+        let inactive = now
+            .checked_sub(Self::ACTIVE_HOLD)
+            .and_then(|t| t.checked_sub(Self::ACTIVE_HOLD))
+            .unwrap_or(now);
 
         Self {
             state: Mutex::new(MonitorState {
@@ -73,7 +80,14 @@ impl NetworkMonitor {
         let (rx, tx, _) = sum_traffic(&s.networks, s.selected_interface.as_deref());
 
         let now = Instant::now();
-        let inactive = now - Self::ACTIVE_HOLD - Self::ACTIVE_HOLD;
+        // `Instant - Duration` panics on underflow, and within ~360ms of the
+        // process's monotonic-clock origin `now` is smaller than the two
+        // holds we subtract (C-01). `checked_sub` degrades to "as early as
+        // representable", which reads as inactive exactly as intended.
+        let inactive = now
+            .checked_sub(Self::ACTIVE_HOLD)
+            .and_then(|t| t.checked_sub(Self::ACTIVE_HOLD))
+            .unwrap_or(now);
 
         s.last_update = now;
         s.last_stats = (rx, tx);
@@ -190,13 +204,15 @@ fn sum_traffic(networks: &Networks, selected: Option<&str>) -> (u64, u64, bool) 
         return (0, 0, false);
     }
 
-    let mut rx = 0;
-    let mut tx = 0;
+    let mut rx: u64 = 0;
+    let mut tx: u64 = 0;
     let mut any = false;
     for (_, network) in networks {
         any = true;
-        rx += network.total_received();
-        tx += network.total_transmitted();
+        // Saturating, not `+=`: these are per-interface byte counters summed
+        // across every adapter, and a debug build panics on overflow (C-02).
+        rx = rx.saturating_add(network.total_received());
+        tx = tx.saturating_add(network.total_transmitted());
     }
     (rx, tx, any)
 }
@@ -216,50 +232,4 @@ fn bytes_to_mbps(bytes: u64, elapsed: Duration) -> f64 {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn bytes_to_mbps_typical() {
-        // 1_000_000 bytes in 1 second = 8 Mbps
-        assert!((bytes_to_mbps(1_000_000, Duration::from_secs(1)) - 8.0).abs() < 1e-6);
-    }
-
-    #[test]
-    fn bytes_to_mbps_zero_elapsed_safe() {
-        assert_eq!(bytes_to_mbps(1_000_000, Duration::from_secs(0)), 0.0);
-    }
-
-    #[test]
-    fn bytes_to_mbps_reports_true_value_for_gbe() {
-        // 1.25 GB in 1s = 10 Gbps = 10_000 Mbps. Previously this was
-        // silently clamped to 999.99 which hid gigabit+ link activity.
-        let actual = bytes_to_mbps(1_250_000_000, Duration::from_secs(1));
-        assert!(
-            (actual - 10_000.0).abs() < 1.0,
-            "expected ~10_000 Mbps, got {actual}"
-        );
-    }
-
-    #[test]
-    fn new_monitor_reports_available_on_refresh() {
-        // Smoke test: constructing and calling get_stats should never panic
-        // and should report `available=true` if any network interface exists
-        // on the test host (all CI runners do).
-        let monitor = NetworkMonitor::new();
-        let stats = monitor.get_stats();
-        // Not asserting `available` since some sandboxed CI may lack interfaces;
-        // just ensuring the call path is sound.
-        assert!(stats.upload_mbps >= 0.0 && stats.download_mbps >= 0.0);
-    }
-
-    #[test]
-    fn selected_interface_round_trips() {
-        let monitor = NetworkMonitor::new();
-        assert_eq!(monitor.selected_interface(), None);
-        monitor.set_interface(Some("lo0".to_string()));
-        assert_eq!(monitor.selected_interface(), Some("lo0".to_string()));
-        monitor.set_interface(None);
-        assert_eq!(monitor.selected_interface(), None);
-    }
-}
+mod tests;

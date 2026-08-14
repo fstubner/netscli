@@ -33,14 +33,18 @@ fn canon_prefix(hex: &str) -> Option<String> {
     Some(format!("{}:{}:{}", &p[0..2], &p[2..4], &p[4..6]))
 }
 
+// `error_for_status` matters more than it looks here (A-09): IEEE rate-limits
+// unknown user agents, and without this a 403 body was handed straight to the
+// CSV parser, which found no header row and returned an empty map -- silently
+// producing a gutted dataset rather than failing.
 async fn fetch_url(client: &Client, url: &str) -> Result<String, Box<dyn std::error::Error>> {
-    let response = client.get(url).send().await?;
+    let response = client.get(url).send().await?.error_for_status()?;
     let text = response.text().await?;
     Ok(text)
 }
 
 async fn fetch_gz(client: &Client, url: &str) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
-    let response = client.get(url).send().await?;
+    let response = client.get(url).send().await?.error_for_status()?;
     let bytes = response.bytes().await?;
     Ok(bytes.to_vec())
 }
@@ -63,7 +67,12 @@ fn parse_oui_csv(csv: &str) -> HashMap<String, String> {
         .iter()
         .position(|c| c.to_lowercase().contains("organization"));
 
+    // A missing header row used to yield an empty map indistinguishable from
+    // "this file legitimately had no rows" (A-09). Warn loudly; the
+    // minimum-entry floor in main() is what actually stops the bad write.
     if p_idx.is_none() || o_idx.is_none() {
+        eprintln!("  WARNING: no assignment/organization header found");
+        eprintln!("  The response was probably an error page, not CSV.");
         return map;
     }
 
@@ -132,8 +141,13 @@ fn parse_wireshark_manuf(
             .replace(':', "")
             .to_uppercase();
 
-        if hex.len() >= 6 {
-            let canon = format!("{}:{}:{}", &hex[0..2], &hex[2..4], &hex[4..6]);
+        // Use the shared canonicaliser rather than slicing `hex` directly
+        // (C-36). Unlike the CSV path, `hex` here has only had colons removed
+        // — it is not hex-filtered — so `&hex[0..2]` panicked on any entry
+        // whose first token began with a multi-byte character. `canon_prefix`
+        // filters to ASCII hex digits first, which also drops the malformed
+        // rows that would otherwise have produced junk vendor keys.
+        if let Some(canon) = canon_prefix(&hex) {
             map.entry(canon).or_insert_with(|| vendor);
         }
     }
@@ -143,7 +157,12 @@ fn parse_wireshark_manuf(
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let client = Client::builder().timeout(FETCH_TIMEOUT).build()?;
+    // IEEE rate-limits unknown user agents, which is what made the silent
+    // 403-parsed-as-CSV failure reachable in the first place.
+    let client = Client::builder()
+        .timeout(FETCH_TIMEOUT)
+        .user_agent(concat!("netscli-oui-generator/", env!("CARGO_PKG_VERSION")))
+        .build()?;
     println!("Fetching OUI data from IEEE...");
     let mut merged: HashMap<String, String> = HashMap::new();
 
@@ -185,6 +204,35 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .join("netscli-core")
         .join("data")
         .join("oui.min.json.gz");
+    // Refuse to overwrite a good dataset with a substantially smaller one
+    // (A-09). The output used to be written unconditionally, so a throttled
+    // or reshaped upstream produced a near-empty vendor database that looked
+    // like a successful run and would ship in the next release.
+    //
+    // 90% rather than "any shrinkage": entries do legitimately disappear when
+    // registrations lapse, and a hard equality check would fail every run.
+    if let Ok(existing) = std::fs::read(&out_path) {
+        let mut decoder = flate2::read::GzDecoder::new(&existing[..]);
+        let mut previous = String::new();
+        if std::io::Read::read_to_string(&mut decoder, &mut previous).is_ok() {
+            if let Ok(Value::Object(old)) = serde_json::from_str::<Value>(&previous) {
+                let floor = old.len() * 9 / 10;
+                if json_map.len() < floor {
+                    return Err(format!(
+                        "refusing to write: {} prefixes is below 90% of the existing {} \
+                         (floor {}). The upstream fetch was probably throttled or \
+                         reshaped. Re-run, or delete {} to override.",
+                        json_map.len(),
+                        old.len(),
+                        floor,
+                        out_path.display()
+                    )
+                    .into());
+                }
+            }
+        }
+    }
+
     std::fs::create_dir_all(out_path.parent().unwrap_or(repo_root))?;
     let file = File::create(&out_path)?;
     let mut encoder = GzEncoder::new(file, Compression::default());

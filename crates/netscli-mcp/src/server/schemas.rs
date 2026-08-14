@@ -7,9 +7,15 @@ use super::errors::RpcError;
 
 const MAX_SUBNET_ADDRESSES: u64 = 1 << 16; // /16
 
+/// Clamp to the same ceiling `Ops` enforces.
+///
+/// This used to clamp to 4096 while `Ops::new` re-clamped to 1024, so any
+/// value in 1025..=4096 was accepted here and then silently reduced, and a
+/// comment in `ops/config.rs` claimed the two bounds matched (C-10).
+/// Deferring to the core constant makes that true by construction.
 pub(super) fn clamp_concurrency(max_concurrent: Option<usize>, default: usize) -> usize {
     let c = max_concurrent.unwrap_or(default);
-    c.clamp(1, 4096)
+    c.clamp(1, netscli_core::MAX_CONCURRENCY)
 }
 
 pub(super) fn clamp_timeout_ms(timeout_ms: Option<u64>, default: u64) -> u64 {
