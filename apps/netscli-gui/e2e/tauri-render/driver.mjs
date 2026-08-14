@@ -60,6 +60,15 @@ export async function startTauriDriver(nativeDriverPath, webdriverPort) {
     }),
   ]);
 
+  // tauri-driver proxies to the native driver (msedgedriver on Windows)
+  // and relays its diagnostics here. Previously this buffer was only
+  // ever read if tauri-driver exited *early* — so when the far more
+  // common failure happened instead (the session failing to start, e.g.
+  // "DevToolsActivePort file doesn't exist"), everything the native
+  // driver said about why was silently discarded. Expose it so the
+  // caller can print it on any failure.
+  child.getDriverOutput = () => output;
+
   return child;
 }
 

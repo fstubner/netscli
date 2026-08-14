@@ -51,6 +51,84 @@ jobs:
       - name: Install tauri-driver
         run: cargo install tauri-driver --locked
 
+      # This job has been failing with "session not created:
+      # DevToolsActivePort file doesn't exist", which is msedgedriver's
+      # generic "the thing I launched never came up" error and says
+      # nothing about why. Capture the environment so the next failure is
+      # diagnosable from the log instead of by guesswork.
+      - name: Diagnose WebView2 / driver environment
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          function Get-Pv($id, $label) {
+            foreach ($root in @('HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients',
+                                'HKLM:\SOFTWARE\Microsoft\EdgeUpdate\Clients',
+                                'HKCU:\SOFTWARE\Microsoft\EdgeUpdate\Clients')) {
+              $key = Join-Path $root $id
+              if (Test-Path $key) {
+                $pv = (Get-ItemProperty $key -ErrorAction SilentlyContinue).pv
+                if ($pv) { Write-Host "${label}: $pv   [$root]"; return }
+              }
+            }
+            Write-Host "${label}: NOT FOUND"
+          }
+          # These GUIDs are Microsoft's stable product ids for the two
+          # separately-versioned components. A Tauri app renders in the
+          # WebView2 Runtime, but the `edgedriver` npm package version-
+          # matches against the Edge *browser* — if these differ, that is
+          # the bug.
+          Get-Pv '{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}' 'WebView2 Runtime'
+          Get-Pv '{56EB18F8-B008-4CBD-B6D2-8C97FE7E9062}' 'Edge (stable) '
+
+          $edge = 'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
+          if (Test-Path $edge) {
+            Write-Host "msedge.exe      : $((Get-Item $edge).VersionInfo.ProductVersion)"
+          } else { Write-Host "msedge.exe      : NOT FOUND" }
+
+          Write-Host "tauri-driver    : $(tauri-driver --version 2>&1)"
+          Write-Host "session type    : $([Environment]::UserInteractive)"
+
       - name: Run Tauri render test
         run: npm run test:tauri-render
         working-directory: apps/netscli-gui
+
+      # Talk to msedgedriver directly with --verbose, bypassing
+      # tauri-driver. tauri-driver relays none of the native driver's
+      # output, so this is the only way to see why the debug port never
+      # appears.
+      - name: msedgedriver verbose session probe (on failure)
+        if: failure()
+        continue-on-error: true
+        run: node e2e/tauri-render/diagnose-driver.mjs
+        working-directory: apps/netscli-gui
+
+      # On failure, show what the app itself did. msedgedriver's error
+      # cannot distinguish "app crashed" from "driver could not attach",
+      # and those need completely different fixes.
+      - name: Probe the built app directly (on failure)
+        if: failure()
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          $app = Get-ChildItem -Path target\debug\netscli-gui.exe -ErrorAction SilentlyContinue
+          if (-not $app) {
+            Write-Host "app binary not found under target\debug"
+            Get-ChildItem -Recurse -Filter netscli-gui.exe -Depth 4 -ErrorAction SilentlyContinue |
+              Select-Object -First 5 FullName
+            exit 0
+          }
+          Write-Host "app: $($app.FullName)  size=$($app.Length)"
+          $p = Start-Process -FilePath $app.FullName -PassThru `
+                 -RedirectStandardError app-stderr.txt -RedirectStandardOutput app-stdout.txt
+          Start-Sleep -Seconds 12
+          if ($p.HasExited) {
+            Write-Host "app EXITED early with code $($p.ExitCode)"
+          } else {
+            Write-Host "app is still running after 12s (so it launches fine)"
+            Stop-Process -Id $p.Id -Force
+          }
+          foreach ($f in 'app-stdout.txt','app-stderr.txt') {
+            if ((Test-Path $f) -and (Get-Item $f).Length -gt 0) {
+              Write-Host "--- $f ---"; Get-Content $f -Tail 40
+            }
+          }
