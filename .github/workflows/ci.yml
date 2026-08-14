@@ -15,15 +15,16 @@ on:
       - 'packaging/**'
       - 'LICENSE'
       - '.gitignore'
+  # NOTE: deliberately no `paths-ignore` here, unlike the push trigger
+  # above. `CI Gate` at the bottom of this file is a required status
+  # check, and a required check that never *reports* leaves a PR stuck on
+  # "Expected — waiting for status" forever. Filtering at the workflow
+  # level would do exactly that for any PR touching only site/docs/
+  # packaging. So the workflow always runs, and the expensive jobs skip
+  # themselves via the `changes` job below. A skipped job satisfies a
+  # required check; an absent one does not.
   pull_request:
     branches: [main]
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
-      - 'site/**'
-      - 'packaging/**'
-      - 'LICENSE'
-      - '.gitignore'
   # Let me run CI manually from the Actions tab, useful for re-running a
   # cache-warm build after tweaking the workflow without having to push.
   workflow_dispatch:
@@ -39,8 +40,50 @@ permissions:
   contents: read
 
 jobs:
+  # Classify the diff so the expensive jobs can skip themselves without
+  # the workflow disappearing from the PR's check list. Done with plain
+  # git rather than a paths-filter action to avoid adding another
+  # third-party action to a repo that signs and publishes binaries.
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - id: filter
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
+            # push / manual runs always do the full build.
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          base='${{ github.event.pull_request.base.sha }}'
+          head='${{ github.event.pull_request.head.sha }}'
+          files=$(git diff --name-only "$base" "$head")
+          echo "Changed files:"
+          echo "$files" | sed 's/^/  /'
+
+          # Anything that is NOT purely docs/site/packaging counts as code.
+          # Mirrors the push trigger's paths-ignore list above; keep the two
+          # in step.
+          code=$(echo "$files" | grep -vE '(\.md$|^docs/|^site/|^packaging/|^LICENSE$|^\.gitignore$)' || true)
+          if [[ -n "$code" ]]; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "code=false" >> "$GITHUB_OUTPUT"
+            echo "No code changes — Rust/GUI jobs will skip."
+          fi
+
   maintainability:
     name: Maintainability
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -55,6 +98,8 @@ jobs:
   # ubuntu-latest/GitHub-hosted runners.
   script-lint:
     name: Installer Script Lint
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -84,7 +129,8 @@ jobs:
   # going to fail there's no point firing up the matrix below.
   lint:
     name: Format + Clippy
-    needs: maintainability
+    needs: [changes, maintainability]
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -120,7 +166,8 @@ jobs:
 
   test:
     name: Test (${{ matrix.os }})
-    needs: lint
+    needs: [changes, lint]
+    if: needs.changes.outputs.code == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -163,7 +210,8 @@ jobs:
 
   gui-build:
     name: GUI Build (TypeScript + Vite)
-    needs: lint
+    needs: [changes, lint]
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -201,7 +249,8 @@ jobs:
   #     equivalent coverage.
   release-build:
     name: Release build (${{ matrix.os }})
-    needs: test
+    needs: [changes, test]
+    if: needs.changes.outputs.code == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -232,3 +281,48 @@ jobs:
             target/release/netscli.exe
           if-no-files-found: ignore
           retention-days: 14
+
+  # ─── Required status check ────────────────────────────────────────────
+  #
+  # This is the ONLY job from this workflow that should be marked required
+  # in branch protection. It runs unconditionally (`if: always()`, no path
+  # filter), so it always reports — which is the whole point. Marking the
+  # individual jobs required instead would deadlock any PR that legitimately
+  # skips them.
+  #
+  # `needs` result values: success | failure | cancelled | skipped.
+  # Skipped is a pass here: it means the `changes` job decided this PR does
+  # not touch code, which is a real answer, not a missing one.
+  ci-gate:
+    name: CI Gate
+    if: always()
+    needs:
+      - changes
+      - maintainability
+      - script-lint
+      - lint
+      - test
+      - gui-build
+      - release-build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify no upstream job failed
+        shell: bash
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          set -euo pipefail
+          echo "$NEEDS" | jq -r 'to_entries[] | "  \(.key): \(.value.result)"'
+
+          failed=$(echo "$NEEDS" | jq -r '
+            to_entries
+            | map(select(.value.result == "failure" or .value.result == "cancelled"))
+            | map(.key)
+            | join(", ")
+          ')
+
+          if [[ -n "$failed" ]]; then
+            echo "::error::CI Gate failed — these jobs did not succeed: ${failed}"
+            exit 1
+          fi
+          echo "CI Gate passed (all jobs succeeded or were legitimately skipped)."
