@@ -1,37 +1,4 @@
-/**
- * Teardown for everything this module attaches.
- *
- * Three whole-document MutationObservers plus a set of scroll/resize
- * listeners were previously never disconnected (B-38). Today that only costs
- * memory, because this runs once per full page load. It becomes a real leak
- * the moment view transitions are enabled: `initDocsHeader` re-runs on
- * `astro:page-load`, so a second navigation would stack a second full set of
- * observers on top of the first, each with rAF callbacks that themselves
- * mutate the DOM.
- *
- * Registering teardown now means enabling `<ClientRouter />` later is a
- * one-line change rather than a debugging session.
- */
-const disposers: Array<() => void> = [];
-
-function disposeDocsHeader(): void {
-  while (disposers.length > 0) {
-    const dispose = disposers.pop();
-    try {
-      dispose?.();
-    } catch {
-      // A failed teardown must not block the rest.
-    }
-  }
-}
-
-let disposalRegistered = false;
-function registerDisposal(): void {
-  if (disposalRegistered) return;
-  disposalRegistered = true;
-  // Fires only when view transitions are active; harmless otherwise.
-  document.addEventListener('astro:before-swap', disposeDocsHeader);
-}
+import { disposeDocsHeader, onDispose, registerDisposal } from './docs-header-disposal';
 
 export function initDocsHeader(): void {
   // Re-entrant under view transitions: drop the previous run's observers
@@ -168,7 +135,7 @@ export function initDocsHeader(): void {
     subtree: true,
     characterData: true,
   });
-  disposers.push(() => searchObserver.disconnect());
+  onDispose(() => searchObserver.disconnect());
   scheduleSearchMessageEnhancement();
 
   let activeSearchOverflowDrawer: Element | null = null;
@@ -235,7 +202,7 @@ export function initDocsHeader(): void {
     subtree: true,
     characterData: true,
   });
-  disposers.push(() => searchOverflowObserver.disconnect());
+  onDispose(() => searchOverflowObserver.disconnect());
   window.addEventListener('resize', scheduleSearchOverflowSettled);
   scheduleSearchOverflowSettled();
 
@@ -292,7 +259,7 @@ export function initDocsHeader(): void {
     childList: true,
     subtree: true,
   });
-  disposers.push(() => mobileTocObserver.disconnect());
+  onDispose(() => mobileTocObserver.disconnect());
   scheduleMobileTocCurrent();
   window.setTimeout(scheduleMobileTocCurrent, 250);
   window.setTimeout(scheduleMobileTocCurrent, 1000);
