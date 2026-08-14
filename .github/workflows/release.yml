@@ -97,7 +97,7 @@ jobs:
     steps:
       # On workflow_dispatch we need the tag ref explicitly. On release
       # events the default ref is already the tag.
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.inputs.tag || github.ref }}
 
@@ -179,7 +179,7 @@ jobs:
       #     --certificate-oidc-issuer https://token.actions.githubusercontent.com \
       #     <asset>
       - name: Install cosign
-        uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
       - name: Sign release asset (sigstore keyless)
         shell: bash
         env:
@@ -248,7 +248,7 @@ jobs:
             bundle_dir: bundle
             bundle_globs: "msi/*.msi"
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.inputs.tag || github.ref }}
 
@@ -258,7 +258,7 @@ jobs:
           toolchain: 1.96.0
           targets: ${{ matrix.target }}
 
-      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           cache: npm
@@ -332,7 +332,7 @@ jobs:
           ls -la
 
       - name: Install cosign
-        uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
       - name: Sign GUI artifacts (sigstore keyless)
         shell: bash
         env:
