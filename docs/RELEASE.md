@@ -1,8 +1,12 @@
 # Release process
 
-netscli ships through five distribution channels. As of v0.2.1 every step
-after "publish the GitHub release" is automated by
+netscli ships through six distribution channels. Every step after "publish
+the GitHub release" is automated by
 [`.github/workflows/publish.yml`](../.github/workflows/publish.yml).
+
+This document is the **process** — what a human does, in order. For a
+per-channel reference (what each channel is, what it needs, how to fix it
+when it breaks), see [`PUBLISHING.md`](PUBLISHING.md).
 
 ## One-time secret setup
 
@@ -19,8 +23,11 @@ Before the first automated release runs, add these secrets at
 
 ## The release flow
 
-1. **Bump versions + CHANGELOG**, merge to main. (Already done for v0.2.1
-   via [#30](https://github.com/fstubner/netscli/pull/30).)
+1. **Bump versions + CHANGELOG**, merge to main. Seven files have to move
+   together — see
+   [`PUBLISHING.md`](PUBLISHING.md#version-bumps) for the list and a
+   verification command; missing the GUI's three is what got the v0.2.4
+   winget submission rejected.
    Before tagging, run the local release gate:
    ```bash
    cargo fmt --check
@@ -104,8 +111,9 @@ Before the first automated release runs, add these secrets at
    installers, attaches them to the release) and `publish.yml` (fans out
    to package managers).
 5. **Watch the dashboard.** From the release page or the Actions tab:
-   - `Release` workflow: 13 CLI assets + 4 GUI installers attached.
-   - `Publish to package managers` workflow: 5 jobs, one per channel.
+   - `Release` workflow: 11 CLI assets + 5 GUI installers attached.
+   - `Publish to package managers` workflow: 9 jobs — a CLI and a GUI job
+     for each of Homebrew, Scoop, winget and AUR, plus `crates-io`.
 
    The `homebrew`, `scoop`, and `aur` jobs poll for asset availability
    (up to 15 minutes) so they tolerate the parallel race against
@@ -206,17 +214,30 @@ listing) so the app does not invent a competing updater path.
 | Platform | Command |
 |----------|---------|
 | Windows | `winget install fstubner.netscli.gui` |
-| macOS | `brew install --cask netscli` |
+| macOS | `brew install --cask fstubner/tap/netscli` |
 | Linux (any distro, AppImage) | `yay -S netscli-gui-bin` |
 | Windows (Scoop) | `scoop install netscli-gui` |
 
 ## Action pin policy
 
-The two third-party actions used by `publish.yml` are referenced by
-version tag, not commit SHA:
-- `vedantmgoyal2009/winget-releaser@v2`
-- `KSXGitHub/github-actions-deploy-aur@v4.1.3`
+Every third-party action in `release.yml` and `publish.yml` is pinned to a
+**commit SHA**, with the human-readable version in a trailing comment:
 
-These are stable, widely-used actions; pinning to SHA is on the radar
-but not blocking. If you want stricter supply-chain hygiene, swap each
-`@vN` for the matching `@<sha>` and let Dependabot bump them.
+```yaml
+uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3
+```
+
+Both workflows hold `contents: write` and `id-token: write`, so a retagged
+or compromised action could exfiltrate the OIDC token and mint Fulcio
+certificates as this repository. Tag refs are mutable; SHAs are not.
+
+Dependabot updates SHA pins and rewrites the comment. When bumping by hand,
+resolve the tag first:
+
+```bash
+gh api repos/<owner>/<repo>/commits/<tag> --jq .sha
+```
+
+The workflows that only hold `contents: read` (`ci.yml`, `site.yml`,
+`audit.yml`, `gui-render.yml`) still use tag refs — the blast radius there
+is a failed build, not a forged signature.
