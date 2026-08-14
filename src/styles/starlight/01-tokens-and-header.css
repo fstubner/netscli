@@ -1,0 +1,276 @@
+/* Theme tokens (dark/light custom properties) and header/search-button base overrides. */
+
+html[data-theme='dark'],
+html[data-theme='dark'] ::backdrop {
+  --sl-color-accent-low: #06291e;
+  --sl-color-accent: #0aae7a;
+  --sl-color-accent-high: #9ff8de;
+  --sl-color-white: #f4f4f4;
+  --sl-color-gray-1: #e7edf6;
+  --sl-color-gray-2: #c2cad8;
+  --sl-color-gray-3: #8c95a6;
+  --sl-color-gray-4: #586174;
+  --sl-color-gray-5: #2b313d;
+  --sl-color-gray-6: #191d25;
+  --sl-color-black: #111111;
+  --sl-color-bg: #111111;
+  --sl-color-bg-nav: rgba(17, 17, 17, 0.92);
+  --sl-color-bg-sidebar: #111111;
+  --sl-color-bg-inline-code: rgba(10, 174, 122, 0.09);
+  --sl-color-hairline: rgba(255, 255, 255, 0.08);
+  --sl-color-hairline-light: rgba(255, 255, 255, 0.1);
+  --sl-color-hairline-shade: #070707;
+  --sl-content-width: 64rem;
+}
+
+html[data-theme='light'],
+html[data-theme='light'] ::backdrop {
+  --sl-color-accent-low: #d9f8ef;
+  --sl-color-accent: #007a54;
+  --sl-color-accent-high: #064934;
+  --sl-color-white: #111827;
+  --sl-color-gray-1: #243044;
+  --sl-color-gray-2: #44516a;
+  /* gray-3 is the secondary/small-text colour used by the docs footer,
+     built-with row, and mobile section labels — much of it at 12px. At
+     the previous #718096 that was 3.88:1 on --sl-color-bg (#fbfbfb),
+     under the 4.5:1 WCAG AA floor for normal-size text. #667387 is
+     4.65:1. Do not lighten this without re-checking the ratio; the dark
+     theme has its own gray-3 above and is unaffected. */
+  --sl-color-gray-3: #667387;
+  --sl-color-gray-4: #c6d0dd;
+  --sl-color-gray-5: #e3e8ef;
+  --sl-color-gray-6: #f4f6f8;
+  --sl-color-gray-7: #fbfbfb;
+  --sl-color-black: #ffffff;
+  --sl-color-bg: #fbfbfb;
+  --sl-color-bg-nav: rgba(251, 251, 251, 0.92);
+  --sl-color-bg-sidebar: #fbfbfb;
+  --sl-color-bg-inline-code: rgba(0, 122, 84, 0.08);
+  --sl-color-hairline: rgba(17, 24, 39, 0.1);
+  --sl-color-hairline-light: rgba(17, 24, 39, 0.12);
+  --sl-color-hairline-shade: rgba(17, 24, 39, 0.04);
+  --sl-content-width: 64rem;
+}
+
+:root {
+  --sl-nav-height: 3.75rem;
+  --netscli-shell-width: 72rem;
+  --netscli-docs-sidebar-width: 16rem;
+  --netscli-docs-toc-width: 13rem;
+  --netscli-docs-shell-gutter: clamp(1.25rem, 2vw, 2.5rem);
+  --netscli-docs-frame-width: calc(
+    var(--netscli-shell-width) + var(--netscli-docs-sidebar-width) + var(--netscli-docs-toc-width)
+  );
+}
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(140, 149, 166, 0.5) rgba(17, 17, 17, 0.9);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(140, 149, 166, 0.42) rgba(255, 255, 255, 0.035);
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #151515;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(140, 149, 166, 0.45);
+  border: 3px solid #151515;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(170, 178, 192, 0.62);
+}
+
+::-webkit-scrollbar-corner {
+  background: #151515;
+}
+
+html[data-theme='light'] {
+  scrollbar-color: rgba(68, 81, 106, 0.42) rgba(241, 245, 249, 0.92);
+}
+
+html[data-theme='light'] * {
+  scrollbar-color: rgba(68, 81, 106, 0.36) rgba(17, 24, 39, 0.045);
+}
+
+html[data-theme='light'] ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+html[data-theme='light'] ::-webkit-scrollbar-thumb {
+  background: rgba(68, 81, 106, 0.36);
+  border-color: #f1f5f9;
+}
+
+html[data-theme='light'] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(68, 81, 106, 0.52);
+}
+
+html[data-theme='light'] ::-webkit-scrollbar-corner {
+  background: #f1f5f9;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+.page,
+.main-frame,
+.main-pane,
+main,
+.content-panel,
+.sl-container,
+.sl-markdown-content {
+  min-width: 0;
+  max-width: 100%;
+}
+
+header.header {
+  border-bottom: 1px solid var(--sl-color-hairline-light);
+  backdrop-filter: blur(12px);
+  height: var(--sl-nav-height);
+  min-height: var(--sl-nav-height);
+  background: var(--sl-color-bg-nav);
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  transition: box-shadow 160ms ease, border-color 160ms ease;
+}
+
+header.header::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: -28px;
+  height: 28px;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.34), rgba(0, 0, 0, 0));
+  transition: opacity 160ms ease;
+}
+
+html:not([data-docs-scrolled='true']) header.header {
+  box-shadow: none !important;
+}
+
+html:not([data-docs-scrolled='true']) header.header::after {
+  opacity: 0 !important;
+}
+
+html[data-docs-scrolled='true'] header.header {
+  border-bottom-color: rgba(10, 174, 122, 0.18);
+  box-shadow:
+    0 14px 34px rgba(0, 0, 0, 0.28),
+    0 1px 0 rgba(10, 174, 122, 0.12) !important;
+}
+
+html[data-docs-scrolled='true'] header.header::after {
+  opacity: 1;
+}
+
+html[data-theme='light'][data-docs-scrolled='true'] header.header {
+  border-bottom-color: rgba(0, 122, 84, 0.18);
+  box-shadow:
+    0 14px 30px rgba(17, 24, 39, 0.11),
+    0 1px 0 rgba(0, 122, 84, 0.12) !important;
+}
+
+html[data-theme='light'][data-docs-scrolled='true'] header.header::after {
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.12), rgba(17, 24, 39, 0));
+}
+
+header.header > .header {
+  width: 100%;
+  height: var(--sl-nav-height);
+  min-height: var(--sl-nav-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-block: 0;
+  border-bottom: 0;
+  background: transparent;
+  backdrop-filter: none;
+}
+
+header.header > .header > * {
+  align-self: center;
+}
+
+header.header site-search button,
+header.header starlight-theme-select label {
+  min-height: 2.35rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+starlight-menu-button button {
+  border: 1px solid var(--sl-color-hairline-light);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--sl-color-gray-2);
+  box-shadow: none;
+}
+
+starlight-menu-button button:hover,
+starlight-menu-button button:focus-visible,
+starlight-menu-button[aria-expanded='true'] button {
+  background: rgba(10, 174, 122, 0.12);
+  border-color: rgba(10, 174, 122, 0.28);
+  color: var(--sl-color-white);
+}
+
+site-search button[data-open-modal] {
+  border: 1px solid rgba(140, 149, 166, 0.24);
+  border-radius: 6px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015)),
+    rgba(17, 22, 29, 0.9);
+  color: var(--sl-color-gray-2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+site-search button[data-open-modal]:hover {
+  border-color: rgba(10, 174, 122, 0.48);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.018)),
+    rgba(17, 22, 29, 0.96);
+  color: var(--sl-color-white);
+  box-shadow:
+    0 0 0 1px rgba(10, 174, 122, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+site-search button[data-open-modal]:focus-visible {
+  outline: 0;
+  border-color: rgba(159, 248, 222, 0.62);
+  box-shadow:
+    0 0 0 2px rgba(10, 174, 122, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
