@@ -7,6 +7,7 @@ use ratatui::{
 };
 use ratatui_textarea::TextArea;
 use std::time::{SystemTime, UNIX_EPOCH};
+use unicode_width::UnicodeWidthStr;
 
 pub(super) const INPUT_PLACEHOLDER: &str = "Type /help for commands";
 
@@ -41,17 +42,28 @@ pub(in crate::tui) fn line_with_drawn_cursor(
 ) -> Line<'static> {
     let width = width.max(1);
     let cursor_x = cursor_x.min(width.saturating_sub(1));
-    let mut chars: Vec<char> = text.chars().collect();
-    while chars.len() < width {
-        chars.push(' ');
+
+    // Pad to `width` *cells*, not chars, and split on cell boundaries. Padding
+    // by `chars.len()` under-filled any line containing a wide character and
+    // then sliced by char index, so the reversed cursor cell landed left of
+    // where the caret actually was (B-08).
+    let left = slice_cols(text, 0, cursor_x);
+    let cursor_cell = slice_cols(text, cursor_x, 1);
+    let cursor_cell = if cursor_cell.is_empty() {
+        " ".to_string()
+    } else {
+        cursor_cell
+    };
+    let cursor_w = UnicodeWidthStr::width(cursor_cell.as_str()).max(1);
+    let right_start = cursor_x.saturating_add(cursor_w);
+    let mut right = slice_cols(text, right_start, width.saturating_sub(right_start));
+
+    // Trailing padding so the styled run still covers the full box.
+    let used =
+        UnicodeWidthStr::width(left.as_str()) + cursor_w + UnicodeWidthStr::width(right.as_str());
+    if used < width {
+        right.push_str(&" ".repeat(width - used));
     }
-    let left: String = chars.iter().take(cursor_x).collect();
-    let cursor_cell = chars.get(cursor_x).copied().unwrap_or(' ');
-    let right: String = chars
-        .iter()
-        .skip(cursor_x.saturating_add(1))
-        .take(width.saturating_sub(cursor_x.saturating_add(1)))
-        .collect();
 
     let mut spans: Vec<Span<'static>> = Vec::new();
     if !left.is_empty() {
@@ -64,7 +76,7 @@ pub(in crate::tui) fn line_with_drawn_cursor(
     } else {
         style
     };
-    spans.push(Span::styled(cursor_cell.to_string(), cursor_style));
+    spans.push(Span::styled(cursor_cell, cursor_style));
     if !right.is_empty() {
         spans.push(Span::styled(right, style));
     }
@@ -101,9 +113,43 @@ pub(in crate::tui) fn suggestion_window_start(
     start
 }
 
-pub(in crate::tui) fn slice_chars(text: &str, start: usize, len: usize) -> String {
+/// Terminal columns occupied by the first `char_index` characters.
+///
+/// The textarea reports the cursor as a *character* index, but everything
+/// downstream — scrolling, slicing, cursor placement — works in terminal
+/// cells. Conflating the two put the cursor in the wrong place and let the
+/// input overflow its box as soon as a wide character was typed (B-08).
+pub(in crate::tui) fn display_col(text: &str, char_index: usize) -> usize {
+    use unicode_width::UnicodeWidthChar;
+    text.chars()
+        .take(char_index)
+        .map(|c| c.width().unwrap_or(0))
+        .sum()
+}
+
+/// Slice `len` terminal columns starting at column `start`.
+///
+/// A wide character straddling either edge is dropped rather than split,
+/// since half of one cannot be rendered.
+pub(in crate::tui) fn slice_cols(text: &str, start: usize, len: usize) -> String {
+    use unicode_width::UnicodeWidthChar;
     if len == 0 {
         return String::new();
     }
-    text.chars().skip(start).take(len).collect()
+    let mut col = 0usize;
+    let mut out = String::new();
+    for ch in text.chars() {
+        let w = ch.width().unwrap_or(0);
+        if col >= start.saturating_add(len) {
+            break;
+        }
+        if col >= start {
+            if col + w > start + len {
+                break;
+            }
+            out.push(ch);
+        }
+        col += w;
+    }
+    out
 }

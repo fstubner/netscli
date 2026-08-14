@@ -1,8 +1,9 @@
 use super::super::super::palette::palette;
 use super::super::super::widgets::{
-    build_suggestion_line, cursor_blink_on, draw_gradient_rounded_border, input_container_height,
-    label_style, line_with_drawn_cursor, next_scroll_top, pad_line_to_width, placeholder_style,
-    scrollbar_thumb, slice_chars, suggestion_window_start, value_style,
+    build_suggestion_line, cursor_blink_on, display_col, draw_gradient_rounded_border,
+    input_container_height, label_style, line_with_drawn_cursor, next_scroll_top,
+    pad_line_to_width, placeholder_style, scrollbar_thumb, slice_cols, suggestion_window_start,
+    value_style,
 };
 use super::super::{TuiApp, INPUT_PLACEHOLDER};
 use crate::tui_settings::StatsUnit;
@@ -13,6 +14,7 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, Padding, Paragraph, Wrap},
     Frame,
 };
+use unicode_width::UnicodeWidthStr;
 
 impl<'a> TuiApp<'a> {
     pub(super) fn render_input(&mut self, f: &mut Frame<'_>, area: Rect) {
@@ -166,13 +168,18 @@ impl<'a> TuiApp<'a> {
         if area.height < 3 || w < 8 {
             let cursor = self.input.cursor();
             let (row, col) = (cursor.0, cursor.1);
-            let cursor_col = if row == 0 { col } else { 0 };
             let raw = self.input.lines().first().cloned().unwrap_or_default();
             let empty = raw.trim().is_empty();
             let display = if empty {
                 INPUT_PLACEHOLDER.to_string()
             } else {
                 raw.clone()
+            };
+            // `col` is a char index; scrolling and slicing are in cells (B-08).
+            let cursor_col = if row == 0 {
+                display_col(&display, col)
+            } else {
+                0
             };
             let width = area.width.max(1) as usize;
             let style = if empty {
@@ -182,12 +189,12 @@ impl<'a> TuiApp<'a> {
             };
 
             let prompt = "> ";
-            let avail = width.saturating_sub(prompt.chars().count()).max(1);
+            let avail = width.saturating_sub(UnicodeWidthStr::width(prompt)).max(1);
             self.input_scroll_x = next_scroll_top(self.input_scroll_x, cursor_col, avail);
             if empty {
                 self.input_scroll_x = 0;
             }
-            let visible = slice_chars(&display, self.input_scroll_x, avail);
+            let visible = slice_cols(&display, self.input_scroll_x, avail);
             let cursor_x = cursor_col
                 .saturating_sub(self.input_scroll_x)
                 .min(avail.saturating_sub(1));
@@ -203,14 +210,19 @@ impl<'a> TuiApp<'a> {
 
         let cursor = self.input.cursor();
         let (row, col) = (cursor.0, cursor.1);
-        let cursor_col = if row == 0 { col } else { 0 };
-
         let raw = self.input.lines().first().cloned().unwrap_or_default();
         let empty = raw.trim().is_empty();
         let display = if empty {
             INPUT_PLACEHOLDER.to_string()
         } else {
             raw.clone()
+        };
+
+        // `col` is a char index; scrolling and slicing are in cells (B-08).
+        let cursor_col = if row == 0 {
+            display_col(&display, col)
+        } else {
+            0
         };
 
         draw_gradient_rounded_border(f, area);
@@ -223,13 +235,13 @@ impl<'a> TuiApp<'a> {
 
         let width = inner.width.max(1) as usize;
         let prompt = "> ";
-        let avail = width.saturating_sub(prompt.chars().count()).max(1);
+        let avail = width.saturating_sub(UnicodeWidthStr::width(prompt)).max(1);
         self.input_scroll_x = next_scroll_top(self.input_scroll_x, cursor_col, avail);
         if empty {
             self.input_scroll_x = 0;
         }
 
-        let visible = slice_chars(&display, self.input_scroll_x, avail);
+        let visible = slice_cols(&display, self.input_scroll_x, avail);
         let style = if empty {
             placeholder_style()
         } else {

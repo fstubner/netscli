@@ -73,12 +73,30 @@ pub fn parse_export_command(input: &str) -> Result<ExportRequest> {
 }
 
 pub fn export_session(history: &[HistoryEntry], req: &ExportRequest) -> Result<PathBuf> {
+    let explicit = req.output.is_some();
     let path = req
         .output
         .clone()
         .unwrap_or_else(|| default_output_path(req.format));
+
+    // Refuse to clobber an existing file (B-13).
+    //
+    // `/export -o ~/.bashrc` used to overwrite it with no confirmation and no
+    // --force. The generated default path is timestamped to the second and is
+    // ours by construction, so only a user-supplied path needs the guard.
+    if explicit && path.exists() {
+        anyhow::bail!(
+            "{} already exists. Choose another path, or delete it first.",
+            path.display()
+        );
+    }
+
+    // Only create directories the user actually asked for. This used to run
+    // for the default path too, materialising trees as a side effect.
     if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent)?;
+        if !parent.as_os_str().is_empty() {
+            fs::create_dir_all(parent)?;
+        }
     }
 
     match req.format {
