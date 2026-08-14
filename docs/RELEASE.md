@@ -142,7 +142,7 @@ wants to verify the cosign signature automatically, the verify command is:
 ```bash
 cosign verify-blob \
   --signature <asset>.sig --certificate <asset>.pem \
-  --certificate-identity-regexp 'https://github.com/fstubner/netscli/.*' \
+  --certificate-identity-regexp 'https://github.com/fstubner/netscli/.github/workflows/release\.yml@.*' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
   <asset>
 ```

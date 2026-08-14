@@ -97,12 +97,12 @@ jobs:
     steps:
       # On workflow_dispatch we need the tag ref explicitly. On release
       # events the default ref is already the tag.
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           ref: ${{ github.event.inputs.tag || github.ref }}
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c # stable
         with:
           toolchain: 1.96.0
           targets: ${{ matrix.target }}
@@ -120,9 +120,22 @@ jobs:
         shell: pwsh
         run: |
           $sdkUrl = "https://npcap.com/dist/npcap-sdk-1.13.zip"
+          # Pinned digest for npcap-sdk-1.13.zip (364,431 bytes). npcap.com
+          # is a third-party host outside our control, and whatever this
+          # step unpacks gets linked into a binary we then cosign-sign — so
+          # the signature would attest to a build that trusted an
+          # unverified download. Verify before extracting.
+          # Re-pin deliberately when bumping the SDK version.
+          $sdkSha256 = "dad1f2bf1b02b787be08ca4862f99e39a876c1f274bac4ac0cedc9bbc58f94fd"
           $zipPath = Join-Path $env:RUNNER_TEMP "npcap-sdk.zip"
           $destPath = Join-Path $env:RUNNER_TEMP "npcap-sdk"
           Invoke-WebRequest -Uri $sdkUrl -OutFile $zipPath
+          $actual = (Get-FileHash -Algorithm SHA256 -Path $zipPath).Hash.ToLowerInvariant()
+          if ($actual -ne $sdkSha256) {
+            Write-Error "Npcap SDK checksum mismatch. Expected $sdkSha256, got $actual"
+            exit 1
+          }
+          Write-Host "Npcap SDK checksum verified."
           Expand-Archive -Path $zipPath -DestinationPath $destPath -Force
           # The 1.13 zip has Lib/ and Include/ at the archive root, no
           # wrapping npcap-sdk/ folder. Point LIB/INCLUDE at $destPath
@@ -162,11 +175,11 @@ jobs:
       # Sigstore keyless signing via the GitHub Actions OIDC token. Produces
       # a .sig and .pem alongside each binary; verifiable by anyone with:
       #   cosign verify-blob --signature <asset>.sig --certificate <asset>.pem \
-      #     --certificate-identity-regexp 'https://github.com/fstubner/netscli/.*' \
+      #     --certificate-identity-regexp 'https://github.com/fstubner/netscli/.github/workflows/release\.yml@.*' \
       #     --certificate-oidc-issuer https://token.actions.githubusercontent.com \
       #     <asset>
       - name: Install cosign
-        uses: sigstore/cosign-installer@v3
+        uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3
       - name: Sign release asset (sigstore keyless)
         shell: bash
         env:
@@ -179,7 +192,7 @@ jobs:
             "${{ matrix.asset_name }}"
 
       - name: Upload Release Asset
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3
         with:
           files: |
             target/${{ matrix.target }}/release/${{ matrix.asset_name }}
@@ -235,17 +248,17 @@ jobs:
             bundle_dir: bundle
             bundle_globs: "msi/*.msi"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           ref: ${{ github.event.inputs.tag || github.ref }}
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c # stable
         with:
           toolchain: 1.96.0
           targets: ${{ matrix.target }}
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 22
           cache: npm
@@ -319,7 +332,7 @@ jobs:
           ls -la
 
       - name: Install cosign
-        uses: sigstore/cosign-installer@v3
+        uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3
       - name: Sign GUI artifacts (sigstore keyless)
         shell: bash
         env:
@@ -341,7 +354,7 @@ jobs:
           done
 
       - name: Upload Release Asset
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3
         with:
           files: |
             ${{ runner.temp }}/gui-out/${{ matrix.asset_prefix }}.*

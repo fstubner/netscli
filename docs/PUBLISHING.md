@@ -68,22 +68,64 @@ and a yanked version still occupies the version number. Bump the patch
 
 ## Version bumps
 
-All three crates share a version (inherited from the workspace). To
-release 0.2.0:
+**The crates do NOT inherit a version from the workspace.** Root
+`Cargo.toml`'s `[workspace.package]` block has no `version` key — each
+crate hardcodes its own, and the desktop app carries three more copies
+outside Cargo entirely. Seven files have to move together:
+
+| File | What it sets |
+| --- | --- |
+| `crates/netscli-core/Cargo.toml` | core crate version |
+| `crates/netscli-mcp/Cargo.toml` | MCP crate version **+ its `netscli-core` dep spec** |
+| `apps/netscli-cli/Cargo.toml` | CLI crate version **+ its `netscli-core`/`netscli-mcp` dep specs** |
+| `apps/netscli-gui/src-tauri/Cargo.toml` | Tauri backend crate version |
+| `apps/netscli-gui/src-tauri/tauri.conf.json` | installer/bundle version |
+| `apps/netscli-gui/package.json` | version shown in the GUI About dialog and on the website |
+| `CHANGELOG.md` | the release heading and its link reference |
+
+Missing the last three is what shipped a GUI installer stamped with the
+wrong version at v0.2.4 and got the Winget submission rejected by a
+moderator (see the 0.2.4 entry in `CHANGELOG.md`). The website reads its
+version from `apps/netscli-gui/package.json`, so a miss there also
+silently mislabels netscli.com.
+
+To release 0.4.0 from 0.3.0:
 
 ```bash
-# Update all three in one go.
-sed -i 's/^version = "0\.1\.0"$/version = "0.2.0"/' \
-    Cargo.toml apps/netscli-cli/Cargo.toml \
-    crates/netscli-core/Cargo.toml crates/netscli-mcp/Cargo.toml
+OLD=0.3.0
+NEW=0.4.0
 
-# Also bump the `version = "0.1.0"` spec on the inter-workspace deps:
-sed -i 's/version = "0\.1\.0"/version = "0.2.0"/g' \
-    apps/netscli-cli/Cargo.toml crates/netscli-mcp/Cargo.toml
+# Crate versions and the inter-workspace dep specs.
+sed -i "s/\"${OLD}\"/\"${NEW}\"/g" \
+    crates/netscli-core/Cargo.toml \
+    crates/netscli-mcp/Cargo.toml \
+    apps/netscli-cli/Cargo.toml \
+    apps/netscli-gui/src-tauri/Cargo.toml
 
-# Verify consistency:
-grep -rn '^version\|version = "' Cargo.toml apps/ crates/ | grep -v target
+# The GUI's two non-Cargo version files.
+sed -i "s/\"version\": \"${OLD}\"/\"version\": \"${NEW}\"/" \
+    apps/netscli-gui/package.json \
+    apps/netscli-gui/src-tauri/tauri.conf.json
+
+# Refresh the lockfile so the bumped versions are recorded.
+cargo update -w
 ```
+
+Then verify every surface agrees before tagging — this should print
+`${NEW}` and nothing else:
+
+```bash
+{
+  grep -h '^version' crates/*/Cargo.toml apps/netscli-cli/Cargo.toml \
+      apps/netscli-gui/src-tauri/Cargo.toml
+  grep -h '"version"' apps/netscli-gui/package.json \
+      apps/netscli-gui/src-tauri/tauri.conf.json
+} | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | sort -u
+```
+
+Finally, move the `## [Unreleased]` content in `CHANGELOG.md` under a
+`## [X.Y.Z] — YYYY-MM-DD` heading and add the matching link reference at
+the bottom of the file.
 
 ## GitHub release
 

@@ -58,8 +58,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      # install.sh is user-facing; the release/ scripts hold GH_TOKEN and
+      # push to three package registries. Both are worth linting, and
+      # neither is exercised by any other job.
       - name: shellcheck install.sh
         run: shellcheck scripts/install.sh
+      - name: shellcheck release scripts
+        run: shellcheck scripts/release/*.sh
       - name: PSScriptAnalyzer install.ps1
         shell: pwsh
         # Write-Host is intentional here (colored installer UX output, which

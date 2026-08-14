@@ -27,9 +27,13 @@ cask "netscli" do
 
   app "NetsCLI.app"
 
+  # Bundle identifier must match tauri.conf.json's `identifier`
+  # (com.netscli.gui). It previously read com.netscli.app, which matches
+  # nothing the app ever writes, so `brew uninstall --zap` left every
+  # file behind.
   zap trash: [
-    "~/Library/Application Support/com.netscli.app",
-    "~/Library/Caches/com.netscli.app",
-    "~/Library/Preferences/com.netscli.app.plist",
+    "~/Library/Application Support/com.netscli.gui",
+    "~/Library/Caches/com.netscli.gui",
+    "~/Library/Preferences/com.netscli.gui.plist",
   ]
 end

@@ -12,6 +12,11 @@
 #   - NETSCLI_SKIP_NPCAP=1: with NETSCLI_PCAP=1, skip the Npcap installer
 #                          (for users who already have Npcap installed)
 #   - NETSCLI_NPCAP_URL: Override the Npcap installer URL
+#   - NETSCLI_SHA256 / NETSCLI_SHA256_URL: supply the expected checksum
+#     explicitly. By default the installer fetches "<asset>.sha256" from
+#     the release and REFUSES to install if it cannot be verified.
+#   - NETSCLI_ALLOW_UNVERIFIED=1: install without checksum verification
+#     (not recommended; only for releases that publish no checksum asset)
 
 $ErrorActionPreference = "Stop"
 
@@ -23,6 +28,7 @@ $NETSCLI_SHA256 = if ($env:NETSCLI_SHA256) { $env:NETSCLI_SHA256 } else { "" }
 $NETSCLI_SHA256_URL = if ($env:NETSCLI_SHA256_URL) { $env:NETSCLI_SHA256_URL } else { "" }
 $NETSCLI_PCAP = if ($env:NETSCLI_PCAP) { $env:NETSCLI_PCAP } else { "" }
 $NETSCLI_SKIP_NPCAP = if ($env:NETSCLI_SKIP_NPCAP) { $env:NETSCLI_SKIP_NPCAP } else { "" }
+$NETSCLI_ALLOW_UNVERIFIED = if ($env:NETSCLI_ALLOW_UNVERIFIED) { $env:NETSCLI_ALLOW_UNVERIFIED } else { "" }
 
 # Backwards-compat: older docs used NETSCLI_INSTALL_NPCAP as a separate toggle.
 # If the user set it, fold it into NETSCLI_PCAP so the old invocation works.
@@ -128,25 +134,44 @@ try {
     $checksumResponse = Invoke-WebRequest -Uri $NETSCLI_SHA256_URL
     $NETSCLI_SHA256 = ($checksumResponse.Content -split '\s+')[0]
   } elseif (-not $NETSCLI_SHA256 -or $NETSCLI_SHA256.Trim().Length -eq 0) {
-    # Best-effort: if the release publishes "<asset>.sha256", use it automatically.
+    # Every release since v0.2.x publishes "<asset>.sha256". Fetch it — and
+    # treat its absence as a failure, not as permission to skip
+    # verification. An attacker on the path can always make one request
+    # fail; if that silently downgraded us to "install unverified", the
+    # checksum would be worth nothing.
     $autoChecksumUrl = "$DOWNLOAD_URL.sha256"
     try {
       $checksumResponse = Invoke-WebRequest -Uri $autoChecksumUrl
       $NETSCLI_SHA256 = ($checksumResponse.Content -split '\s+')[0]
     } catch {
-      # ignore (asset not published or unreachable)
+      Write-Host "ERROR: could not fetch $autoChecksumUrl" -ForegroundColor Red
+      Write-Host "Refusing to install an unverified binary." -ForegroundColor Red
+      Write-Host ""
+      Write-Host "If this release genuinely has no checksum asset, supply one explicitly:" -ForegroundColor Yellow
+      Write-Host '  $env:NETSCLI_SHA256="<digest>"           # known digest' -ForegroundColor Yellow
+      Write-Host '  $env:NETSCLI_SHA256_URL="<url>"          # digest fetched from elsewhere' -ForegroundColor Yellow
+      Write-Host '  $env:NETSCLI_ALLOW_UNVERIFIED=1          # opt out (not recommended)' -ForegroundColor Yellow
+      exit 1
     }
   }
 
   if ($NETSCLI_SHA256 -and $NETSCLI_SHA256.Trim().Length -gt 0) {
-    Write-Host "Verifying checksum..." -ForegroundColor Cyan
-    $hash = (Get-FileHash -Algorithm SHA256 -Path $tmpExe).Hash.ToLower()
-    if ($hash -ne $NETSCLI_SHA256.Trim().ToLower()) {
-      Write-Host "Checksum mismatch. Expected $NETSCLI_SHA256, got $hash" -ForegroundColor Red
+    $expected = $NETSCLI_SHA256.Trim().ToLower()
+    if ($expected -notmatch '^[0-9a-f]{64}$') {
+      Write-Host "ERROR: checksum is not a 64-character hex digest: '$expected'" -ForegroundColor Red
       exit 1
     }
+    Write-Host "Verifying checksum..." -ForegroundColor Cyan
+    $hash = (Get-FileHash -Algorithm SHA256 -Path $tmpExe).Hash.ToLower()
+    if ($hash -ne $expected) {
+      Write-Host "Checksum mismatch. Expected $expected, got $hash" -ForegroundColor Red
+      exit 1
+    }
+  } elseif (Test-True $NETSCLI_ALLOW_UNVERIFIED) {
+    Write-Host "Warning: installing WITHOUT checksum verification (NETSCLI_ALLOW_UNVERIFIED=1)." -ForegroundColor Yellow
   } else {
-    Write-Host "Warning: no checksum verification performed (set NETSCLI_SHA256 or NETSCLI_SHA256_URL)." -ForegroundColor Yellow
+    Write-Host "ERROR: no checksum available and NETSCLI_ALLOW_UNVERIFIED is not set." -ForegroundColor Red
+    exit 1
   }
 
   if (-not (Test-Path $INSTALL_DIR)) {

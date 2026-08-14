@@ -174,7 +174,7 @@ Every CLI and GUI release asset is signed keylessly via [Sigstore cosign](https:
 cosign verify-blob \
   --signature netscli-linux-x86_64.sig \
   --certificate netscli-linux-x86_64.pem \
-  --certificate-identity-regexp 'https://github.com/fstubner/netscli/.*' \
+  --certificate-identity-regexp 'https://github.com/fstubner/netscli/.github/workflows/release\.yml@.*' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
   netscli-linux-x86_64
 ```

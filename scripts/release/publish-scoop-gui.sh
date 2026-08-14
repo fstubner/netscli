@@ -11,32 +11,23 @@
 
 set -euo pipefail
 
+# shellcheck source=scripts/release/lib.sh
+. "$(dirname "$0")/lib.sh"
+
 TAG="${1:?usage: publish-scoop-gui.sh <tag>}"
+validate_tag "$TAG"
 VERSION="${TAG#v}"
 
 BASE="https://github.com/fstubner/netscli/releases/download/${TAG}"
 ASSET="netscli-gui-windows-x86_64.msi"
 
-url="${BASE}/${ASSET}.sha256"
-echo "→ ${url}"
-for i in {1..30}; do
-  if curl -fsSL --head "$url" >/dev/null 2>&1; then
-    break
-  fi
-  echo "  not yet; retry in 30s ($i/30)"
-  sleep 30
-done
-
-sha=$(curl -fsSL "$url" | awk '{print $1}')
+echo "→ verifying ${ASSET}"
+sha=$(verified_sha "$BASE" "$ASSET")
 
 WORKDIR=$(mktemp -d)
 trap 'rm -rf "$WORKDIR"' EXIT
-git clone --depth 1 \
-  "https://x-access-token:${GH_TOKEN}@github.com/fstubner/scoop-bucket.git" \
-  "$WORKDIR/bucket"
+clone_tap "fstubner/scoop-bucket" "$WORKDIR/bucket"
 cd "$WORKDIR/bucket"
-git config user.name  "netscli release bot"
-git config user.email "noreply@netscli.com"
 
 manifest="bucket/netscli-gui.json"
 asset_url="${BASE}/${ASSET}"
@@ -49,9 +40,19 @@ jq --arg ver "$VERSION" \
      | .architecture["64bit"].hash = $sha
    ' "$manifest" > "$manifest.tmp" && mv "$manifest.tmp" "$manifest"
 
+# Sanity check: jq wrote what we asked, and the hash is a real digest.
+if ! jq -e --arg ver "$VERSION" --arg sha "$sha" '
+       .version == $ver
+       and .architecture["64bit"].hash == $sha
+       and (.architecture["64bit"].hash | test("^[0-9a-f]{64}$"))
+     ' "$manifest" >/dev/null; then
+  echo "ERROR: scoop-gui manifest render check failed" >&2
+  cat "$manifest" >&2
+  exit 1
+fi
+
 git diff
 git add "$manifest"
-git commit -m "netscli-gui ${VERSION}"
-git push origin HEAD
+commit_and_push "netscli-gui ${VERSION}"
 
 echo "✓ Scoop bucket netscli-gui updated to ${VERSION}"
