@@ -196,6 +196,61 @@ managers rely on their own hash checks instead.
 downloads and verifies against a pinned SHA256. Bumping the SDK version
 means re-pinning that digest.
 
+## Site previews (Cloudflare Pages)
+
+**Production is not involved.** netscli.com is served from GitHub Pages via
+`pages.yml`, which stays manual-only. `site-preview.yml` deploys to a
+separate Cloudflare Pages project and always passes an explicit
+`--branch=pr-<N>`, which Cloudflare treats as a preview deployment. There is
+no code path in that workflow that produces a production deploy.
+
+### Enabling it
+
+The workflow runs today and reports "not configured" until two repository
+secrets exist. Nothing fails in the meantime.
+
+1. **Create the Pages project** (one-off, direct-upload mode — do *not*
+   connect it to Git, or Cloudflare will start building on its own and you
+   will have two things deploying the site):
+
+   ```bash
+   npx wrangler@4 pages project create netscli-site-preview \
+     --production-branch=unused-production-branch
+   ```
+
+   The production branch is deliberately a name no PR will ever use, so the
+   project has no reachable production deployment.
+
+2. **Add two repository secrets** under Settings → Secrets and variables →
+   Actions:
+
+   | Secret | Where from |
+   | --- | --- |
+   | `CLOUDFLARE_API_TOKEN` | Cloudflare dashboard → My Profile → API Tokens → Create Token. Template "Edit Cloudflare Workers", or a custom token with **Account → Cloudflare Pages → Edit**. Scope it to the one account. |
+   | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare dashboard → Workers & Pages → Account ID in the right-hand pane |
+
+3. Open a PR touching `site/**`. The workflow comments the preview URL and
+   updates that same comment on later pushes.
+
+### What a preview build changes
+
+Preview builds set `NETSCLI_PREVIEW=1`, which does two things that matter:
+
+- **`robots: noindex, nofollow` on every page.** Emitted by
+  `src/layouts/Page.astro` for the landing/changelog/404 pages *and* by the
+  `head` entry in `astro.config.mjs` for the Starlight docs pages — those use
+  Starlight's own layout, so the first mechanism alone leaves 11 of 14 pages
+  crawlable.
+- **The Cloudflare Web Analytics beacon is suppressed.** A preview is still a
+  production Astro build (`import.meta.env.PROD` is true), so without this
+  every PR deploy would report into netscli.com's real analytics property.
+
+The workflow **verifies both before deploying** and fails the job rather than
+publishing an indexable or analytics-reporting preview.
+
+Neither affects a normal build: production still emits the beacon, and only
+the 404 carries `noindex`.
+
 ## Homebrew
 
 Two artifacts in one tap, `fstubner/homebrew-tap`:
