@@ -100,14 +100,26 @@ export function ResultTable({
       ].filter(Boolean).join(' ')}
       data-testid="result-table"
       ref={tableShellRef}
-      role="grid"
-      aria-multiselectable="true"
-      tabIndex={0}
       onScroll={() => updateOverflowState(tableShellRef.current, setOverflow)}
       onContextMenu={onContentContextMenu}
-      onKeyDown={(event) => handleTableKeyDown(event, activeTab.selectedIndex, rows.length, onSelectAllRows, onSelectRow)}
     >
-      <table className="result-table">
+      {/*
+        The grid role lives on the <table>, not on the scroll container
+        (B-20). A `role="grid"` div whose only child is a table breaks row
+        ownership: the rows belong to the table, so assistive tech saw a grid
+        with no rows. Focus and key handling move here with it, since
+        `aria-activedescendant` must sit on the focused element.
+      */}
+      <table
+        className="result-table"
+        role="grid"
+        aria-multiselectable="true"
+        aria-activedescendant={rows.length > 0 ? `result-row-${activeTab.selectedIndex}` : undefined}
+        tabIndex={0}
+        onKeyDown={(event) =>
+          handleTableKeyDown(event, activeTab.selectedIndex, rows.length, onSelectAllRows, onSelectRow)
+        }
+      >
         <colgroup>
           {effectiveColumns.map((column) => (
             <col key={column.key} style={column.width ? { width: `${column.width}px` } : undefined} />
@@ -116,7 +128,19 @@ export function ResultTable({
         <thead>
           <tr>
             {effectiveColumns.map((column) => (
-              <th className={column.grow ? 'grow' : ''} key={column.key}>
+              <th
+                className={column.grow ? 'grow' : ''}
+                key={column.key}
+                // Without this the sort state was visible only as a caret
+                // glyph, which screen readers do not convey (B-20).
+                aria-sort={
+                  activeTab.sortKey === column.key
+                    ? activeTab.sortDir === 'asc'
+                      ? 'ascending'
+                      : 'descending'
+                    : 'none'
+                }
+              >
                 <button onClick={() => onSort(column)}>
                   <span>{column.label}</span>
                   {activeTab.sortKey === column.key && (
@@ -151,6 +175,10 @@ export function ResultTable({
                 aria-selected={selected}
                 className={[selected ? 'selected' : '', focused ? 'focused' : ''].filter(Boolean).join(' ')}
                 data-testid={`result-row-${row.data.port ?? row.id}`}
+                // Referenced by the grid's aria-activedescendant so arrow-key
+                // navigation is announced. Keyed by index, not row id,
+                // because the selection is an index.
+                id={`result-row-${index}`}
                 key={row.id}
                 tabIndex={-1}
                 onClick={(event) => onSelectRow(index, selectionModeForPointer(event))}
