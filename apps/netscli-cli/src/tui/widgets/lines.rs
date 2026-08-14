@@ -2,6 +2,7 @@ use ratatui::{
     style::Style,
     text::{Line, Span},
 };
+use unicode_width::UnicodeWidthChar;
 
 pub(in crate::tui) fn boxed_lines(
     inner: Vec<Line<'static>>,
@@ -80,14 +81,26 @@ fn truncate_line_to_width(
     let mut out: Vec<Span<'static>> = Vec::new();
     let mut used = 0usize;
 
+    // Accumulate *display width*, not char count.
+    //
+    // `max_width` comes from `line_width`, which measures terminal cells, but
+    // this loop used to take `remaining` chars and add `chars().count()`
+    // (B-07). Any wide character — CJK, emoji — in a remote-supplied hostname
+    // or banner therefore consumed two cells while being counted as one, and
+    // pushed the box border off the right edge.
     for span in line.spans.drain(..) {
         if used >= target {
             break;
         }
-        let s = span.content.to_string();
-        let remaining = target - used;
-        let take = s.chars().take(remaining).collect::<String>();
-        used += take.chars().count();
+        let mut take = String::new();
+        for ch in span.content.chars() {
+            let w = UnicodeWidthChar::width(ch).unwrap_or(0);
+            if used + w > target {
+                break;
+            }
+            take.push(ch);
+            used += w;
+        }
         if !take.is_empty() {
             out.push(Span::styled(take, span.style));
         }

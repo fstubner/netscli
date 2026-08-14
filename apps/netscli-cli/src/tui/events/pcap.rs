@@ -153,16 +153,15 @@ pub(super) async fn handle(
 
     let iface = interface.unwrap_or_else(|| "unknown".to_string());
     match ops.pcap_check_support() {
-        Ok(devs) => {
-            if !devs.iter().any(|d| d == &iface) {
-                out.push(Formatter::format_error(&format!(
-                    "Unknown interface: {iface}"
-                )));
-                out.push(Line::default());
-                out.extend(Formatter::format_pcap_interfaces(&devs));
-                return out;
-            }
-        }
+        // Deliberately no name check here (B-12).
+        //
+        // This used to require exact string equality against a device name,
+        // while `resolve_capture_device` in core also accepts case-insensitive
+        // names, description substrings, GUIDs and IP addresses. The TUI
+        // therefore rejected interfaces the CLI accepted, for the same
+        // capture. Core owns resolution; letting it fail produces one
+        // consistent error across both surfaces.
+        Ok(_devs) => {}
         Err(e) => {
             out.push(Formatter::format_error("PCAP is not available."));
             out.push(Line::from(format!("  {e}")));

@@ -6,6 +6,9 @@
 mod config_controls;
 mod gradient;
 mod input;
+#[cfg(test)]
+#[path = "widgets/input_tests.rs"]
+mod input_tests;
 mod lines;
 mod scroll;
 mod styles;
@@ -14,8 +17,8 @@ mod suggestions;
 pub(super) use config_controls::{config_line, cycle_option, cycle_unit};
 pub(super) use gradient::{draw_gradient_rounded_border, gradient_text_line_with_left_pad};
 pub(super) use input::{
-    configure_input, cursor_blink_on, input_container_height, line_with_drawn_cursor,
-    placeholder_style, slice_chars, suggestion_window_start,
+    configure_input, cursor_blink_on, display_col, input_container_height, line_with_drawn_cursor,
+    placeholder_style, slice_cols, suggestion_window_start,
 };
 pub(super) use lines::{boxed_lines, pad_line_to_width};
 pub(super) use scroll::{next_scroll_top, scrollbar_thumb};
