@@ -1,6 +1,7 @@
 use super::CommandContext;
 use crate::output::{output_format, print_structured, OutputFormat};
 use anyhow::Result;
+use netscli_core::sanitize_for_terminal;
 use std::time::Duration;
 
 pub(super) async fn run(
@@ -28,10 +29,16 @@ fn print_services(timeout_ms: u64, services: &[netscli_core::MdnsService]) {
         return;
     }
 
+    // Hostnames and service types come from unauthenticated multicast
+    // announcements — any device on the link picks its own, and mdns-sd
+    // only escapes `.` and `\`. Sanitize before these reach the terminal.
     let mut by_host: std::collections::BTreeMap<String, Vec<&netscli_core::MdnsService>> =
         std::collections::BTreeMap::new();
     for svc in services {
-        by_host.entry(svc.hostname.clone()).or_default().push(svc);
+        by_host
+            .entry(sanitize_for_terminal(&svc.hostname).into_owned())
+            .or_default()
+            .push(svc);
     }
     for (host, svcs) in by_host {
         let addrs: std::collections::BTreeSet<String> = svcs
@@ -45,7 +52,11 @@ fn print_services(timeout_ms: u64, services: &[netscli_core::MdnsService]) {
         };
         println!("{host}  [{addr_list}]");
         for svc in svcs {
-            println!("  {} :{}", svc.service_type.trim_end_matches('.'), svc.port);
+            println!(
+                "  {} :{}",
+                sanitize_for_terminal(svc.service_type.trim_end_matches('.')),
+                svc.port
+            );
         }
     }
 }

@@ -11,7 +11,11 @@
 #   - INSTALL_DIR: install directory (default: ~/.local/bin)
 #   - REPO: GitHub repo ("owner/name", default: fstubner/netscli)
 #   - NETSCLI_VERSION: release tag (e.g. v0.1.0; default: latest)
-#   - NETSCLI_SHA256 / NETSCLI_SHA256_URL: checksum verification (optional)
+#   - NETSCLI_SHA256 / NETSCLI_SHA256_URL: supply the expected checksum
+#     explicitly. By default the installer fetches "<asset>.sha256" from
+#     the release and REFUSES to install if it cannot be verified.
+#   - NETSCLI_ALLOW_UNVERIFIED=1: install without checksum verification
+#     (not recommended; only for releases that publish no checksum asset)
 #   - NETSCLI_PCAP=1: install the PCAP-enabled binary AND libpcap system lib
 #   - NETSCLI_SKIP_LIBPCAP=1: with NETSCLI_PCAP=1, skip installing libpcap
 #     (for users who already manage libpcap themselves)
@@ -241,32 +245,55 @@ trap 'rm -rf "${TMP_DIR}"' EXIT
 
 echo "Downloading release asset: ${DOWNLOAD_URL}"
 download "${DOWNLOAD_URL}" "${TMP_DIR}/${BINARY_NAME}"
-chmod +x "${TMP_DIR}/${BINARY_NAME}"
+# Deliberately NOT chmod +x yet — that happens only after the checksum
+# check below passes, so an unverified download is never left executable.
 
 if [[ -n "$NETSCLI_SHA256_URL" ]]; then
   echo "Fetching checksum from ${NETSCLI_SHA256_URL}"
   download "${NETSCLI_SHA256_URL}" "${TMP_DIR}/${BINARY_NAME}.sha256"
   NETSCLI_SHA256="$(awk '{print $1}' "${TMP_DIR}/${BINARY_NAME}.sha256" | head -n 1)"
 elif [[ -z "$NETSCLI_SHA256" ]]; then
-  # Best-effort: if the release publishes "<asset>.sha256", use it automatically.
-  if download_optional "${DOWNLOAD_URL}.sha256" "${TMP_DIR}/${BINARY_NAME}.sha256"; then
-    NETSCLI_SHA256="$(awk '{print $1}' "${TMP_DIR}/${BINARY_NAME}.sha256" | head -n 1)"
+  # Every release since v0.2.x publishes "<asset>.sha256" alongside the
+  # binary. Fetch it — and treat its absence as a failure, not as
+  # permission to skip verification. An attacker on the path can always
+  # make one request fail; if that silently downgraded us to "install
+  # unverified", the checksum would be worth nothing.
+  if ! download_optional "${DOWNLOAD_URL}.sha256" "${TMP_DIR}/${BINARY_NAME}.sha256"; then
+    echo "ERROR: could not fetch ${DOWNLOAD_URL}.sha256" >&2
+    echo "Refusing to install an unverified binary." >&2
+    echo "" >&2
+    echo "If this release genuinely has no checksum asset, supply one explicitly:" >&2
+    echo "  NETSCLI_SHA256=<digest> ...          # known digest" >&2
+    echo "  NETSCLI_SHA256_URL=<url> ...         # digest fetched from elsewhere" >&2
+    echo "  NETSCLI_ALLOW_UNVERIFIED=1 ...       # opt out (not recommended)" >&2
+    exit 1
   fi
+  NETSCLI_SHA256="$(awk '{print $1}' "${TMP_DIR}/${BINARY_NAME}.sha256" | head -n 1)"
 fi
 
 if [[ -n "$NETSCLI_SHA256" ]]; then
+  if [[ ! "$NETSCLI_SHA256" =~ ^[0-9a-fA-F]{64}$ ]]; then
+    echo "ERROR: checksum is not a 64-character hex digest: '${NETSCLI_SHA256}'" >&2
+    exit 1
+  fi
   echo "Verifying checksum..."
   if have_cmd sha256sum; then
     echo "${NETSCLI_SHA256}  ${TMP_DIR}/${BINARY_NAME}" | sha256sum -c -
   elif have_cmd shasum; then
     echo "${NETSCLI_SHA256}  ${TMP_DIR}/${BINARY_NAME}" | shasum -a 256 -c -
   else
-    echo "sha256sum or shasum not found; cannot verify checksum."
+    echo "sha256sum or shasum not found; cannot verify checksum." >&2
     exit 1
   fi
+elif is_true "${NETSCLI_ALLOW_UNVERIFIED:-}"; then
+  echo "Warning: installing WITHOUT checksum verification (NETSCLI_ALLOW_UNVERIFIED=1)."
 else
-  echo "Warning: no checksum verification performed (set NETSCLI_SHA256 or NETSCLI_SHA256_URL)."
+  echo "ERROR: no checksum available and NETSCLI_ALLOW_UNVERIFIED is not set." >&2
+  exit 1
 fi
+
+# Verified (or explicitly waived) — safe to make executable now.
+chmod +x "${TMP_DIR}/${BINARY_NAME}"
 
 if [[ "$OS" == "linux" && "${ASSET}" == *"-musl" ]]; then
   echo ""

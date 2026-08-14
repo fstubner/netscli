@@ -4,8 +4,11 @@ All notable changes to netscli are documented here. This file follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-Workspace crates (`netscli`, `netscli-core`, `netscli-mcp`) share a
-version and release together.
+Workspace crates (`netscli`, `netscli-core`, `netscli-mcp`) and the
+desktop app are released together under one version number. Note that
+they do not *inherit* it — each crate sets its own, and the GUI carries
+further copies in `package.json` and `tauri.conf.json`. See
+`docs/PUBLISHING.md` for the full list of files a bump has to touch.
 
 ## [Unreleased]
 

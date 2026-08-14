@@ -59,6 +59,16 @@ where
     }
 }
 
+/// Strip dangerous control characters from bytes read off a scanned host.
+///
+/// Everything here is chosen by the remote end. `ESC` and friends are
+/// replaced so they can never drive the operator's terminal.
+///
+/// `\n`, `\r` and `\t` are deliberately preserved: this feeds
+/// `parse_http`, which splits an HTTP response on `\r\n`, so mangling
+/// them here would break header parsing. Line structure is stripped
+/// later, by [`single_line_display`], at the point a value becomes a
+/// one-line banner.
 fn sanitize(bytes: &[u8]) -> String {
     String::from_utf8_lossy(bytes)
         .chars()
@@ -71,4 +81,50 @@ fn sanitize(bytes: &[u8]) -> String {
         })
         .take(ENRICH_MAX_BYTES)
         .collect()
+}
+
+/// Collapse a remote-supplied value into one terminal-safe display line.
+///
+/// `sanitize` keeps `\n`/`\r`/`\t` so the HTTP parser can do its job, but
+/// a banner is printed as a single table cell. A surviving lone `\r`
+/// there lets a scanned host carriage-return over the row it was printed
+/// on and forge the output above it, and `\n` fabricates extra rows.
+pub(in crate::scan) fn single_line_display(value: &str) -> String {
+    value
+        .chars()
+        .map(|c| if c.is_control() { '.' } else { c })
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{sanitize, single_line_display};
+
+    #[test]
+    fn sanitize_strips_escape_sequences() {
+        let out = sanitize(b"SSH-2.0\x1b[31mspoofed");
+        assert!(!out.contains('\u{1b}'), "ESC survived: {out:?}");
+        assert_eq!(out, "SSH-2.0.[31mspoofed");
+    }
+
+    #[test]
+    fn sanitize_preserves_line_structure_for_the_http_parser() {
+        // parse_http splits on \r\n; mangling these would break it.
+        assert_eq!(
+            sanitize(b"HTTP/1.1 200 OK\r\nServer:\tnginx"),
+            "HTTP/1.1 200 OK\r\nServer:\tnginx"
+        );
+    }
+
+    #[test]
+    fn single_line_display_strips_interior_carriage_return() {
+        // A banner of "real\rfake" would print "fake" over "real".
+        assert_eq!(single_line_display("real\rfake"), "real.fake");
+    }
+
+    #[test]
+    fn single_line_display_strips_newlines_and_escapes() {
+        assert_eq!(single_line_display("a\nb"), "a.b");
+        assert_eq!(single_line_display("a\u{1b}[2Jb"), "a.[2Jb");
+    }
 }

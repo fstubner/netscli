@@ -16,7 +16,7 @@
 //! CLI entry point focused on arg parsing + dispatch.
 use anyhow::{Context, Result};
 use dirs::home_dir;
-use netscli_core::{Database, Ops};
+use netscli_core::{sanitize_for_terminal, Database, Ops};
 use serde::Serialize;
 use std::collections::HashMap;
 use std::net::IpAddr;
@@ -186,7 +186,11 @@ pub fn print_dns_records_text(records: &[netscli_core::dns::DnsRecord]) {
         println!("DNS {record_type}");
         if let Some(values) = grouped.get(record_type) {
             for value in values {
-                println!("  {value}");
+                // Record data is chosen by whoever runs the authoritative
+                // server for the queried name. hickory's TXT Display impl
+                // is a bare from_utf8_lossy with no escaping, so raw ESC
+                // reaches us intact and would drive ANSI sequences here.
+                println!("  {}", sanitize_for_terminal(value));
             }
         }
     }

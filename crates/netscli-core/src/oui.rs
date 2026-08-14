@@ -15,13 +15,30 @@ const EMBEDDED_OUI: &[u8] = include_bytes!("../data/oui.min.json.gz");
 
 pub fn lookup_vendor(mac: &str) -> Option<String> {
     let map = OUI_MAP.get_or_init(load_oui);
-    let key = mac.to_ascii_uppercase().replace([':', '-'], "");
-    let prefix = if key.len() >= 6 {
-        &key[..6]
+    let prefix = oui_prefix(mac)?;
+    map.get(&prefix).cloned()
+}
+
+/// First 6 hex digits of a MAC, uppercased, separators removed.
+///
+/// Takes the first 6 *characters*, not the first 6 bytes. This is public
+/// API, so a caller can hand us anything: `&key[..6]` panicked whenever
+/// byte 6 landed mid-codepoint (e.g. "aabbc€", where € occupies bytes
+/// 5..8). Returns `None` for anything that isn't at least 6 hex digits,
+/// which also rejects the non-MAC input that used to reach the map
+/// lookup.
+fn oui_prefix(mac: &str) -> Option<String> {
+    let prefix: String = mac
+        .chars()
+        .filter(|c| !matches!(c, ':' | '-' | '.'))
+        .take(6)
+        .collect();
+
+    if prefix.chars().count() == 6 && prefix.chars().all(|c| c.is_ascii_hexdigit()) {
+        Some(prefix.to_ascii_uppercase())
     } else {
-        return None;
-    };
-    map.get(prefix).cloned()
+        None
+    }
 }
 
 fn load_oui() -> HashMap<String, String> {
@@ -82,12 +99,45 @@ fn parse_json(data: &str) -> Option<HashMap<String, String>> {
     if let Some(obj) = json.as_object() {
         for (k, v) in obj {
             if let Some(s) = v.as_str() {
-                let cleaned = k.replace([':', '-'], "");
-                if cleaned.len() >= 6 {
-                    map.insert(cleaned[..6].to_ascii_uppercase(), s.to_string());
+                // Same char-vs-byte hazard as `lookup_vendor`: keys come
+                // from a JSON file that may be user-supplied via
+                // NETSCLI_OUI_PATH, so a multi-byte key must not panic.
+                if let Some(prefix) = oui_prefix(k) {
+                    map.insert(prefix, s.to_string());
                 }
             }
         }
     }
     Some(map)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{lookup_vendor, oui_prefix};
+
+    #[test]
+    fn normalizes_common_mac_separators() {
+        for mac in ["AA:BB:CC:DD:EE:FF", "aa-bb-cc-dd-ee-ff", "aabbccddeeff"] {
+            assert_eq!(oui_prefix(mac).as_deref(), Some("AABBCC"), "input: {mac}");
+        }
+    }
+
+    #[test]
+    fn multibyte_input_does_not_panic() {
+        // Regression: `&key[..6]` panicked here because '€' is 3 bytes,
+        // so byte index 6 fell inside it.
+        assert_eq!(oui_prefix("aabbc€"), None);
+        assert_eq!(lookup_vendor("aabbc€"), None);
+        for mac in ["€€€€€€", "日本語テスト", "aa:bb:c€"] {
+            assert!(lookup_vendor(mac).is_none(), "input: {mac}");
+        }
+    }
+
+    #[test]
+    fn rejects_short_and_non_hex_input() {
+        assert_eq!(oui_prefix("aabb"), None);
+        assert_eq!(oui_prefix(""), None);
+        assert_eq!(oui_prefix("zzzzzz"), None);
+        assert_eq!(oui_prefix("not-a-mac-at-all"), None);
+    }
 }

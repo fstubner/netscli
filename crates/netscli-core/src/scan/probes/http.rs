@@ -1,7 +1,7 @@
 use tokio::io::{AsyncRead, AsyncWrite, AsyncWriteExt};
 use tokio::time::timeout;
 
-use super::{probe_timeout, read_once, read_until, sanitize};
+use super::{probe_timeout, read_once, read_until, sanitize, single_line_display};
 use crate::scan::types::{HttpHeader, HttpProbe};
 
 const HTTP_METHOD: &[u8] = b"HEAD / HTTP/1.1";
@@ -85,13 +85,15 @@ fn http_banner(http: &HttpProbe) -> Option<String> {
         .find(|h| h.name.eq_ignore_ascii_case("server"))
         .map(|h| h.value.clone())
         .or_else(|| http.status_line.clone())
+        // Server header values and status lines are attacker-chosen and
+        // get printed as a single table cell.
+        .map(|value| single_line_display(&value))
 }
 
 pub(in crate::scan) fn first_banner_line(raw: &str) -> String {
-    raw.lines()
-        .next()
-        .unwrap_or(raw)
-        .trim()
+    // `.trim()` only removes a *trailing* \r; an interior one survives
+    // and would let the remote host overwrite its own output row.
+    single_line_display(raw.lines().next().unwrap_or(raw).trim())
         .chars()
         .take(160)
         .collect()

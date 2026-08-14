@@ -22,9 +22,9 @@ pub use error::{Error, Result};
 pub use arp::{ArpEntry, InterfaceInfo, NetworkManager};
 pub use common::{
     default_ipv4_subnet_string, default_ports, detect_default_ipv4_addr,
-    detect_default_ipv4_subnet, parse_ports, parse_ports_checked, DEFAULT_CONCURRENCY,
-    DEFAULT_DNS_TIMEOUT_MS, DEFAULT_PING_TIMEOUT_MS, DEFAULT_PORTS, DEFAULT_SCAN_TIMEOUT_MS,
-    DEFAULT_SUBNET, MAX_PORTS_PER_SCAN,
+    detect_default_ipv4_subnet, parse_ports, parse_ports_checked, sanitize_for_terminal,
+    DEFAULT_CONCURRENCY, DEFAULT_DNS_TIMEOUT_MS, DEFAULT_PING_TIMEOUT_MS, DEFAULT_PORTS,
+    DEFAULT_SCAN_TIMEOUT_MS, DEFAULT_SUBNET, MAX_PORTS_PER_SCAN,
 };
 #[cfg(feature = "db")]
 pub use db::{Database, HostRecord, ScanHistoryRecord};

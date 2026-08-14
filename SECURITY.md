@@ -16,14 +16,19 @@ the subject. Plain text is fine.
 
 ## Supported versions
 
-Only the latest `0.x` release gets security fixes. The project is
-pre-`1.0`, so older `0.x.y` releases aren't patched; the fix will
-land in the next point release.
+Only the **latest published release** gets security fixes. The project
+is pre-`1.0`, so older releases aren't patched; the fix lands in the
+next point release.
 
-| Version | Supported |
-|---------|-----------|
-| 0.3.x   | yes       |
-| < 0.3   | no        |
+"Latest published" means the newest tag on
+https://github.com/fstubner/netscli/releases — not whatever version
+number happens to be in the source tree, which may be ahead of what has
+actually shipped.
+
+This is deliberately phrased as a rule rather than a table of version
+numbers: a hardcoded table goes stale the moment a release is cut or
+deferred, and a stale table can tell users their supported version is
+unsupported.
 
 ## Scope
 
