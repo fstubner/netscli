@@ -142,12 +142,25 @@ async fn handle_request_inner(
         // lifecycle. These are stateful (server-held job handles, in
         // `jobs.rs`), so they stay separate from `dispatch_tool`'s
         // stateless tool table below.
+        // The guard is bound to a local rather than inlined as
+        // `&mut lock(state)?`: a guard built inside the argument list is a
+        // temporary, and the reborrow through it does not coerce to
+        // `&mut ServerState` there.
         #[cfg(feature = "pcap")]
-        "start_pcap_capture" => start_pcap_capture_job(&mut lock(state)?, params),
+        "start_pcap_capture" => {
+            let mut guard = lock(state)?;
+            start_pcap_capture_job(&mut guard, params)
+        }
         #[cfg(feature = "pcap")]
-        "get_pcap_capture_status" => pcap_job_status(&lock(state)?, params),
+        "get_pcap_capture_status" => {
+            let guard = lock(state)?;
+            pcap_job_status(&guard, params)
+        }
         #[cfg(feature = "pcap")]
-        "get_pcap_capture_result" => pcap_job_result(&lock(state)?, params),
+        "get_pcap_capture_result" => {
+            let guard = lock(state)?;
+            pcap_job_result(&guard, params)
+        }
 
         // Every other backwards-compatible direct method name maps 1:1 onto
         // a `tools/call` tool of the same name; share that table instead of
@@ -237,16 +250,18 @@ async fn handle_tools_call(
     {
         match p.name.as_str() {
             "start_pcap_capture" => {
+                let mut guard = lock(state)?;
                 return Ok(mcp_tool_result_text(start_pcap_capture_job(
-                    &mut lock(state)?,
-                    args,
-                )?))
+                    &mut guard, args,
+                )?));
             }
             "get_pcap_capture_status" => {
-                return Ok(mcp_tool_result_text(pcap_job_status(&lock(state)?, args)?))
+                let guard = lock(state)?;
+                return Ok(mcp_tool_result_text(pcap_job_status(&guard, args)?));
             }
             "get_pcap_capture_result" => {
-                return Ok(mcp_tool_result_text(pcap_job_result(&lock(state)?, args)?))
+                let guard = lock(state)?;
+                return Ok(mcp_tool_result_text(pcap_job_result(&guard, args)?));
             }
             _ => {}
         }
