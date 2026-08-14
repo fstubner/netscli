@@ -22,12 +22,18 @@ pub(super) fn print_post_install_status(deps: &[DependencyStatus]) {
     print_compact_status(deps);
 }
 
-pub(super) fn print_recommended_commands(commands: &[String]) {
-    println!("\n📋 Recommended install commands:\n");
+pub(super) fn print_recommended_commands(commands: &[super::commands::InstallCommand]) {
+    println!("\n📋 Recommended install steps:\n");
     for cmd in commands {
-        println!("  {}", cmd);
+        if cmd.runnable {
+            println!("  {}", cmd.display);
+        } else {
+            // Not argv — `netscli setup --execute` deliberately will not
+            // run this, so don't present it as a pasteable command.
+            println!("  (manual) {}", cmd.display);
+        }
     }
-    println!("\n💡 Copy and paste these commands to install dependencies.\n");
+    println!("\n💡 Run the commands above to install dependencies.\n");
 }
 
 pub(super) fn print_diagnostics(deps: &[DependencyStatus]) {

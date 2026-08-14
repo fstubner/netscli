@@ -62,45 +62,64 @@ async fn run_interactive_setup(
     state: &mut SetupState,
 ) -> Result<()> {
     println!("\n📦 Missing dependencies detected. Let's set them up:\n");
+    for dep in missing {
+        println!("  ✗ {}", dep.name);
+    }
 
     let commands = recommend_commands();
-    let mut to_install = Vec::new();
 
-    for (idx, dep) in missing.iter().enumerate() {
-        let install_cmd = commands.get(idx).or_else(|| commands.first());
-        let Some(install_cmd) = install_cmd else {
-            println!("  ⚠️  No install command available for {}", dep.name);
-            continue;
-        };
+    // The recommended steps are not per-dependency — one platform's set
+    // installs everything we look for. Pairing them positionally against
+    // `missing` meant that with both libpcap and tcpdump absent the user
+    // was asked twice and the *same* command ran twice. Ask once, then
+    // run the whole set in order.
+    let (runnable, advisory): (Vec<_>, Vec<_>) = commands.iter().partition(|c| c.runnable);
 
-        let should_install = Confirm::with_theme(theme)
-            .with_prompt(format!("Install {}?", dep.name))
-            .default(true)
-            .interact()?;
-
-        if should_install {
-            to_install.push((dep.name.clone(), install_cmd.clone()));
+    if !advisory.is_empty() {
+        println!("\n📋 These steps have to be done manually:\n");
+        for cmd in &advisory {
+            println!("  {}", cmd.display);
         }
     }
 
-    if to_install.is_empty() {
+    if runnable.is_empty() {
+        println!("\n⏭️  Nothing can be installed automatically on this platform.\n");
+        save_state(state)?;
+        return Ok(());
+    }
+
+    println!("\n📋 Will run:\n");
+    for cmd in &runnable {
+        println!("  {}", cmd.display);
+    }
+    println!();
+
+    let should_install = Confirm::with_theme(theme)
+        .with_prompt("Run these install commands?")
+        .default(true)
+        .interact()?;
+
+    if !should_install {
         println!("\n⏭️  Skipping installation. You can run `netscli setup --execute` later.\n");
         save_state(state)?;
         return Ok(());
     }
 
     println!("\n🔧 Installing dependencies...\n");
-    for (name, cmdline) in &to_install {
-        println!("Installing {}...", name);
-        let Some(status) = run_command_line(cmdline).await? else {
+    for cmd in &runnable {
+        println!("Running: {}", cmd.display);
+        let Some(status) = run_command_line(&cmd.display).await? else {
             println!("  ⚠️  Nothing to run.");
             continue;
         };
 
         if status.success() {
-            println!("  ✅ {} installed successfully", name);
+            println!("  ✅ succeeded");
         } else {
-            println!("  ❌ {} installation failed (exit code: {})", name, status);
+            // Later steps usually depend on earlier ones (apt-get update
+            // before apt-get install), so don't press on after a failure.
+            println!("  ❌ failed (exit code: {})", status);
+            break;
         }
     }
 
@@ -116,13 +135,28 @@ async fn run_non_interactive_setup(state: &mut SetupState) -> Result<()> {
     let commands = recommend_commands();
     println!("\n🔧 Installing dependencies (non-interactive mode)...\n");
 
-    if let Some(cmdline) = commands.first() {
-        println!("Running: {}\n", cmdline);
-        match run_command_line(cmdline).await? {
-            Some(status) if status.success() => println!("✅ Install command succeeded."),
-            Some(status) => println!("❌ Install command exited with status {}", status),
-            None => println!("Nothing to run."),
+    // Run every runnable step, not just the first — on Linux the update
+    // and the install are two separate argv invocations.
+    let mut ran_any = false;
+    for cmd in commands.iter().filter(|c| c.runnable) {
+        ran_any = true;
+        println!("Running: {}", cmd.display);
+        match run_command_line(&cmd.display).await? {
+            Some(status) if status.success() => println!("  ✅ succeeded"),
+            Some(status) => {
+                println!("  ❌ exited with status {}", status);
+                break;
+            }
+            None => println!("  Nothing to run."),
         }
+    }
+
+    for cmd in commands.iter().filter(|c| !c.runnable) {
+        println!("\n📋 Manual step required:\n  {}", cmd.display);
+    }
+
+    if !ran_any {
+        println!("Nothing can be installed automatically on this platform.");
     }
 
     let refreshed = collect_status().await;
