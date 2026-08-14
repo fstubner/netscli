@@ -1,10 +1,48 @@
 # Publishing netscli
 
-This is a workspace with three publishable crates that depend on each other.
-Crates.io requires dependencies to be published before anything that depends
-on them, so the order matters.
+Per-channel reference: what each distribution channel is, what publishes to
+it, what it needs, and how to fix it when it breaks.
 
-## Publish order
+For the step-by-step *process* of cutting a release, see
+[`RELEASE.md`](RELEASE.md). This document is the reference you consult when
+one channel misbehaves.
+
+## Channels at a glance
+
+netscli publishes to **six** channels via **nine** automated jobs. Everything
+except the crates.io publish is triggered by promoting a GitHub release to
+public.
+
+| Channel | Artifacts | Job in `publish.yml` | Deployed to |
+| --- | --- | --- | --- |
+| crates.io | `netscli-core`, `netscli-mcp`, `netscli` | `crates-io` | crates.io |
+| GitHub Releases | 11 CLI assets + 5 GUI installers, each with `.sha256`/`.sig`/`.pem` | *(`release.yml`, not `publish.yml`)* | this repo's Releases |
+| Homebrew | CLI formula + GUI cask | `homebrew`, `homebrew-cask` | `fstubner/homebrew-tap` |
+| Scoop | CLI + GUI manifests | `scoop`, `scoop-gui` | `fstubner/scoop-bucket` |
+| winget | `fstubner.netscli`, `fstubner.netscli.gui` | `winget`, `winget-gui` | `microsoft/winget-pkgs` (PR) |
+| AUR | `netscli-bin`, `netscli-gui-bin` | `aur`, `aur-gui` | `aur.archlinux.org` |
+
+Templates for the packaging manifests live under [`packaging/`](../packaging/)
+for reference. The **deployed** copies live in the tap, bucket, AUR, and
+winget-pkgs — the jobs re-stamp those on every release; the templates in this
+repo are not what users install.
+
+### What is NOT published
+
+- **The desktop app is not on crates.io.** `netscli-gui` is a Tauri app,
+  distributed only as platform installers.
+- **No published artifact has packet capture.** Every release asset and
+  installer is built without `--features pcap`, deliberately, so the default
+  install has no libpcap/Npcap dependency and we do not redistribute Npcap.
+  The `-pcap` CLI variants are the exception and are published as separate
+  release assets. There is no packet-capture desktop installer at all.
+
+## Crates.io
+
+Three crates depend on each other, and crates.io requires dependencies to be
+published first, so the order matters.
+
+### Publish order
 
 1. `netscli-core` (the library — depends on nothing in-workspace)
 2. `netscli-mcp` (depends on `netscli-core`)
@@ -127,18 +165,149 @@ Finally, move the `## [Unreleased]` content in `CHANGELOG.md` under a
 `## [X.Y.Z] — YYYY-MM-DD` heading and add the matching link reference at
 the bottom of the file.
 
-## GitHub release
+## GitHub Releases
 
-Platform installers (and the download links in the install scripts) come
-from the GitHub release, not crates.io. The `release.yml` workflow fires
-when you publish a release on GitHub:
+Platform installers, and the download links the install scripts resolve,
+come from the GitHub release — not crates.io. `release.yml` fires on
+`release: published`.
 
 ```bash
-# Tag the commit
-git tag v0.2.0
-git push origin v0.2.0
-
-# Then on GitHub: Releases → Draft a new release → pick the tag →
-# fill in notes → publish. The workflow builds binaries for every
-# platform in the matrix and attaches them as release assets.
+git tag vX.Y.Z
+git push origin vX.Y.Z
+# Then: Releases → Draft a new release → pick the tag → notes → publish.
 ```
+
+It builds and attaches, per asset, four files: the artifact, `.sha256`,
+`.sig`, and `.pem`.
+
+- **11 CLI assets** — linux x86_64/aarch64 (gnu, each with a `-pcap`
+  variant), linux x86_64 musl (no `-pcap`), windows x86_64 (plus `-pcap`),
+  macos x86_64/aarch64 (each plus `-pcap`).
+- **5 GUI installers** from 4 matrix entries — the Linux entry emits both
+  `.deb` and `.AppImage`; then two `.dmg` (aarch64, x86_64) and one `.msi`.
+
+Signing is Sigstore keyless via `cosign sign-blob`, using the Actions OIDC
+token — no key material is stored. Consumers verify with the command in
+[`RELEASE.md`](RELEASE.md#sigstore-signature-verification). Note that
+**nothing downstream verifies these signatures automatically**; the package
+managers rely on their own hash checks instead.
+
+**Windows pcap builds** link against the Npcap SDK, which `release.yml`
+downloads and verifies against a pinned SHA256. Bumping the SDK version
+means re-pinning that digest.
+
+## Homebrew
+
+Two artifacts in one tap, `fstubner/homebrew-tap`:
+
+| Artifact | File | Job | Install |
+| --- | --- | --- | --- |
+| CLI | `Formula/netscli.rb` | `homebrew` | `brew install fstubner/tap/netscli` |
+| Desktop | `Casks/netscli.rb` | `homebrew-cask` | `brew install --cask fstubner/tap/netscli` |
+
+**The Formula and the Cask share the token `netscli`.** A bare
+`brew install netscli` is ambiguous — always qualify with `--cask` for the
+desktop app, and prefer the fully-qualified `fstubner/tap/netscli` form in
+documentation so it works without a separate `brew tap` step.
+
+`publish-homebrew.sh` sed-patches the version and awk-patches each `sha256`
+that follows a matching url line. `publish-homebrew-cask.sh` regenerates the
+Cask wholesale from a quoted heredoc, because the Cask block puts `sha256`
+*before* `url` and a single-pass awk would need a backwards lookup.
+
+Needs `HOMEBREW_TAP_TOKEN`.
+
+## Scoop
+
+Two manifests in `fstubner/scoop-bucket`, both patched with `jq`:
+
+| Artifact | File | Job | Install |
+| --- | --- | --- | --- |
+| CLI | `bucket/netscli.json` | `scoop` | `scoop install netscli` |
+| Desktop | `bucket/netscli-gui.json` | `scoop-gui` | `scoop install netscli-gui` |
+
+Users add the bucket once with
+`scoop bucket add fstubner https://github.com/fstubner/scoop-bucket`.
+
+Needs `SCOOP_BUCKET_TOKEN`.
+
+## winget
+
+Two package identifiers submitted to `microsoft/winget-pkgs` by
+`vedantmgoyal9/winget-releaser`, which forks the repo under your account and
+opens a PR.
+
+| Identifier | Job | Install |
+| --- | --- | --- |
+| `fstubner.netscli` | `winget` | `winget install fstubner.netscli` |
+| `fstubner.netscli.gui` | `winget-gui` | `winget install fstubner.netscli.gui` |
+
+**A moderator has to merge the PR** — usually hours to days. This is the one
+channel that is not fully automated, and the CLA must be signed once per
+account.
+
+Both jobs poll for the relevant `.sha256` sidecar for up to 15 minutes before
+invoking the action, because `release.yml` and `publish.yml` both fire on
+`release: published` and race each other. Without the poll the action sees no
+matching asset and fails with an empty `--urls`.
+
+winget is the **recommended Windows install path** because it verifies the
+installer against the SHA256 in the manifest. Direct MSI/NSIS downloads are
+unsigned and show SmartScreen warnings — see
+[`RELEASE.md`](RELEASE.md#windows-trust-and-signing-policy). Do not describe
+winget as a substitute for Authenticode signing.
+
+The `packaging/winget/<pkg>/<version>/` directories are **reference copies**
+of submitted manifests, one directory per version. Do not edit an existing
+version's directory to hold a different version's content — winget-pkgs keys
+on the directory name, and a mismatch files a conflicting duplicate.
+
+Needs `WINGET_TOKEN` (classic PAT, `public_repo`).
+
+## AUR
+
+Two packages pushed over SSH by `KSXGitHub/github-actions-deploy-aur`, which
+regenerates `.SRCINFO` server-side.
+
+| Package | Job | Install |
+| --- | --- | --- |
+| `netscli-bin` | `aur` | `yay -S netscli-bin` |
+| `netscli-gui-bin` | `aur-gui` | `yay -S netscli-gui-bin` |
+
+Each job computes the asset SHA256s, renders a bumped PKGBUILD with `sed`,
+and pushes. The render happens **inside `$GITHUB_WORKSPACE`**, not `/tmp` —
+the deploy action runs in a container that mounts the workspace only, and a
+`/tmp` path produces a confusing `bash: --command: invalid option` error.
+
+AUR has **no review step**. A bad push is live immediately.
+
+Needs `AUR_SSH_PRIVATE_KEY`.
+
+## When a channel fails
+
+Every job is independent and re-runnable. `publish.yml` accepts a
+`workflow_dispatch` tag input, so you can re-run a single channel without
+rebuilding binaries or touching the others:
+
+```bash
+gh workflow run publish.yml -f tag=vX.Y.Z
+```
+
+The publish scripts are idempotent — re-running a channel that already
+succeeded commits nothing and exits cleanly, rather than failing on "nothing
+to commit".
+
+Failure modes worth knowing:
+
+| Symptom | Cause |
+| --- | --- |
+| `refusing to publish malformed tag` | The tag input is not `vMAJOR.MINOR.PATCH[-prerelease]`. Deliberate — the tag reaches `sed` replacements and commit messages. |
+| `checksum mismatch for <asset>` | The `.sha256` sidecar disagrees with the actual bytes. The scripts download and re-hash rather than trusting the sidecar; investigate before overriding. |
+| `<asset>.sha256 is not a 64-char hex digest` | Sidecar truncated or missing. Previously this silently produced a manifest with blank hashes. |
+| `never became available` after 15 min | `release.yml` did not attach the asset. Check that job first; publishing cannot proceed without it. |
+| winget job fails with empty `--urls` | Asset poll passed but the action ran too early, or the package has never been accepted into winget-pkgs. |
+| crates.io "no matching package named …" | An earlier crate in the order has not indexed yet. Wait and re-run; the job sleeps 90s between publishes. |
+
+Because crates.io publishes are **permanent** — you can yank but not delete,
+and a yanked version keeps its number — a failed crates.io publish means
+bumping the patch version, not retrying the same one.
