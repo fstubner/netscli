@@ -95,8 +95,25 @@ async function waitForServer() {
 
 async function ensurePreview() {
   if (await isServing()) {
-    console.log(`Using existing preview server at ${baseUrl}`);
-    return;
+    // Reusing whatever answers on this port is how a green local run stops
+    // meaning anything. A long-running `astro dev` server also listens on
+    // 4322 and serves from source with different CSS processing, so the gate
+    // silently scanned something other than `dist/` -- and passed while CI,
+    // which always starts fresh, failed on a 1.53:1 contrast bug.
+    //
+    // Opt in explicitly if the running server really is the built output.
+    if (process.env.A11Y_REUSE_SERVER === '1') {
+      console.log(`Reusing the server already at ${baseUrl} (A11Y_REUSE_SERVER=1).`);
+      console.log('Note: this is only valid if it is serving the current dist/.');
+      return;
+    }
+    console.error(
+      `Something is already listening on ${baseUrl}.\n` +
+        'Refusing to scan it, because a dev server serves different output than\n' +
+        'the production build and would make this check pass on the wrong thing.\n' +
+        'Stop it, or set A11Y_REUSE_SERVER=1 if it is serving the current dist/.',
+    );
+    process.exit(1);
   }
 
   console.log(`Starting Astro preview at ${baseUrl}`);
@@ -127,9 +144,15 @@ async function ensurePreview() {
  * Chrome has no "force light" switch because light IS the default with
  * no OS preference; `--force-dark-mode` covers the other side.
  */
+// `headless` is not optional here. Without it, axe launches a headed Chrome
+// that takes its colour scheme from the OS and ignores --force-dark-mode, so
+// *both* passes render the same theme and one of them is never tested. That
+// blind spot is not theoretical: it hid a 1.53:1 contrast failure in the
+// caution callout on /docs/packet-capture/ from every local run, and only CI
+// -- which is headless -- caught it.
 const THEMES = [
-  { name: 'light', chromeOptions: [] },
-  { name: 'dark', chromeOptions: ['force-dark-mode'] },
+  { name: 'light', chromeOptions: ['headless'] },
+  { name: 'dark', chromeOptions: ['headless', 'force-dark-mode'] },
 ];
 
 /**

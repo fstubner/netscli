@@ -1,0 +1,29 @@
+/*
+ * Callout (aside) inline content contrast.
+ *
+ * `code` and `a` inside a Starlight aside inherited the global mint accent,
+ * which is tuned for contrast against the #111 page background rather than a
+ * callout's own coloured one. On the amber `caution` variant that measured
+ * 1.53:1 for code and 3.53:1 for links, both far below the 4.5:1 AA
+ * threshold. Measured after this rule: 6.77:1 and 8.34:1.
+ *
+ * `--sl-color-asides-text-accent` is set per variant by Starlight, so this
+ * stays correct for note/tip/danger too instead of hard-coding one colour.
+ *
+ * Why here, and why `!important`: earlier files in this stack already declare
+ * `.sl-markdown-content a` and `.sl-markdown-content :not(pre) > code` with
+ * `!important`, so a scoped rule in the file that looks like it owns asides
+ * (05-docs-surfaces.css) is silently overridden. This is the B-23 tax --
+ * placement is load-order-dependent and the cascade cannot be reasoned about
+ * locally. Consolidating that stack would let this move somewhere sensible.
+ */
+.sl-markdown-content .starlight-aside a {
+  color: var(--sl-color-asides-text-accent) !important;
+}
+
+.sl-markdown-content .starlight-aside :not(pre) > code {
+  color: var(--sl-color-asides-text-accent) !important;
+  /* The default translucent-grey chip is nearly invisible on a coloured
+     callout; darkening it restores the inline-code affordance. */
+  background: rgba(0, 0, 0, 0.28) !important;
+}
