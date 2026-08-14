@@ -187,7 +187,7 @@ export function AppDialogs({
           onSelectTab={workspace.setActiveTabId}
           onSelectRow={(tabId, rowIndex) => {
             workspace.setActiveTabId(tabId);
-            window.setTimeout(() => workspace.selectRow(rowIndex), 0);
+            workspace.selectRowInTab(tabId, rowIndex);
           }}
         />
       )}

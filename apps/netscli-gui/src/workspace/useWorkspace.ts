@@ -1,18 +1,19 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { isTauri } from '../services/env';
 import * as netscli from '../services/netscli';
 import { createTab, defaultDetailTab } from '../tools/registry';
 import { buildCommand, buildRows, columnsFor, filterAndSortRows } from '../tools/presentation';
-import type { HistoryEntry, ResultColumn, RowSelectionMode, WorkspaceTab } from '../tools/types';
+import type { HistoryEntry, ResultColumn, WorkspaceTab } from '../tools/types';
 import { applyContextDefaults } from './networkDefaults';
 import { createDemoScreenshotTabs, isDemoScreenshotMode } from './demoMode';
 import { cancelWorkspaceTab, runWorkspaceTab } from './operations';
-import { clampIndex, normalizeSelection, rangeBetween } from './selection';
+import { clampIndex, normalizeSelection } from './selection';
 import { loadHistory, saveHistory } from './historyStorage';
 import { enrichInterfaceRows } from './interfaceRows';
 import { applyProgressUpdate } from './traceProgress';
 import { useResultActions } from './useResultActions';
+import { useSelection } from './useSelection';
 import { useTabLifecycle } from './useTabLifecycle';
 import type { WorkspaceModel, WorkspaceOptions } from './types';
 import { useNetworkStatus } from './useNetworkStatus';
@@ -73,6 +74,16 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
     interfaces,
   });
 
+  const { selectRow, selectRowInTab, selectAllRows } = useSelection({
+    activeTab,
+    defaultInterface,
+    filterText,
+    patchTab,
+    rows,
+    tabs,
+    trafficInterfaceName,
+  });
+
   const resultActions = useResultActions({
     activeTab,
     columns,
@@ -106,30 +117,66 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
     });
   }, [defaultInterface, interfaces, trafficInterfaceName]);
 
+  // Reset the selection when the *same* tab is re-sorted or re-filtered,
+  // because the row at a given index is then a different row.
+  //
+  // Keying this on `sortKey`/`sortDir` alone was wrong: each tool kind has
+  // its own DEFAULT_SORT, so merely switching tabs changed those values and
+  // wiped the destination tab's selection (B-16). Comparing against the
+  // previous tab id distinguishes "this tab re-sorted" from "a different
+  // tab became active".
+  const lastSortRef = useRef<{ tabId: string; sortKey?: string; sortDir?: string; filterText: string } | null>(null);
   useEffect(() => {
     if (!activeTab) return;
+    const prev = lastSortRef.current;
+    const next = {
+      tabId: activeTab.id,
+      sortKey: activeTab.sortKey,
+      sortDir: activeTab.sortDir,
+      filterText,
+    };
+    lastSortRef.current = next;
+
+    // First render, or the active tab changed: adopt the new state without
+    // touching the selection the destination tab already had.
+    if (!prev || prev.tabId !== next.tabId) return;
+    if (prev.sortKey === next.sortKey && prev.sortDir === next.sortDir && prev.filterText === next.filterText) {
+      return;
+    }
+
     patchTab(activeTab.id, {
       selectedIndex: 0,
       selectedIndices: [0],
       selectionAnchor: 0,
     });
-  }, [activeTab?.sortDir, activeTab?.sortKey, filterText]);
+  }, [activeTab?.id, activeTab?.sortDir, activeTab?.sortKey, filterText]);
 
   useEffect(() => {
     if (!isTauri()) return;
     let cancelled = false;
     let unlisten: (() => void) | undefined;
-    void netscli.listenOperationProgress((progress) => {
-      const tabId = Object.entries(activeOps.current).find(([, opId]) => opId === progress.op_id)?.[0];
-      if (!tabId) return;
-      setTabs((prev) => prev.map((tab) => (tab.id === tabId ? applyProgressUpdate(tab, progress) : tab)));
-    }).then((dispose) => {
-      if (cancelled) {
-        dispose();
-      } else {
-        unlisten = dispose;
-      }
-    });
+    void netscli
+      .listenOperationProgress((progress) => {
+        const tabId = Object.entries(activeOps.current).find(([, opId]) => opId === progress.op_id)?.[0];
+        if (!tabId) return;
+        setTabs((prev) => prev.map((tab) => (tab.id === tabId ? applyProgressUpdate(tab, progress) : tab)));
+      })
+      .then((dispose) => {
+        if (cancelled) {
+          dispose();
+        } else {
+          unlisten = dispose;
+        }
+      })
+      // Without this, a rejected `listen()` left every later operation
+      // silently reporting no progress, with nothing surfaced to the user
+      // (B-15). Every other Tauri call in the codebase is already guarded.
+      .catch((error: unknown) => {
+        showToast({
+          kind: 'interaction',
+          message: `Progress updates unavailable: ${error instanceof Error ? error.message : String(error)}`,
+        });
+      });
     return () => {
       cancelled = true;
       unlisten?.();
@@ -156,65 +203,6 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
         };
       }),
     );
-  }
-
-  function selectRow(index: number, mode: RowSelectionMode = 'single') {
-    if (!activeTab) return;
-    const rowCount = rows.length;
-    if (rowCount === 0) return;
-
-    const nextIndex = clampIndex(index, rowCount);
-    const currentSelection = normalizeSelection(
-      activeTab.selectedIndices,
-      activeTab.selectedIndex,
-      rowCount,
-    );
-    const anchor = clampIndex(activeTab.selectionAnchor ?? activeTab.selectedIndex, rowCount);
-
-    if (mode === 'range') {
-      patchTab(activeTab.id, {
-        selectedIndex: nextIndex,
-        selectedIndices: rangeBetween(anchor, nextIndex),
-        selectionAnchor: anchor,
-      });
-      return;
-    }
-
-    if (mode === 'toggle') {
-      const selected = new Set(currentSelection);
-      if (selected.has(nextIndex) && selected.size > 1) {
-        selected.delete(nextIndex);
-      } else {
-        selected.add(nextIndex);
-      }
-      patchTab(activeTab.id, {
-        selectedIndex: nextIndex,
-        selectedIndices: Array.from(selected).sort((left, right) => left - right),
-        selectionAnchor: nextIndex,
-      });
-      return;
-    }
-
-    if (mode === 'focus') {
-      patchTab(activeTab.id, { selectedIndex: nextIndex });
-      return;
-    }
-
-    patchTab(activeTab.id, {
-      selectedIndex: nextIndex,
-      selectedIndices: [nextIndex],
-      selectionAnchor: nextIndex,
-    });
-  }
-
-  function selectAllRows() {
-    if (!activeTab || rows.length === 0) return;
-    patchTab(activeTab.id, {
-      selectedIndex: 0,
-      selectedIndices: rows.map((_row, index) => index),
-      selectionAnchor: 0,
-      detailTab: rows.length > 1 ? 'selection' : activeTab.detailTab,
-    });
   }
 
   function closeOtherTabs() {
@@ -297,6 +285,7 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
     patchTab,
     patchForm,
     selectRow,
+    selectRowInTab,
     selectAllRows,
     addTab,
     openHostTool,

@@ -5,8 +5,8 @@ import { createTab, TOOL_CONFIG } from '../tools/registry';
 import type { ResultColumn, ResultRow, WorkspaceTab } from '../tools/types';
 import {
   buildResultBundle,
-  copyRowsDetails,
-  copyRowsRaw,
+  formatRowsDetails,
+  formatRowsRaw,
   exportCurrentResult,
   exportSelectedRows,
   parseResultBundle,
@@ -94,16 +94,37 @@ export function useResultActions({
     }
   }
 
+  /**
+   * Copy text, reporting whether it actually landed.
+   *
+   * The previous shape — `navigator.clipboard?.writeText(x).catch(() =>
+   * undefined)` followed by an unconditional "copied" toast — reported
+   * success in two failing cases: a rejected write (swallowed by the catch)
+   * and a missing `navigator.clipboard` (the optional chain made it a silent
+   * no-op). The export path already reports its failures; this matches it.
+   */
+  async function copyToClipboard(label: string, text: string) {
+    if (!navigator.clipboard) {
+      showToast({ message: `${label} failed: clipboard unavailable`, kind: 'interaction' });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast({ message: `${label} copied`, kind: 'interaction' });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      showToast({ message: `${label} copy failed: ${message}`, kind: 'interaction' });
+    }
+  }
+
   async function copyCommand() {
     if (!commandPreview) return;
-    await navigator.clipboard?.writeText(commandPreview).catch(() => undefined);
-    showToast({ message: 'Command copied', kind: 'interaction' });
+    await copyToClipboard('Command', commandPreview);
   }
 
   async function copyCellValue(label: string, value: string) {
     if (!value) return;
-    await navigator.clipboard?.writeText(value).catch(() => undefined);
-    showToast({ message: `${label} copied`, kind: 'interaction' });
+    await copyToClipboard(label, value);
   }
 
   async function openCaptureFile(path: string) {
@@ -123,21 +144,15 @@ export function useResultActions({
   async function copySelectedDetails() {
     const rowsToCopy = selectedRows.length > 0 ? selectedRows : selectedRow ? [selectedRow] : [];
     if (rowsToCopy.length === 0) return;
-    await copyRowsDetails(rowsToCopy);
-    showToast({
-      message: rowsToCopy.length === 1 ? 'Details copied' : `${rowsToCopy.length} rows copied`,
-      kind: 'interaction',
-    });
+    const label = rowsToCopy.length === 1 ? 'Details' : `${rowsToCopy.length} rows`;
+    await copyToClipboard(label, formatRowsDetails(rowsToCopy));
   }
 
   async function copySelectedRaw() {
     const rowsToCopy = selectedRows.length > 0 ? selectedRows : selectedRow ? [selectedRow] : [];
     if (rowsToCopy.length === 0) return;
-    await copyRowsRaw(rowsToCopy);
-    showToast({
-      message: rowsToCopy.length === 1 ? 'Raw row copied' : `Raw ${rowsToCopy.length} rows copied`,
-      kind: 'interaction',
-    });
+    const label = rowsToCopy.length === 1 ? 'Raw row' : `Raw ${rowsToCopy.length} rows`;
+    await copyToClipboard(label, formatRowsRaw(rowsToCopy));
   }
 
   return {

@@ -28,4 +28,12 @@ export default defineConfig({
       interval: 1000,
     },
   },
+  test: {
+    // Most existing suites are pure modules and need no DOM, so jsdom is
+    // opted into per-file with `@vitest-environment jsdom` rather than paid
+    // for globally. Hook and component tests declare it; the ~57 pure tests
+    // keep running in node.
+    environment: 'node',
+    globals: true,
+  },
 })

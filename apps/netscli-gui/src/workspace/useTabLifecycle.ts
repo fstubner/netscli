@@ -66,16 +66,20 @@ export function useTabLifecycle({
 
   function closeTab(id: string) {
     cancelOperationIds([id]);
-    setTabs((prev) => {
-      const index = prev.findIndex((tab) => tab.id === id);
-      if (index < 0) return prev;
-      const next = prev.filter((tab) => tab.id !== id);
-      if (id === activeTabId) {
-        const replacement = next[Math.max(0, index - 1)] ?? next[0];
-        setActiveTabId(replacement?.id ?? '');
-      }
-      return next;
-    });
+
+    // The replacement id is computed out here rather than inside the
+    // `setTabs` updater. React requires updaters to be pure, and calling
+    // `setActiveTabId` from within one relied on that call being idempotent
+    // — StrictMode double-invokes updaters in dev, and concurrent rendering
+    // may replay them (B-17).
+    const index = tabs.findIndex((tab) => tab.id === id);
+    if (index < 0) return;
+    const remaining = tabs.filter((tab) => tab.id !== id);
+    if (id === activeTabId) {
+      const replacement = remaining[Math.max(0, index - 1)] ?? remaining[0];
+      setActiveTabId(replacement?.id ?? '');
+    }
+    setTabs(remaining);
   }
 
   function closeAllTabs() {

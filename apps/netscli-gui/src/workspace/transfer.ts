@@ -128,9 +128,13 @@ export function exportSelectedRows(
   );
 }
 
-export async function copyRowsDetails(rows: ResultRow[]) {
-  if (rows.length === 0) return;
-  const details = rows
+// These build the text and nothing more. They used to write to the clipboard
+// themselves and swallow the outcome, which left the caller reporting success
+// unconditionally (B-19). Copy reporting now lives in one place, in
+// `useResultActions.copyToClipboard`.
+
+export function formatRowsDetails(rows: ResultRow[]): string {
+  return rows
     .map((row, index) => {
       const body = Object.entries(row.data)
         .map(([key, value]) => `${key}: ${value ?? ''}`)
@@ -138,13 +142,11 @@ export async function copyRowsDetails(rows: ResultRow[]) {
       return rows.length === 1 ? body : `Row ${index + 1}\n${body}`;
     })
     .join('\n\n');
-  await navigator.clipboard?.writeText(details).catch(() => undefined);
 }
 
-export async function copyRowsRaw(rows: ResultRow[]) {
-  if (rows.length === 0) return;
+export function formatRowsRaw(rows: ResultRow[]): string {
   const payload = rows.length === 1 ? rows[0].raw : rows.map((row) => row.raw);
-  await navigator.clipboard?.writeText(JSON.stringify(payload, null, 2)).catch(() => undefined);
+  return JSON.stringify(payload, null, 2);
 }
 
 function exportText(
