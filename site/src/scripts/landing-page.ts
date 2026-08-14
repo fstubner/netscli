@@ -15,6 +15,9 @@ interface GitHubRelease {
 interface NavigatorWithUserAgentData extends Navigator {
   userAgentData?: {
     platform?: string;
+    /** Async, and Chromium-only. `architecture` is a high-entropy hint,
+     *  so it is not exposed on the object directly. */
+    getHighEntropyValues?: (hints: string[]) => Promise<{ architecture?: string }>;
   };
 }
 
@@ -208,12 +211,38 @@ export function initLandingPage(repo: string): void {
 
       const desktopDownload = document.querySelector<HTMLAnchorElement>("#hero-desktop-download");
       if (desktopDownload) {
+        const base = "https://github.com/fstubner/netscli/releases/latest/download";
+        // macOS ships two .dmgs and they are NOT interchangeable. This
+        // button used to hand every Mac visitor the Apple Silicon build,
+        // so Intel users downloaded something that would not run.
+        //
+        // Default to the Intel build, because Rosetta 2 runs it on Apple
+        // Silicon too — an asymmetry worth exploiting, since the wrong
+        // guess in that direction still works and the reverse does not.
+        // Then upgrade to the native arm64 build if the browser will
+        // actually tell us the architecture.
         const desktopUrls: Record<OperatingSystem, string> = {
-          windows: "https://github.com/fstubner/netscli/releases/latest/download/netscli-gui-windows-x86_64.msi",
-          macos: "https://github.com/fstubner/netscli/releases/latest/download/netscli-gui-macos-aarch64.dmg",
-          linux: "https://github.com/fstubner/netscli/releases/latest/download/netscli-gui-linux-x86_64.AppImage",
+          windows: `${base}/netscli-gui-windows-x86_64.msi`,
+          macos: `${base}/netscli-gui-macos-x86_64.dmg`,
+          linux: `${base}/netscli-gui-linux-x86_64.AppImage`,
         };
         desktopDownload.href = desktopUrls[detected];
+
+        if (detected === "macos") {
+          // High-entropy hints are async and Chromium-only; Safari never
+          // resolves this, which is exactly why the default above has to
+          // be the one that runs everywhere.
+          navigatorWithUaData.userAgentData
+            ?.getHighEntropyValues?.(["architecture"])
+            .then(({ architecture }) => {
+              if (architecture === "arm") {
+                desktopDownload.href = `${base}/netscli-gui-macos-aarch64.dmg`;
+              }
+            })
+            .catch(() => {
+              /* keep the Intel default */
+            });
+        }
       }
     }
 

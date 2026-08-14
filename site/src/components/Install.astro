@@ -4,6 +4,12 @@ const { install, copy } = site;
 const { byPlatform, tryCommands, binariesNote } = install;
 const oses = ['windows', 'macos', 'linux'] as const;
 const labels = { windows: 'Windows', macos: 'macOS', linux: 'Linux' };
+// Desktop first: most visitors landing here want the app, and the CLI
+// has the hero's copyable one-liner already.
+const groups = [
+  { key: 'desktop', title: 'Desktop app' },
+  { key: 'cli', title: 'CLI + terminal UI' },
+] as const;
 ---
 <section id="install">
   <div class="w">
@@ -35,20 +41,46 @@ const labels = { windows: 'Windows', macos: 'macOS', linux: 'Linux' };
             data-os={os}
             hidden={os !== 'windows'}
           >
-            <div class="reco">
-              <div class="reco-meta">{byPlatform[os][0].label}</div>
-              <div class="cmd big has-copy always-show">{byPlatform[os][0].command}</div>
-            </div>
-            {byPlatform[os].length > 1 && (
-              <div class="alts">
-                {byPlatform[os].slice(1).map((e) => (
-                  <div class="alt has-copy">
-                    <div class="alt-label">{e.label}</div>
-                    <div class="alt-cmd">{e.command}</div>
+            {groups.map(({ key, title }) => {
+              const entries = byPlatform[os][key];
+              if (!entries.length) return null;
+              const [recommended, ...alternatives] = entries;
+              return (
+                <div class="install-group">
+                  <h3 class="install-group-title">{title}</h3>
+                  <div class="reco">
+                    <div class="reco-meta">{recommended.label}</div>
+                    {recommended.command ? (
+                      <div class="cmd big has-copy always-show">{recommended.command}</div>
+                    ) : (
+                      <a class="cmd big install-download" href={recommended.href} download>
+                        Download {recommended.label}
+                      </a>
+                    )}
+                    {recommended.hint && <p class="install-hint">{recommended.hint}</p>}
                   </div>
-                ))}
-              </div>
-            )}
+                  {alternatives.length > 0 && (
+                    <div class="alts">
+                      {alternatives.map((e) => (
+                        <div class={`alt${e.command ? ' has-copy' : ''}`}>
+                          <div class="alt-label">
+                            {e.label}
+                            {e.hint && <span class="alt-hint">{e.hint}</span>}
+                          </div>
+                          {e.command ? (
+                            <div class="alt-cmd">{e.command}</div>
+                          ) : (
+                            <a class="alt-cmd install-download" href={e.href} download>
+                              Download →
+                            </a>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         ))}
         <p class="footer-note" set:html={binariesNote} />
@@ -144,6 +176,21 @@ const labels = { windows: 'Windows', macos: 'macOS', linux: 'Linux' };
   font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.82rem;
   color:#ccc;overflow-wrap:anywhere;word-break:normal;padding-right:50px;
 }
+/* Two groups per OS panel: desktop app, then CLI. */
+.install-group + .install-group{margin-top:26px}
+.install-group-title{
+  font-size:.8125rem;font-weight:600;color:#8a8a8a;margin:0 0 10px;
+  text-transform:uppercase;letter-spacing:.06em;
+}
+.install-hint{font-size:.7rem;color:#7a7a7a;margin:8px 0 0}
+.alt-hint{display:block;font-size:.7rem;color:#6f6f6f;margin-top:2px;line-height:1.35}
+/* Direct-download rows reuse the command-bar treatment but are links, so
+   they get no copy button and an affordance colour instead. */
+a.install-download{
+  display:block;text-decoration:none;color:#0aae7a;font-weight:500;
+}
+a.install-download:hover{color:#23d198;background:rgba(10,174,122,.08)}
+.alt a.install-download{padding-right:16px}
 .footer-note{margin-top:14px;font-size:.8125rem;color:#777}
 .footer-note a{color:#0aae7a;text-decoration:underline;text-underline-offset:3px}
 .footer-note a:hover{color:#23d198}

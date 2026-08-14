@@ -94,11 +94,30 @@ export type Platform = 'windows' | 'macos' | 'linux';
 
 export interface InstallEntry {
   label: string;
-  /** Shell command(s) shown monospace with copy button. */
-  command: string;
-  /** Optional small hint. NOT rendered in the current OS-tabbed design;
-   *  kept on the type for possible future variants or SEO copy. */
+  /** Shell command(s) shown monospace with copy button. Omit when this
+   *  entry is a direct download — set `href` instead. */
+  command?: string;
+  /** Direct download URL. Entries with an `href` render as a link rather
+   *  than a copyable command, for the installer artifacts that have no
+   *  package-manager equivalent (.msi / .dmg / .deb / .AppImage). */
+  href?: string;
+  /** Optional small hint, rendered under the label. Used to warn about
+   *  the unsigned installers before someone hits a Gatekeeper or
+   *  SmartScreen dialog with no explanation. */
   hint?: string;
+}
+
+/** Install routes for one OS, split by which thing you are installing.
+ *
+ *  Both lists follow the same convention as before: position 0 is the
+ *  recommended entry and renders as the hero card; the rest render as
+ *  alternative rows in array order.
+ */
+export interface PlatformInstall {
+  /** CLI + terminal UI (the `netscli` binary). */
+  cli: InstallEntry[];
+  /** Desktop GUI application. */
+  desktop: InstallEntry[];
 }
 
 export interface TryCommand {
@@ -150,9 +169,8 @@ export interface SiteData {
   };
   surfaces: SurfaceCard[];
   install: {
-    /** Per-OS arrays. Position 0 is the recommended (hero) entry; the
-     *  rest render as alternative rows below it in array order. */
-    byPlatform: Record<Platform, InstallEntry[]>;
+    /** Per-OS install routes, each split into CLI and desktop groups. */
+    byPlatform: Record<Platform, PlatformInstall>;
     tryCommands: TryCommand[];
     binariesNote: string;
   };
