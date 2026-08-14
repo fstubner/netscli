@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 import type { WorkspaceModel } from '../workspace/types';
 
@@ -24,6 +24,16 @@ export function useKeyboardShortcuts({
   workspaceSearchOpen: boolean;
 }) {
   const activeTab = workspace.activeTab;
+
+  // The handler is rebuilt every render (it closes over props that change),
+  // but the *listener* is attached once and reads the latest handler through
+  // this ref.
+  //
+  // Previously the deps array included `workspace` — a fresh object on every
+  // render — plus two fresh closures, so the 3-second network-stats poll
+  // re-rendered App and detached/reattached a document-level keydown listener
+  // continuously (B-18).
+  const handlerRef = useRef<((event: KeyboardEvent) => void) | undefined>(undefined);
 
   useEffect(() => {
     function isEditableTarget(target: EventTarget | null): boolean {
@@ -110,19 +120,15 @@ export function useKeyboardShortcuts({
       }
     }
 
-    document.addEventListener('keydown', handleKeyboardShortcuts);
-    return () => document.removeEventListener('keydown', handleKeyboardShortcuts);
-  }, [
-    activeTab,
-    focusResultFilter,
-    openMenu,
-    requestRun,
-    setOpenMenu,
-    setSettingsOpen,
-    settingsOpen,
-    setWorkspaceSearchOpen,
-    workspace,
-    workspaceSearchOpen,
-  ]);
+    // No deps: this runs after every render and only assigns a ref, which is
+    // far cheaper than swapping a DOM listener.
+    handlerRef.current = handleKeyboardShortcuts;
+  });
+
+  useEffect(() => {
+    const listener = (event: KeyboardEvent) => handlerRef.current?.(event);
+    document.addEventListener('keydown', listener);
+    return () => document.removeEventListener('keydown', listener);
+  }, []);
 }
 

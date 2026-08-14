@@ -68,17 +68,22 @@ function parseFilter(input: string): FilterToken[] {
 
 function tokenizeFilter(query: string): string[] {
   const tokens: string[] = [];
+  const chars = Array.from(query);
   let current = '';
   let quote: '"' | "'" | null = null;
+  let quoteStart = -1;
 
-  for (const char of query) {
+  for (let index = 0; index < chars.length; index += 1) {
+    const char = chars[index];
     if ((char === '"' || char === "'") && quote === null) {
       quote = char;
+      quoteStart = index;
       current += char;
       continue;
     }
     if (char === quote) {
       quote = null;
+      quoteStart = -1;
       current += char;
       continue;
     }
@@ -88,6 +93,20 @@ function tokenizeFilter(query: string): string[] {
       continue;
     }
     current += char;
+  }
+
+  // An unterminated quote means the user is mid-typing on the way to a closing
+  // one. Treating it as a real quote made the whole tail a single literal
+  // token — so `'open` searched for `'open` and silently returned no rows
+  // where `open` returned four (M-6).
+  //
+  // Re-tokenizing without the dangling quote makes typing `"open 22` behave
+  // like `open 22` until the quote is closed. Each pass removes one character,
+  // so the recursion terminates. A quote *inside* a word (`don't`) never opens
+  // one here, so apostrophes in search text still work.
+  if (quote !== null && quoteStart >= 0) {
+    chars.splice(quoteStart, 1);
+    return tokenizeFilter(chars.join(''));
   }
 
   if (current.trim()) tokens.push(current.trim());
@@ -112,9 +131,11 @@ function keysFor(key: string): string[] {
 }
 
 function stripQuotes(value: string): string {
+  // The length guard matters: a lone `"` both starts and ends with a quote,
+  // and `slice(1, -1)` on it would silently produce an empty term.
   if (
-    (value.startsWith('"') && value.endsWith('"')) ||
-    (value.startsWith("'") && value.endsWith("'"))
+    value.length >= 2 &&
+    ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'")))
   ) {
     return value.slice(1, -1);
   }
