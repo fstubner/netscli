@@ -1,3 +1,5 @@
+use std::sync::{Arc, Mutex};
+
 use serde::Deserialize;
 use serde_json::{json, Value};
 
@@ -29,11 +31,23 @@ pub(super) struct ServerState {
     pub(super) next_pcap_job_id: u64,
 }
 
-pub(super) async fn handle_request(
-    state: &mut ServerState,
-    req: JsonRpcRequest,
-) -> JsonRpcResponse {
-    let id = req.id.clone();
+/// Shared server state.
+///
+/// A `std::sync::Mutex` is deliberate: every critical section below is
+/// synchronous and short (a bool read, a job-map insert). Nothing holds this
+/// guard across an `.await`, which is what keeps the handler futures `Send`
+/// and keeps slow tool calls — the whole reason this is concurrent — outside
+/// the lock entirely.
+pub(super) type SharedState = Arc<Mutex<ServerState>>;
+
+fn lock(state: &SharedState) -> Result<std::sync::MutexGuard<'_, ServerState>, RpcError> {
+    state
+        .lock()
+        .map_err(|_| RpcError::Internal("server state lock poisoned".to_string()))
+}
+
+pub(super) async fn handle_request(state: SharedState, req: JsonRpcRequest) -> JsonRpcResponse {
+    let id = req.id.clone().flatten();
     let method = req.method.clone();
     // For tools/call the caller-visible operation is the tool name; surface it
     // so log consumers can grep a single tool without regex-parsing params.
@@ -55,7 +69,7 @@ pub(super) async fn handle_request(
         id,
     };
 
-    match handle_request_inner(state, &req).await {
+    match handle_request_inner(&state, &req).await {
         Ok(val) => {
             response.result = Some(val);
         }
@@ -89,7 +103,7 @@ pub(super) async fn handle_request(
 }
 
 async fn handle_request_inner(
-    state: &mut ServerState,
+    state: &SharedState,
     req: &JsonRpcRequest,
 ) -> Result<serde_json::Value, RpcError> {
     if req.jsonrpc != "2.0" {
@@ -99,8 +113,9 @@ async fn handle_request_inner(
         )));
     }
 
-    // Enforce MCP init lifecycle for requests.
-    if !state.initialized && req.method != "initialize" && req.method != "tools/list" {
+    // Enforce MCP init lifecycle for requests. Read and release — the guard
+    // must not survive into the tool dispatch below.
+    if !lock(state)?.initialized && req.method != "initialize" && req.method != "tools/list" {
         return Err(RpcError::NotInitialized);
     }
 
@@ -113,7 +128,7 @@ async fn handle_request_inner(
             let protocol = p
                 .protocol_version
                 .unwrap_or_else(|| "2024-11-05".to_string());
-            state.initialized = true;
+            lock(state)?.initialized = true;
             Ok(json!({
                 "protocolVersion": protocol,
                 "capabilities": { "tools": {} },
@@ -128,11 +143,11 @@ async fn handle_request_inner(
         // `jobs.rs`), so they stay separate from `dispatch_tool`'s
         // stateless tool table below.
         #[cfg(feature = "pcap")]
-        "start_pcap_capture" => start_pcap_capture_job(state, params).await,
+        "start_pcap_capture" => start_pcap_capture_job(&mut lock(state)?, params),
         #[cfg(feature = "pcap")]
-        "get_pcap_capture_status" => pcap_job_status(state, params),
+        "get_pcap_capture_status" => pcap_job_status(&lock(state)?, params),
         #[cfg(feature = "pcap")]
-        "get_pcap_capture_result" => pcap_job_result(state, params),
+        "get_pcap_capture_result" => pcap_job_result(&lock(state)?, params),
 
         // Every other backwards-compatible direct method name maps 1:1 onto
         // a `tools/call` tool of the same name; share that table instead of
@@ -198,7 +213,7 @@ async fn dispatch_tool(name: &str, params: Value) -> Result<Value, RpcError> {
 }
 
 async fn handle_tools_call(
-    state: &mut ServerState,
+    state: &SharedState,
     params: Value,
 ) -> Result<serde_json::Value, RpcError> {
     #[cfg(not(feature = "pcap"))]
@@ -222,15 +237,16 @@ async fn handle_tools_call(
     {
         match p.name.as_str() {
             "start_pcap_capture" => {
-                return Ok(mcp_tool_result_text(
-                    start_pcap_capture_job(state, args).await?,
-                ))
+                return Ok(mcp_tool_result_text(start_pcap_capture_job(
+                    &mut lock(state)?,
+                    args,
+                )?))
             }
             "get_pcap_capture_status" => {
-                return Ok(mcp_tool_result_text(pcap_job_status(state, args)?))
+                return Ok(mcp_tool_result_text(pcap_job_status(&lock(state)?, args)?))
             }
             "get_pcap_capture_result" => {
-                return Ok(mcp_tool_result_text(pcap_job_result(state, args)?))
+                return Ok(mcp_tool_result_text(pcap_job_result(&lock(state)?, args)?))
             }
             _ => {}
         }
