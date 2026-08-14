@@ -58,3 +58,42 @@ async fn ping_scanner_concurrency_zero_returns_result() {
     assert_eq!(res.seq, 1);
     assert!(res.method.is_some());
 }
+
+/// Port validation must not depend on which surface the call arrives on.
+///
+/// Regression: `netscli scan -p 0` reported "Scanned 1 port (0 open)" while
+/// the MCP `scan_ports` tool rejected the identical input, because the CLI
+/// path validated in `parse_ports_checked` and the MCP path validated in its
+/// own `normalize_ports`. `Ops` now validates whatever it is handed, so a
+/// library consumer building a `Vec<u16>` by hand cannot bypass it either.
+#[tokio::test]
+async fn ops_reject_port_zero_regardless_of_caller() {
+    let ops = netscli_core::Ops::default();
+
+    assert!(
+        ops.scan_ports("127.0.0.1", Some(vec![0])).await.is_err(),
+        "scan_ports accepted port 0"
+    );
+    assert!(
+        ops.inspect_host("127.0.0.1".to_string(), Some(vec![0]))
+            .await
+            .is_err(),
+        "inspect_host accepted port 0"
+    );
+    assert!(
+        ops.sweep_ipv4(Some("127.0.0.0/30".to_string()), Some(vec![0]), false)
+            .await
+            .is_err(),
+        "sweep_ipv4 accepted port 0"
+    );
+}
+
+#[tokio::test]
+async fn ops_reject_oversized_port_lists() {
+    let ops = netscli_core::Ops::default();
+    let too_many: Vec<u16> = (1..=(netscli_core::MAX_PORTS_PER_SCAN as u16 + 1)).collect();
+    assert!(
+        ops.scan_ports("127.0.0.1", Some(too_many)).await.is_err(),
+        "scan_ports accepted more than MAX_PORTS_PER_SCAN"
+    );
+}

@@ -3,6 +3,35 @@ use crate::error::{Error, Result};
 
 pub const MAX_PORTS_PER_SCAN: usize = 4096;
 
+/// Validate an already-parsed port list.
+///
+/// Lives here, next to `MAX_PORTS_PER_SCAN`, so every interface answers the
+/// same way. The CLI and GUI reach it through `parse_ports_checked`; the MCP
+/// server and any library consumer reach it through `Ops`, which validates
+/// whatever it is handed rather than trusting the caller to have parsed it
+/// from a string.
+///
+/// Port 0 is rejected. It is not a connectable TCP port — in a `bind` it
+/// means "pick any free port", and in a `connect` it is meaningless. The MCP
+/// server has always rejected it while the CLI happily reported
+/// "Scanned 1 port (0 open)", which is the divergence this function exists
+/// to remove.
+pub fn validate_ports(ports: &[u16]) -> Result<()> {
+    if ports.contains(&0) {
+        return Err(Error::invalid_input(
+            "port 0 is invalid (not a connectable TCP port)",
+        ));
+    }
+    if ports.len() > MAX_PORTS_PER_SCAN {
+        return Err(Error::invalid_input(format!(
+            "too many ports requested ({} > {})",
+            ports.len(),
+            MAX_PORTS_PER_SCAN
+        )));
+    }
+    Ok(())
+}
+
 /// Lenient parser used by internal defaults — silently drops invalid tokens.
 /// Prefer `parse_ports_checked` for user input so typos are surfaced.
 pub fn parse_ports(input: Option<&str>) -> Option<Vec<u16>> {
@@ -60,25 +89,30 @@ pub fn parse_ports_checked(input: Option<&str>) -> Result<Option<Vec<u16>>> {
     let mut ports = Vec::new();
     for part in raw.split(',') {
         let mut expanded = parse_port_token(part).map_err(|e| {
-            // Wrap the inner parser's per-token message with the caller's
-            // context so consumers see both "why" and "where" in one Error.
-            Error::invalid_input(format!("Invalid port list '{raw}': {e}"))
+            // Add the caller's context so consumers see both "why" and
+            // "where" in one Error. Match on the variant rather than
+            // formatting `e`, whose Display already carries an
+            // "invalid input: " prefix — interpolating it produced
+            // "invalid input: Invalid port list 'x': invalid input: …".
+            let detail = match e {
+                Error::InvalidInput(detail) => detail,
+                other => other.to_string(),
+            };
+            Error::invalid_input(format!("invalid port list '{raw}': {detail}"))
         })?;
         ports.append(&mut expanded);
     }
     if ports.is_empty() {
-        return Err(Error::invalid_input(format!("Invalid port list: {raw}")));
+        return Err(Error::invalid_input(format!("invalid port list: {raw}")));
     }
     // Sort + dedup so downstream scanners don't probe the same port twice.
     ports.sort_unstable();
     ports.dedup();
-    if ports.len() > MAX_PORTS_PER_SCAN {
-        return Err(Error::invalid_input(format!(
-            "too many ports requested ({} > {})",
-            ports.len(),
-            MAX_PORTS_PER_SCAN
-        )));
-    }
+    // Propagate as-is rather than re-wrapping. `validate_ports` already
+    // returns an `Error::InvalidInput` naming the offending rule, and
+    // wrapping it in another one rendered as
+    // "invalid input: Invalid port list '0': invalid input: port 0 is …".
+    validate_ports(&ports)?;
     Ok(Some(ports))
 }
 
@@ -142,7 +176,7 @@ mod tests {
     #[test]
     fn test_parse_ports_checked_invalid() {
         let err = parse_ports_checked(Some("invalid")).unwrap_err();
-        assert!(err.to_string().contains("Invalid port list"));
+        assert!(err.to_string().contains("invalid port list"));
     }
 
     #[test]
@@ -150,7 +184,7 @@ mod tests {
         // Previously this silently returned [80,443]. Typos are now surfaced.
         let err = parse_ports_checked(Some("80,invalid,443")).unwrap_err();
         assert!(
-            err.to_string().contains("Invalid port list"),
+            err.to_string().contains("invalid port list"),
             "expected strict rejection, got: {err}"
         );
     }
@@ -158,13 +192,13 @@ mod tests {
     #[test]
     fn test_parse_ports_checked_rejects_out_of_range() {
         let err = parse_ports_checked(Some("22,99999")).unwrap_err();
-        assert!(err.to_string().contains("Invalid port list"));
+        assert!(err.to_string().contains("invalid port list"));
     }
 
     #[test]
     fn test_parse_ports_checked_rejects_inverted_range() {
         let err = parse_ports_checked(Some("90-80")).unwrap_err();
-        assert!(err.to_string().contains("Invalid port list"));
+        assert!(err.to_string().contains("invalid port list"));
     }
 
     #[test]
@@ -194,6 +228,47 @@ mod tests {
         assert_eq!(
             parse_ports_checked(Some("80,443")).unwrap(),
             Some(vec![80, 443])
+        );
+    }
+
+    // --- port 0 -----------------------------------------------------------
+    // Regression: the CLI accepted `-p 0` and reported "Scanned 1 port
+    // (0 open)" while the MCP server rejected the same input, because each
+    // surface carried its own validation. These pin the single shared rule.
+
+    #[test]
+    fn validate_ports_rejects_port_zero() {
+        assert!(validate_ports(&[0]).is_err());
+        assert!(validate_ports(&[22, 0, 443]).is_err());
+        assert!(validate_ports(&[22, 443]).is_ok());
+    }
+
+    #[test]
+    fn validate_ports_enforces_the_scan_cap() {
+        let ok: Vec<u16> = (1..=MAX_PORTS_PER_SCAN as u16).collect();
+        assert!(validate_ports(&ok).is_ok());
+        let too_many: Vec<u16> = (1..=(MAX_PORTS_PER_SCAN as u16 + 1)).collect();
+        assert!(validate_ports(&too_many).is_err());
+    }
+
+    #[test]
+    fn parse_ports_checked_rejects_port_zero() {
+        for input in ["0", "0,80", "80,0", "0-2"] {
+            let err = parse_ports_checked(Some(input))
+                .unwrap_err()
+                .to_string()
+                .to_lowercase();
+            assert!(err.contains("port 0"), "input {input:?} gave: {err}");
+        }
+    }
+
+    #[test]
+    fn parse_ports_checked_still_accepts_port_one() {
+        // Guard against an off-by-one turning "reject 0" into "reject <2".
+        assert_eq!(parse_ports_checked(Some("1")).unwrap(), Some(vec![1]));
+        assert_eq!(
+            parse_ports_checked(Some("1-3")).unwrap(),
+            Some(vec![1, 2, 3])
         );
     }
 }
