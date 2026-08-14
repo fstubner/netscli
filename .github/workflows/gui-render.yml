@@ -92,6 +92,16 @@ jobs:
         run: npm run test:tauri-render
         working-directory: apps/netscli-gui
 
+      # Talk to msedgedriver directly with --verbose, bypassing
+      # tauri-driver. tauri-driver relays none of the native driver's
+      # output, so this is the only way to see why the debug port never
+      # appears.
+      - name: msedgedriver verbose session probe (on failure)
+        if: failure()
+        continue-on-error: true
+        run: node e2e/tauri-render/diagnose-driver.mjs
+        working-directory: apps/netscli-gui
+
       # On failure, show what the app itself did. msedgedriver's error
       # cannot distinguish "app crashed" from "driver could not attach",
       # and those need completely different fixes.
