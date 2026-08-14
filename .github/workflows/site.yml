@@ -5,18 +5,60 @@ on:
     branches: [main]
     paths:
       - 'site/**'
+  # NOTE: deliberately unfiltered, unlike the push trigger above. `Site
+  # Gate` below is a required status check, and a required check that
+  # never *reports* leaves a PR stuck on "Expected — waiting for status"
+  # forever. A `paths:` filter here would do exactly that for every PR
+  # that does not touch site/. So the workflow always runs and the real
+  # jobs skip themselves via `changes`. A skipped job satisfies a
+  # required check; an absent one does not.
   pull_request:
     branches: [main]
-    paths:
-      - 'site/**'
   workflow_dispatch:
+
+concurrency:
+  group: site-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
+  changes:
+    name: Detect site changes
+    runs-on: ubuntu-latest
+    outputs:
+      site: ${{ steps.filter.outputs.site }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - id: filter
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
+            echo "site=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          base='${{ github.event.pull_request.base.sha }}'
+          head='${{ github.event.pull_request.head.sha }}'
+          files=$(git diff --name-only "$base" "$head")
+          echo "Changed files:"
+          echo "$files" | sed 's/^/  /'
+
+          if echo "$files" | grep -qE '^site/'; then
+            echo "site=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "site=false" >> "$GITHUB_OUTPUT"
+            echo "No site/ changes — site jobs will skip."
+          fi
+
   maintainability:
     name: File size guard
+    needs: changes
+    if: needs.changes.outputs.site == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -27,7 +69,8 @@ jobs:
 
   build:
     name: Build + typecheck
-    needs: maintainability
+    needs: [changes, maintainability]
+    if: needs.changes.outputs.site == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -42,5 +85,41 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm run check
+      # Runs axe against both themes; see site/scripts/a11y.mjs for why
+      # both are needed, and why it prefers the runner's matched
+      # chromedriver over the one the npm package downloads.
       - name: Accessibility check
         run: npm run test:a11y
+
+  # ─── Required status check ────────────────────────────────────────────
+  # The only job here that should be marked required in branch protection.
+  # See the equivalent note in ci.yml.
+  site-gate:
+    name: Site Gate
+    if: always()
+    needs:
+      - changes
+      - maintainability
+      - build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify no upstream job failed
+        shell: bash
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          set -euo pipefail
+          echo "$NEEDS" | jq -r 'to_entries[] | "  \(.key): \(.value.result)"'
+
+          failed=$(echo "$NEEDS" | jq -r '
+            to_entries
+            | map(select(.value.result == "failure" or .value.result == "cancelled"))
+            | map(.key)
+            | join(", ")
+          ')
+
+          if [[ -n "$failed" ]]; then
+            echo "::error::Site Gate failed — these jobs did not succeed: ${failed}"
+            exit 1
+          fi
+          echo "Site Gate passed (all jobs succeeded or were legitimately skipped)."
