@@ -46,7 +46,14 @@ impl NetworkMonitor {
 
         let (rx, tx, _) = sum_traffic(&networks, None);
         let now = Instant::now();
-        let inactive = now - Self::ACTIVE_HOLD - Self::ACTIVE_HOLD;
+        // `Instant - Duration` panics on underflow, and within ~360ms of the
+        // process's monotonic-clock origin `now` is smaller than the two
+        // holds we subtract (C-01). `checked_sub` degrades to "as early as
+        // representable", which reads as inactive exactly as intended.
+        let inactive = now
+            .checked_sub(Self::ACTIVE_HOLD)
+            .and_then(|t| t.checked_sub(Self::ACTIVE_HOLD))
+            .unwrap_or(now);
 
         Self {
             state: Mutex::new(MonitorState {
@@ -73,7 +80,14 @@ impl NetworkMonitor {
         let (rx, tx, _) = sum_traffic(&s.networks, s.selected_interface.as_deref());
 
         let now = Instant::now();
-        let inactive = now - Self::ACTIVE_HOLD - Self::ACTIVE_HOLD;
+        // `Instant - Duration` panics on underflow, and within ~360ms of the
+        // process's monotonic-clock origin `now` is smaller than the two
+        // holds we subtract (C-01). `checked_sub` degrades to "as early as
+        // representable", which reads as inactive exactly as intended.
+        let inactive = now
+            .checked_sub(Self::ACTIVE_HOLD)
+            .and_then(|t| t.checked_sub(Self::ACTIVE_HOLD))
+            .unwrap_or(now);
 
         s.last_update = now;
         s.last_stats = (rx, tx);
@@ -190,13 +204,15 @@ fn sum_traffic(networks: &Networks, selected: Option<&str>) -> (u64, u64, bool) 
         return (0, 0, false);
     }
 
-    let mut rx = 0;
-    let mut tx = 0;
+    let mut rx: u64 = 0;
+    let mut tx: u64 = 0;
     let mut any = false;
     for (_, network) in networks {
         any = true;
-        rx += network.total_received();
-        tx += network.total_transmitted();
+        // Saturating, not `+=`: these are per-interface byte counters summed
+        // across every adapter, and a debug build panics on overflow (C-02).
+        rx = rx.saturating_add(network.total_received());
+        tx = tx.saturating_add(network.total_transmitted());
     }
     (rx, tx, any)
 }
@@ -218,6 +234,35 @@ fn bytes_to_mbps(bytes: u64, elapsed: Duration) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // C-01: `now - ACTIVE_HOLD - ACTIVE_HOLD` panics on underflow, which is
+    // reachable within ~360ms of the monotonic clock's origin. There is no
+    // portable way to construct a near-zero `Instant`, so this pins the
+    // saturating arithmetic itself rather than the call site.
+    #[test]
+    fn instant_underflow_saturates_instead_of_panicking() {
+        let origin = Instant::now();
+        let hold = NetworkMonitor::ACTIVE_HOLD;
+
+        // Mirrors the expression in `new()` and `refresh()`.
+        let inactive = origin
+            .checked_sub(hold)
+            .and_then(|t| t.checked_sub(hold))
+            .unwrap_or(origin);
+
+        // Either it stepped back by two holds, or it clamped at the origin —
+        // never a panic, and never a time in the future.
+        assert!(inactive <= origin);
+    }
+
+    // C-02: these are per-interface byte counters summed across every
+    // adapter, and `+=` panics on overflow in a debug build.
+    #[test]
+    fn traffic_accumulation_saturates_on_overflow() {
+        let mut rx: u64 = u64::MAX - 1;
+        rx = rx.saturating_add(1_000_000);
+        assert_eq!(rx, u64::MAX);
+    }
 
     #[test]
     fn bytes_to_mbps_typical() {

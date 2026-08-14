@@ -28,7 +28,32 @@ fn ops_new_clamps_concurrency_upper_bound() {
     };
 
     let ops = Ops::new(cfg);
-    assert_eq!(ops.config().concurrency, 1024);
+    assert_eq!(ops.config().concurrency, netscli_core::MAX_CONCURRENCY);
+}
+
+// C-10: the MCP server clamped to 4096 while this clamps to 1024, so any
+// value in 1025..=4096 was accepted at the API boundary and then silently
+// reduced -- and a comment claimed the two bounds matched. Both now derive
+// from this constant, so a change to one cannot drift from the other.
+#[test]
+fn max_concurrency_is_the_value_ops_actually_enforces() {
+    let cfg = OpsConfig {
+        concurrency: netscli_core::MAX_CONCURRENCY + 1,
+        ..Default::default()
+    };
+    let ops = Ops::new(cfg);
+    assert_eq!(ops.config().concurrency, netscli_core::MAX_CONCURRENCY);
+
+    // And a value just inside the bound survives untouched, which is what
+    // makes the constant meaningful rather than merely an upper limit.
+    let cfg = OpsConfig {
+        concurrency: netscli_core::MAX_CONCURRENCY,
+        ..Default::default()
+    };
+    assert_eq!(
+        Ops::new(cfg).config().concurrency,
+        netscli_core::MAX_CONCURRENCY
+    );
 }
 
 #[tokio::test]
