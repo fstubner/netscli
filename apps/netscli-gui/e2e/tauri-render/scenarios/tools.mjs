@@ -6,11 +6,22 @@ import { waitForNoElement } from './helpers/menu.mjs';
 import { assertKeyboardSelection } from './helpers/table.mjs';
 import { assertFieldSelectPopoverVisible, assertFilterPlaceholder } from './helpers/tabs.mjs';
 
+// Every other scenario here is hermetic against the local probe server; this
+// one used to resolve `netscli.com` against real public DNS with a 25s budget
+// (B-28), so the suite failed on an air-gapped runner or a slow resolver for
+// reasons that had nothing to do with the app.
+//
+// `localhost` resolves through the system resolver without leaving the host
+// and has both A (127.0.0.1) and AAAA (::1) records, so the record-type
+// assertions below still exercise what they were written for. Override with
+// NETSCLI_E2E_DNS_HOST to point at a real name deliberately.
+const DNS_HOST = process.env.NETSCLI_E2E_DNS_HOST || 'localhost';
+
 export async function exerciseDns(driver) {
   await addToolTab(driver, 'DNS Lookup');
   await withElement(driver, '[data-testid="dns-host-input"]');
-  await replaceInput(driver, '[data-testid="dns-host-input"]', 'netscli.com');
-  await assertCommand(driver, /netscli dns netscli\.com --json/);
+  await replaceInput(driver, '[data-testid="dns-host-input"]', DNS_HOST);
+  await assertCommand(driver, new RegExp(`netscli dns ${escapeRe(DNS_HOST)} --json`));
   await runActiveTool(driver);
   await waitForText(driver, '[data-testid="statusbar"]', /\d+ records?/i, 25_000);
   await waitForRow(driver, '[data-testid="result-row-dns-0"]', 25_000);
@@ -26,12 +37,12 @@ export async function exerciseDns(driver) {
   await driver.findElement(By.css('.workspace')).click();
   await waitForNoElement(driver, '[data-testid="advanced-filter-menu"]');
   await dismissDnsWarningIfPresent(driver);
-  await replaceInput(driver, '[data-testid="dns-host-input"]', 'example.com');
+  await replaceInput(driver, '[data-testid="dns-host-input"]', DNS_HOST);
   await driver.findElement(By.css('[data-testid="dns-record-input"]')).click();
   await waitForText(driver, '.field-select-popover', /AAAA/i);
   await assertFieldSelectPopoverVisible(driver);
   await clickButtonText(driver, '.field-select-popover button', 'AAAA');
-  await assertCommand(driver, /netscli dns example\.com --record AAAA --json/);
+  await assertCommand(driver, new RegExp(`netscli dns ${escapeRe(DNS_HOST)} --record AAAA --json`));
   await assertNoErrorStrip(driver);
 }
 
@@ -130,4 +141,8 @@ export async function exercisePcapValidation(driver) {
   return true;
 }
 
-
+// `localhost` needs no escaping, but NETSCLI_E2E_DNS_HOST may be a real
+// domain whose dots would otherwise match any character in the assertion.
+function escapeRe(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}

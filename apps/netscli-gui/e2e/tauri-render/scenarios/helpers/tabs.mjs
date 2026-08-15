@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { By } from '../../driver.mjs';
 import { getActiveTabText } from './menu.mjs';
+import { assertAlignment } from './alignment.mjs';
 
 async function assertActiveTabVisible(driver) {
   const visibility = await driver.executeScript(`
@@ -97,7 +98,7 @@ async function assertDetailPaneCanFillWorkspace(driver) {
   assert.match(state.detailClass, /expanded/, 'Detail pane should enter expanded mode');
   assert.equal(state.formDisplay, 'none', 'Expanded details should hide the form row');
   assert.equal(state.resultDisplay, 'none', 'Expanded details should hide the result region');
-  assert.ok(state.topDelta <= 1, `Expanded details should start at workspace top, got ${state.topDelta}px`);
+  assertAlignment('Expanded details vs workspace top', state.topDelta, 1);
   assert.ok(state.heightRatio > 0.85, `Expanded details should fill the workspace, got ratio ${state.heightRatio}`);
   await driver.findElement(By.css('.detail-actions button:first-child')).click();
 }
@@ -136,13 +137,10 @@ async function assertTabAddControlPlacement(driver) {
   assert.match(state.addShadow, /inset/, 'Tab add control should keep a bottom edge');
   assert.equal(state.stripUserSelect, 'none', 'Tab strip should not select text during drag gestures');
   assert.equal(state.addUserSelect, 'none', 'Tab add control should not select text during drag gestures');
-  assert.ok(state.mainCenterDelta <= 1, `New tab button should be vertically centered, got ${state.mainCenterDelta}px`);
-  assert.ok(
-    state.chevronCenterDelta <= 1,
-    `Tool chooser button should be vertically centered, got ${state.chevronCenterDelta}px`,
-  );
+  assertAlignment('New tab button vertical centering', state.mainCenterDelta, 1);
+  assertAlignment('Tool chevron vertical centering', state.chevronCenterDelta, 1);
   if (state.overflows) {
-    assert.ok(state.rightDelta <= 2, `Overflowing tab add control should pin to the right edge, got ${state.rightDelta}px`);
+    assertAlignment('Overflowing tab add control vs right edge', state.rightDelta, 2);
     assert.equal(state.scrollBeforeAdd, true, 'Tab overflow should end before the pinned add control');
     return;
   }

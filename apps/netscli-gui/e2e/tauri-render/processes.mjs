@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import net from 'node:net';
 
 import { guiRoot, npmBin } from './paths.mjs';
@@ -67,8 +67,42 @@ export function waitForPort(port, timeoutMs = 20_000) {
   });
 }
 
+/**
+ * Kill a spawned process *and everything it spawned*.
+ *
+ * `child.kill()` alone signals only the direct child (M-13). The processes
+ * this suite starts are supervisors — `tauri-driver` spawns the platform
+ * WebDriver, which spawns the browser — so the grandchildren survived, kept
+ * holding their ports, and the next run failed to bind or attached to a stale
+ * session. On CI the job simply hung until its timeout.
+ *
+ * Windows has no process groups, so `taskkill /T` is the only way to walk the
+ * tree; elsewhere, killing the negated pid signals the whole group, which is
+ * why callers spawn detached.
+ */
 export function stopProcess(child) {
-  if (child && !child.killed) {
+  if (!child || child.killed || child.pid === undefined) return;
+
+  if (process.platform === 'win32') {
+    try {
+      spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
+      return;
+    } catch {
+      // Fall through to the plain kill below.
+    }
+  } else {
+    try {
+      // Negative pid = process group. Requires the child to be detached.
+      process.kill(-child.pid, 'SIGTERM');
+      return;
+    } catch {
+      // Not a group leader, or already gone.
+    }
+  }
+
+  try {
     child.kill();
+  } catch {
+    // Already exited.
   }
 }
