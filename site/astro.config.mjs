@@ -65,6 +65,10 @@ export default defineConfig({
         './src/styles/starlight/26-mobile-containment.css',
         './src/styles/starlight/27-release-qa-overrides.css',
         './src/styles/starlight/28-final-interaction-guardrails.css',
+        // Loads last on purpose: it has to outrank the `!important` colour
+        // declarations several earlier files make on `.sl-markdown-content a`
+        // and `code`. See the file for why that is unavoidable today.
+        './src/styles/starlight/29-callout-contrast.css',
       ],
       social: [
         {

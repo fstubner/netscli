@@ -1,4 +1,8 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://netscli.com/sitemap.xml
+# The Starlight/@astrojs/sitemap integration generates sitemap-index.xml on
+# every build, so it is always current. A hand-written public/sitemap.xml used
+# to ship alongside it with all 13 lastmod values frozen at 2026-07-02, and
+# this file pointed at that stale copy rather than the generated one (B-24).
+Sitemap: https://netscli.com/sitemap-index.xml

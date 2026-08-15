@@ -1,4 +1,11 @@
+import { disposeDocsHeader, onDispose, registerDisposal } from './docs-header-disposal';
+
 export function initDocsHeader(): void {
+  // Re-entrant under view transitions: drop the previous run's observers
+  // before attaching a new set.
+  disposeDocsHeader();
+  registerDisposal();
+
   const root = document.documentElement;
   const updateHeaderDepth = () => {
     if (window.scrollY > 6) {
@@ -128,6 +135,7 @@ export function initDocsHeader(): void {
     subtree: true,
     characterData: true,
   });
+  onDispose(() => searchObserver.disconnect());
   scheduleSearchMessageEnhancement();
 
   let activeSearchOverflowDrawer: Element | null = null;
@@ -194,6 +202,7 @@ export function initDocsHeader(): void {
     subtree: true,
     characterData: true,
   });
+  onDispose(() => searchOverflowObserver.disconnect());
   window.addEventListener('resize', scheduleSearchOverflowSettled);
   scheduleSearchOverflowSettled();
 
@@ -250,6 +259,7 @@ export function initDocsHeader(): void {
     childList: true,
     subtree: true,
   });
+  onDispose(() => mobileTocObserver.disconnect());
   scheduleMobileTocCurrent();
   window.setTimeout(scheduleMobileTocCurrent, 250);
   window.setTimeout(scheduleMobileTocCurrent, 1000);

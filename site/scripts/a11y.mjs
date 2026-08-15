@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import process from 'node:process';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -7,7 +7,37 @@ import { setTimeout as delay } from 'node:timers/promises';
 const host = process.env.A11Y_HOST || '127.0.0.1';
 const port = process.env.A11Y_PORT || '4322';
 const baseUrl = process.env.A11Y_BASE_URL || `http://${host}:${port}`;
-const defaultRoutes = [
+// Derive the route list from what was actually built rather than hard-coding
+// it (B-26). The hard-coded list covered 7 of 14 routes, and the seven it
+// missed -- /docs/cli/, /mcp/, /tui/, /operations/, /packet-capture/,
+// /core-library/, /result-model/ -- hold the heaviest table markup, which
+// docs-header.ts then wraps at runtime on every docs page. A list that has to
+// be updated by hand is exactly the list that drifts as pages are added.
+function discoverRoutes() {
+  const dist = join(process.cwd(), 'dist');
+  if (!existsSync(dist)) return null;
+
+  const found = [];
+  const walk = (dir, prefix) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(full, `${prefix}${entry.name}/`);
+      } else if (entry.name === 'index.html') {
+        found.push(prefix || '/');
+      } else if (entry.name.endsWith('.html')) {
+        found.push(`${prefix}${entry.name}`);
+      }
+    }
+  };
+  walk(dist, '/');
+  return found.sort();
+}
+
+// Falls back to the previous list only if dist/ is missing, so a caller who
+// forgot to build still gets a meaningful run instead of scanning nothing --
+// an empty route list would otherwise pass silently.
+const fallbackRoutes = [
   '/',
   '/docs/',
   '/docs/install/',
@@ -16,6 +46,7 @@ const defaultRoutes = [
   '/changelog/',
   '/404.html',
 ];
+const defaultRoutes = discoverRoutes() ?? fallbackRoutes;
 
 const routes = (process.env.A11Y_ROUTES || defaultRoutes.join(' '))
   .split(/[\s,]+/)
@@ -64,8 +95,25 @@ async function waitForServer() {
 
 async function ensurePreview() {
   if (await isServing()) {
-    console.log(`Using existing preview server at ${baseUrl}`);
-    return;
+    // Reusing whatever answers on this port is how a green local run stops
+    // meaning anything. A long-running `astro dev` server also listens on
+    // 4322 and serves from source with different CSS processing, so the gate
+    // silently scanned something other than `dist/` -- and passed while CI,
+    // which always starts fresh, failed on a 1.53:1 contrast bug.
+    //
+    // Opt in explicitly if the running server really is the built output.
+    if (process.env.A11Y_REUSE_SERVER === '1') {
+      console.log(`Reusing the server already at ${baseUrl} (A11Y_REUSE_SERVER=1).`);
+      console.log('Note: this is only valid if it is serving the current dist/.');
+      return;
+    }
+    console.error(
+      `Something is already listening on ${baseUrl}.\n` +
+        'Refusing to scan it, because a dev server serves different output than\n' +
+        'the production build and would make this check pass on the wrong thing.\n' +
+        'Stop it, or set A11Y_REUSE_SERVER=1 if it is serving the current dist/.',
+    );
+    process.exit(1);
   }
 
   console.log(`Starting Astro preview at ${baseUrl}`);
@@ -96,9 +144,15 @@ async function ensurePreview() {
  * Chrome has no "force light" switch because light IS the default with
  * no OS preference; `--force-dark-mode` covers the other side.
  */
+// `headless` is not optional here. Without it, axe launches a headed Chrome
+// that takes its colour scheme from the OS and ignores --force-dark-mode, so
+// *both* passes render the same theme and one of them is never tested. That
+// blind spot is not theoretical: it hid a 1.53:1 contrast failure in the
+// caution callout on /docs/packet-capture/ from every local run, and only CI
+// -- which is headless -- caught it.
 const THEMES = [
-  { name: 'light', chromeOptions: [] },
-  { name: 'dark', chromeOptions: ['force-dark-mode'] },
+  { name: 'light', chromeOptions: ['headless'] },
+  { name: 'dark', chromeOptions: ['headless', 'force-dark-mode'] },
 ];
 
 /**

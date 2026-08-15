@@ -1,0 +1,56 @@
+/*
+ * Callout (aside) inline content contrast.
+ *
+ * `code` and `a` inside a Starlight aside inherited the global mint accent,
+ * which is tuned for contrast against the #111 page background rather than a
+ * callout's own coloured one. On the amber `caution` variant that measured
+ * 1.53:1 for code and 3.53:1 for links, against a 4.5:1 AA threshold, and it
+ * shipped unnoticed because the a11y gate did not cover /docs/packet-capture/
+ * (B-26).
+ *
+ * These inherit the aside's own text colour rather than naming a replacement.
+ * Two earlier attempts show why that matters:
+ *
+ *   - `--sl-color-asides-text-accent` alone measured 4.53:1 in the light
+ *     theme. It passes, but with so little margin that a rounding difference
+ *     between axe versions could flip it.
+ *   - Darkening the code chip to rgba(0, 0, 0, .28) fixed dark and broke
+ *     light, where that accent is itself dark — dark-on-dark, failing just as
+ *     badly in the other direction.
+ *
+ * Starlight already guarantees its aside body text contrasts with each
+ * variant's background, in both themes: measured 14.96:1 light, 9.18:1 dark.
+ * Inheriting it means this cannot drift when a token changes, and it holds
+ * for note/tip/danger without enumerating them.
+ *
+ * Why this file loads last, why `!important`, and why the aside class is
+ * repeated: earlier files declare
+ *
+ *     html[data-theme="light"] .sl-markdown-content :not(pre) > code
+ *
+ * with `!important`. That is specificity (0,2,3). The obvious selector here —
+ * `.sl-markdown-content .starlight-aside :not(pre) > code` — is only (0,2,2),
+ * so it loses even though it is more specific in the sense that matters and
+ * loads later. Repeating `.starlight-aside` takes this to (0,3,2), which
+ * outranks it on class count without depending on `data-theme` being present.
+ *
+ * This is the B-23 tax in miniature: a correct, well-scoped rule cannot be
+ * written in the file that owns the concern, and needs a specificity trick to
+ * land at all. Consolidating that stack would let all of this be deleted.
+ */
+.sl-markdown-content .starlight-aside.starlight-aside a {
+  color: inherit !important;
+  /* Colour alone no longer distinguishes the link, so the underline is now
+     load-bearing rather than decorative. */
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.sl-markdown-content .starlight-aside.starlight-aside :not(pre) > code {
+  color: inherit !important;
+  /* Let the aside's background show through: any tint that suits one theme
+     is wrong in the other. The border keeps the code visually distinct
+     without introducing a second colour to reason about. */
+  background: transparent !important;
+  border: 1px solid var(--sl-color-asides-border);
+}
