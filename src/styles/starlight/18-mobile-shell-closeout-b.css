@@ -140,16 +140,10 @@
 
 @media (max-width: 49.99rem) {
   .docs-mobile-section-nav {
-    position: fixed !important;
+
     inset-inline: 0 !important;
     top: var(--sl-nav-height) !important;
-  }
-
-  html[data-mobile-scroll-direction='down'] .docs-mobile-section-nav {
-    transform: translateY(calc(-1 * var(--netscli-mobile-docs-nav-height)));
-  }
-
-  mobile-starlight-toc nav {
+  }mobile-starlight-toc nav {
     position: fixed !important;
     inset-inline: 0 !important;
     top: calc(var(--sl-nav-height) + var(--netscli-mobile-docs-nav-height)) !important;
@@ -158,14 +152,7 @@
 
   html[data-mobile-scroll-direction='down'] mobile-starlight-toc nav {
     top: var(--sl-nav-height) !important;
-  }
-
-  .main-frame {
-    padding-top: calc(
-      var(--sl-nav-height) + var(--netscli-mobile-docs-nav-height) + var(--netscli-mobile-toc-bar-height)
-    ) !important;
-  }
-}
+  }}
 
 html[data-theme='light'] .docs-mobile-section-menu,
 html[data-theme='light'] mobile-starlight-toc .dropdown {

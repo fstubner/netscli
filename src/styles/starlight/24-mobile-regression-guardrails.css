@@ -1,7 +1,7 @@
 /* Final mobile/docs regression guardrails. Keep these last so Starlight and
    earlier site overrides cannot reintroduce the checked regressions. */
 .sidebar-content :where(details > ul) {
-  margin-inline-start: .5rem !important;
+
   border-inline-start: 1px solid var(--sl-color-hairline) !important;
 }
 
@@ -16,12 +16,7 @@
   background-clip: border-box !important;
 }
 
-@media (max-width: 49.99rem) {
-  .sidebar-content > sl-sidebar-state-persist {
-    display: contents !important;
-  }
-
-  .sidebar-content :where(details > ul) {
+@media (max-width: 49.99rem) {.sidebar-content :where(details > ul) {
     margin-inline-start: .5rem !important;
   }
 
@@ -33,14 +28,7 @@
 
   .docs-header-search {
     margin-inline-end: .35rem !important;
-  }
-
-  .starlight-menu-button,
-  .starlight-menu-button button {
-    margin-inline-start: .35rem !important;
-  }
-
-  .mobile-docs-trigger,
+  }.mobile-docs-trigger,
   .mobile-toc-trigger,
   .mobile-docs-bar,
   .mobile-toc-bar {
@@ -52,49 +40,32 @@
   .mobile-toc-trigger[aria-expanded="true"],
   .right-sidebar .mobile-toc-trigger,
   .right-sidebar .mobile-toc-trigger:hover {
-    background: transparent !important;
+
     border-inline-start: 0 !important;
     color: var(--sl-color-white) !important;
   }
 
   .right-sidebar :where(a:hover, a[aria-current="true"], a[aria-current="page"]) {
     background: transparent !important;
-    border-inline-start: 0 !important;
+
   }
 
   .content-panel table,
   .sl-markdown-content table {
-    display: table !important;
+
     width: max-content !important;
     min-width: 100% !important;
-  }
-
-  .content-panel thead,
-  .sl-markdown-content thead {
-    display: table-header-group !important;
-  }
-
-  .content-panel tbody,
-  .sl-markdown-content tbody {
-    display: table-row-group !important;
-  }
-
-  .content-panel tr,
-  .sl-markdown-content tr {
-    display: table-row !important;
-  }
-
-  .content-panel th,
+  }.content-panel th,
   .content-panel td,
   .sl-markdown-content th,
   .sl-markdown-content td {
-    display: table-cell !important;
+
     white-space: normal !important;
   }
 
   .content-panel td::before,
   .sl-markdown-content td::before {
-    content: none !important;
+
     display: none !important;
   }
 
@@ -111,14 +82,14 @@
   }
 
   site-search dialog {
-    width: min(100vw - 1rem, 48rem) !important;
+
     max-height: calc(100dvh - 1rem) !important;
     min-height: auto !important;
     overflow: auto !important;
   }
 
   site-search dialog .dialog-frame {
-    display: grid !important;
+
     grid-template-columns: minmax(0, 1fr) auto !important;
     grid-template-areas:
       "search close"
@@ -133,7 +104,7 @@
   site-search dialog .pagefind-ui,
   site-search dialog .pagefind-ui__form {
     grid-area: search !important;
-    width: 100% !important;
+
     max-width: none !important;
   }
 
@@ -148,7 +119,7 @@
   }
 
   site-search dialog .pagefind-ui__drawer {
-    grid-area: drawer !important;
+
     width: 100% !important;
     max-width: none !important;
     min-height: 9rem !important;
@@ -156,6 +127,6 @@
 
   site-search dialog .pagefind-ui__search-input {
     width: 100% !important;
-    max-width: none !important;
+
   }
 }
