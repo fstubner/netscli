@@ -35,8 +35,16 @@ Before the first automated release runs, add these secrets at
    cargo clippy --all-targets -- -D warnings
    cargo clippy --all-targets --features pcap -- -D warnings
    cargo audit
-   cd apps/netscli-gui && npm run test:unit && npm run test:maintainability && npm run build && npm run test:tauri-render
+   cd apps/netscli-gui && npm run lint && npm run test:unit && npm run test:maintainability && npm run build
    ```
+   > **`npm run test:tauri-render` is not part of this gate right now, and a
+   > release must not block on it.** WebView2 Runtime 150+ ignores
+   > `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS` on an elevated host, by design
+   > per Microsoft, so tauri-driver cannot hand msedgedriver its
+   > remote-debugging port. Tracked at wry#1782; nothing on our side fixes
+   > it. `gui-render.yml` is schedule-only for the same reason. Desktop
+   > coverage is manual until a scheduled run goes green — see the installer
+   > smoke below, which is a real check and still required.
    On Windows, PCAP-enabled source builds also need the Npcap SDK import
    library on `LIB` (for x64 MSVC, the directory containing `wpcap.lib` is
    usually `<Npcap SDK>\Lib\x64`) and `C:\Windows\System32\Npcap` on `PATH`
@@ -48,6 +56,10 @@ Before the first automated release runs, add these secrets at
 
    # Installed-binary render smoke. The render harness skips its own
    # Tauri build when TAURI_APP_PATH is set.
+   #
+   # Expected to fail today for the WebView2/wry#1782 reason noted above.
+   # Run it to see whether that has changed, but do not gate the release on
+   # it -- launch the installed app by hand instead and confirm it renders.
    $env:TAURI_APP_PATH = "C:\Program Files\NetsCLI\netscli-gui.exe"
    npm run test:tauri-render
    Remove-Item Env:\TAURI_APP_PATH
