@@ -6,10 +6,9 @@ use super::super::super::widgets::{
     value_style,
 };
 use super::super::{TuiApp, INPUT_PLACEHOLDER};
-use crate::tui_settings::StatsUnit;
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
-    style::{Color, Style},
+    style::Style,
     text::{Line, Span},
     widgets::{Block, BorderType, Borders, Padding, Paragraph, Wrap},
     Frame,
@@ -257,79 +256,5 @@ impl<'a> TuiApp<'a> {
             Paragraph::new(Line::from(spans)).wrap(Wrap { trim: false }),
             inner,
         );
-    }
-
-    fn render_stats_lines(&mut self) -> (Line<'static>, Line<'static>) {
-        let stats = self.monitor.get_stats();
-        if stats.available {
-            self.stats_upload_mbps = stats.upload_mbps;
-            self.stats_download_mbps = stats.download_mbps;
-            self.stats_upload_active = stats.upload_active;
-            self.stats_download_active = stats.download_active;
-        } else {
-            self.stats_upload_mbps = 0.0;
-            self.stats_download_mbps = 0.0;
-            self.stats_upload_active = false;
-            self.stats_download_active = false;
-        }
-
-        let dot = " · ";
-        let unit: StatsUnit = self.settings.stats_unit;
-        let up = format!(
-            "{:.2}",
-            unit.scale_from_mbps(self.stats_upload_mbps).min(999.99)
-        );
-        let down = format!(
-            "{:.2}",
-            unit.scale_from_mbps(self.stats_download_mbps).min(999.99)
-        );
-        let unit_suffix = format!(" {}", unit.suffix());
-
-        let left = Line::from(vec![
-            Span::styled("host ", label_style()),
-            Span::styled(self.hostname.clone(), value_style()),
-            Span::styled(dot, label_style()),
-            Span::styled("ip ", label_style()),
-            Span::styled(
-                self.context_address
-                    .clone()
-                    .unwrap_or_else(|| "n/a".to_string()),
-                value_style(),
-            ),
-        ]);
-
-        let up_arrow_style = if self.stats_upload_active {
-            Style::default().fg(Color::Cyan)
-        } else {
-            label_style()
-        };
-        let down_arrow_style = if self.stats_download_active {
-            Style::default().fg(Color::Cyan)
-        } else {
-            label_style()
-        };
-        let number_style = value_style();
-
-        let right_spans = vec![
-            Span::styled("↑ ", up_arrow_style),
-            Span::styled(up, number_style),
-            Span::styled(unit_suffix.clone(), label_style()),
-            Span::styled(dot, label_style()),
-            Span::styled("↓ ", down_arrow_style),
-            Span::styled(down, number_style),
-            Span::styled(unit_suffix, label_style()),
-        ];
-
-        (left, Line::from(right_spans))
-    }
-
-    pub(super) fn spinner_frame(&mut self) -> &'static str {
-        if !self.running {
-            return " ";
-        }
-        let frames = ["-", "\\", "|", "/"];
-        let ch = frames[self.spinner_idx % frames.len()];
-        self.spinner_idx = (self.spinner_idx + 1) % frames.len();
-        ch
     }
 }

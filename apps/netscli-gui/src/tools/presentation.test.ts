@@ -13,6 +13,8 @@ import {
   filterAndSortRows,
   inspectOverviewLines,
   inspectPortsLines,
+  latencyOf,
+  latencyOfPort,
   portBannerLines,
   portHeaderLines,
   portRawPreview,
@@ -174,8 +176,24 @@ describe('result presentation', () => {
 
     const rows = buildRows(result);
     expect(rows.map((row) => row.data.status)).toEqual(['open', 'closed', 'filtered', 'error']);
-    expect(rows.map((row) => row.data.latency)).toEqual(['14 ms', '8 ms', 'timeout', '']);
+    // The `error` row reads '-' rather than ''. This assertion previously
+    // pinned the table's own formatter, which returned '' where the detail
+    // pane returned a reason for the same port -- the M-7 divergence. Both
+    // now come from one function, so a port with no measured latency always
+    // explains itself.
+    expect(rows.map((row) => row.data.latency)).toEqual(['14 ms', '8 ms', 'timeout', '-']);
     expect(rows[0]?.searchText).toContain('cloudflare');
+  });
+
+  // M-7 regression: the table and detail pane must agree for every status.
+  it('reports the same latency text in the table and the detail pane', () => {
+    const statuses = ['open', 'closed', 'filtered', 'error'] as const;
+    for (const status of statuses) {
+      const port = portResult(80, status);
+      expect(latencyOf(port)).toBe(latencyOfPort(port));
+    }
+    // A closed port used to be blank in the table and 'refused' in details.
+    expect(latencyOf(portResult(22, 'closed'))).toBe('refused');
   });
 
   it('normalizes inspect rows from all scanned ports, not only open ports', () => {

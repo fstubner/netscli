@@ -13,6 +13,7 @@ mod content;
 mod input;
 mod message;
 mod scrollbar;
+mod stats;
 
 impl<'a> TuiApp<'a> {
     pub fn draw<B: Backend>(&mut self, terminal: &mut Terminal<B>) -> Result<(), B::Error> {

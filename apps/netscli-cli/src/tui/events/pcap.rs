@@ -122,7 +122,10 @@ pub(super) async fn handle(
     }
 
     if check || interface.is_none() {
-        match ops.pcap_check_support() {
+        // Device enumeration is a blocking syscall on every platform, and
+        // this runs on a tokio worker (B-10). `block_in_place` rather than
+        // `spawn_blocking` because `ops` is a borrow, not `'static`.
+        match tokio::task::block_in_place(|| ops.pcap_check_support()) {
             Ok(devs) => {
                 out.extend(Formatter::format_pcap_interfaces(&devs));
                 if !check && interface.is_none() {
@@ -152,7 +155,7 @@ pub(super) async fn handle(
     }
 
     let iface = interface.unwrap_or_else(|| "unknown".to_string());
-    match ops.pcap_check_support() {
+    match tokio::task::block_in_place(|| ops.pcap_check_support()) {
         // Deliberately no name check here (B-12).
         //
         // This used to require exact string equality against a device name,

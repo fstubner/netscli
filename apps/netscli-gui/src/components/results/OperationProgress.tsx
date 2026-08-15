@@ -101,7 +101,25 @@ function operationDetail(tab: WorkspaceTab): string {
   }
 }
 
-function countList(value: string | undefined): number {
+/**
+ * Count the ports a spec expands to.
+ *
+ * Splitting on `,` alone counted `1-1024` as a single port, so the progress
+ * line read "1 ports" for a full sweep (C-16). Ranges now expand, and a
+ * reversed or malformed range contributes nothing rather than a negative.
+ */
+export function countList(value: string | undefined): number {
   if (!value) return 0;
-  return value.split(',').map((part) => part.trim()).filter(Boolean).length;
+  return value
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .reduce((total, part) => {
+      const range = part.match(/^(\d+)\s*-\s*(\d+)$/);
+      if (!range) return total + 1;
+      const start = Number(range[1]);
+      const end = Number(range[2]);
+      if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return total;
+      return total + (end - start + 1);
+    }, 0);
 }
