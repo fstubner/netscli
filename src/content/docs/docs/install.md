@@ -29,6 +29,20 @@ The desktop app is distributed separately:
 winget install fstubner.netscli.gui
 ```
 
+Scoop is also supported, for both the CLI and the desktop app:
+
+```powershell
+scoop bucket add fstubner https://github.com/fstubner/scoop-bucket
+scoop install netscli
+scoop install netscli-gui
+```
+
+Or the PowerShell install script, which picks the right asset for your machine:
+
+```powershell
+iwr -useb https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.ps1 | iex
+```
+
 Direct Windows installers are attached to GitHub Releases. They are not Authenticode-signed yet, so Windows may show a publisher warning when installing outside winget. The winget manifests verify release asset hashes.
 
 ## macOS
@@ -116,7 +130,7 @@ If you do want packet capture, you need **both** a build that has the feature co
 The install script does both at once — it selects the `-pcap` build *and* installs the system library:
 
 ```bash
-NETSCLI_PCAP=1 curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | NETSCLI_PCAP=1 bash
+curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | NETSCLI_PCAP=1 bash
 ```
 
 ```powershell
