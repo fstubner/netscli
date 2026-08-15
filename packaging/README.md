@@ -6,8 +6,15 @@ getting NetsCLI into the major OS package managers.
 Most live package-manager updates are automated from
 `.github/workflows/publish.yml` after a GitHub release is published. The
 files in this directory are reference templates/snapshots and should stay
-accurate enough to review, but the publish jobs compute release SHA256s
-from the uploaded `.sha256` sidecars before pushing downstream updates.
+accurate enough to review. The publish jobs download each release asset,
+re-hash it, and check the result against the uploaded `.sha256` sidecar
+before pushing downstream updates — so a sidecar that disagrees with its
+asset fails the publish rather than propagating.
+
+Earlier revisions of this file described the sidecar as the source of the
+hash, which made verification circular: the sidecar came from the same
+origin as the asset, so it could only ever detect corruption in transit,
+never a compromised artifact (C-35, B-03).
 
 ## How the release pipeline feeds these
 

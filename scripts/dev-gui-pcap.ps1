@@ -8,7 +8,14 @@ $RepoRoot = Split-Path -Parent $PSScriptRoot
 $GuiRoot = Join-Path $RepoRoot 'apps\netscli-gui'
 
 if (-not $NpcapSdk) {
-    $NpcapSdk = 'C:\tmp\netscli-npcap-sdk'
+    # Default under LOCALAPPDATA, not C:\tmp (B-33).
+    #
+    # C:\tmp is predictable and not ACL'd, so any local user could plant a
+    # Lib\x64\wpcap.lib there: it passes the existence check below and gets
+    # linked into the developer's build. LOCALAPPDATA is per-user.
+    # docs/RELEASE.md steers maintainers through this script during the
+    # release gate, which is exactly when that matters.
+    $NpcapSdk = Join-Path $env:LOCALAPPDATA 'netscli\npcap-sdk'
 }
 
 $NpcapLib = Join-Path $NpcapSdk 'Lib\x64'

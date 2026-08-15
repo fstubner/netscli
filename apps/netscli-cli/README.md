@@ -41,7 +41,7 @@ resolution, interface listing, and optional packet capture.
 Install the pcap-enabled variant via the release script:
 
 ```bash
-NETSCLI_PCAP=1 curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | NETSCLI_PCAP=1 bash
 ```
 
 This picks the right binary variant and also installs the platform's

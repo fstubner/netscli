@@ -28,15 +28,23 @@ is for building your own tools on top of the same primitives.
 ## Quick example
 
 ```rust
-use netscli_core::{PortScanner, parse_ports};
+use netscli_core::{parse_ports_checked, PortScanner};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let ports = parse_ports("22,80,443")?;
-    let scanner = PortScanner::new(100, 500); // concurrency, timeout_ms
-    let results = scanner.scan("192.168.1.1", &ports).await;
+    // `parse_ports_checked` rejects port 0 and enforces the per-scan cap;
+    // it returns `None` when no port string was supplied, so fall back to
+    // the defaults rather than unwrapping.
+    let ports = parse_ports_checked(Some("22,80,443"))?.unwrap_or_default();
+
+    let scanner = PortScanner::new(100); // max concurrent connections
+    let target = "192.168.1.1".parse()?;
+    let results = scanner.scan_host(target, ports, 500).await; // timeout_ms
+
     for result in results {
-        println!("{}:{} open={}", result.host, result.port, result.open);
+        // `PortResult` carries the port, not the host — the host is the
+        // `target` you passed in.
+        println!("{}:{} open={}", target, result.port, result.open);
     }
     Ok(())
 }

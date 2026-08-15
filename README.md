@@ -147,7 +147,7 @@ Release assets: Windows `x86_64`, Linux `x86_64`/`aarch64` (glibc) + Linux `x86_
 PCAP-enabled install (optional, adds packet capture support):
 
 ```bash
-NETSCLI_PCAP=1 curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | NETSCLI_PCAP=1 bash
 ```
 
 The single `NETSCLI_PCAP=1` flag does two things: it downloads the pcap-enabled binary variant *and* installs the `libpcap` system library via your package manager. If you already have libpcap installed and don't want the installer touching it, add `NETSCLI_SKIP_LIBPCAP=1`.

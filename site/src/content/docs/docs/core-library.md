@@ -21,12 +21,18 @@ Interface layers use the core `Ops` facade instead of implementing their own pro
 Dependency flow stays one-way:
 
 ```text
-netscli CLI/TUI ┐
-netscli-gui     ├─> netscli-core
-netscli-mcp     ┘
+netscli CLI/TUI ──┬──────────────> netscli-core
+                  │                     ^
+                  └─> netscli-mcp ──────┘
+netscli-gui ─────────────────────────────┘
 ```
 
 Interface crates may depend on the core. The core must not depend on a UI layer, MCP protocol layer, or desktop runtime.
+
+The CLI additionally depends on `netscli-mcp`, because `netscli serve` runs
+the MCP server in-process — the one edge between two interface crates. The
+diagram previously showed all three as siblings, which made `netscli serve`
+look impossible.
 
 ## Ownership rules
 

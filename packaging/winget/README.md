@@ -40,8 +40,8 @@ and the root version manifest) from a release URL:
 winget install Microsoft.WingetCreate
 
 wingetcreate new `
-  --urls https://github.com/fstubner/netscli/releases/download/v0.1.1/netscli-windows-x86_64.exe `
-  --version 0.1.1 `
+  --urls https://github.com/fstubner/netscli/releases/download/vX.Y.Z/netscli-windows-x86_64.exe `
+  --version X.Y.Z `
   fstubner.netscli
 ```
 
@@ -58,7 +58,7 @@ This pops an editor with the three YAML files. Verify:
 Then:
 
 ```powershell
-wingetcreate submit --token <gh-token> manifests/f/fstubner/netscli/0.1.1
+wingetcreate submit --token <gh-token> manifests/f/fstubner/netscli/X.Y.Z
 ```
 
 This forks microsoft/winget-pkgs, pushes the manifests, and opens the PR
