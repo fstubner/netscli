@@ -1,18 +1,37 @@
 name: GUI Render
 
+# Schedule and manual only — deliberately NOT on pull_request.
+#
+# This suite cannot currently pass. WebView2 Runtime 150+ ignores
+# WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS on an elevated host, which is by
+# design per Microsoft, so tauri-driver can never hand msedgedriver the
+# remote-debugging port it needs. Tracked upstream at wry#1782; there is no
+# change on our side that fixes it.
+#
+# Run per-PR it cost ~13 minutes on every PR touching the GUI or core — nine
+# of the last ten runs failed, all at the same step, for that same reason.
+# A check that cannot pass teaches everyone to ignore a red X, which is worse
+# than not running it: the next genuine failure looks identical to the noise.
+#
+# The weekly run is what tells us the day upstream fixes it, and
+# workflow_dispatch covers investigating it on demand. No coverage is lost by
+# dropping the PR trigger, because there was no passing signal to lose.
+#
+# To restore per-PR runs: confirm a green scheduled run first, then re-add
+#
+#   pull_request:
+#     branches: [main]
+#     paths:
+#       - 'apps/netscli-gui/**'
+#       - 'crates/netscli-core/**'
+#       - 'Cargo.lock'
+#       - 'Cargo.toml'
+#       - 'rust-toolchain.toml'
+#       - '.github/workflows/gui-render.yml'
 on:
   workflow_dispatch:
   schedule:
     - cron: '0 7 * * 2'  # Tuesdays 07:00 UTC
-  pull_request:
-    branches: [main]
-    paths:
-      - 'apps/netscli-gui/**'
-      - 'crates/netscli-core/**'
-      - 'Cargo.lock'
-      - 'Cargo.toml'
-      - 'rust-toolchain.toml'
-      - '.github/workflows/gui-render.yml'
 
 concurrency:
   group: gui-render-${{ github.ref }}
