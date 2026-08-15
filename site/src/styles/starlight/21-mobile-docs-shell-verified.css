@@ -1,7 +1,7 @@
 /* Verified mobile/docs shell close-out. These overrides intentionally sit last
    because Starlight and earlier compatibility passes both touch these controls. */
 .sidebar-content :where(details > ul) {
-  margin-inline-start: 0.5rem !important;
+
   border-inline-start: 1px solid var(--sl-color-hairline) !important;
 }
 
@@ -11,7 +11,7 @@
 }
 
 .sidebar-content :where(details > ul a) {
-  margin-inline-start: -1px !important;
+
   width: calc(100% + 1px) !important;
   padding-inline-start: 0.75rem !important;
   border-inline-start: 2px solid transparent !important;
@@ -24,7 +24,7 @@
 }
 
 .sidebar-content :where(details > ul a[aria-current='page']) {
-  border-inline-start-color: #0aae7a !important;
+
   background: rgba(10, 174, 122, 0.12) !important;
   box-shadow: none !important;
 }
@@ -44,13 +44,7 @@
     padding: 0 !important;
     border: 0 !important;
     overflow: visible !important;
-  }
-
-  .main-frame {
-    padding-top: calc(var(--sl-nav-height) + var(--netscli-mobile-docs-nav-height)) !important;
-  }
-
-  .docs-mobile-section-nav {
+  }.docs-mobile-section-nav {
     position: fixed !important;
     inset-inline: 0 !important;
   }

@@ -10,24 +10,18 @@
   }
 
   .docs-topbar {
-    width: calc(100vw - 4.5rem) !important;
+
     max-width: calc(100vw - 4.5rem) !important;
     margin-inline: 0 !important;
     padding-inline-start: max(0.65rem, env(safe-area-inset-left)) !important;
     padding-inline-end: max(0.5rem, env(safe-area-inset-right)) !important;
     gap: 0.55rem !important;
-  }
-
-  .docs-mark {
-    transform: translateX(-18px) !important;
-  }
-
-  .docs-mark img {
+  }.docs-mark img {
     width: 132px !important;
   }
 
   .docs-header-search {
-    display: flex !important;
+
     flex: 0 0 2.5rem !important;
     width: 2.5rem !important;
     max-width: 2.5rem !important;
@@ -47,21 +41,9 @@
     padding: 0 !important;
     justify-content: center !important;
     gap: 0 !important;
-  }
-
-  .docs-header-search site-search button[data-open-modal] span,
-  .docs-header-search site-search button[data-open-modal] kbd {
-    display: none !important;
-  }
-
-  .sidebar-pane {
+  }.sidebar-pane {
     inset-block-start: var(--sl-nav-height) !important;
-  }
-
-  .sidebar-content > sl-sidebar-state-persist {
-    display: none !important;
-  }
-}
+  }}
 
 @media (min-width: 50rem) {
   .docs-mobile-section-nav {
@@ -152,14 +134,8 @@
     color: #0aae7a;
     font-size: 1rem;
     line-height: 1;
-    transition: transform 120ms linear;
-  }
 
-  .docs-mobile-section-nav details[open] .docs-mobile-section-caret {
-    transform: rotate(90deg);
-  }
-
-  .docs-mobile-section-menu {
+  }.docs-mobile-section-menu {
     position: absolute;
     inset-inline: 0;
     top: 100%;

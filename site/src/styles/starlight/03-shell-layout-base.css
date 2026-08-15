@@ -50,12 +50,7 @@
 @media (max-width: 71.99rem) {
   html[data-has-toc] {
     --sl-mobile-toc-height: 0rem;
-  }
-
-  .right-sidebar-container {
-    display: none !important;
-  }
-}
+  }}
 
 @media (min-width: 72.01rem) {
   starlight-menu-button {
@@ -164,7 +159,7 @@ html[data-theme='light'] .main-pane > .content-panel:first-child::before {
 .sl-markdown-content :not(pre) > code {
   border: 1px solid rgba(10, 174, 122, 0.18);
   border-radius: 0.24rem;
-  background: var(--sl-color-bg-inline-code);
+
   color: #9ff8de;
   font-family: var(--__sl-font-mono);
   font-size: 0.9em;
@@ -193,11 +188,11 @@ html[data-theme='light'] .main-pane > .content-panel:first-child::before {
   --ec-frm-inlBtnBg: #9ff8de;
   --ec-frm-inlBtnBrd: #9ff8de;
   --ec-frm-tooltipSuccessBg: #0aae7a;
-  margin-block: 1.15rem 1.75rem;
+
 }
 
 .sl-markdown-content .expressive-code .frame {
-  overflow: hidden;
+
   border-radius: 8px !important;
   border: 1px solid rgba(140, 149, 166, 0.18);
   box-shadow:
@@ -207,15 +202,7 @@ html[data-theme='light'] .main-pane > .content-panel:first-child::before {
 
 .sl-markdown-content .expressive-code .frame.is-terminal .header {
   min-height: 2.45rem;
-}
-
-.sl-markdown-content .expressive-code pre {
-  background:
-    linear-gradient(180deg, rgba(10, 174, 122, 0.035), transparent 14rem),
-    #10151b !important;
-}
-
-.sl-markdown-content .expressive-code .ec-line :where(span[style*='#8B949E']) {
+}.sl-markdown-content .expressive-code .ec-line :where(span[style*='#8B949E']) {
   --0: #818b9c !important;
 }
 
@@ -244,7 +231,7 @@ html[data-theme='light'] .sl-markdown-content .expressive-code .frame {
 }
 
 html[data-theme='light'] .sl-markdown-content :not(pre) > code {
-  border-color: rgba(0, 122, 84, 0.18);
+
   color: #064934;
 }
 
@@ -285,9 +272,7 @@ html[data-theme='light'] .sl-markdown-content .expressive-code .ec-line :where(s
   border: 1px solid rgba(140, 149, 166, 0.18);
   border-radius: 8px;
   overflow: hidden;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.022), transparent 12rem),
-    rgba(20, 24, 31, 0.54);
+
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.025) inset,
     0 12px 28px rgba(0, 0, 0, 0.12);

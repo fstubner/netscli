@@ -3,12 +3,12 @@
 @media (max-width: 49.99rem) {
   html,
   body {
-    max-width: 100vw !important;
+
     overflow-x: hidden !important;
   }
 
   .main-frame {
-    width: 100vw !important;
+
     max-width: 100vw !important;
     min-width: 0 !important;
     padding-inline-start: 0 !important;
@@ -19,7 +19,7 @@
   .content-panel,
   .content-panel > .sl-container,
   .sl-markdown-content {
-    width: 100% !important;
+
     max-width: 100% !important;
     min-width: 0 !important;
     box-sizing: border-box !important;
@@ -38,12 +38,12 @@
   .main-pane .sl-markdown-content li,
   .main-pane .sl-heading-wrapper {
     width: 100% !important;
-    max-width: 100% !important;
+
     min-width: 0 !important;
   }
 
   .content-panel > .sl-container {
-    width: auto !important;
+
     max-width: 100vw !important;
     margin-inline: 0 !important;
     padding-inline: clamp(1rem, 5vw, 1.5rem) !important;
@@ -54,7 +54,7 @@
   }
 
   starlight-menu-button {
-    display: block !important;
+
     position: fixed !important;
     inset-block-start: .625rem !important;
     inset-inline-end: .75rem !important;
@@ -62,14 +62,14 @@
   }
 
   starlight-menu-button button {
-    position: static !important;
+
     inset: auto !important;
     width: 2.5rem !important;
     height: 2.5rem !important;
   }
 
   .docs-header-search {
-    position: fixed !important;
+
     inset-block-start: .625rem !important;
     inset-inline-end: 3.75rem !important;
     z-index: calc(var(--sl-z-index-navbar) + 2) !important;
@@ -80,7 +80,7 @@
 
   .sl-markdown-content .netscli-table-scroll,
   .content-panel .netscli-table-scroll {
-    display: block !important;
+
     width: 100% !important;
     max-width: 100% !important;
     overflow-x: auto !important;
@@ -91,7 +91,7 @@
   .sl-markdown-content .netscli-table-scroll table,
   .content-panel .netscli-table-scroll table {
     display: table !important;
-    width: max-content !important;
+
     min-width: 42rem !important;
     max-width: none !important;
     table-layout: fixed !important;

@@ -29,7 +29,7 @@
 }
 
 #starlight__search .pagefind-ui__button {
-  display: flex !important;
+
   justify-content: center !important;
   text-align: center !important;
 }
@@ -41,25 +41,15 @@
 }
 
 .sl-markdown-content .expressive-code .copy button[data-copied] {
-  border-color: rgba(10, 174, 122, 0.34) !important;
+
   color: #9ff8de !important;
-}
-
-.sl-markdown-content .expressive-code .copy button[data-copied]::after {
-  background: #9ff8de !important;
-}
-
-html[data-theme='light'] #starlight__search .pagefind-ui__search-input {
+}html[data-theme='light'] #starlight__search .pagefind-ui__search-input {
   background: #ffffff !important;
   box-shadow: none !important;
 }
 
 html[data-theme='light'] .sl-markdown-content .expressive-code .copy button[data-copied] {
-  border-color: rgba(0, 122, 84, 0.3) !important;
+
   background: #e5f3ef !important;
   color: #064934 !important;
-}
-
-html[data-theme='light'] .sl-markdown-content .expressive-code .copy button[data-copied]::after {
-  background: #007a54 !important;
 }

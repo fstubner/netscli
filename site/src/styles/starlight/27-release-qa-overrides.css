@@ -35,7 +35,7 @@
 @media (max-width: 42rem) {
   .sl-markdown-content table,
   .content-panel table {
-    display: table !important;
+
     min-width: 42rem !important;
   }
 
