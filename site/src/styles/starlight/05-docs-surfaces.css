@@ -8,21 +8,7 @@ html[data-theme='dark'] ::backdrop {
 html[data-theme='light'],
 html[data-theme='light'] ::backdrop {
   --sl-color-bg-inline-code: rgba(17, 24, 39, 0.07);
-}
-
-header.header {
-  border-bottom-color: rgba(10, 174, 122, 0.28);
-}
-
-html:not([data-docs-scrolled='true']) header.header {
-  box-shadow: inset 0 -1px 0 rgba(10, 174, 122, 0.22) !important;
-}
-
-html[data-theme='light'] header.header {
-  border-bottom-color: rgba(0, 122, 84, 0.22);
-}
-
-html[data-theme='light']:not([data-docs-scrolled='true']) header.header {
+}html[data-theme='light']:not([data-docs-scrolled='true']) header.header {
   box-shadow: inset 0 -1px 0 rgba(0, 122, 84, 0.18) !important;
 }
 
@@ -93,11 +79,11 @@ site-search dialog .dialog-frame {
 .sl-markdown-content :not(pre) > code {
   border-color: rgba(140, 149, 166, 0.25);
   background: var(--sl-color-bg-inline-code);
-  color: var(--sl-color-gray-1);
+
 }
 
 html[data-theme='light'] .sl-markdown-content :not(pre) > code {
-  border-color: rgba(17, 24, 39, 0.13);
+
   color: #243044;
 }
 
@@ -117,7 +103,7 @@ html[data-theme='light'] .sl-markdown-content :not(pre) > code {
 }
 
 .sl-markdown-content .expressive-code .frame {
-  background: #171c23;
+
   border-color: rgba(140, 149, 166, 0.22);
   box-shadow:
     0 16px 36px rgba(0, 0, 0, 0.3),
@@ -133,19 +119,13 @@ html[data-theme='light'] .sl-markdown-content :not(pre) > code {
   border-top: var(--ec-brdWd) solid var(--ec-brdCol) !important;
   border-top-left-radius: calc(var(--ec-brdRad) + var(--ec-brdWd)) !important;
   border-top-right-radius: calc(var(--ec-brdRad) + var(--ec-brdWd)) !important;
-}
+}.sl-markdown-content .expressive-code .copy {
 
-.sl-markdown-content .expressive-code pre {
-  background: #171c23 !important;
-}
-
-.sl-markdown-content .expressive-code .copy {
-  inset-block-start: calc(var(--ec-brdWd) + 0.55rem) !important;
   inset-inline-end: calc(var(--ec-brdWd) + 0.55rem) !important;
 }
 
 .sl-markdown-content .expressive-code .copy button {
-  width: 2rem;
+
   height: 2rem;
   background: #202631;
   border-radius: 4px;
@@ -158,7 +138,7 @@ html[data-theme='light'] .sl-markdown-content :not(pre) > code {
 
 .sl-markdown-content .expressive-code .copy button:hover,
 .sl-markdown-content .expressive-code .copy button:focus-visible {
-  background: #252c38;
+
   opacity: 1;
 }
 
@@ -226,13 +206,7 @@ html[data-theme='light'] .sl-markdown-content .expressive-code pre {
 
 .sl-markdown-content tbody tr:nth-child(even) {
   background: #242932;
-}
-
-.sl-markdown-content tbody tr:hover {
-  background: #2a303b;
-}
-
-.sl-markdown-content td,
+}.sl-markdown-content td,
 .sl-markdown-content th {
   border-color: rgba(140, 149, 166, 0.13);
 }
@@ -251,7 +225,7 @@ html[data-theme='light'] .sl-markdown-content .expressive-code pre {
 }
 
 html[data-theme='light'] .sl-markdown-content table {
-  background: #ffffff;
+
   border-color: rgba(17, 24, 39, 0.12);
   box-shadow: 0 10px 24px rgba(17, 24, 39, 0.07);
 }
@@ -271,8 +245,4 @@ html[data-theme='light'] .sl-markdown-content tbody tr {
 
 html[data-theme='light'] .sl-markdown-content tbody tr:nth-child(even) {
   background: #f6f8fa;
-}
-
-html[data-theme='light'] .sl-markdown-content tbody tr:hover {
-  background: #eef5f2;
 }

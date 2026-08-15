@@ -1,14 +1,6 @@
-/* Base markdown content typography: tables, blockquotes, pagination, theme select. */
-
-.sl-markdown-content thead tr {
-  background:
-    linear-gradient(180deg, rgba(10, 174, 122, 0.13), rgba(10, 174, 122, 0.055)),
-    rgba(25, 29, 37, 0.96);
-}
-
 .sl-markdown-content th {
   background: transparent;
-  color: #d7fdf2;
+
   font-size: 0.72rem;
   font-weight: 760;
   letter-spacing: 0.055em;
@@ -19,23 +11,13 @@
 
 .sl-markdown-content td,
 .sl-markdown-content th {
-  border-color: rgba(140, 149, 166, 0.13);
+
   font-weight: 720;
   line-height: 1.45;
   padding: 0.76rem 1rem;
   text-align: left;
   vertical-align: middle;
-}
-
-.sl-markdown-content tbody tr {
-  background: rgba(255, 255, 255, 0.012);
-}
-
-.sl-markdown-content tbody tr:nth-child(even) {
-  background: rgba(255, 255, 255, 0.026);
-}
-
-.sl-markdown-content tbody td {
+}.sl-markdown-content tbody td {
   border-bottom: 1px solid rgba(140, 149, 166, 0.105);
 }
 
@@ -54,14 +36,14 @@
 .sl-markdown-content table.table-row-headers tbody td:first-child {
   color: var(--sl-color-gray-1);
   font-weight: 650;
-  background: rgba(255, 255, 255, 0.018);
+
 }
 
 .sl-markdown-content table:not(.table-row-headers) tbody td:first-child,
 .sl-markdown-content table.table-plain-first-column tbody td:first-child {
   color: inherit;
   font-weight: inherit;
-  background: transparent;
+
 }
 
 .sl-markdown-content td:last-child,
@@ -150,24 +132,18 @@
 
 @media (max-width: 42rem) {
   .sl-markdown-content table {
-    display: block;
+
     border: 0;
     background: transparent;
     overflow: visible;
     max-width: 100%;
-  }
+  }.sl-markdown-content table tbody {
 
-  .sl-markdown-content table thead {
-    display: none;
-  }
-
-  .sl-markdown-content table tbody {
-    display: grid;
     gap: 0.55rem;
   }
 
   .sl-markdown-content table tr {
-    display: grid;
+
     gap: 0.28rem;
     padding: 0.8rem 0.9rem;
     border: 1px solid rgba(140, 149, 166, 0.18);
@@ -177,21 +153,14 @@
 
   .sl-markdown-content table td,
   .sl-markdown-content table th {
-    display: block;
+
     width: auto;
     min-width: 0;
     padding: 0;
     border: 0;
     white-space: normal;
     overflow-wrap: anywhere;
-  }
-
-  .sl-markdown-content table td + td,
-  .sl-markdown-content table th + th {
-    border-inline-start: 0;
-  }
-
-  .sl-markdown-content table td:first-child {
+  }.sl-markdown-content table td:first-child {
     width: auto;
     padding: 0;
     color: var(--sl-color-gray-1);

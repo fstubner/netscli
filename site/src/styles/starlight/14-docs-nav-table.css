@@ -6,7 +6,7 @@
 }
 
 .sidebar-content :where(details > ul) {
-  margin-inline-start: 0.75rem !important;
+
   border-inline-start: 1px solid var(--sl-color-hairline) !important;
 }
 
@@ -26,7 +26,7 @@
 
 @media (max-width: 71.99rem) {
   .right-sidebar-container {
-    display: block !important;
+
     width: 100% !important;
     flex: 0 0 100% !important;
     order: -1;
@@ -42,7 +42,7 @@
   }
 
   .right-sidebar {
-    position: static !important;
+
     width: 100% !important;
     height: auto !important;
     padding: 0 !important;
@@ -56,7 +56,7 @@
     width: 100% !important;
     border: 0 !important;
     background: transparent !important;
-    box-shadow: none !important;
+
   }
 
   mobile-starlight-toc summary {
@@ -114,14 +114,14 @@
     min-height: 2.45rem !important;
     padding-block: 0.38rem !important;
     padding-inline: clamp(1.15rem, 3.5vw, 1.75rem) !important;
-    border-inline-start: 2px solid transparent !important;
+
     color: var(--sl-color-gray-2) !important;
     background: transparent !important;
   }
 
   mobile-starlight-toc .dropdown a:hover,
   mobile-starlight-toc .dropdown a:focus-visible {
-    color: var(--sl-color-white) !important;
+
     background: rgba(255, 255, 255, 0.045) !important;
     outline: 0 !important;
   }
