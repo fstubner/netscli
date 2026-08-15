@@ -1,5 +1,6 @@
-import type { PortResult, PortStatus } from '../../types/netscli';
+import type { PortResult } from '../../types/netscli';
 import type { DetailLine } from './detailLine';
+import { latencyOf } from './ports';
 
 export function portBannerLines(port: PortResult, latency: string): DetailLine[] {
   return [
@@ -14,7 +15,7 @@ export function portBannerLines(port: PortResult, latency: string): DetailLine[]
       muted: !port.banner?.trim(),
     },
     { label: 'Service', value: port.service || inferredProtocolLabel(port) },
-    { label: 'Latency', value: latency || statusLatencyLabel(port.status) },
+    { label: 'Latency', value: latency || latencyOf(port) },
     { label: 'Error', value: port.error || '-' },
   ];
 }
@@ -102,16 +103,9 @@ function inferredProtocolLabel(port: PortResult): string {
   return 'tcp';
 }
 
-function statusLatencyLabel(status: PortStatus): string {
-  if (status === 'filtered') return 'timeout';
-  if (status === 'closed') return 'refused';
-  return '-';
-}
-
-export function latencyOfPort(port: PortResult): string {
-  if (typeof port.latency_ms === 'number') return `${port.latency_ms} ms`;
-  return statusLatencyLabel(port.status);
-}
+// Kept as a named re-export so the detail modules read naturally, but the
+// logic lives in one place now (M-7).
+export { latencyOf as latencyOfPort };
 
 export function portStatusMeaning(port: PortResult): string {
   switch (port.status) {

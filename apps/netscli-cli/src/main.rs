@@ -31,7 +31,13 @@ async fn main() -> Result<()> {
             .unwrap_or_else(|| tui_settings::load_settings().max_concurrent_probes),
         ..Default::default()
     });
-    let local_addr = netscli_core::detect_default_ipv4_addr().map(|ip| ip.to_string());
+    // Route enumeration is a blocking syscall; this runs inside the async
+    // main, so it delayed every startup path behind it (B-10).
+    let local_addr = tokio::task::spawn_blocking(netscli_core::detect_default_ipv4_addr)
+        .await
+        .ok()
+        .flatten()
+        .map(|ip| ip.to_string());
 
     if let Some(command) = &cli.command {
         cli_dispatch::run_command(

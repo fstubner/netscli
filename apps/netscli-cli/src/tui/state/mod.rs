@@ -42,7 +42,6 @@ pub struct TuiApp<'a> {
     pub confirm_exit: bool,
     pub running: bool,
     pub running_detail: Option<String>,
-    pub spinner_idx: usize,
     pub settings: TuiSettings,
     pub concurrency_override: Option<usize>,
     pub hostname: String,
@@ -56,6 +55,8 @@ pub struct TuiApp<'a> {
     stats_download_active: bool,
     input_scroll_x: usize,
     ui_mode: UiMode,
+    /// Set when /config changes a value; cleared when it is written to disk.
+    settings_dirty: bool,
 }
 
 impl<'a> TuiApp<'a> {
@@ -87,7 +88,6 @@ impl<'a> TuiApp<'a> {
             confirm_exit: false,
             running: false,
             running_detail: None,
-            spinner_idx: 0,
             settings: TuiSettings::default(),
             concurrency_override: None,
             hostname,
@@ -101,6 +101,7 @@ impl<'a> TuiApp<'a> {
             stats_download_active: false,
             input_scroll_x: 0,
             ui_mode: UiMode::Normal,
+            settings_dirty: false,
         }
     }
 

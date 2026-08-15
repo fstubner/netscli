@@ -97,7 +97,14 @@ pub(super) async fn handle_scan(
                     commands::db_add_scan_history_safe(db, "scan", 0, &res).await;
                 }
 
-                let arp = netscli_core::NetworkManager::find_mac(&ip);
+                // `find_mac` shells out to `arp` on Windows and macOS, so
+                // calling it inline blocked a tokio worker for the lifetime
+                // of a subprocess (B-10).
+                let arp = tokio::task::spawn_blocking(move || {
+                    netscli_core::NetworkManager::find_mac(&ip)
+                })
+                .await
+                .unwrap_or(None);
                 let mac = arp.as_ref().map(|e| e.mac.to_string());
                 let vendor = arp.and_then(|e| e.vendor);
                 let hostname = netscli_core::dns::reverse_lookup_best_effort_timeout(

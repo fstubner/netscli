@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { By } from '../../driver.mjs';
+import { assertAlignment } from './alignment.mjs';
 
 async function assertEmptyStateCentered(driver) {
   const state = await driver.executeScript(`
@@ -13,7 +14,7 @@ async function assertEmptyStateCentered(driver) {
     return { deltaX: Math.abs(regionCenterX - emptyCenterX) };
   `);
   assert.ok(state, 'Empty state should render');
-  assert.ok(state.deltaX <= 2, `Empty state should be centered horizontally, got ${state.deltaX}px`);
+  assertAlignment('Empty state horizontal centering', state.deltaX, 2);
 }
 
 async function forceTabOverflow(driver) {

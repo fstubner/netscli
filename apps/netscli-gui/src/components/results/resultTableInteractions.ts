@@ -52,27 +52,36 @@ export function handleColumnResizeKeyDown(
   setColumnWidths: Dispatch<SetStateAction<Record<string, number>>>,
 ) {
   const step = event.shiftKey ? 48 : 16;
-  let nextWidth: number | null = null;
+  const MIN = 72;
+  const MAX = 640;
 
+  // Each case returns the next width given the *current* one. It used to read
+  // `column.width` -- the static column definition, not the live resized
+  // value -- so every keypress recomputed from the same base and holding an
+  // arrow key moved the border exactly one step and then stopped (M-2).
+  let nextFrom: ((current: number) => number) | null = null;
   switch (event.key) {
     case 'ArrowLeft':
-      nextWidth = Math.max(72, (column.width ?? 120) - step);
+      nextFrom = (current) => Math.max(MIN, current - step);
       break;
     case 'ArrowRight':
-      nextWidth = Math.min(640, (column.width ?? 120) + step);
+      nextFrom = (current) => Math.min(MAX, current + step);
       break;
     case 'Home':
-      nextWidth = 72;
+      nextFrom = () => MIN;
       break;
     case 'End':
-      nextWidth = 640;
+      nextFrom = () => MAX;
       break;
     default:
       return;
   }
 
   event.preventDefault();
-  setColumnWidths((prev) => ({ ...prev, [column.key]: nextWidth }));
+  setColumnWidths((prev) => {
+    const current = prev[column.key] ?? column.width ?? 120;
+    return { ...prev, [column.key]: nextFrom(current) };
+  });
 }
 
 export function startColumnResize(

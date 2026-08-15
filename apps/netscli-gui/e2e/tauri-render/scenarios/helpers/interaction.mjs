@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { By } from '../../driver.mjs';
 import { clickButtonText, waitForText } from '../../ui.mjs';
 import { getActiveTabText, waitForNoElement } from './menu.mjs';
+import { assertAlignment } from './alignment.mjs';
 
 async function assertCommandStatusAlignment(driver) {
   await waitForText(driver, '[data-testid="statusbar"] .status-left', /Mbps/i, 6_000);
@@ -37,7 +38,7 @@ async function assertCommandStatusAlignment(driver) {
   assert.equal(state.dotMarginTop, '1px', 'Status dot should sit 1px lower to align with footer text');
   assert.match(state.leftText, /Mbps/i, 'Traffic rates should be grouped with the selected interface on the left');
   assert.doesNotMatch(state.rightText, /v\d+\./i, 'Footer should not duplicate the About version');
-  assert.ok(state.rightDelta <= 3, `Command copy icon should align to status padding, got ${state.rightDelta}px`);
+  assertAlignment('Command copy icon vs status padding', state.rightDelta, 3);
 }
 
 async function assertThemedTooltips(driver) {
@@ -216,10 +217,20 @@ async function dismissDnsWarningIfPresent(driver) {
 }
 
 async function assertOperationToastReturnsToTab(driver, expectedTabText) {
-  await driver.executeScript(`
+  // The whole point is "switch away, then click the toast to come back", so
+  // switching away has to actually happen. `inactiveTab?.click()` swallowed
+  // the case where no inactive tab existed, and the final assertion then
+  // passed trivially because the expected tab had never been left (M-16).
+  const switchedAway = await driver.executeScript(`
     const inactiveTab = document.querySelector('[data-testid="tab-strip"] .work-tab:not(.active)');
-    inactiveTab?.click();
+    if (!inactiveTab) return false;
+    inactiveTab.click();
+    return true;
   `);
+  assert.ok(
+    switchedAway,
+    'Expected a second tab to switch away from; without one this scenario cannot fail',
+  );
   await waitForText(driver, '[data-testid="toast"]', /complete/i, 25_000);
   await waitForText(driver, '[data-testid="toast"] .toast-action', /Open tab/i);
   await driver.findElement(By.css('[data-testid="toast"]')).click();

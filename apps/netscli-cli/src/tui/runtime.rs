@@ -28,6 +28,11 @@ pub async fn run_tui(concurrency: Option<usize>) -> Result<()> {
         input.refresh_exit_confirmation(&mut app);
         tasks.refresh_running_detail(&mut app);
 
+        // Sample traffic here rather than from the draw path: `get_stats`
+        // holds a mutex across a syscall, and drawing is synchronous so it
+        // cannot yield (B-10). `block_in_place` keeps the borrow.
+        tokio::task::block_in_place(|| app.refresh_traffic_stats());
+
         app.draw(&mut terminal)?;
         if app.running {
             app.suggestions.clear();
@@ -37,11 +42,22 @@ pub async fn run_tui(concurrency: Option<usize>) -> Result<()> {
 
         tasks.finish_ready_task(&mut app).await;
 
-        if !event::poll(tick_rate)? {
-            continue;
-        }
+        // `event::poll` parks the calling thread for up to `tick_rate`, and
+        // this loop runs on a tokio worker — so every iteration blocked a
+        // worker for 100ms whether or not a key arrived (B-10). Both the poll
+        // and the read move to a blocking thread; they stay together so the
+        // read cannot race another poller.
+        let polled = tokio::task::spawn_blocking(move || -> std::io::Result<Option<Event>> {
+            if event::poll(tick_rate)? {
+                Ok(Some(event::read()?))
+            } else {
+                Ok(None)
+            }
+        })
+        .await
+        .map_err(|e| std::io::Error::other(e.to_string()))??;
 
-        let Event::Key(key) = event::read()? else {
+        let Some(Event::Key(key)) = polled else {
             continue;
         };
 

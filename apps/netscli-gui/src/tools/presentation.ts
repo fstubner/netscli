@@ -12,6 +12,8 @@ export { portBannerLines, portHeaderLines, portRawPreview, portTlsLines } from '
 export { detailLinesForRow } from './presentation/rowDetails';
 export { filterHintsFor, type FilterHints, type FilterSectionConfig } from './presentation/filterHints';
 export { latencyOf, statusOf } from './presentation/ports';
+// Same function, kept under both names while call sites read naturally (M-7).
+export { latencyOfPort } from './presentation/portDetails';
 export { buildRows } from './presentation/rows';
 export { resultSummary } from './presentation/summaries';
 export { filterAndSortRows, serializeRowsAsCsv } from './presentation/table';

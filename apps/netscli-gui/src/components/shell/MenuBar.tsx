@@ -301,14 +301,15 @@ export function MenuBar({
   ];
 
   return (
-    <div className="menu-strip">
+    <div className="menu-strip" role="menubar" aria-label="Main menu">
       <NetsCliMenuMark />
       {groups.map((group) => (
-        <div className="menu-root" key={group.label}>
+        <div className="menu-root" key={group.label} role="none">
           <button
             aria-expanded={group.label !== 'Settings' ? openMenu === group.label : undefined}
             aria-haspopup={group.label !== 'Settings' ? 'menu' : undefined}
             className={`menu-button ${openMenu === group.label ? 'active' : ''}`}
+            role="menuitem"
             ref={openMenu === group.label ? activeButtonRef : undefined}
             onClick={(event) => {
               if (group.label === 'Settings') {
@@ -354,7 +355,7 @@ export function MenuBar({
               {group.sections.map((section, sectionIndex) => (
                 <div className="menu-popover-section" key={section.label ?? sectionIndex}>
                   {section.label && <span className="menu-popover-label">{section.label}</span>}
-                  {section.items.map((item) => (
+                  {section.items.map((item, itemIndex) => (
                     <button
                       className={[
                         'menu-popover-item',
@@ -362,7 +363,9 @@ export function MenuBar({
                         item.variant === 'danger' ? 'danger' : '',
                       ].filter(Boolean).join(' ')}
                       disabled={item.disabled}
-                      key={item.label}
+                      // Index-qualified: repeated history commands share a
+                      // label, and React drops the duplicate key (M-1).
+                      key={`${sectionIndex}-${itemIndex}-${item.label}`}
                       role="menuitem"
                       onClick={() => {
                         shouldRestoreFocusRef.current = false;

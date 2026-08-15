@@ -21,6 +21,7 @@ import {
   exerciseScan,
   exerciseSweep,
 } from './tauri-render/scenarios.mjs';
+import { alignmentReport } from './tauri-render/scenarios/helpers/alignment.mjs';
 
 const DESKTOP_WINDOW = { x: 0, y: 0, width: 1000, height: 970 };
 const NARROW_WINDOW = { width: 520, height: 720 };
@@ -163,6 +164,16 @@ main()
     process.exitCode = 1;
   })
   .finally(async () => {
+    // Alignment drift does not fail the run (M-14), so it has to be
+    // summarised here or the warnings scroll past mid-run and are never seen.
+    const drifts = alignmentReport();
+    if (drifts.length > 0) {
+      console.warn(`
+${drifts.length} alignment drift(s) within tolerance of failing:`);
+      for (const d of drifts) {
+        console.warn(`  - ${d.label}: ${d.delta.toFixed(1)}px (tolerance ${d.tolerance}px)`);
+      }
+    }
     await closeServer(probeServer).catch(() => undefined);
     stopProcess(tauriDriverProcess);
   });

@@ -15,8 +15,23 @@ impl<'a> TuiApp<'a> {
     }
 
     pub fn exit_config(&mut self) {
+        // Every close path funnels through here (Esc, Done, /config toggle),
+        // so this is where the single write belongs. Cycling a value used to
+        // do a synchronous fs::write + fs::rename per key event, on the event
+        // loop thread, which under key-repeat meant one full file rewrite per
+        // repeat tick (B-11).
+        self.flush_settings_if_dirty();
         self.ui_mode = UiMode::Normal;
         self.scroll_to_bottom();
+    }
+
+    /// Persist settings only if something actually changed.
+    fn flush_settings_if_dirty(&mut self) -> Option<String> {
+        if !self.settings_dirty {
+            return None;
+        }
+        self.settings_dirty = false;
+        self.config_save_settings()
     }
 
     pub fn config_next(&mut self) {
@@ -111,9 +126,10 @@ impl<'a> TuiApp<'a> {
             ConfigItemKind::Reset | ConfigItemKind::Done => {}
         }
 
-        let msg = self.config_save_settings();
+        // Deferred to exit_config; see B-11 there.
+        self.settings_dirty = true;
         if let Some(state) = self.config_state_mut() {
-            state.message = msg;
+            state.message = None;
         }
     }
 
@@ -140,7 +156,10 @@ impl<'a> TuiApp<'a> {
             _ => false,
         };
 
-        let msg = self.config_save_settings();
+        // Reset is a discrete, destructive action, so it is written through
+        // immediately rather than waiting for the panel to close.
+        self.settings_dirty = true;
+        let msg = self.flush_settings_if_dirty();
         if let Some(state) = self.config_state_mut() {
             state.message = msg;
         }

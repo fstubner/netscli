@@ -17,8 +17,20 @@ export function NumberField({ disabled, field, tab, onPatchForm, onRun }: Number
   const max = field.max;
   const step = field.step ?? 1;
 
+  /**
+   * Clamp and normalise. Only on blur, Enter, or a stepper click.
+   *
+   * This used to run from `onChange` too, so every keystroke was clamped
+   * (M-3): in a field with `min: 10`, typing the "5" of "50" was rewritten to
+   * "10" before the "0" arrived, and the value could not be typed at all.
+   */
   function commit(raw: string) {
     onPatchForm(tab.id, field.key, normalizeNumberFieldValue(raw, field));
+  }
+
+  /** Store exactly what was typed, so an in-progress value survives. */
+  function edit(raw: string) {
+    onPatchForm(tab.id, field.key, raw);
   }
 
   function stepBy(delta: number) {
@@ -43,7 +55,7 @@ export function NumberField({ disabled, field, tab, onPatchForm, onRun }: Number
         value={value}
         placeholder={field.placeholder}
         onBlur={(event) => commit(event.currentTarget.value)}
-        onChange={(event) => commit(event.target.value)}
+        onChange={(event) => edit(event.target.value)}
         onKeyDown={(event) => {
           if (event.key === 'Enter') {
             commit(event.currentTarget.value);

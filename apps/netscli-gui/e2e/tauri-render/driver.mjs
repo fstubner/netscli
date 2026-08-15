@@ -42,6 +42,11 @@ export async function startTauriDriver(nativeDriverPath, webdriverPort) {
     cwd: guiRoot,
     stdio: ['ignore', 'pipe', 'pipe'],
     shell: false,
+    // Its own process group, so `stopProcess` can signal the whole tree.
+    // tauri-driver spawns the platform WebDriver, which spawns the browser;
+    // without this those grandchildren outlive the run and hold their ports
+    // (M-13). No-op on Windows, which uses taskkill /T instead.
+    detached: process.platform !== 'win32',
   });
 
   child.stdout.on('data', (chunk) => {
