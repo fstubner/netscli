@@ -29,7 +29,7 @@ makepkg -si
 
 # Submit
 git add PKGBUILD .SRCINFO
-git commit -m "Initial release: netscli-bin 0.1.1"
+git commit -m "Initial release: netscli-bin X.Y.Z"
 git push origin master
 ```
 
@@ -45,7 +45,7 @@ If updating manually:
 cd netscli-bin
 # Edit PKGBUILD: bump pkgver, replace sha256sums and sha256sums_* values
 makepkg --printsrcinfo > .SRCINFO
-git commit -am "Update to 0.1.2"
+git commit -am "Update to X.Y.Z"
 git push
 ```
 

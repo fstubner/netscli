@@ -223,6 +223,13 @@ jobs:
       - name: npm ci
         run: npm ci
         working-directory: apps/netscli-gui
+      - name: GUI lint
+        # C-22: there was no lint config or script here at all, which
+        # AGENTS.md acknowledged. `react-hooks` is the rule set that catches
+        # stale closures and wrong dependency arrays -- the shape of A-13,
+        # B-16 and B-18.
+        run: npm run lint
+        working-directory: apps/netscli-gui
       - name: GUI unit tests
         run: npm run test:unit
         working-directory: apps/netscli-gui

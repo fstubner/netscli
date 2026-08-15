@@ -49,7 +49,12 @@ jobs:
         working-directory: apps/netscli-gui
 
       - name: Install tauri-driver
-        run: cargo install tauri-driver --locked
+        # Pinned (B-34). `--locked` honours *that crate's* lockfile but says
+        # nothing about which version gets installed, so this floated to
+        # whatever was newest at job time -- a silent, unreviewed dependency
+        # bump on a job that drives the real app. Dependabot does not watch
+        # `cargo install` lines, so bumping this is a deliberate edit.
+        run: cargo install tauri-driver --locked --version 2.0.6
 
       # This job has been failing with "session not created:
       # DevToolsActivePort file doesn't exist", which is msedgedriver's

@@ -8,7 +8,10 @@ $ErrorActionPreference = 'Stop'
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 
 if (-not $NpcapSdk) {
-    $NpcapSdk = 'C:\tmp\netscli-npcap-sdk'
+    # Default under LOCALAPPDATA, not C:\tmp (B-33). C:\tmp is predictable
+    # and not ACL'd, so a planted Lib\x64\wpcap.lib there passes the
+    # existence check below and links into the build.
+    $NpcapSdk = Join-Path $env:LOCALAPPDATA 'netscli\npcap-sdk'
 }
 
 $NpcapLib = Join-Path $NpcapSdk 'Lib\x64'
