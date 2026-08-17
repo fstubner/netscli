@@ -30,6 +30,20 @@ validate_tag() {
 # publish jobs routinely start before release.yml's matrix has finished
 # uploading. Poll for up to 15 minutes, which covers the slowest matrix
 # entry (Tauri bundle on Windows).
+#
+# Progress goes to stderr, deliberately. `verified_sha` calls this, and every
+# caller of `verified_sha` uses a command substitution — so anything written
+# to stdout here is captured *as part of the checksum*. That is not
+# hypothetical: with the retry engaged, `sha` became
+#
+#   "  not yet; retry in 30s (1/30)\n<the real digest>"
+#
+# which the downstream awk/sed patch wrote into the formula, and the render
+# check then rejected with "expected 4 valid sha256 lines, got 0". The retry
+# always engages on a real release, because release.yml and publish.yml fire
+# on the same event and the binaries take minutes to build — so this broke
+# all four Homebrew/Scoop publishes, with an error naming the manifest rather
+# than the cause. `lib_test.sh` pins it.
 wait_for_asset() {
   local url="$1"
   local i
@@ -37,7 +51,7 @@ wait_for_asset() {
     if curl -fsSL --head "$url" >/dev/null 2>&1; then
       return 0
     fi
-    echo "  not yet; retry in 30s ($i/30)"
+    echo "  not yet; retry in 30s ($i/30)" >&2
     sleep 30
   done
   echo "ERROR: $url never became available" >&2
