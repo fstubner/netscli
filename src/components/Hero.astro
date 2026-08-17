@@ -464,25 +464,17 @@ const { hero, social, version } = site;
   .hero .quick-install span{white-space:normal;overflow:visible;text-overflow:clip;word-break:break-all}
 }
 
-/* Narrow screens: wrap the hero command instead of clipping it.
+/* Narrow screens: the hero command stays on one line and ellipsises.
  *
- * `.hero-command code` is `nowrap` + `text-overflow:ellipsis`, which at
- * 375px meant 251px of box for 631px of text -- more than half of the
- * `curl ... | bash` one-liner a first-time visitor is being asked to run was
- * simply not visible. The copy button still copied all of it, which makes it
- * worse rather than better: you cannot see what you are about to paste into
- * a shell.
+ * Deliberate: the `curl … | bash` URL is long enough to wrap to four lines
+ * at 375px, which turns the hero's tightest element into its tallest. The
+ * copy button carries the full string, so nothing is lost — and unlike the
+ * install boxes below, this one never had text hidden under the button,
+ * because `.hero-command` is not a scroller. Its `padding-right:58px` means
+ * the ellipsis lands clear of the button.
  *
- * Here rather than in global.css for the cascade reason noted in
- * Install.astro.
+ * Worth stating the tradeoff, since this is a shell one-liner: a truncated
+ * command means copying something you have not fully read. The copy button
+ * is the intended path and the full command is in the install guide.
  */
-@media(max-width:700px){
-  .hero-command code{
-    white-space:pre-wrap;
-    overflow:visible;
-    text-overflow:clip;
-    overflow-wrap:anywhere;
-  }
-  .hero-command .copy-btn{top:7px;transform:none}
-}
 </style>
