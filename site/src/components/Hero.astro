@@ -463,4 +463,26 @@ const { hero, social, version } = site;
      the "| bash" at the end made the command unusable on phones. */
   .hero .quick-install span{white-space:normal;overflow:visible;text-overflow:clip;word-break:break-all}
 }
+
+/* Narrow screens: wrap the hero command instead of clipping it.
+ *
+ * `.hero-command code` is `nowrap` + `text-overflow:ellipsis`, which at
+ * 375px meant 251px of box for 631px of text -- more than half of the
+ * `curl ... | bash` one-liner a first-time visitor is being asked to run was
+ * simply not visible. The copy button still copied all of it, which makes it
+ * worse rather than better: you cannot see what you are about to paste into
+ * a shell.
+ *
+ * Here rather than in global.css for the cascade reason noted in
+ * Install.astro.
+ */
+@media(max-width:700px){
+  .hero-command code{
+    white-space:pre-wrap;
+    overflow:visible;
+    text-overflow:clip;
+    overflow-wrap:anywhere;
+  }
+  .hero-command .copy-btn{top:7px;transform:none}
+}
 </style>
