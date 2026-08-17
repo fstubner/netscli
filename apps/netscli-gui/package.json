@@ -34,7 +34,7 @@
     "@vitejs/plugin-react": "^6.0.5",
     "edgedriver": "^6.3.0",
     "eslint": "^9.39.5",
-    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "jsdom": "^26.1.0",
     "selenium-webdriver": "^4.44.0",
     "typescript": "^6.0.3",
