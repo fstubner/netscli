@@ -97,7 +97,9 @@ export function useRovingFocus({
     if (items.length === 0) return;
 
     const activeIndex = Math.max(0, items.indexOf(document.activeElement as HTMLElement));
-    let nextIndex = activeIndex;
+    // No initialiser — see the note in resultTableInteractions.ts. Every
+    // switch arm assigns or returns, so seeding this was dead code.
+    let nextIndex: number;
 
     switch (event.key) {
       case 'ArrowDown':
