@@ -208,6 +208,15 @@ body.nav-scrolled nav::after{
     padding:0 10px;
     border-bottom:0;
     border-left:2px solid transparent;
+    /* Undo the desktop full-height trick. The base rule sets
+       `height:calc(100% + 24px)` with `margin-block:-12px` so a horizontal
+       nav link fills the bar and puts its underline on the bar's bottom
+       edge. In this column that negative margin pulls every link 12px into
+       each neighbour: measured 40px-tall links sitting only 18px apart, so
+       each one overlapped the next by 22px and the lower half of every menu
+       item activated the item below it. */
+    height:auto;
+    margin-block:0;
   }
   .nlinks a:hover,
   .nlinks a[aria-current='page']{

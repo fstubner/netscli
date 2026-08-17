@@ -68,7 +68,9 @@ const fallbackReleases = parseLocalChangelog(changelogText);
   includeFaqSchema={false}
 >
   <Nav />
-  <main class="changelog-shell">
+  <!-- id="main" is what Page.astro's "Skip to content" link targets. Without
+       it the link is focusable, announced, and goes nowhere. -->
+  <main id="main" class="changelog-shell">
     <header class="changelog-hero">
       <h1>Release notes</h1>
       <p>
@@ -199,7 +201,7 @@ const fallbackReleases = parseLocalChangelog(changelogText);
   transform:translateY(-50%);
 }
 .release-timeline-link small{
-  color:#687384;
+  color:#737f91;
   font-size:.68rem;
 }
 .release-timeline-link:hover,
@@ -214,7 +216,7 @@ const fallbackReleases = parseLocalChangelog(changelogText);
   background:#0aae7a;
 }
 .release-timeline-empty{
-  color:#687384;
+  color:#737f91;
   font-size:.78rem;
 }
 .release-item{
