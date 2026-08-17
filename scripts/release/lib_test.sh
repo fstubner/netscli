@@ -16,7 +16,7 @@
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=./lib.sh
+# shellcheck source=./lib.sh disable=SC1091
 . "${HERE}/lib.sh"
 
 TMP="$(mktemp -d)"
@@ -46,6 +46,9 @@ DIGEST="$(printf '%s' "$ASSET_BYTES" | sha256_of_stdin)"
 PROBES="${TMP}/probe-count"
 : >"$PROBES"
 
+# These two shadow the real commands for the duration of the test. lib.sh
+# calls them by name, which shellcheck cannot see, hence the SC2317s.
+# shellcheck disable=SC2317
 curl() {
   local args=("$@") i
   for ((i = 0; i < ${#args[@]}; i++)); do
@@ -65,6 +68,7 @@ curl() {
 }
 
 # Keep the retry from actually waiting 30 seconds.
+# shellcheck disable=SC2317
 sleep() { :; }
 
 captured="$(verified_sha "https://example.invalid/download/v0.0.0" "netscli-fake")"
@@ -102,6 +106,9 @@ for good in v0.3.0 v1.2.3 v10.20.30 v0.3.0-rc.1; do
   fi
 done
 
+# The single quotes are the point: these are the literal strings an
+# attacker would supply, and they must never be expanded here.
+# shellcheck disable=SC2016
 for evil in \
   'v0.3.0; rm -rf /' \
   'v0.3.0|p\nrm' \
