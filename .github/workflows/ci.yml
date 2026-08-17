@@ -336,15 +336,29 @@ jobs:
           set -euo pipefail
           echo "$NEEDS" | jq -r 'to_entries[] | "  \(.key): \(.value.result)"'
 
-          failed=$(echo "$NEEDS" | jq -r '
+          # Allowlist the two good outcomes rather than denylisting the bad
+          # ones. This used to fail only on "failure" or "cancelled", and
+          # GitHub has more result states than that.
+          #
+          # Observed on PR #187: codeload started returning 429 for action
+          # downloads, the ubuntu leg of the test matrix died before running
+          # anything, and its result came back as "abandoned" — which matched
+          # neither arm, so this gate reported success over a test job that
+          # had visibly failed. A required status check that can go green
+          # while a test job is red is worse than no gate, because branch
+          # protection is trusting it.
+          #
+          # Anything that is not success or skipped now fails the gate,
+          # including result states GitHub may add later.
+          bad=$(echo "$NEEDS" | jq -r '
             to_entries
-            | map(select(.value.result == "failure" or .value.result == "cancelled"))
-            | map(.key)
+            | map(select(.value.result != "success" and .value.result != "skipped"))
+            | map("\(.key)=\(.value.result)")
             | join(", ")
           ')
 
-          if [[ -n "$failed" ]]; then
-            echo "::error::CI Gate failed — these jobs did not succeed: ${failed}"
+          if [[ -n "$bad" ]]; then
+            echo "::error::CI Gate failed — these jobs did not succeed: ${bad}"
             exit 1
           fi
           echo "CI Gate passed (all jobs succeeded or were legitimately skipped)."
