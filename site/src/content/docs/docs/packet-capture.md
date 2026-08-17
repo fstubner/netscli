@@ -5,8 +5,8 @@ description: NetsCLI packet capture support, runtime requirements, output format
 
 Packet capture is optional. It needs a build with packet-capture support and a system packet-capture library.
 
-:::caution[No published build has packet capture]
-It is a compile-time feature, and every published artifact — the desktop installers, the standard CLI release assets, and `cargo install netscli` — is built without it. Nothing on this page will work until you install a capture-capable build. See [Packet capture in the install guide](/docs/install/#packet-capture) for the three ways to get one.
+:::caution[The default builds have no packet capture]
+It is a compile-time feature. The desktop installers, the standard CLI release assets, and `cargo install netscli` are all built without it, so nothing on this page will work until you install a capture-capable build. The `-pcap` CLI assets on each release *are* built with it — see [Packet capture in the install guide](/docs/install/#packet-capture) for the three ways to get one.
 
 Run `netscli doctor` to check which build you have. It works on every build, unlike `netscli pcap --check` below.
 :::

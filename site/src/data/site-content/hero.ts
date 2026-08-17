@@ -9,7 +9,14 @@ export const hero: Hero = {
   badge: 'Windows · Linux · macOS',
   heading: 'A modern network scanner',
   subhead:
-    'Discover LAN devices, scan TCP ports, query DNS, trace routes, inspect hosts, and capture packets from the desktop app, terminal UI, CLI, or MCP server. Each interface calls the same Rust core, so results stay consistent.',
+    // Packet capture is scoped deliberately. Listing it alongside the other
+    // operations claimed it works "from the desktop app, terminal UI, CLI, or
+    // MCP server", and no published desktop installer has capture compiled in
+    // at all -- a visitor could install from this page, go looking for it, and
+    // find nothing. The capture-enabled CLI assets are real and published, so
+    // the feature stays on the page; it just no longer implies the download
+    // above it includes it.
+    'Discover LAN devices, scan TCP ports, query DNS, trace routes, and inspect hosts from the desktop app, terminal UI, CLI, or MCP server — with packet capture in capture-enabled CLI builds. Each interface calls the same Rust core, so results stay consistent.',
   quickInstall:
     'curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash',
   installLinkLabel: 'More install options ↓',
