@@ -5,8 +5,12 @@ export const meta: Meta = {
   title: 'NetsCLI - Modern Network Scanner and Diagnostics Toolkit',
   description:
     'NetsCLI is a Rust-based network scanner for LAN discovery, TCP port scans, DNS, trace routes, host inspection, packet capture, and desktop, terminal, CLI, and MCP workflows.',
+  // Same scoping as the hero subhead: capture is not in any published desktop
+  // installer, so this must not imply it ships with the app. It is what search
+  // results and link previews show, which is where an inaccurate claim travels
+  // furthest.
   ogDescription:
-    'Discover LAN devices, scan TCP ports, query DNS, trace routes, inspect hosts, and capture packets from the desktop app, terminal UI, CLI, or MCP server backed by one Rust core.',
+    'Discover LAN devices, scan TCP ports, query DNS, trace routes, and inspect hosts from the desktop app, terminal UI, CLI, or MCP server backed by one Rust core. Packet capture in capture-enabled CLI builds.',
   keywords:
     'network scanner, rust, cli, tui, mcp server, model context protocol, port scan, host discovery, dns lookup, arp table, bonjour, mdns, packet capture, claude, cursor, ai agent, network tool, cross-platform',
   siteName: 'NetsCLI',
