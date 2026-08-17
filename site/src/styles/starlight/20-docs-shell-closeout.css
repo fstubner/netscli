@@ -207,9 +207,21 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
     padding: 0 !important;
     border: 1px solid rgba(140, 149, 166, 0.22) !important;
     border-radius: 8px !important;
+    /* Opaque, and theme-aware.
+     *
+     * This was a hard-coded `rgba(27, 32, 40, 0.96)`, which failed twice
+     * over. The 4% let the page read straight through the open menu -- the
+     * page heading and body text crossing the menu labels. And because the
+     * colour was hard-coded rather than tokenised, the panel stayed dark in
+     * light theme, so a dark drawer sat over a #fbfbfb page with white
+     * bleeding through it.
+     *
+     * `--sl-color-bg-sidebar` is #111 in dark and #fbfbfb in light, so the
+     * panel now follows the theme and hides what is behind it. The green
+     * wash stays; it is decorative and reads on both. */
     background:
       linear-gradient(180deg, rgba(10, 174, 122, 0.04), transparent 11rem),
-      rgba(27, 32, 40, 0.96) !important;
+      var(--sl-color-bg-sidebar) !important;
     box-shadow: 18px 0 46px rgba(0, 0, 0, 0.36) !important;
     overflow: auto !important;
     overscroll-behavior: contain !important;
