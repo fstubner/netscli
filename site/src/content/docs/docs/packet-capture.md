@@ -21,7 +21,7 @@ Run `netscli doctor` to check which build you have. It works on every build, unl
 | Linux | libpcap installed and capture permissions granted. |
 | macOS | libpcap available and capture permissions granted where required. |
 
-If the desktop build does not include packet capture support, the Packet Capture tool is hidden. If support is included but the runtime library or permissions are missing, NetsCLI keeps the rest of the app usable and shows setup guidance for packet capture.
+The Packet Capture tool stays visible in the desktop app either way. If the build does not include packet capture support, or support is included but the runtime library or permissions are missing, the tool opens and shows setup guidance instead of running. The rest of the app is unaffected.
 
 ## CLI Capture
 
