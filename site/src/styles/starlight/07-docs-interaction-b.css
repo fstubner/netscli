@@ -155,3 +155,31 @@ html[data-theme='light'] .sl-markdown-content :not(pre) > code {
   background: #eef2f4;
 
 }
+
+/* Narrow screens: give the copy button its own band above the code.
+ *
+ * The rule above tries to reserve room with
+ * `.ec-line:first-child .code { padding-inline-end: ... }`, and it cannot
+ * work: the line sits inside a horizontal scroller, so that padding lands at
+ * the END of the scrollable content, not at the visible right edge. Any line
+ * longer than the viewport still renders under the button. Measured on
+ * /docs/cli/ at 375px, the button covered 32px of the first line on three of
+ * four code blocks.
+ *
+ * Wrapping is not the answer here the way it is for the landing page's
+ * install commands -- these are real code samples where a wrapped line
+ * changes what the reader thinks the command is. So instead the code starts
+ * below the button, which costs one band of vertical space and hides
+ * nothing. On wider screens the button has room beside the code and this
+ * does not apply.
+ *
+ * `.is-terminal` is deliberately NOT excluded. Expressive Code gives
+ * terminal frames a header bar that would hold the button clear, but this
+ * stack hides it (`display:none`, measured height 0), so on every code
+ * block in these docs the button lands on line one.
+ */
+@media (max-width: 700px) {
+  .sl-markdown-content .expressive-code .frame:not(.has-title) pre {
+    padding-block-start: calc(var(--netscli-code-copy-size) + 0.5rem);
+  }
+}

@@ -13,7 +13,8 @@ import Footer from '../components/Footer.astro';
   noindex
 >
   <Nav />
-  <main class="not-found" aria-labelledby="not-found-title">
+  <!-- id="main" is what Page.astro's "Skip to content" link targets. -->
+  <main id="main" class="not-found" aria-labelledby="not-found-title">
     <section class="not-found-shell">
       <div class="not-found-copy">
         <p class="eyebrow">HTTP 404</p>

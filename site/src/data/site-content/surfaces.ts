@@ -39,10 +39,10 @@ export const surfaces: SurfaceCard[] = [
     body:
       'Use the CLI for repeatable diagnostics and automation. Network operations expose <code>--json</code> and <code>--yaml</code> output, so scripts and other tools can consume the same data the desktop app displays.',
     codeHtml: `<span style="color:#888">$</span> netscli scan demo.local -p 80,443 --json
-<span style="color:#555">[</span>
-  <span style="color:#555">{</span> <span style="color:#7c9fc7">"port"</span>: 80,  <span style="color:#7c9fc7">"open"</span>: true, <span style="color:#7c9fc7">"service"</span>: <span style="color:#8fbc7f">"http"</span>  <span style="color:#555">}</span>,
-  <span style="color:#555">{</span> <span style="color:#7c9fc7">"port"</span>: 443, <span style="color:#7c9fc7">"open"</span>: true, <span style="color:#7c9fc7">"service"</span>: <span style="color:#8fbc7f">"https"</span> <span style="color:#555">}</span>
-<span style="color:#555">]</span>
+<span style="color:#7b7b7b">[</span>
+  <span style="color:#7b7b7b">{</span> <span style="color:#7c9fc7">"port"</span>: 80,  <span style="color:#7c9fc7">"open"</span>: true, <span style="color:#7c9fc7">"service"</span>: <span style="color:#8fbc7f">"http"</span>  <span style="color:#7b7b7b">}</span>,
+  <span style="color:#7b7b7b">{</span> <span style="color:#7c9fc7">"port"</span>: 443, <span style="color:#7c9fc7">"open"</span>: true, <span style="color:#7c9fc7">"service"</span>: <span style="color:#8fbc7f">"https"</span> <span style="color:#7b7b7b">}</span>
+<span style="color:#7b7b7b">]</span>
 
 <span style="color:#888">$</span> netscli discover --json | jq '.[].hostname'
 <span style="color:#8fbc7f">"workstation.local"</span>
@@ -54,14 +54,14 @@ export const surfaces: SurfaceCard[] = [
     body:
       'Run <code>netscli serve</code> when an MCP client needs local network tools. The server exposes structured operations for discovery, scanning, ping, DNS, ARP, inspect, sweep, interfaces, and mDNS, with packet-capture tools available in packet-capture builds.',
     codeHtml: `<span style="color:#888">// claude_desktop_config.json</span>
-<span style="color:#555">{</span>
-  <span style="color:#7c9fc7">"mcpServers"</span>: <span style="color:#555">{</span>
-    <span style="color:#7c9fc7">"netscli"</span>: <span style="color:#555">{</span>
+<span style="color:#7b7b7b">{</span>
+  <span style="color:#7c9fc7">"mcpServers"</span>: <span style="color:#7b7b7b">{</span>
+    <span style="color:#7c9fc7">"netscli"</span>: <span style="color:#7b7b7b">{</span>
       <span style="color:#7c9fc7">"command"</span>: <span style="color:#8fbc7f">"netscli"</span>,
       <span style="color:#7c9fc7">"args"</span>: [<span style="color:#8fbc7f">"serve"</span>]
-    <span style="color:#555">}</span>
-  <span style="color:#555">}</span>
-<span style="color:#555">}</span>`,
+    <span style="color:#7b7b7b">}</span>
+  <span style="color:#7b7b7b">}</span>
+<span style="color:#7b7b7b">}</span>`,
     flip: true,
   },
 ];
