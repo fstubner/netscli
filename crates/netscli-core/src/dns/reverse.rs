@@ -54,9 +54,31 @@ pub async fn reverse_lookup_best_effort_timeout(ip: IpAddr, timeout_ms: u64) -> 
         .and_then(normalize_hostname)
 }
 
+/// Trim a resolved name, and reject one carrying a control character.
+///
+/// Every reverse-lookup result funnels through here, so this is the one
+/// place that can guarantee the property for all consumers — plain-text
+/// CLI, `--json`, the TUI, the desktop app and the MCP server alike.
+///
+/// It matters because of the Windows branch. [`reverse_lookup_windows_ping`]
+/// lifts the name out of `ping -a` stdout, and `ping -a` resolves through
+/// LLMNR and NetBIOS, where the name is whatever a device on the local link
+/// decided to call itself — raw bytes, escaped by nothing. The whitespace
+/// tokenisation there does not remove `ESC`, so a device naming itself
+/// `\x1b[2K\x1b[1A` could repaint the row above its own in `netscli
+/// discover --resolve` output and forge another host's line.
+///
+/// The pure-DNS path happens to be safe already: hickory's `Label` Display
+/// octal-escapes control bytes. But that is a dependency's behaviour, not a
+/// property this code holds, and it does not cover the Windows route.
+///
+/// Rejecting rather than sanitising: a hostname containing a control
+/// character is malformed by any definition, so "no name resolved" is the
+/// honest answer and leaves nothing mangled to display. Callers already
+/// handle `None`.
 fn normalize_hostname(name: String) -> Option<String> {
     let name = name.trim().trim_end_matches('.').trim();
-    if name.is_empty() {
+    if name.is_empty() || name.chars().any(char::is_control) {
         None
     } else {
         Some(name.to_string())
@@ -141,5 +163,31 @@ mod tests {
     fn normalize_hostname_rejects_empty() {
         assert_eq!(normalize_hostname("".to_string()), None);
         assert_eq!(normalize_hostname(".".to_string()), None);
+    }
+
+    #[test]
+    fn normalize_hostname_rejects_control_characters() {
+        // The Windows `ping -a` route returns LLMNR/NetBIOS names as raw
+        // bytes. A device that names itself with a cursor-up plus
+        // line-erase can repaint the row above its own in `discover
+        // --resolve` output, forging another host's line.
+        assert_eq!(normalize_hostname("\u{1b}[2K\u{1b}[1A".to_string()), None);
+        assert_eq!(normalize_hostname("evil\u{1b}[31mhost".to_string()), None);
+        // OSC 52 writes the operator's clipboard; it needs the BEL too.
+        assert_eq!(
+            normalize_hostname("host\u{1b}]52;c;cHduZWQK\u{7}".to_string()),
+            None
+        );
+        // A bare newline would fabricate an extra output line.
+        assert_eq!(normalize_hostname("real\nfake".to_string()), None);
+    }
+
+    #[test]
+    fn normalize_hostname_keeps_legitimate_unicode() {
+        // Rejecting control characters must not reject IDN hostnames.
+        assert_eq!(
+            normalize_hostname("münchen.example.com".to_string()),
+            Some("münchen.example.com".to_string())
+        );
     }
 }

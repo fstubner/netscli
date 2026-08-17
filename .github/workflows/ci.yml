@@ -110,6 +110,13 @@ jobs:
         run: shellcheck scripts/install.sh
       - name: shellcheck release scripts
         run: shellcheck scripts/release/*.sh
+      # The publish path only executes during a release, so a regression in
+      # it stays invisible until the worst possible moment. lib_test.sh
+      # covers the two things shellcheck cannot see: that verified_sha's
+      # stdout carries the digest and nothing else, and that validate_tag
+      # rejects the shell metacharacters that reach sed.
+      - name: test release script helpers
+        run: bash scripts/release/lib_test.sh
       - name: PSScriptAnalyzer install.ps1
         shell: pwsh
         # Write-Host is intentional here (colored installer UX output, which

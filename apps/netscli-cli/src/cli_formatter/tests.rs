@@ -95,3 +95,60 @@ fn port_result(
         error: error.map(str::to_string),
     }
 }
+
+// --- Terminal-escape safety -----------------------------------------------
+//
+// Hostnames are chosen by whatever answered the reverse lookup. On Windows
+// that resolution goes through LLMNR/NetBIOS via `ping -a`, where any device
+// on the local link picks its own name and nothing escapes it.
+//
+// These pin the plain-text CLI path specifically: the TUI is safe because
+// ratatui filters control graphemes, and --json/--yaml are safe because
+// serde escapes them. This path writes bytes straight to the terminal.
+//
+// They assert on the hostile sequence rather than on ESC generally, because
+// the colour helpers legitimately emit ESC when colour is enabled.
+
+/// `ESC [ 1 A` moves the cursor up a line. Combined with `ESC [ 2 K`
+/// (erase line) it lets a scanned device overwrite the row printed above
+/// its own — forging another host's entry in the operator's output.
+const CURSOR_UP: &str = "\u{1b}[1A";
+
+fn hostile_host() -> netscli_core::discover::Host {
+    netscli_core::discover::Host {
+        ip: "10.0.0.7".parse().unwrap(),
+        hostname: Some(format!("evil{CURSOR_UP}\u{1b}[2K")),
+        mac: Some("aa:bb:cc:dd:ee:ff".to_string()),
+        vendor: None,
+        rtt_ms: Some(1),
+    }
+}
+
+#[test]
+fn discover_table_neutralises_a_hostile_hostname() {
+    let out = CliFormatter::format_discover_result(
+        &[hostile_host()],
+        "10.0.0.0/24",
+        Instant::now(),
+        None,
+    );
+    assert!(
+        !out.contains(CURSOR_UP),
+        "cursor-up survived into discover output: {out:?}"
+    );
+    // Still shown, just defused — dropping the row would hide the device.
+    assert!(out.contains("evil"), "hostname vanished entirely: {out:?}");
+}
+
+#[test]
+fn sweep_output_neutralises_a_hostile_hostname() {
+    let entry = netscli_core::sweep::SweepEntry {
+        host: hostile_host(),
+        open_ports: vec![port_result(22, PortStatus::Open, true, Some(1), None)],
+    };
+    let out = CliFormatter::format_sweep_result(&[entry], "10.0.0.0/24", Instant::now(), None);
+    assert!(
+        !out.contains(CURSOR_UP),
+        "cursor-up survived into sweep output: {out:?}"
+    );
+}

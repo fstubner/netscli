@@ -150,6 +150,23 @@ jobs:
         with:
           ref: ${{ env.TAG }}
 
+      # The tag reaches a `sed` replacement in the render step below, and
+      # `workflow_dispatch` lets anyone with repo write access supply an
+      # arbitrary string for it. `|` is the sed delimiter, so an unvalidated
+      # tag escapes the substitution into arbitrary sed commands — and GNU
+      # sed's `s///e` flag executes the result as a shell command, in a job
+      # holding AUR_SSH_PRIVATE_KEY.
+      #
+      # The four publish-*.sh scripts call validate_tag themselves. These two
+      # AUR jobs do their sed inline in YAML and so were never covered by it.
+      - name: Validate tag
+        env:
+          TAG: ${{ env.TAG }}
+        run: |
+          set -euo pipefail
+          . scripts/release/lib.sh
+          validate_tag "$TAG"
+
       - name: Wait for Linux release assets + compute SHA256s
         id: shas
         env:
@@ -295,6 +312,16 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ env.TAG }}
+
+      # Same reasoning as the CLI AUR job: the tag reaches an inline `sed`
+      # below, and workflow_dispatch makes it caller-controlled.
+      - name: Validate tag
+        env:
+          TAG: ${{ env.TAG }}
+        run: |
+          set -euo pipefail
+          . scripts/release/lib.sh
+          validate_tag "$TAG"
 
       - name: Wait for Linux GUI .AppImage + compute SHA256
         id: shas

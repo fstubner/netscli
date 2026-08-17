@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+
 use super::constants::DEFAULT_PORTS;
 use crate::error::{Error, Result};
 
@@ -86,9 +88,32 @@ pub fn parse_ports_checked(input: Option<&str>) -> Result<Option<Vec<u16>>> {
         return Ok(None);
     }
 
-    let mut ports = Vec::new();
+    // Accumulate into a set, and check the cap *inside* the loop.
+    //
+    // This used to expand every token into one flat Vec, then sort, dedup
+    // and validate at the end — so the 4,096-port cap could not prevent the
+    // work it exists to prevent. `-p` is just a string, and each `1-65535`
+    // token expands to 65,535 entries before anything looks at the total:
+    // a 24 KB argument took **2m11s** to be rejected (measured, debug
+    // build), and the cost is linear, so a 1 MB argument allocates tens of
+    // gigabytes before erroring.
+    //
+    // A `BTreeSet` fixes both halves at once. Memory is bounded by the
+    // 65,536 distinct ports that exist rather than by the input length, and
+    // because the set is deduplicated as it grows, the length check after
+    // each token is exact — a leading `1-65535` is rejected immediately.
+    // Iterating a BTreeSet yields sorted unique values, so the explicit
+    // sort+dedup this replaces is now free, and the returned list is
+    // byte-for-byte what it was before.
+    //
+    // Residual: an input made entirely of *repeated identical* ranges
+    // (`1-4096,1-4096,…`) never grows the set past the cap, so it is still
+    // walked token by token. That is bounded work per token with no
+    // allocation growth, which is a different order of problem from the one
+    // above.
+    let mut ports: BTreeSet<u16> = BTreeSet::new();
     for part in raw.split(',') {
-        let mut expanded = parse_port_token(part).map_err(|e| {
+        let expanded = parse_port_token(part).map_err(|e| {
             // Add the caller's context so consumers see both "why" and
             // "where" in one Error. Match on the variant rather than
             // formatting `e`, whose Display already carries an
@@ -100,14 +125,19 @@ pub fn parse_ports_checked(input: Option<&str>) -> Result<Option<Vec<u16>>> {
             };
             Error::invalid_input(format!("invalid port list '{raw}': {detail}"))
         })?;
-        ports.append(&mut expanded);
+        ports.extend(expanded);
+        if ports.len() > MAX_PORTS_PER_SCAN {
+            // Delegate to validate_ports rather than restating the limit or
+            // its wording here — one rule, one message, one place. It is
+            // guaranteed to return Err given the length we just checked.
+            let so_far: Vec<u16> = ports.iter().copied().collect();
+            validate_ports(&so_far)?;
+        }
     }
     if ports.is_empty() {
         return Err(Error::invalid_input(format!("invalid port list: {raw}")));
     }
-    // Sort + dedup so downstream scanners don't probe the same port twice.
-    ports.sort_unstable();
-    ports.dedup();
+    let ports: Vec<u16> = ports.into_iter().collect();
     // Propagate as-is rather than re-wrapping. `validate_ports` already
     // returns an `Error::InvalidInput` naming the offending rule, and
     // wrapping it in another one rendered as
@@ -269,6 +299,46 @@ mod tests {
         assert_eq!(
             parse_ports_checked(Some("1-3")).unwrap(),
             Some(vec![1, 2, 3])
+        );
+    }
+
+    #[test]
+    fn parse_ports_checked_rejects_an_oversized_list_without_expanding_it() {
+        // The cap used to be checked only after the whole string had been
+        // expanded, so it could not stop the allocation it exists to
+        // prevent. Measured against the old code, this input took over two
+        // minutes to be rejected; it now returns on the first token.
+        //
+        // The budget is deliberately loose. The point is the difference
+        // between "immediate" and "minutes", not a precise timing, and a
+        // loaded CI runner must not make this flaky.
+        let big = "1-65535,".repeat(2000);
+        let start = std::time::Instant::now();
+        let err = parse_ports_checked(Some(&big)).unwrap_err().to_string();
+        let elapsed = start.elapsed();
+
+        assert!(err.contains("too many ports"), "unexpected error: {err}");
+        assert!(
+            elapsed < std::time::Duration::from_secs(10),
+            "took {elapsed:?} to reject a list it could have rejected on the first token"
+        );
+    }
+
+    #[test]
+    fn parse_ports_checked_still_dedups_across_tokens() {
+        // Switching to a set must not change the accepted/rejected line.
+        // Overlapping ranges collapse, so this stays under the cap and is
+        // still accepted, exactly as with the previous sort+dedup.
+        let overlapping = format!("1-{MAX_PORTS_PER_SCAN},1-{MAX_PORTS_PER_SCAN}");
+        let parsed = parse_ports_checked(Some(&overlapping)).unwrap().unwrap();
+        assert_eq!(parsed.len(), MAX_PORTS_PER_SCAN);
+        assert_eq!(parsed.first(), Some(&1));
+        assert_eq!(parsed.last(), Some(&(MAX_PORTS_PER_SCAN as u16)));
+
+        // And the ordinary case is still sorted and deduplicated.
+        assert_eq!(
+            parse_ports_checked(Some("443,22,80,22")).unwrap(),
+            Some(vec![22, 80, 443])
         );
     }
 }

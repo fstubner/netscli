@@ -1,4 +1,5 @@
 use netscli_core::inspect::InspectResult;
+use netscli_core::sanitize_for_terminal;
 use std::time::Instant;
 
 use super::style::{cyan, dim, duration_tag, green, red, source_tag, white};
@@ -17,7 +18,12 @@ impl CliFormatter {
             lines.push(format!("{} {}", dim("IP:"), white(&ip.to_string())));
         }
         if let Some(hostname) = &result.hostname {
-            lines.push(format!("{} {}", dim("Hostname:"), white(hostname)));
+            // Remote-chosen; see the note in the discover formatter.
+            lines.push(format!(
+                "{} {}",
+                dim("Hostname:"),
+                white(&sanitize_for_terminal(hostname))
+            ));
         }
         if let Some(ping) = &result.ping {
             let status = if ping.alive {

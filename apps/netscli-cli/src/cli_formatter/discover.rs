@@ -1,4 +1,5 @@
 use netscli_core::discover::Host;
+use netscli_core::sanitize_for_terminal;
 use std::time::Instant;
 
 use super::style::{cyan, dim, duration_tag, green, source_tag, white, yellow};
@@ -81,7 +82,12 @@ impl CliFormatter {
             let ip_str = host.ip.to_string();
             let mac = host.mac.as_deref().unwrap_or("-");
             let vendor = host.vendor.as_deref().unwrap_or("-");
-            let hostname = host.hostname.as_deref().unwrap_or("-");
+            // Hostnames are remote-chosen. `normalize_hostname` in core now
+            // rejects control characters at the source, so this is the second
+            // layer — it holds no matter which code path produced the name,
+            // which is the property that was missing when the sanitiser was
+            // wired to DNS records and mDNS names but to no hostname at all.
+            let hostname = sanitize_for_terminal(host.hostname.as_deref().unwrap_or("-"));
 
             rows.push(format!(
                 "{} {} {} {}",

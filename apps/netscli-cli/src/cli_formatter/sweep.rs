@@ -1,3 +1,4 @@
+use netscli_core::sanitize_for_terminal;
 use netscli_core::sweep::SweepEntry;
 use std::time::Instant;
 
@@ -45,6 +46,8 @@ impl CliFormatter {
                 cyan(&entry.host.ip.to_string()),
             ));
             if let Some(name) = &entry.host.hostname {
+                // Remote-chosen; see the note in the discover formatter.
+                let name = sanitize_for_terminal(name);
                 out.push_str(&format!(" {}", dim(&format!("({name})"))));
             }
             out.push('\n');

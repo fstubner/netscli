@@ -2,6 +2,7 @@ use super::CommandContext;
 use crate::commands;
 use crate::output::{output_format, print_structured, OutputFormat};
 use anyhow::Result;
+use netscli_core::sanitize_for_terminal;
 
 pub(super) async fn run_lookup(
     ctx: CommandContext<'_>,
@@ -34,7 +35,10 @@ pub(super) async fn run_reverse(
     match format {
         OutputFormat::Json | OutputFormat::Yaml => print_structured(format, &res)?,
         OutputFormat::Text => match res {
-            Some(name) => println!("{}", name),
+            // `netscli reverse` prints the remote-chosen name and nothing
+            // else, so it is the shortest path from a hostile name to the
+            // operator's terminal.
+            Some(name) => println!("{}", sanitize_for_terminal(&name)),
             None => println!("No PTR record found."),
         },
     }
