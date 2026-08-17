@@ -124,11 +124,18 @@ impl DiscoverEngine {
             ping_results.into_iter().filter(|r| r.alive).collect();
 
         // 2) Load ARP/neighbor table once and reuse it.
-        let arp_map: HashMap<IpAddr, crate::arp::ArpEntry> = NetworkManager::get_arp_table()
-            .unwrap_or_default()
-            .into_iter()
-            .map(|e| (e.ip, e))
-            .collect();
+        //
+        // On a blocking thread: this shells out to `arp` on Windows and
+        // macOS, and running it inline parked a runtime worker on the child
+        // process for every discover and sweep.
+        let arp_map: HashMap<IpAddr, crate::arp::ArpEntry> =
+            tokio::task::spawn_blocking(NetworkManager::get_arp_table)
+                .await
+                .unwrap_or_else(|_| Ok(Vec::new()))
+                .unwrap_or_default()
+                .into_iter()
+                .map(|e| (e.ip, e))
+                .collect();
 
         // 3) Optionally reverse-DNS alive hosts using a single resolver.
         let hostname_map: HashMap<IpAddr, Option<String>> = if resolve {

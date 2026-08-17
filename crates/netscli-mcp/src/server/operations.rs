@@ -125,9 +125,10 @@ pub(super) async fn op_dns_lookup(
         .map_err(|e| RpcError::ToolError(e.to_string()))
 }
 
-pub(super) fn op_get_arp_table() -> Result<Vec<netscli_core::ArpEntry>, RpcError> {
+pub(super) async fn op_get_arp_table() -> Result<Vec<netscli_core::ArpEntry>, RpcError> {
     let ops = netscli_core::Ops::default();
     ops.get_arp_table()
+        .await
         .map_err(|e| RpcError::ToolError(e.to_string()))
 }
 

@@ -41,7 +41,7 @@ pub(super) async fn handle_arp(parts: &[&str], ops: &Ops) -> Vec<Line<'static>> 
             Ok(_) => out.push(Line::from("Cleared ARP table")),
             Err(e) => out.push(Formatter::format_error(&format!("Error: {}", e))),
         },
-        _ => match ops.get_arp_table() {
+        _ => match ops.get_arp_table().await {
             Ok(entries) => {
                 out.extend(Formatter::format_arp_table(&entries));
             }
