@@ -119,7 +119,12 @@ export function handleTableKeyDown(
   if (rowCount === 0) return;
 
   const current = Math.min(Math.max(selectedIndex, 0), rowCount - 1);
-  let next = current;
+  // No initialiser: every arm of the switch below either assigns `next` or
+  // returns, so seeding it with `current` was dead (ESLint 10's
+  // `no-useless-assignment`). Leaving it undeclared makes the compiler
+  // enforce that property instead of hiding a missing case behind a
+  // plausible-looking default.
+  let next: number;
   const ctrlOrMeta = event.ctrlKey || event.metaKey;
 
   if (event.key === ' ' && ctrlOrMeta) {
