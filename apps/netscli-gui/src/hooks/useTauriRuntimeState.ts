@@ -94,9 +94,25 @@ export function useTauriRuntimeState() {
     }
   }
 
+  // Packet Capture stays in the menu even on a build without the feature.
+  //
+  // It used to be filtered out, which is why the docs disagreed with each
+  // other: `docs/install.md` and `docs/RELEASE.md` both say the tool appears
+  // and presents setup guidance, while the app removed it entirely. Since no
+  // published installer is built with `--features pcap`, every real user got
+  // the hidden version — they went looking for packet capture, found no
+  // trace of it, and no explanation of why.
+  //
+  // Nothing else is needed to make this safe. The pane already renders
+  // `PcapUnavailableState` whenever the capability is unavailable, and
+  // `runDisabledReason` in App.tsx already disables Run for the same
+  // condition, so the tool is visible, explains itself, and stays
+  // non-runnable — which is what RELEASE.md specifies.
+  //
+  // mDNS keeps the capability check: it is on by default in every published
+  // build, so hiding it means the feature genuinely is not there.
   const toolCapabilities: ToolCapabilityMap = {
     mdns: mdnsCapability.compiled,
-    pcap: pcapCapability.compiled,
   };
 
   return {
