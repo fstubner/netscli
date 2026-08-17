@@ -190,10 +190,26 @@ export function initLandingPage(repo: string): void {
         navigatorWithUaData.userAgentData?.platform ||
         navigator.userAgent ||
         "";
+      // Mobile and Chrome OS have to be matched explicitly.
+      //
+      // UA-CH reports `platform` as one of a small fixed set: "Windows",
+      // "macOS", "Linux", "Android", "Chrome OS", "iOS". The previous three
+      // tests covered only the first three, so Android, iOS and Chrome OS
+      // all fell through to the `"macos"` default -- every phone visitor was
+      // shown the macOS install tab and offered a .dmg from the hero button.
+      // Confirmed on a Pixel 8 UA, where `platform` is exactly "Android".
+      //
+      // Apple's mobile platforms group with macOS, and Android/Chrome OS
+      // with Linux. Neither can actually run NetsCLI, so the goal is only to
+      // show the least wrong thing to someone browsing on a phone and to
+      // stop claiming a Mac is involved when it is not.
+      //
+      // `cros` is matched before `linux` deliberately: Chrome OS is
+      // Linux-based and some UA strings contain both.
       const detected: OperatingSystem = /win/i.test(ua) ? "windows"
-        : /mac/i.test(ua) ? "macos"
-        : /linux/i.test(ua) ? "linux"
-        : "macos";
+        : /mac|ios|iphone|ipad/i.test(ua) ? "macos"
+        : /android|cros|chrome\s?os|linux/i.test(ua) ? "linux"
+        : "windows";
       setOS(detected);
 
       const packageInstall = document.getElementById("hero-package-install");
