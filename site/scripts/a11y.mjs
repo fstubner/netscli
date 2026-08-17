@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import process from 'node:process';
@@ -61,8 +61,51 @@ const axeCli = modulePath('@axe-core', 'cli', 'dist', 'src', 'bin', 'cli.js');
 let preview;
 let previewOutput = '';
 
+// Cleanup kills whatever is listening on our port, not `preview.pid`.
+//
+// `preview.kill()` leaked the server on every run, and the tree-walk fix
+// tried first did not help either: `taskkill /T` exited 128 ("process not
+// found"). The node process we spawn re-execs and exits, so the process
+// actually holding the port is an orphan whose parent is already gone --
+// there is no tree left to walk from `preview.pid`.
+//
+// The leak was not cosmetic. The next run hit this script's own "something
+// is already listening, refusing to scan it" guard and exited 1, so the
+// check reliably blocked itself on its second invocation.
+//
+// Killing by port is safe here precisely because of that guard: we only
+// reach this point having confirmed the port was free and started the
+// server ourselves, so nothing else can own it.
+const listenersOnPort = () => {
+  if (process.platform === 'win32') {
+    const r = spawnSync('netstat', ['-ano'], { encoding: 'utf8' });
+    if (r.status !== 0 || !r.stdout) return [];
+    const lines = r.stdout.split(/\r?\n/);
+    const pids = lines
+      .filter((line) => line.includes('LISTENING') && line.includes(':' + port))
+      .map((line) => line.trim().split(/\s+/).pop())
+      .filter((pid) => pid && pid !== '0');
+    return [...new Set(pids)];
+  }
+  const r = spawnSync('lsof', ['-ti', 'tcp:' + port], { encoding: 'utf8' });
+  if (r.status !== 0 || !r.stdout) return [];
+  return [...new Set(r.stdout.split(/\s+/).filter(Boolean))];
+};
+
 const cleanup = () => {
-  if (preview && !preview.killed) preview.kill();
+  if (!preview) return;
+  for (const pid of listenersOnPort()) {
+    if (process.platform === 'win32') {
+      spawnSync('taskkill', ['/pid', pid, '/T', '/F'], { stdio: 'ignore' });
+    } else {
+      try {
+        process.kill(Number(pid), 'SIGKILL');
+      } catch {
+        // Already gone.
+      }
+    }
+  }
+  if (!preview.killed) preview.kill();
 };
 
 process.on('exit', cleanup);

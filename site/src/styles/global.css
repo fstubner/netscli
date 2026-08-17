@@ -243,16 +243,10 @@ body.lightbox-open{overflow:hidden}
 .image-lightbox-close:hover{background:#2a2d32;border-color:rgba(255,255,255,.32)}
 .image-lightbox-close:focus-visible{outline:2px solid #2dd4bf;outline-offset:2px}
 
-html[data-theme='light'] .image-lightbox{background:rgba(15,23,42,.72)}
-html[data-theme='light'] .image-lightbox-frame{
-  border-color:rgba(15,23,42,.16);
-  background:#fff;
-}
-html[data-theme='light'] .image-lightbox-close{
-  background:#fff;
-  color:#0f172a;
-  border-color:rgba(15,23,42,.22);
-}
+/* No light-theme overrides here on purpose. The lightbox only runs on the
+   landing page (it binds to `.bigshot img, .surface-visual img`), and that
+   layout is dark-only — setting data-theme='light' on it changes nothing.
+   Rules that can never match are how the Starlight stack got to 29 files. */
 
 /* The screenshots become buttons at runtime (tabIndex + role), so they need
    a visible focus ring — without one, keyboard users get no indication of
