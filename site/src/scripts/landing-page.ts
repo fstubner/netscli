@@ -1,3 +1,4 @@
+import { initCopyButtons } from "./landing/copy-buttons";
 import { initScreenshotLightbox } from "./landing/lightbox";
 
 interface GitHubAsset {
@@ -89,59 +90,7 @@ export function initLandingPage(repo: string): void {
         .catch(() => {});
     })();
 
-    // Copy buttons on every .has-copy block and FAQ command row.
-    document.querySelectorAll<HTMLElement>(".has-copy, .faq-command").forEach((el) => {
-      if (el.querySelector(":scope > .copy-btn")) return;
-      const btn = document.createElement("button");
-      btn.className = "copy-btn";
-      btn.type = "button";
-      btn.setAttribute("aria-label", "Copy command");
-      btn.title = "Copy command";
-      const copyIcon = `
-        <svg aria-hidden="true" viewBox="0 0 16 16" focusable="false">
-          <path d="M5.5 2.5h7v9h-7z"></path>
-          <path d="M3.5 4.5h-1v9h7v-1"></path>
-        </svg>
-      `;
-      const copiedIcon = `
-        <svg aria-hidden="true" viewBox="0 0 16 16" focusable="false">
-          <path d="M3 8.2 6.1 11 13 4"></path>
-        </svg>
-      `;
-      btn.innerHTML = copyIcon;
-      btn.addEventListener("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        let t = el.dataset.copy
-          || el.querySelector("code")?.textContent?.trim()
-          || el.textContent?.trim()
-          || "";
-        if (el.classList.contains("codeblock") || el.classList.contains("tryblock")) {
-          t = t
-            .split("\n")
-            .map((line: string) => line.replace(/^\$\s*/, "").replace(/\s*\/\/.*$/, "").trim())
-            .filter(Boolean)
-            .join("\n");
-        }
-        navigator.clipboard.writeText(t).then(() => {
-          btn.innerHTML = copiedIcon;
-          btn.classList.add("copied");
-          btn.setAttribute("aria-label", "Copied");
-          btn.title = "Copied";
-          setTimeout(() => {
-            btn.innerHTML = copyIcon;
-            btn.classList.remove("copied");
-            btn.setAttribute("aria-label", "Copy command");
-            btn.title = "Copy command";
-          }, 2500);
-        }).catch(() => {
-          btn.setAttribute("aria-label", "Copy failed");
-          btn.title = "Copy failed";
-        });
-      });
-      el.appendChild(btn);
-    });
-
+    initCopyButtons();
     initScreenshotLightbox();
 
     // OS tab swap. Keep visual state and ARIA state aligned so package
@@ -212,18 +161,49 @@ export function initLandingPage(repo: string): void {
         : "windows";
       setOS(detected);
 
-      const packageInstall = document.getElementById("hero-package-install");
-      if (packageInstall) {
-        const packageCommands: Record<OperatingSystem, string> = {
-          windows: "winget install fstubner.netscli",
-          macos: "brew tap fstubner/tap && brew install netscli",
-          linux: "curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash",
-        };
-        const packageCommand = packageCommands[detected];
-        packageInstall.dataset.copy = packageCommand;
-        const code = packageInstall.querySelector("code");
-        if (code) code.textContent = packageCommand;
-      }
+      // Both hero command boxes are OS-aware, and they must differ.
+      //
+      // Only the second box used to be. The first held `hero.quickInstall`
+      // -- the `curl … install.sh | bash` line -- for everyone, which made
+      // two separate problems:
+      //
+      //   Windows: the most prominent command on the page was a bash
+      //   pipeline that does not run there, with the correct `winget` line
+      //   demoted to the smaller box below it.
+      //
+      //   Linux: `packageCommands.linux` was byte-identical to
+      //   `hero.quickInstall`, so the hero printed the same command twice.
+      //
+      // Primary is whatever the install section recommends for that
+      // platform, so the hero and "Get started" agree; secondary is a
+      // genuinely different route.
+      const heroCommands: Record<OperatingSystem, { primary: string; secondary: string }> = {
+        windows: {
+          primary: "winget install fstubner.netscli",
+          secondary:
+            "iwr -useb https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.ps1 | iex",
+        },
+        macos: {
+          primary: "brew tap fstubner/tap && brew install netscli",
+          secondary:
+            "curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash",
+        },
+        linux: {
+          primary:
+            "curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash",
+          secondary: "yay -S netscli-bin",
+        },
+      };
+
+      const setHeroCommand = (id: string, command: string) => {
+        const host = document.getElementById(id);
+        if (!host) return;
+        host.dataset.copy = command;
+        const code = host.querySelector("code");
+        if (code) code.textContent = command;
+      };
+      setHeroCommand("hero-quick-install", heroCommands[detected].primary);
+      setHeroCommand("hero-package-install", heroCommands[detected].secondary);
 
       const desktopDownload = document.querySelector<HTMLAnchorElement>("#hero-desktop-download");
       if (desktopDownload) {
