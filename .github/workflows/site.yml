@@ -111,15 +111,19 @@ jobs:
           set -euo pipefail
           echo "$NEEDS" | jq -r 'to_entries[] | "  \(.key): \(.value.result)"'
 
-          failed=$(echo "$NEEDS" | jq -r '
+          # Allowlist success/skipped rather than denylisting failure/
+          # cancelled — see the equivalent note in ci.yml. A job whose runner
+          # never starts reports "abandoned", which matched neither arm and
+          # let the required check pass over a failed job.
+          bad=$(echo "$NEEDS" | jq -r '
             to_entries
-            | map(select(.value.result == "failure" or .value.result == "cancelled"))
-            | map(.key)
+            | map(select(.value.result != "success" and .value.result != "skipped"))
+            | map("\(.key)=\(.value.result)")
             | join(", ")
           ')
 
-          if [[ -n "$failed" ]]; then
-            echo "::error::Site Gate failed — these jobs did not succeed: ${failed}"
+          if [[ -n "$bad" ]]; then
+            echo "::error::Site Gate failed — these jobs did not succeed: ${bad}"
             exit 1
           fi
           echo "Site Gate passed (all jobs succeeded or were legitimately skipped)."

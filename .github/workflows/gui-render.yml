@@ -59,7 +59,8 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: 20
+          # 22, matching ci.yml and the release build. See ci.yml's note.
+          node-version: 22
           cache: npm
           cache-dependency-path: apps/netscli-gui/package-lock.json
 
