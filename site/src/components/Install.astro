@@ -276,34 +276,33 @@ a.install-download:hover{color:#23d198;background:rgba(10,174,122,.08)}
 }
 .surface-download-btn:hover .dl-hint{color:#9a9a9a}
 
-/* Narrow screens: wrap commands instead of scrolling them sideways.
+/* Narrow screens: truncate long commands, do not scroll them sideways.
  *
- * `.cmd` is itself the horizontal scroller (`overflow-x:auto;
- * white-space:pre`) and the copy button is absolutely positioned inside it.
- * Overflowing inline content paints straight across a scroll container's
- * right padding, so the `padding-right:74px` above reserved nothing --
- * measured at 375px wide, 38px of `winget install fstubner.netscli.gui`
- * rendered underneath an opaque button, with a scrollbar beneath it.
+ * The bug being fixed is the sideways scroll, not the truncation. `.cmd` was
+ * itself the horizontal scroller (`overflow-x:auto; white-space:pre`) with
+ * the copy button absolutely positioned inside it, and overflowing inline
+ * content paints straight across a scroll container's right padding -- so
+ * the `padding-right:74px` above reserved nothing. Measured at 375px, 38px
+ * of `winget install fstubner.netscli.gui` rendered underneath an opaque
+ * button, with a scrollbar beneath it.
  *
- * Wrapping fixes it without moving the button: once the text no longer
- * overflows it respects padding-right normally. It also makes the whole
- * command readable, which sideways scrolling in a 279px box never did, and
- * it matches what the Scoop and PowerShell rows already do.
+ * `overflow:hidden` + `text-overflow:ellipsis` clips at the *content* box
+ * instead, so the ellipsis lands before the padding and the button sits in
+ * clear space. No scrollbar, nothing hidden underneath, and the layout stays
+ * one line per command -- matching the hero.
  *
- * This lives here rather than in global.css because global.css is imported
- * before component styles, so an override there loses the cascade tie to
- * the `.cmd` rules above and silently does nothing.
+ * The copy button carries the full command either way.
+ *
+ * Lives here rather than in global.css: global.css is imported before
+ * component styles, so an override there loses the cascade tie to the `.cmd`
+ * rules above and silently does nothing.
  */
 @media(max-width:700px){
   .cmd,
   .cmd.big{
-    white-space:pre-wrap;
-    overflow-x:visible;
-    overflow-wrap:anywhere;
-    word-break:normal;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
   }
-  /* Centred is right for a one-line box; on a wrapped box the button has to
-     sit at the top so it never lands mid-command. */
-  .cmd.has-copy .copy-btn{top:7px;transform:none}
 }
 </style>
