@@ -195,9 +195,8 @@ async fn dispatch_tool(name: &str, params: Value) -> Result<Value, RpcError> {
             let res = op_dns_lookup(p).await?;
             serde_json::to_value(res).map_err(|e| RpcError::Internal(e.to_string()))
         }
-        "get_arp_table" => {
-            serde_json::to_value(op_get_arp_table()?).map_err(|e| RpcError::Internal(e.to_string()))
-        }
+        "get_arp_table" => serde_json::to_value(op_get_arp_table().await?)
+            .map_err(|e| RpcError::Internal(e.to_string())),
         "inspect_host" => {
             let p: ScanParams = parse_params(params)?;
             let res = op_inspect_host(p).await?;

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { fetchLatestRelease, isNewerVersion } from '../services/releases';
 import type { WorkspaceToast } from '../workspace/types';
@@ -18,11 +18,31 @@ export function useReleaseNotifications({
   showUpdateToast,
   toast,
 }: ReleaseNotificationOptions) {
+  // The callbacks live in a ref so they cannot re-trigger the effects below.
+  //
+  // Both are plain functions declared in `useWorkspaceToast`'s body, so each
+  // render produces new identities. Listing them as dependencies meant the
+  // release check re-ran on *every* render: it aborted the in-flight request
+  // and issued another one. During a scan that is roughly one request to
+  // api.github.com per progress event — per probed port — and the
+  // unauthenticated limit is 60 an hour, so the app rate-limited itself out
+  // of update checks within seconds of normal use. Even idle it refired every
+  // 30s, because the interface poll sets state with freshly deserialized
+  // values each time.
+  //
+  // Same shape as the handler ref in useKeyboardShortcuts: assign in an
+  // effect with no dependency array, so it runs after every render and only
+  // ever writes a ref.
+  const callbacks = useRef({ dismissToast, showUpdateToast });
+  useEffect(() => {
+    callbacks.current = { dismissToast, showUpdateToast };
+  });
+
   useEffect(() => {
     if (!enabled && toast?.kind === 'update') {
-      dismissToast();
+      callbacks.current.dismissToast();
     }
-  }, [dismissToast, enabled, toast?.kind]);
+  }, [enabled, toast?.kind]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -32,7 +52,7 @@ export function useReleaseNotifications({
       .then((release) => {
         const dismissed = window.localStorage.getItem('netscli-dismissed-release-version');
         if (dismissed === release.version || !isNewerVersion(release.version, appVersion)) return;
-        showUpdateToast(release.version, release.url);
+        callbacks.current.showUpdateToast(release.version, release.url);
       })
       .catch((error) => {
         if (controller.signal.aborted) return;
@@ -40,6 +60,5 @@ export function useReleaseNotifications({
       });
 
     return () => controller.abort();
-  }, [appVersion, enabled, showUpdateToast]);
+  }, [appVersion, enabled]);
 }
-

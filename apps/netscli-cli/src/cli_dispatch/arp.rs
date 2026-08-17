@@ -8,7 +8,7 @@ use std::net::IpAddr;
 use std::str::FromStr;
 
 #[allow(clippy::too_many_arguments)]
-pub(super) fn run(
+pub(super) async fn run(
     ctx: CommandContext<'_>,
     add: bool,
     delete: bool,
@@ -91,7 +91,7 @@ pub(super) fn run(
         return Ok(());
     }
 
-    let entries = ctx.ops.get_arp_table()?;
+    let entries = ctx.ops.get_arp_table().await?;
     match format {
         OutputFormat::Json | OutputFormat::Yaml => print_structured(format, &entries)?,
         OutputFormat::Text => {

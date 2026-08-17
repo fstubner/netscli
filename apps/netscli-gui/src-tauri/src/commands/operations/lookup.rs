@@ -113,7 +113,7 @@ pub(crate) async fn get_arp_table(
 ) -> JsonResult {
     run_json_operation(op_id, manager, None, move || async move {
         let ops = Ops::default();
-        let entries = ops.get_arp_table().map_err(|e| e.to_string())?;
+        let entries = ops.get_arp_table().await.map_err(|e| e.to_string())?;
         serde_json::to_value(entries).map_err(|e| e.to_string())
     })
     .await

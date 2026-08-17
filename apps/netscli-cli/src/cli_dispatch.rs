@@ -97,7 +97,7 @@ pub(crate) async fn run_command(command: &Commands, ctx: CommandContext<'_>) -> 
             json,
             yaml,
         } => {
-            arp::run(ctx, *add, *delete, *clear, ip, mac, *json, *yaml)?;
+            arp::run(ctx, *add, *delete, *clear, ip, mac, *json, *yaml).await?;
         }
         #[cfg(feature = "pcap")]
         Commands::Pcap {
