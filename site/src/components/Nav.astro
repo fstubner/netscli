@@ -82,10 +82,10 @@ nav::after{
   transition:opacity 160ms ease;
 }
 body.nav-scrolled nav{
-  border-bottom-color:rgba(10,174,122,.12);
+  border-bottom-color:rgba(var(--netscli-accent-rgb),.12);
   box-shadow:
     0 12px 28px rgba(0,0,0,.28),
-    0 1px 0 rgba(10,174,122,.08) !important;
+    0 1px 0 rgba(var(--netscli-accent-rgb),.08) !important;
 }
 body.nav-scrolled nav::after{
   opacity:1;
@@ -141,7 +141,7 @@ body.nav-scrolled nav::after{
 .nav-menu-toggle:hover,
 .nav-menu-toggle:focus-visible{
   color:#fff;
-  border-color:rgba(10,174,122,.35);
+  border-color:rgba(var(--netscli-accent-rgb),.35);
   outline:none;
 }
 .nlinks{display:flex;gap:20px;font-size:.8125rem;flex-wrap:wrap;justify-content:flex-end}
@@ -169,7 +169,7 @@ body.nav-scrolled nav::after{
 .nlinks a[aria-current="page"],
 .nlinks a[aria-current="location"]{
   color:#e5e5e5;
-  border-bottom-color:#0aae7a;
+  border-bottom-color:var(--netscli-accent);
 }
 .external-link{
   display:inline-flex;
@@ -181,7 +181,7 @@ body.nav-scrolled nav::after{
 .external-link::after{
   content:"↗";
   flex:0 0 auto;
-  color:#0aae7a;
+  color:var(--netscli-accent);
   font-size:.92em;
   font-weight:700;
   line-height:1;
@@ -189,7 +189,7 @@ body.nav-scrolled nav::after{
   text-decoration:none;
 }
 .external-link:hover::after{
-  color:#23d198;
+  color:var(--netscli-accent-bright);
   opacity:1;
 }
 @media(max-width:600px){
@@ -224,22 +224,21 @@ body.nav-scrolled nav::after{
     padding:0 10px;
     border-bottom:0;
     border-left:2px solid transparent;
-    /* Undo the desktop full-height trick. The base rule sets
-       `height:calc(100% + 24px)` with `margin-block:-12px` so a horizontal
-       nav link fills the bar and puts its underline on the bar's bottom
-       edge. In this column that negative margin pulls every link 12px into
-       each neighbour: measured 40px-tall links sitting only 18px apart, so
-       each one overlapped the next by 22px and the lower half of every menu
-       item activated the item below it. */
+    /* Undo the desktop full-bar height. Horizontally it puts the underline on
+       the bar's bottom edge; in this column it would make every menu item as
+       tall as the whole bar. An earlier version did the same job with a
+       negative block margin, which pulled each link 12px into its neighbour
+       -- 40px links sitting 18px apart, so the lower half of every item
+       activated the one below it. Hence the explicit margin reset. */
     height:auto;
     margin-block:0;
   }
   .nlinks a:hover,
   .nlinks a[aria-current='page'],
   .nlinks a[aria-current='location']{
-    border-left-color:#0aae7a;
+    border-left-color:var(--netscli-accent);
     border-bottom-color:transparent;
-    background:rgba(10,174,122,.1);
+    background:rgba(var(--netscli-accent-rgb),.1);
   }
 }
 

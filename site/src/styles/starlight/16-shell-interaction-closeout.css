@@ -40,9 +40,9 @@ site-search button[data-open-modal]:hover {
 }
 
 site-search button[data-open-modal]:hover {
-  border-color: rgba(10, 174, 122, 0.48) !important;
+  border-color: rgba(var(--netscli-accent-rgb), 0.48) !important;
   box-shadow:
-    0 0 0 1px rgba(10, 174, 122, 0.16),
+    0 0 0 1px rgba(var(--netscli-accent-rgb), 0.16),
     inset 0 1px 0 rgba(255, 255, 255, 0.035) !important;
 }
 
@@ -83,7 +83,7 @@ html[data-theme='light'] #starlight__search .pagefind-ui__drawer:has(.pagefind-u
 .pagination-links a:hover,
 .pagination-links a:focus-visible {
 
-  border-color: rgba(10, 174, 122, 0.36) !important;
+  border-color: rgba(var(--netscli-accent-rgb), 0.36) !important;
   color: var(--sl-color-white) !important;
   outline: 0 !important;
 }
@@ -108,7 +108,7 @@ html[data-theme='light'] .pagination-links a:focus-visible {
   border-radius: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
-  color: #0aae7a !important;
+  color: var(--netscli-accent) !important;
   font: inherit !important;
   font-size: 0.8rem !important;
   font-weight: 400 !important;
@@ -123,7 +123,7 @@ html[data-theme='light'] .pagination-links a:focus-visible {
 #starlight__search .pagefind-ui__button:focus-visible {
   background: transparent !important;
   box-shadow: none !important;
-  color: #23d198 !important;
+  color: var(--netscli-accent-bright) !important;
   outline: 0 !important;
 }
 

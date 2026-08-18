@@ -2,7 +2,7 @@
    NetsCLI green for content affordances, and constrain the hero divider to the
    actual reading column. */
 header.header {
-  border-bottom-color: rgba(10, 174, 122, 0.12) !important;
+  border-bottom-color: rgba(var(--netscli-accent-rgb), 0.12) !important;
 }
 
 html[data-theme='light'] header.header {
@@ -18,7 +18,7 @@ html:not([data-docs-scrolled='true']) header.header::after {
 }
 
 html[data-docs-scrolled='true'] header.header {
-  border-bottom-color: rgba(10, 174, 122, 0.12) !important;
+  border-bottom-color: rgba(var(--netscli-accent-rgb), 0.12) !important;
 }
 
 html[data-theme='light'][data-docs-scrolled='true'] header.header {
@@ -47,8 +47,8 @@ html[data-theme='light'][data-docs-scrolled='true'] header.header {
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(circle at 0 0, rgba(10, 174, 122, 0.11), transparent 25rem),
-    linear-gradient(128deg, rgba(10, 174, 122, 0.045), rgba(30, 220, 255, 0.016) 38%, transparent 72%);
+    radial-gradient(circle at 0 0, rgba(var(--netscli-accent-rgb), 0.11), transparent 25rem),
+    linear-gradient(128deg, rgba(var(--netscli-accent-rgb), 0.045), rgba(30, 220, 255, 0.016) 38%, transparent 72%);
 }
 
 .main-pane > .content-panel:first-of-type > .sl-container,
@@ -82,29 +82,29 @@ html[data-theme='light'] .main-pane > main > .content-panel:first-child::before 
 }
 
 .sl-markdown-content :not(pre) > code {
-  color: #23d198 !important;
+  color: var(--netscli-accent-bright) !important;
 }
 
 html[data-theme='light'] .sl-markdown-content :not(pre) > code {
-  color: #007a54 !important;
+  color: #146b2e !important;
 }
 
 .sl-markdown-content a,
 .sl-markdown-content .sl-anchor-link,
 .sl-markdown-content .sl-anchor-link:focus,
 .sl-markdown-content .sl-heading-wrapper:hover .sl-anchor-link {
-  color: #0aae7a !important;
+  color: var(--netscli-accent) !important;
 }
 
 .sl-markdown-content a:hover {
-  color: #23d198 !important;
+  color: var(--netscli-accent-bright) !important;
 }
 
 html[data-theme='light'] .sl-markdown-content a,
 html[data-theme='light'] .sl-markdown-content .sl-anchor-link,
 html[data-theme='light'] .sl-markdown-content .sl-anchor-link:focus,
 html[data-theme='light'] .sl-markdown-content .sl-heading-wrapper:hover .sl-anchor-link {
-  color: #007a54 !important;
+  color: #146b2e !important;
 }
 
 html[data-theme='light'] .sl-markdown-content a:hover {
@@ -118,7 +118,7 @@ html[data-theme='light'] .sl-markdown-content a:hover {
   background: none !important;
   -webkit-mask: none !important;
   mask: none !important;
-  color: #0aae7a !important;
+  color: var(--netscli-accent) !important;
   font-size: 0.92em;
   font-weight: 700;
   line-height: 1;
@@ -126,12 +126,12 @@ html[data-theme='light'] .sl-markdown-content a:hover {
 
 .external-link:hover::after,
 .sl-markdown-content a[href^='http']:hover::after {
-  color: #23d198 !important;
+  color: var(--netscli-accent-bright) !important;
 }
 
 html[data-theme='light'] .external-link::after,
 html[data-theme='light'] .sl-markdown-content a[href^='http']::after {
-  color: #007a54 !important;
+  color: #146b2e !important;
 }
 
 html[data-theme='light'] .external-link:hover::after,

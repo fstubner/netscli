@@ -49,7 +49,7 @@
   }
 
   mobile-starlight-toc .caret {
-    color: #0aae7a;
+    color: var(--netscli-accent);
   }
 
   mobile-starlight-toc .display-current {
@@ -134,7 +134,7 @@ html[data-theme='light'] mobile-starlight-toc summary:focus-visible .toggle {
 }
 
 html[data-theme='light'] mobile-starlight-toc .caret {
-  color: #007a54;
+  color: #146b2e;
 }
 
 html[data-theme='light'] mobile-starlight-toc .display-current {
@@ -212,9 +212,9 @@ html[data-theme='light'] .sl-markdown-content .expressive-code .copy button[data
 html[data-theme='light'] .sl-markdown-content .expressive-code .copy:has(.feedback.show) button {
   border-color: rgba(0, 122, 84, 0.3) !important;
   background: #e5f3ef !important;
-  color: #007a54 !important;
+  color: #146b2e !important;
 }
 
 html[data-theme='light'] .sl-markdown-content .expressive-code .copy:has(.feedback.show) button::after {
-  background: #007a54 !important;
+  background: #146b2e !important;
 }

@@ -237,8 +237,8 @@ const { hero, social, version } = site;
   border-radius:9px;
   background:
     linear-gradient(#191b1e,#191b1e) padding-box,
-    linear-gradient(90deg,#0aae7a 0%,#0aae7a 62%,#1edcff 100%) border-box;
-  box-shadow:0 0 12px rgba(10,174,122,.08);
+    linear-gradient(90deg,var(--netscli-accent) 0%,var(--netscli-accent) 62%,#1edcff 100%) border-box;
+  box-shadow:0 0 12px rgba(var(--netscli-accent-rgb),.08);
   overflow:visible;
 }
 .hero-primary,
@@ -254,11 +254,11 @@ const { hero, social, version } = site;
   text-decoration:none;font-size:.82rem;font-weight:760;
   letter-spacing:.005em;
   font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;
-  color:#0aae7a;
+  color:var(--netscli-accent);
 }
 .hero-primary-label{
   transform:translateX(8px);
-  background-image:linear-gradient(90deg,#005a1e,#0aae7a,#1edcff);
+  background-image:linear-gradient(90deg,#005a1e,var(--netscli-accent),#1edcff);
   -webkit-background-clip:text;background-clip:text;
   -webkit-text-fill-color:transparent;
 }
@@ -289,8 +289,8 @@ const { hero, social, version } = site;
 .hero-primary-wrap:hover{
   background:
     linear-gradient(#1c1f23,#1c1f23) padding-box,
-    linear-gradient(90deg,#0aae7a 0%,#0aae7a 62%,#1edcff 100%) border-box;
-  box-shadow:0 0 0 1px rgba(10,174,122,.16),0 0 12px rgba(10,174,122,.08);
+    linear-gradient(90deg,var(--netscli-accent) 0%,var(--netscli-accent) 62%,#1edcff 100%) border-box;
+  box-shadow:0 0 0 1px rgba(var(--netscli-accent-rgb),.16),0 0 12px rgba(var(--netscli-accent-rgb),.08);
 }
 .hero-primary-menu:hover{color:#fff}
 .hero-desktop-menu{
@@ -363,13 +363,13 @@ const { hero, social, version } = site;
   color:currentColor;font-size:8px;line-height:1;
   font-family:ui-monospace,"SF Mono",Menlo,monospace;
 }
-.hero-desktop-menu a:hover{background:rgba(10,174,122,.12);color:#1ec88c}
+.hero-desktop-menu a:hover{background:rgba(var(--netscli-accent-rgb),.12);color:#1ec88c}
 .hero-command{
   position:relative;display:grid;grid-template-columns:minmax(0,1fr);
   align-items:center;gap:10px;min-height:36px;
   padding:8px 58px 8px 14px;border-radius:9px;
   background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
-  box-shadow:0 0 0 1px rgba(10,174,122,.26),0 0 14px rgba(10,174,122,.08);
+  box-shadow:0 0 0 1px rgba(var(--netscli-accent-rgb),.26),0 0 14px rgba(var(--netscli-accent-rgb),.08);
 }
 .hero-command.hero-copy .copy-btn{opacity:1}
 .hero-command code{

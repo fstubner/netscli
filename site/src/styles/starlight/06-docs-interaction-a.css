@@ -43,7 +43,7 @@
 }
 
 #starlight__search .pagefind-ui__search-clear::before {
-  background-color: #9ff8de;
+  background-color: var(--netscli-accent-high);
   opacity: 0.86;
   -webkit-mask-size: 42% !important;
   mask-size: 42% !important;
