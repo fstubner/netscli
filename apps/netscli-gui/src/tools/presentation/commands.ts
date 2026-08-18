@@ -1,11 +1,17 @@
-import { DEFAULT_PORTS } from '../registry';
 import type { WorkspaceTab } from '../types';
 
 export function buildCommand(tab: WorkspaceTab): string {
   const form = tab.form;
   switch (tab.kind) {
     case 'scan':
-      return `netscli scan ${form.host || '<host>'} -p ${form.ports || DEFAULT_PORTS} --json`;
+      // `-p` is omitted when the field is empty, exactly as `inspect` and
+      // `sweep` below already do. It used to substitute the GUI's
+      // DEFAULT_PORTS placeholder (22,80,443,8080,8443) while execution sent
+      // no port list at all and the core fell back to its own default of
+      // 22,80,443 — so the preview claimed five ports, three were scanned,
+      // and that wrong string was what Ctrl+Shift+C copied, what the History
+      // menu recorded, and what got stored with the saved result.
+      return `netscli scan ${form.host || '<host>'}${form.ports ? ` -p ${form.ports}` : ''} --json`;
     case 'ping':
       return `netscli ping ${form.host || '<host>'}${form.count ? ` --count ${form.count}` : ''} --json`;
     case 'trace': {
@@ -45,8 +51,13 @@ export function buildCommand(tab: WorkspaceTab): string {
       const parts = ['netscli pcap'];
       if (form.interface) parts.push(`--interface ${form.interface}`);
       if (form.duration) parts.push(`--duration ${form.duration}`);
-      if (form.filter) parts.push(`--filter "${form.filter}"`);
+      // Escape quotes rather than interpolating raw: a BPF filter containing
+      // a double quote produced a preview that would not parse if pasted.
+      if (form.filter) parts.push(`--filter "${form.filter.replace(/"/g, '\\"')}"`);
       if (form.max_packets) parts.push(`--max-packets ${form.max_packets}`);
+      // The capture branch omitted --json while every other command here
+      // includes it, so this one preview did not match what the app runs.
+      parts.push('--json');
       return parts.join(' ');
     }
   }

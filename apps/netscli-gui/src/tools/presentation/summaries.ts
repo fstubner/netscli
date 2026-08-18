@@ -1,4 +1,5 @@
 import type { ToolResult } from '../../types/app';
+import { inspectPorts } from './ports';
 
 export function resultSummary(result: ToolResult | null): string {
   if (!result) return '0 results';
@@ -18,7 +19,7 @@ export function resultSummary(result: ToolResult | null): string {
     case 'reverse':
       return result.data.hostname ? 'reverse name found' : 'no reverse name';
     case 'inspect': {
-      const ports = result.data.ports ?? result.data.open_ports;
+      const ports = inspectPorts(result.data);
       if (ports.length > 0) {
         const open = ports.filter((port) => port.open).length;
         return `${ports.length} ${ports.length === 1 ? 'port' : 'ports'} checked - ${open} open`;
@@ -37,8 +38,25 @@ export function resultSummary(result: ToolResult | null): string {
       return `${result.data.length} interfaces`;
     case 'arp':
       return `${result.data.length} ARP entries`;
-    case 'pcap':
-      return `${'packets_captured' in result.data ? result.data.packets_captured : result.data.total_packets} packets`;
+    case 'pcap': {
+      // Say when the view is cut off. The core sets `packets_truncated` on a
+      // capture and `truncated` on a parse, and neither was read anywhere in
+      // the GUI: opening a 20,000-packet file with the default 1,000 limit
+      // showed 1,000 rows under a status bar reading "20000 packets", with
+      // nothing indicating the rest was missing — and Export CSV then wrote
+      // only the loaded rows.
+      // `in` has to narrow inline; hoisting the discriminant into a boolean
+      // loses the narrowing and the union members have no fields in common.
+      const data = result.data;
+      if ('packets_captured' in data) {
+        return data.packets_truncated
+          ? `${formatNumber(data.packets.length)} of ${formatNumber(data.packets_captured)} packets shown`
+          : `${formatNumber(data.packets_captured)} packets`;
+      }
+      return data.truncated
+        ? `${formatNumber(data.packets.length)} of ${formatNumber(data.total_packets)} packets shown`
+        : `${formatNumber(data.total_packets)} packets`;
+    }
   }
 }
 
