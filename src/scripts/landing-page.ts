@@ -35,8 +35,12 @@ export function initLandingPage(repo: string): void {
       const fmt = (n: number) => n.toLocaleString();
       const fmtDownloads = (n: number) => {
         if (n < 1000) return fmt(n);
-        if (n < 1000000) return `${Math.floor(n / 1000)}K+`;
-        return `${Math.floor(n / 1000000)}M+`;
+        // One decimal, floored. Whole thousands hid most of the movement --
+        // everything from 1,000 to 1,999 read as "1K+". Floored rather than
+        // rounded because the "+" claims "at least this many", so 1,999 must
+        // not round up to 2.0K+.
+        if (n < 1000000) return `${(Math.floor(n / 100) / 10).toFixed(1)}K+`;
+        return `${(Math.floor(n / 100000) / 10).toFixed(1)}M+`;
       };
       const refreshMetricSeparators = () => {
         const stars = document.getElementById("stars");
