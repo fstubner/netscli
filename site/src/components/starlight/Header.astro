@@ -6,26 +6,9 @@ import ThemeSelect from 'virtual:starlight/components/ThemeSelect';
 const shouldRenderSearch =
   config.pagefind || config.components.Search !== '@astrojs/starlight/components/Search.astro';
 
+import { hrefFor, isCurrent, navLinks } from '../../data/site-content/nav';
+
 const pathname = Astro.url.pathname;
-type NavLink = {
-  href: string;
-  label: string;
-  external?: boolean;
-};
-
-const siteLinks: NavLink[] = [
-  { href: '/#surfaces', label: 'Features' },
-  { href: '/#install', label: 'Install' },
-  { href: '/#faq', label: 'FAQ' },
-  { href: '/docs/', label: 'Docs' },
-  { href: '/changelog/', label: 'Changelog' },
-];
-
-const isActive = (href: string) => {
-  if (href === '/docs/') return pathname.startsWith('/docs');
-  if (href === '/changelog/') return pathname.startsWith('/changelog');
-  return pathname.replace(/\/$/, '') === href.replace(/\/$/, '');
-};
 ---
 
 <div class="docs-topbar">
@@ -39,11 +22,12 @@ const isActive = (href: string) => {
 
   <nav class="docs-nav-links" aria-label="Site navigation">
     {
-      siteLinks.map((link) => (
+      navLinks.map((link) => (
         <a
-          href={link.href}
+          href={hrefFor(link, pathname)}
           class={link.external ? 'external-link' : undefined}
-          aria-current={isActive(link.href) ? 'page' : undefined}
+          aria-current={isCurrent(link, pathname) ? 'page' : undefined}
+          {...(link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
         >
           {link.label}
         </a>

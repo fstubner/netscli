@@ -54,8 +54,7 @@ html[data-theme='light'] ::backdrop {
 }
 
 :root {
-  --sl-nav-height: 3.75rem;
-  --netscli-shell-width: 72rem;
+  --sl-nav-height: var(--netscli-nav-height);
   --netscli-docs-sidebar-width: 16rem;
   --netscli-docs-toc-width: 13rem;
   --netscli-docs-shell-gutter: clamp(1.25rem, 2vw, 2.5rem);
