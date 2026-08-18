@@ -59,19 +59,23 @@
    border on the <ul> was the rail; laid out in columns it would mark only the
    first column and leave the other two floating. A border per link gives each
    column its own continuous rail, and the active link still lights it green. */
-/* Doubled class deliberately. These compete with `.right-sidebar-panel ...`
-   rules in 20-docs-shell-closeout.css that sit at the same specificity, and
-   the bundler does not emit these files in filename order -- both classes are
-   on the same element, so the extra class wins the tie regardless of order. */
-.docs-toc-under-hero.right-sidebar-panel :where(nav ul) {
+/* These compete with `.right-sidebar-panel ...` rules in
+   20-docs-shell-closeout.css. An earlier version of this comment claimed the
+   doubled class was needed because the bundler does not emit these files in
+   filename order; that was measured and is wrong for this pair -- 30 is
+   emitted after 20, and the rule it competes with carries no !important, so
+   these win on either count. (Emission order is not always filename order --
+   24 is emitted before 23 -- but that is not what was happening here; the
+   symptom that prompted it was a stale deployed stylesheet.) */
+.docs-toc-under-hero :where(nav ul) {
   border-inline-start: 0 !important;
 }
 
-.docs-toc-under-hero.right-sidebar-panel :where(a) {
+.docs-toc-under-hero :where(a) {
   margin-inline: 0 !important;
   border-inline-start: 2px solid var(--sl-color-hairline) !important;
 }
 
-.docs-toc-under-hero.right-sidebar-panel :where(a[aria-current='true']) {
+.docs-toc-under-hero :where(a[aria-current='true']) {
   border-inline-start-color: var(--netscli-accent) !important;
 }
