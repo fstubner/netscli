@@ -1,6 +1,5 @@
 ---
 import MobileTableOfContents from 'virtual:starlight/components/MobileTableOfContents';
-import TableOfContents from 'virtual:starlight/components/TableOfContents';
 
 const { sidebar: routeSidebar, toc } = Astro.locals.starlightRoute;
 const sidebar = routeSidebar as SidebarEntry[];
@@ -105,13 +104,11 @@ const currentGroupLabel = formatCrumb(currentGroup?.label) || 'Start';
 {
   toc && (
     <>
+      {/* Narrow screens keep the collapsed dropdown. The wide-screen list
+          moved to PageTitle.astro so it sits under the hero rather than in
+          the right-hand rail. */}
       <div class="netscli-mobile-toc-wrapper lg:sl-hidden">
         <MobileTableOfContents />
-      </div>
-      <div class="right-sidebar-panel sl-hidden lg:sl-block">
-        <div class="sl-container">
-          <TableOfContents />
-        </div>
       </div>
     </>
   )

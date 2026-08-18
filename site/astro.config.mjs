@@ -29,6 +29,7 @@ export default defineConfig({
         Footer: './src/components/starlight/Footer.astro',
         MobileMenuFooter: './src/components/starlight/MobileMenuFooter.astro',
         PageSidebar: './src/components/starlight/PageSidebar.astro',
+        MarkdownContent: './src/components/starlight/MarkdownContent.astro',
       },
       // Split from a single 4,965-line starlight.css into ordered per-pass
       // files (see docs/ARCHITECTURE.md). Order matters: several later
@@ -69,6 +70,7 @@ export default defineConfig({
         // declarations several earlier files make on `.sl-markdown-content a`
         // and `code`. See the file for why that is unavoidable today.
         './src/styles/starlight/29-callout-contrast.css',
+        './src/styles/starlight/30-toc-under-hero.css',
       ],
       social: [
         {
