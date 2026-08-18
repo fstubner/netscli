@@ -1,6 +1,7 @@
 import type { ToolResult } from '../../types/app';
 import type { ResultColumn, ResultRow, ToolKind } from '../types';
 import { buildRows } from './rows';
+import { inspectPorts } from './ports';
 
 export function columnsFor(
   kind: ToolKind,
@@ -13,8 +14,8 @@ export function columnsFor(
   const hasPorts = hasColumnData(rows, 'ports');
   const hasMac = hasColumnData(rows, 'mac');
 
-  const inspectPorts = result?.kind === 'inspect' ? (result.data.ports ?? result.data.open_ports) : [];
-  if (kind === 'inspect' && result?.kind === 'inspect' && inspectPorts.length === 0) {
+  const inspectPortList = result?.kind === 'inspect' ? inspectPorts(result.data) : [];
+  if (kind === 'inspect' && result?.kind === 'inspect' && inspectPortList.length === 0) {
     return [
       { key: 'host', label: 'Host', mono: true, width: 220 },
       { key: 'ip', label: 'IP', mono: true, width: 220 },

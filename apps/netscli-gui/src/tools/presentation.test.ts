@@ -76,8 +76,26 @@ describe('buildCommand', () => {
     pcap.form.filter = 'tcp port 443';
     pcap.form.max_packets = '50';
     expect(buildCommand(pcap)).toBe(
-      'netscli pcap --interface Ethernet --duration 10 --filter "tcp port 443" --max-packets 50',
+      'netscli pcap --interface Ethernet --duration 10 --filter "tcp port 443" --max-packets 50 --json',
     );
+  });
+
+  it('omits -p when the ports field is empty, because that is what runs', () => {
+    // The preview used to substitute the GUI's five-port placeholder while
+    // execution sent no port list and the core used its own default of three.
+    // The copied command, the History entry and the saved bundle all carried
+    // the wrong string.
+    const scan = createTab('scan');
+    scan.form.host = 'router.local';
+    scan.form.ports = '';
+    expect(buildCommand(scan)).toBe('netscli scan router.local --json');
+  });
+
+  it('escapes quotes in a capture filter so the preview stays paste-able', () => {
+    const pcap = createTab('pcap');
+    pcap.form.interface = 'eth0';
+    pcap.form.filter = 'host "example"';
+    expect(buildCommand(pcap)).toContain('--filter "host \\"example\\""');
   });
 });
 

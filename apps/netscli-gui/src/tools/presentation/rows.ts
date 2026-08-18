@@ -1,7 +1,7 @@
 import type { ToolResult } from '../../types/app';
 import type { PortResult } from '../../types/netscli';
 import type { ResultRow, ToolKind } from '../types';
-import { latencyOf, statusOf } from './ports';
+import { inspectPorts, latencyOf, statusOf } from './ports';
 import { parseTraceLine, type TraceHopRow } from './traceLine';
 
 function portRow(port: PortResult, index: number, kind: ToolKind): ResultRow {
@@ -128,7 +128,7 @@ export function buildRows(result: ToolResult | null): ResultRow[] {
       ];
     }
     case 'inspect': {
-      const ports = result.data.ports?.length ? result.data.ports : result.data.open_ports;
+      const ports = inspectPorts(result.data);
       const rows = ports.map((port, index) => portRow(port, index, 'inspect'));
       if (rows.length > 0) return rows;
       const ping = result.data.ping;
