@@ -99,6 +99,12 @@ body.nav-scrolled nav::after{
   opacity:1;
 }
 .nav-inner{
+  /* Matches the docs top bar. Padding alone gave 12+32+12 plus the 1px
+     border on <nav> = 57px against the docs' 60px, so the bar jumped every
+     time you crossed between the landing page and the docs. The border is
+     on the parent, hence the -1px. Still a min, so the mobile wrapped state
+     grows past it as before. */
+  min-height:calc(var(--netscli-nav-height) - 1px);
   max-width:var(--netscli-shell-width);margin:0 auto;padding:12px var(--netscli-shell-gutter);
   display:flex;align-items:center;justify-content:space-between;gap:18px;
   flex-wrap:wrap;
@@ -151,7 +157,16 @@ body.nav-scrolled nav::after{
   margin-block:-12px;
 }
 .nlinks a:hover{color:#e5e5e5}
-.nlinks a[aria-current="page"]{
+/* Both values, because two different things set this attribute here.
+   Nav.astro marks a genuine current page with "page"; the scroll spy in
+   scripts/site-nav.ts marks the section you are looking at with "location",
+   which is the correct ARIA value for a position within a page. Only "page"
+   was styled, so on the landing page -- where every nav link is an anchor
+   and the spy is the only thing that fires -- the underline never appeared
+   at all. The docs bar was unaffected, which is why the two looked
+   inconsistent. */
+.nlinks a[aria-current="page"],
+.nlinks a[aria-current="location"]{
   color:#e5e5e5;
   border-bottom-color:#0aae7a;
 }
@@ -219,7 +234,8 @@ body.nav-scrolled nav::after{
     margin-block:0;
   }
   .nlinks a:hover,
-  .nlinks a[aria-current='page']{
+  .nlinks a[aria-current='page'],
+  .nlinks a[aria-current='location']{
     border-left-color:#0aae7a;
     border-bottom-color:transparent;
     background:rgba(10,174,122,.1);

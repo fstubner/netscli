@@ -1,6 +1,5 @@
 *,*::before,*::after{box-sizing:border-box}
 :root{
-  --netscli-shell-width:72rem;
   --netscli-shell-gutter:24px;
 }
 html{

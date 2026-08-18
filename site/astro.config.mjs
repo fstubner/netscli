@@ -38,6 +38,7 @@ export default defineConfig({
       // file — do not alphabetize or reorder without checking the affected
       // rules' cascade dependency first.
       customCss: [
+        './src/styles/tokens.css',
         './src/styles/starlight/01-tokens-and-header.css',
         './src/styles/starlight/02-search-and-sidebar-base.css',
         './src/styles/starlight/03-shell-layout-base.css',
