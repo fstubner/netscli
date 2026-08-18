@@ -40,7 +40,7 @@ html[data-theme='light'] .right-sidebar-panel :where(a):focus-visible,
 html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='true']),
 html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='page']),
 html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location']) {
-  color: #00865d !important;
+  color: #0e7a33 !important;
 }
 
 .sidebar-content :where(details > ul > li) {

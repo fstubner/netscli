@@ -5,6 +5,29 @@
  * undo the parts of that class that only made sense in a fixed 208px rail.
  */
 
+/* Which of the two contents lists shows, and where the switch happens.
+ *
+ * 50rem, the width at which the left sidebar stops being a drawer and becomes
+ * a permanent column. Starlight's own switch for the ToC is 72rem, so the
+ * 50-72rem band showed the collapsed dropdown beside a fully expanded
+ * sidebar, with a strip of empty hero above it -- one of the two navigation
+ * panes collapsed and the other not, at a width with room for both. */
+@media (max-width: 49.99rem) {
+  .docs-toc-under-hero {
+    display: none !important;
+  }
+}
+
+@media (min-width: 50rem) {
+  .docs-toc-under-hero {
+    display: block !important;
+  }
+
+  mobile-starlight-toc {
+    display: none !important;
+  }
+}
+
 /* The column Starlight reserves for the rail has to collapse, or the article
    keeps a dead gutter roughly a sidebar wide. TwoColumnContent.astro sizes
    .main-pane by subtracting that width, so both change together. */

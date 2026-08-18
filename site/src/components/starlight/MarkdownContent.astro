@@ -7,6 +7,12 @@
  * the dropdown for narrow screens and moves the wide-screen version into the
  * content column, directly under the hero band.
  *
+ * Which of the two shows is decided in styles/starlight/30-toc-under-hero.css,
+ * at the same 50rem breakpoint the left sidebar uses -- not by Starlight's
+ * 72rem utility classes. Keyed to 72rem, the 50-72rem band showed the
+ * collapsed dropdown next to a fully expanded sidebar, which read as the ToC
+ * having collapsed for no reason.
+ *
  * It hangs off MarkdownContent rather than PageTitle: PageTitle renders
  * inside the hero's own panel, so the list ended up overlapping the title
  * inside the gradient band. This slot is the first thing in the content
@@ -25,7 +31,7 @@ const { toc } = Astro.locals.starlightRoute;
 
 {
   toc && (
-    <div class="docs-toc-under-hero right-sidebar-panel sl-hidden lg:sl-block print:hidden">
+    <div class="docs-toc-under-hero right-sidebar-panel print:hidden">
       <TableOfContents />
     </div>
   )

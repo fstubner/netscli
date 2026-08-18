@@ -99,8 +99,19 @@ html[data-theme='light'] .sl-markdown-content tbody tr:nth-child(even):hover {
   color: var(--netscli-accent) !important;
 }
 
+/* Square, and the size Starlight already reserved for it.
+ *
+ * Starlight sets only `width: var(--sl-anchor-icon-size)` here and leaves the
+ * height to the SVG's own `height="16"` attribute. The result next to an h2
+ * was a 29x16 box holding a 16px glyph -- the icon rendered barely a quarter
+ * the height of the 52px heading beside it, and off-centre, because the
+ * vertical centring Starlight applies is calculated from the icon size it
+ * thinks is in effect. Setting the height to the same variable makes the box
+ * square, fills it, and makes that centring correct. It stays in `em`, so it
+ * still scales with the heading level. */
 .sl-markdown-content .sl-anchor-icon > svg {
   color: var(--netscli-accent);
+  height: var(--sl-anchor-icon-size);
 }.pagination-links a {
   align-items: flex-start;
   color: var(--sl-color-gray-1) !important;

@@ -32,8 +32,12 @@
    * starlight/01-tokens-and-header.css, as it did before. */
   --netscli-accent: #22c55e;
   --netscli-accent-rgb: 34, 197, 94;
-  /* Hover and other lifted states. */
-  --netscli-accent-bright: #4ade80;
+  /* Hover and other lifted states.
+   *
+   * #4ade80 was only a 1.31x luminance step up from the accent, against the
+   * 1.52x the old teal pair had, so hovering a link looked like nothing
+   * happened. #86efac restores a visible step at 1.63x. */
+  --netscli-accent-bright: #86efac;
   /* Pale tint for active text on dark surfaces. */
   --netscli-accent-high: #a7f3c6;
 }
