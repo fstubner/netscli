@@ -1,0 +1,18 @@
+/* Values the landing page and the docs shell both need to agree on.
+ *
+ * These two stacks are otherwise separate: the landing page loads
+ * global.css, the docs load the numbered starlight/ files, and neither sees
+ * the other. Every value duplicated across that boundary is one that can
+ * drift silently -- the nav height already had, leaving the landing bar 57px
+ * against the docs' 60px, which is visible the moment you click "Docs".
+ *
+ * Registered first in astro.config.mjs's customCss and imported at the top of
+ * global.css, so both stacks read the same declaration.
+ */
+:root {
+  /* Total height of the top bar including its bottom border, on both the
+     landing page and the docs. Starlight's own --sl-nav-height is set from
+     this in starlight/01-tokens-and-header.css. */
+  --netscli-nav-height: 3.75rem;
+  --netscli-shell-width: 72rem;
+}

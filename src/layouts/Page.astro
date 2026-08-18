@@ -1,4 +1,5 @@
 ---
+import '../styles/tokens.css';
 import '../styles/global.css';
 import '../styles/lightbox.css';
 import { site } from '../data/site';
@@ -88,7 +89,6 @@ const shouldNoindex = noindex || isPreviewBuild;
 <title>{title}</title>
 <meta name="description" content={description} />
 <meta name="author" content={meta.author.name} />
-<meta name="keywords" content={meta.keywords} />
 <meta property="og:type" content="website" />
 <meta property="og:title" content={title} />
 <meta property="og:description" content={ogDesc} />
@@ -102,7 +102,6 @@ const shouldNoindex = noindex || isPreviewBuild;
 {shouldNoindex && <meta name="robots" content="noindex, nofollow" />}
 <link rel="canonical" href={canonicalUrl} />
 <link rel="icon" type="image/svg+xml" href={meta.faviconPath} />
-<link rel="apple-touch-icon" href={meta.faviconPath} />
 
 <!-- Preconnect hints for the only third-party origins this page hits.
      Shaves ~150-300ms off the first request to each by warming DNS +
