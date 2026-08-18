@@ -86,13 +86,25 @@
 }
 
 @media (max-width: 52rem) {
+  /* `100%`, not `100vw`.
+   *
+   * `100vw` is the viewport INCLUDING the classic scrollbar; the content box
+   * excludes it. Below this breakpoint that made html/body/.page wider than
+   * the space available by exactly the scrollbar width, and the children
+   * sized at `width:100%` inherited it -- so every docs page scrolled
+   * sideways by 10px in any desktop window narrower than 832px. Measured at
+   * 650px: clientWidth 641, scrollWidth 651, and the page really did scroll.
+   *
+   * It hid from earlier testing because touch emulation uses overlay
+   * scrollbars, where `100vw` and the content box are the same width. Only a
+   * real narrow desktop window shows it. */
   html,
   body,
   .page,
   .main-frame,
   .main-pane {
-    width: 100vw !important;
-    max-width: 100vw !important;
+    width: 100% !important;
+    max-width: 100% !important;
     overflow-x: clip;
   }
 
