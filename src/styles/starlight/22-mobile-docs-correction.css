@@ -61,14 +61,23 @@
     box-shadow: 0 18px 42px rgba(0, 0, 0, 0.34) !important;
   }
 
+  /* The current heading keeps its marker.
+     This listed every state including aria-current and forced the border
+     transparent for all of them, so the entry you are reading was the only
+     one in the dropdown with nothing to distinguish it but its text colour.
+     The reset now covers the resting and hover states only. */
   .netscli-mobile-toc-wrapper mobile-starlight-toc .dropdown a,
   .netscli-mobile-toc-wrapper mobile-starlight-toc .dropdown a:hover,
-  .netscli-mobile-toc-wrapper mobile-starlight-toc .dropdown a:focus-visible,
+  .netscli-mobile-toc-wrapper mobile-starlight-toc .dropdown a:focus-visible {
+    border-inline-start-color: transparent !important;
+    background: transparent !important;
+  }
+
   .netscli-mobile-toc-wrapper mobile-starlight-toc .dropdown a[aria-current='true'],
   .netscli-mobile-toc-wrapper mobile-starlight-toc .dropdown a[aria-current='true']:hover,
   .netscli-mobile-toc-wrapper mobile-starlight-toc .dropdown a[aria-current='true']:focus-visible {
-    border-inline-start-color: transparent !important;
-    background: transparent !important;
+    border-inline-start-color: var(--netscli-accent) !important;
+    background: rgba(var(--netscli-accent-rgb), 0.07) !important;
   }
 
   .netscli-mobile-toc-wrapper mobile-starlight-toc .dropdown a:hover,
