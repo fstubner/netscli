@@ -46,8 +46,15 @@ html[data-theme='light'][data-docs-scrolled='true'] header.header {
   inset: 0;
   z-index: 0;
   pointer-events: none;
+  /* The radius is capped against the viewport as well.
+   *
+   * A fixed rem radius is a soft corner accent on a desktop-width band, but
+   * on a 375px phone the falloff runs off the right edge, so the whole band
+   * reads as tinted and the fade looks cut off rather than finished. 70vw
+   * brings it back inside the screen at phone widths; min() leaves desktop
+   * untouched, where the rem value is always the smaller of the two. */
   background:
-    radial-gradient(circle at 0 0, rgba(var(--netscli-accent-rgb), 0.11), transparent 25rem),
+    radial-gradient(circle at 0 0, rgba(var(--netscli-accent-rgb), 0.11), transparent min(25rem, 70vw)),
     linear-gradient(128deg, rgba(var(--netscli-accent-rgb), 0.045), rgba(30, 220, 255, 0.016) 38%, transparent 72%);
 }
 
@@ -77,7 +84,7 @@ html[data-theme='light'] .main-pane > .content-panel:first-child::before,
 html[data-theme='light'] .main-pane > main > .content-panel:first-of-type::before,
 html[data-theme='light'] .main-pane > main > .content-panel:first-child::before {
   background:
-    radial-gradient(circle at 0 0, rgba(0, 122, 84, 0.08), transparent 24rem),
+    radial-gradient(circle at 0 0, rgba(0, 122, 84, 0.08), transparent min(24rem, 70vw)),
     linear-gradient(128deg, rgba(0, 122, 84, 0.035), rgba(30, 220, 255, 0.024) 38%, transparent 72%);
 }
 
