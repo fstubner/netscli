@@ -2,7 +2,7 @@
   <defs>
     <linearGradient id="netscliDocsGradient" x1="0" x2="170" y1="0" y2="0" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#005a1e"/>
-      <stop offset="0.52" stop-color="#0aae7a"/>
+      <stop offset="0.52" stop-color="#22c55e"/>
       <stop offset="1" stop-color="#1edcff"/>
     </linearGradient>
   </defs>

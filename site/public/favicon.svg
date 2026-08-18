@@ -3,7 +3,7 @@
   <defs>
     <linearGradient id="g" x1="0" y1="0" x2="64" y2="0" gradientUnits="userSpaceOnUse">
       <stop offset="0%"  stop-color="#005a1e"/>
-      <stop offset="45%" stop-color="#0aae7a"/>
+      <stop offset="45%" stop-color="#22c55e"/>
       <stop offset="100%" stop-color="#1edcff"/>
     </linearGradient>
     <style>

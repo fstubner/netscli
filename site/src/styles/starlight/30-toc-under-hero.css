@@ -79,3 +79,14 @@
 .docs-toc-under-hero :where(a[aria-current='true']) {
   border-inline-start-color: var(--netscli-accent) !important;
 }
+
+/* The search dialog's own failure message, injected by
+   scripts/docs-search-keys.ts when Pagefind neither answers nor errors.
+   Sized and coloured like the message it sits under, so it reads as part of
+   the dialog rather than as content that failed to load. */
+#starlight__search .netscli-search-offline {
+  margin: 0.35rem 0 0;
+  color: var(--sl-color-gray-2);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
