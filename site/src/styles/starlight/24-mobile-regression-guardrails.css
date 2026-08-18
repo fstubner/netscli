@@ -28,24 +28,19 @@
 
   .docs-header-search {
     margin-inline-end: .35rem !important;
-  }.mobile-docs-trigger,
-  .mobile-toc-trigger,
-  .mobile-docs-bar,
-  .mobile-toc-bar {
-    cursor: pointer !important;
-  }
+  }  
 
-  .mobile-toc-trigger,
-  .mobile-toc-trigger:hover,
-  .mobile-toc-trigger[aria-expanded="true"],
-  .right-sidebar .mobile-toc-trigger,
-  .right-sidebar .mobile-toc-trigger:hover {
-
-    border-inline-start: 0 !important;
-    color: var(--sl-color-white) !important;
-  }
-
-  .right-sidebar :where(a:hover, a[aria-current="true"], a[aria-current="page"]) {
+  /* Not the section menu.
+     PageSidebar renders the mobile section dropdown inside .right-sidebar, so
+     this rule -- written to flatten the ToC rail -- also stripped the marker
+     off the current page in that menu. Every other entry there reserves 2px
+     for a border, so the one item that should have been marked was the only
+     one with no border at all. */
+  .right-sidebar
+    :where(a:hover, a[aria-current="true"], a[aria-current="page"]):not(
+      .docs-mobile-section-menu a,
+      mobile-starlight-toc .dropdown a
+    ) {
     background: transparent !important;
 
   }

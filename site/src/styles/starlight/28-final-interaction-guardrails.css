@@ -166,29 +166,20 @@ a.download-count:focus-visible,
   .starlight-menu-button,
   .starlight-menu-button button {
     margin-inline-start: .15rem !important;
-  }
+  }    
 
-  .mobile-docs-trigger,
-  .mobile-toc-trigger,
-  .mobile-docs-bar,
-  .mobile-toc-bar,
-  .mobile-docs-trigger *,
-  .mobile-toc-trigger * {
-    cursor: pointer !important;
-  }
-
-  .mobile-toc-trigger,
-  .mobile-toc-trigger:hover,
-  .mobile-toc-trigger:focus-visible,
-  .right-sidebar .mobile-toc-trigger,
-  .right-sidebar .mobile-toc-trigger:hover,
-  .right-sidebar .mobile-toc-trigger:focus-visible {
-    background: transparent !important;
-    background-image: none !important;
-    border-inline-start: 0 !important;
-  }
-
-  .right-sidebar :where(a:hover, a[aria-current="true"], a[aria-current="page"]) {
+  /* Not the section menu.
+     PageSidebar renders the mobile section dropdown inside .right-sidebar, so
+     this rule -- written to flatten the ToC rail -- also stripped the marker
+     off the current page in that menu. Every other entry there reserves 2px
+     for a border, so the one item that should have been marked was the only
+     one with no border at all. The contents dropdown, which lives in the same
+     component, had lost its marker the same way. */
+  .right-sidebar
+    :where(a:hover, a[aria-current="true"], a[aria-current="page"]):not(
+      .docs-mobile-section-menu a,
+      mobile-starlight-toc .dropdown a
+    ) {
     background: transparent !important;
     border-inline-start: 0 !important;
   }
