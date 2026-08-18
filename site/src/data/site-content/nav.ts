@@ -46,16 +46,28 @@ export function hrefFor(link: NavLink, pathname: string): string {
   return pathname === '/' ? `#${link.section}` : `/#${link.section}`;
 }
 
-/** Whether `link` points at the page currently being rendered.
+/** How `link` relates to the page currently being rendered, as the ARIA
+ *  value to put on it -- or undefined when it is neither.
  *
- * Section links are never current here -- on the landing page they are marked
- * by the scroll spy in scripts/site-nav.ts, which writes aria-current
- * "location" rather than "page". */
-export function isCurrent(link: NavLink, pathname: string): boolean {
-  if (!link.href || link.external) return false;
-  // Prefix match on the trailing-slash-stripped href, so /docs/ is current
-  // for /docs, /docs/, and /docs/install/ alike without depending on which
-  // trailing-slash convention the router hands us.
+ * `page` is reserved for the exact page. A link to a section that merely
+ * contains it gets `true`, which is the ARIA value for "current within this
+ * set" and does not claim to be the page.
+ *
+ * The distinction is not cosmetic. This used to prefix-match and return the
+ * same value for both, so on /docs/install/ the Starlight sidebar marked
+ * "Installation" as the current page and the "Docs" link here marked itself
+ * as the current page too. Two elements claiming aria-current="page" on one
+ * document makes a screen reader announce "current page" twice, for two
+ * different destinations.
+ *
+ * Section links are never current here -- on the landing page the scroll spy
+ * in scripts/site-nav.ts marks those with "location". */
+export function isCurrent(link: NavLink, pathname: string): 'page' | 'true' | undefined {
+  if (!link.href || link.external) return undefined;
+  // Trailing-slash-stripped, so this does not depend on which convention the
+  // router hands us.
+  const here = pathname.replace(/\/$/, '');
   const base = link.href.replace(/\/$/, '');
-  return pathname === base || pathname.startsWith(`${base}/`);
+  if (here === base) return 'page';
+  return here.startsWith(`${base}/`) ? 'true' : undefined;
 }

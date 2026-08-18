@@ -29,7 +29,7 @@ const onHome = pathname === '/';
           class={link.external ? 'external-link' : undefined}
           data-section={link.section}
           data-site-nav-link
-          aria-current={isCurrent(link, pathname) ? 'page' : undefined}
+          aria-current={isCurrent(link, pathname)}
           {...(link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
         >
           {link.label}
@@ -57,6 +57,11 @@ const onHome = pathname === '/';
 /* nav */
 nav{
   position:sticky;top:0;z-index:10;
+  /* Border-box, so this is the whole bar including its border -- the docs
+     header sets the same value the same way. Sizing it from the inner box
+     plus a border instead left the landing bar 0.2px shorter, because a 1px
+     border renders as 0.8 at this device pixel ratio. */
+  min-height:var(--netscli-nav-height);
   background:rgba(17,17,17,.85);backdrop-filter:blur(12px);
   border-bottom:1px solid rgba(255,255,255,.06);
   box-shadow:none;
@@ -166,8 +171,10 @@ body.nav-scrolled nav::after{
    and the spy is the only thing that fires -- the underline never appeared
    at all. The docs bar was unaffected, which is why the two looked
    inconsistent. */
-.nlinks a[aria-current="page"],
-.nlinks a[aria-current="location"]{
+/* Any aria-current value. `page` is the exact page, `true` a section that
+   contains it, `location` the scroll-spy section on the landing page --
+   all three should look current. */
+.nlinks a[aria-current]{
   color:#e5e5e5;
   border-bottom-color:var(--netscli-accent);
 }
@@ -234,8 +241,7 @@ body.nav-scrolled nav::after{
     margin-block:0;
   }
   .nlinks a:hover,
-  .nlinks a[aria-current='page'],
-  .nlinks a[aria-current='location']{
+  .nlinks a[aria-current]{
     border-left-color:var(--netscli-accent);
     border-bottom-color:transparent;
     background:rgba(var(--netscli-accent-rgb),.1);

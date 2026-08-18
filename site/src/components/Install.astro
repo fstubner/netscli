@@ -299,7 +299,12 @@ a.install-download:hover{color:var(--netscli-accent-bright);background:rgba(var(
  */
 @media(max-width:700px){
   .cmd,
-  .cmd.big{
+  .cmd.big,
+  /* `.alt-cmd` too. It was left on `overflow-wrap:anywhere`, so while the
+     recommended command truncated to one line the alternates below it broke
+     mid-token across four -- the Scoop line did exactly that at 375px. Same
+     treatment, same reason: the copy button carries the full command. */
+  .alt-cmd{
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;

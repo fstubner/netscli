@@ -26,7 +26,7 @@ const pathname = Astro.url.pathname;
         <a
           href={hrefFor(link, pathname)}
           class={link.external ? 'external-link' : undefined}
-          aria-current={isCurrent(link, pathname) ? 'page' : undefined}
+          aria-current={isCurrent(link, pathname)}
           {...(link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
         >
           {link.label}
@@ -43,9 +43,10 @@ const pathname = Astro.url.pathname;
 
 <script>
   import { initDocsHeader } from '../../scripts/docs-header';
-  import { initDocsSearchKeys } from '../../scripts/docs-search-keys';
+  import { initDocsSearchKeys, initDocsSearchResilience } from '../../scripts/docs-search-keys';
   initDocsHeader();
   initDocsSearchKeys();
+  initDocsSearchResilience();
 </script>
 
 <style>
@@ -111,11 +112,11 @@ const pathname = Astro.url.pathname;
     }
 
     .docs-nav-links a:hover,
-    .docs-nav-links a[aria-current='page'] {
+    .docs-nav-links a[aria-current] {
       color: var(--sl-color-white);
     }
 
-    .docs-nav-links a[aria-current='page'] {
+    .docs-nav-links a[aria-current] {
       border-bottom-color: var(--netscli-accent);
     }
 
