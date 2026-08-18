@@ -56,6 +56,7 @@
     position: fixed !important;
     inset-block-start: .625rem !important;
     inset-inline-end: 3.75rem !important;
+    /* see the 50-72rem block at the end of this file */
     z-index: calc(var(--sl-z-index-navbar) + 2) !important;
     width: 2.5rem !important;
     max-width: 2.5rem !important;
@@ -91,5 +92,24 @@
   .sl-markdown-content :has(> table),
   .content-panel :has(> table) {
     max-width: 100% !important;
+  }
+}
+
+/* The band between the two collapses: 50rem, where the menu button appears,
+   and 72rem, where the header's own nav links come back.
+ *
+ * Starlight takes the menu button out of flow below 72rem -- it is
+ * `position: fixed` against the viewport's inline end -- so the topbar lays
+ * itself out as if the button were not there and puts the search button
+ * underneath it. Measured at 1000px: search at 910-950, menu at 942-982, an
+ * 8px overlap, which is the squeezed look.
+ *
+ * The pinning above only covers <= 49.99rem, where both are pinned and
+ * spaced deliberately. Here the search stays in flow, so the topbar reserves
+ * the width the fixed button occupies instead: 2.5rem for the button, 0.5rem
+ * for its inset, 0.65rem of gap. */
+@media (min-width: 50rem) and (max-width: 72rem) {
+  .header .docs-topbar {
+    padding-inline-end: 2.25rem !important;
   }
 }

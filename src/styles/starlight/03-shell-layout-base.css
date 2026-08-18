@@ -4,20 +4,35 @@
   border-inline-start: 1px solid var(--sl-color-hairline);
 }
 
+/* The sidebar's inset has to be the frame's inset, exactly.
+ *
+ * The frame is `width: min(100vw - 2*gutter, frame-width)` with an auto
+ * margin, so its left edge is `max(gutter, (100vw - frame-width) / 2)`. The
+ * sidebar is fixed and was offset by `max(0px, (100vw - frame-width) / 2)`,
+ * which drops to 0 whenever the viewport is narrower than the frame cap --
+ * every width from 72rem to about 108rem. There the sidebar sat flush to the
+ * viewport while the content started a gutter in, leaving a strip of page
+ * background between the sidebar's border and the hero band. Same expression
+ * on both now.
+ *
+ * `100%`, not `100vw`, on both sides of that expression: 100vw counts the
+ * classic scrollbar and the frame's layout box does not, so measuring the two
+ * differently left them 5px apart -- half a scrollbar -- even once the
+ * formulas matched. */
 @media (min-width: 72rem) {
   nav.sidebar {
-    left: max(0px, calc((100vw - var(--netscli-docs-frame-width)) / 2));
-    inset-inline-start: max(0px, calc((100vw - var(--netscli-docs-frame-width)) / 2));
+    left: max(var(--netscli-docs-shell-gutter), calc((100% - var(--netscli-docs-frame-width)) / 2));
+    inset-inline-start: max(var(--netscli-docs-shell-gutter), calc((100% - var(--netscli-docs-frame-width)) / 2));
     width: calc(var(--netscli-docs-sidebar-width) + var(--netscli-docs-shell-gutter));
   }
 
   .main-frame {
-    width: min(calc(100vw - (var(--netscli-docs-shell-gutter) * 2)), var(--netscli-docs-frame-width));
+    width: min(calc(100% - (var(--netscli-docs-shell-gutter) * 2)), var(--netscli-docs-frame-width));
     margin-inline: auto !important;
   }
 
   .sidebar-pane {
-    left: max(0px, calc((100vw - var(--netscli-docs-frame-width)) / 2));
+    left: max(var(--netscli-docs-shell-gutter), calc((100% - var(--netscli-docs-frame-width)) / 2));
     flex-basis: var(--netscli-docs-sidebar-width);
     width: var(--netscli-docs-sidebar-width);
     margin-inline-start: 0;

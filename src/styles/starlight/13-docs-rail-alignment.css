@@ -23,10 +23,11 @@
     --sl-content-inline-start: var(--netscli-docs-sidebar-width) !important;
   }
 
+  /* No width/margin reset here any more. It used to force the frame
+     full-bleed in this band only, which hid the sidebar misalignment at
+     72-86rem and left it visible everywhere above -- see the comment on the
+     sidebar inset in 03-shell-layout-base.css, which fixes the cause. */
   .main-frame {
-    width: 100% !important;
-    max-width: 100% !important;
-    margin-inline: 0 !important;
     padding-inline-start: var(--sl-content-inline-start) !important;
   }
 }
