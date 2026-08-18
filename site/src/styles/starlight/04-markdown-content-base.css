@@ -206,6 +206,15 @@ starlight-theme-select {
   color: var(--sl-color-gray-2);
 }
 
+/* The icon is absolutely positioned by upstream at `inset-inline-start: 0`,
+   which is the label's PADDING box -- so it ignored the 0.65rem inline
+   padding and sat 1px from the border, visibly crowding the edge. Pin it to
+   the same inset as the padding instead. The <select> keeps its own left
+   padding, so its text still clears the icon. */
+starlight-theme-select label .label-icon {
+  inset-inline-start: 0.65rem;
+}
+
 starlight-theme-select label {
   gap: 0.45rem;
   min-width: 5.35rem;
@@ -235,6 +244,10 @@ starlight-theme-select select {
      label's own min-height (2.35rem) sets the height now. */
   padding-block: 0;
   line-height: 1.2;
+  /* Upstream's inline padding assumes the icon is pinned at inset 0. Having
+     moved it in by the label's 0.65rem padding, the text needs the same
+     shift or it ends up 4px from the icon. */
+  padding-inline-start: calc(1.625rem + 0.65rem);
 }
 
 starlight-theme-select option {
