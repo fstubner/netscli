@@ -60,6 +60,13 @@
     width: 2.5rem !important;
     max-width: 2.5rem !important;
     min-width: 2.5rem !important;
+    /* Square, like the menu button beside it. Both are pinned to the same
+       inset-block-start, but this one kept the full-bar height it is given
+       at desktop widths, so the box ran from 10px to 70px -- past the 60px
+       bar -- and its 40px button sat at the bottom of it, 10px lower than
+       the menu button. */
+    height: 2.5rem !important;
+    min-height: 0 !important;
   }
 
   .sl-markdown-content .netscli-table-scroll,

@@ -97,7 +97,11 @@ body.nav-scrolled nav::after{
      on the parent, hence the -1px. Still a min, so the mobile wrapped state
      grows past it as before. */
   min-height:calc(var(--netscli-nav-height) - 1px);
-  max-width:var(--netscli-shell-width);margin:0 auto;padding:12px var(--netscli-shell-gutter);
+  /* No block padding: the links are the full bar height so their underline
+     reaches the bottom border, and padding here would push them past it.
+     min-height holds the bar open instead. The narrow-screen rule below
+     restores padding, where the links go back to auto height. */
+  max-width:var(--netscli-shell-width);margin:0 auto;padding:0 var(--netscli-shell-gutter);
   display:flex;align-items:center;justify-content:space-between;gap:18px;
   flex-wrap:wrap;
   position:relative;
@@ -143,10 +147,15 @@ body.nav-scrolled nav::after{
 .nlinks{display:flex;gap:20px;font-size:.8125rem;flex-wrap:wrap;justify-content:flex-end}
 .nlinks a{
   color:#b0b0b0;text-decoration:none;
-  display:inline-flex;align-items:center;min-height:32px;
+  display:inline-flex;align-items:center;
   border-bottom:2px solid transparent;
-  height:calc(100% + 24px);
-  margin-block:-12px;
+  /* Full bar height, so the underline lands on the bar's bottom edge the way
+     the docs one does. This was height:calc(100% + 24px) with a -12px block
+     margin, which never worked: .nlinks has no definite height, so the
+     percentage had nothing to resolve against and the link collapsed to its
+     32px content box. The underline then floated 14px above the bar's
+     border. Minus 1px for the border on <nav>. */
+  height:calc(var(--netscli-nav-height) - 1px);
 }
 .nlinks a:hover{color:#e5e5e5}
 /* Both values, because two different things set this attribute here.
