@@ -1,29 +1,11 @@
 ---
 import ThemeSelect from 'virtual:starlight/components/ThemeSelect';
 
+import { hrefFor, isCurrent, navLinks } from '../../data/site-content/nav';
+
 const pathname = Astro.url.pathname;
-type NavLink = {
-  href: string;
-  label: string;
-  external?: boolean;
-};
-
-const siteLinks: NavLink[] = [
-  { href: '/#surfaces', label: 'Features' },
-  { href: '/#install', label: 'Install' },
-  { href: '/#faq', label: 'FAQ' },
-  { href: '/docs/', label: 'Docs' },
-];
-
-const projectLinks: NavLink[] = [
-  { href: '/changelog/', label: 'Changelog' },
-  { href: 'https://github.com/fstubner/netscli', label: 'GitHub', external: true },
-];
-
-const isActive = (href: string) => {
-  if (href === '/docs/') return pathname.startsWith('/docs');
-  return pathname.replace(/\/$/, '') === href.replace(/\/$/, '');
-};
+const siteLinks = navLinks.filter((link) => link.mobileGroup === 'site');
+const projectLinks = navLinks.filter((link) => link.mobileGroup === 'project');
 ---
 
 <div class="docs-mobile-footer">
@@ -33,9 +15,9 @@ const isActive = (href: string) => {
       {
         siteLinks.map((link) => (
           <a
-            href={link.href}
+            href={hrefFor(link, pathname)}
             class={link.external ? 'external-link' : undefined}
-            aria-current={isActive(link.href) ? 'page' : undefined}
+            aria-current={isCurrent(link, pathname) ? 'page' : undefined}
           >
             {link.label}
           </a>
@@ -50,9 +32,9 @@ const isActive = (href: string) => {
       {
         projectLinks.map((link) => (
           <a
-            href={link.href}
+            href={hrefFor(link, pathname)}
             class={link.external ? 'external-link' : undefined}
-            aria-current={isActive(link.href) ? 'page' : undefined}
+            aria-current={isCurrent(link, pathname) ? 'page' : undefined}
           >
             {link.label}
           </a>
