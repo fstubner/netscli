@@ -11,12 +11,27 @@
   border-inline-start: 0 !important;
 }
 
+/* This selector outranks every `:where(details > ul a)` rule in the later
+   files -- `:where()` contributes no specificity, so those lose to a plain
+   `.sidebar-content a[aria-current='page']` even when they load afterwards.
+   The alignment therefore has to be set here, or it silently does nothing.
+
+   The list item adds 0.5rem of inline padding inside the rail (the <ul>'s
+   inline-start border), so a marker on the link sat 7.8px inside the rail
+   and read as belonging to the section label above rather than to the list.
+   Pull the link back by that padding plus the rail's own width to put the
+   marker on the rail, and add the same amount to the padding so the text
+   does not move. */
 .sidebar-content a[aria-current='page'] {
 
   box-shadow: none !important;
-  margin-inline-start: -1px !important;
-  padding-inline-start: 0.55rem !important;
-  width: calc(100% + 1px) !important;
+  margin-inline-start: calc(-1px - 0.5rem) !important;
+  /* Matches the inactive links' text position exactly. Their padding is
+     calc(0.85rem + 1px) from a link box 9px further right, so the active
+     link needs that plus the 9px it was pulled back by -- otherwise the
+     label visibly jumps left by 5.8px the moment an item becomes current. */
+  padding-inline-start: calc(0.85rem + 0.5rem + 2px) !important;
+  width: calc(100% + 1px + 0.5rem) !important;
 }site-search button[data-open-modal],
 site-search button[data-open-modal]:hover {
   background:

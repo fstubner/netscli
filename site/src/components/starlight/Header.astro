@@ -164,11 +164,21 @@ const isActive = (href: string) => {
       margin: 0;
     }
 
-    .docs-header-theme :global(starlight-theme-select),
-    .docs-header-theme :global(starlight-theme-select label) {
+    .docs-header-theme :global(starlight-theme-select) {
       display: inline-flex;
       align-items: center;
       height: 100%;
+    }
+
+    /* The label is the visible control -- bordered, rounded, tinted -- so it
+       must size to its content, not to the header. `height: 100%` stretched
+       it to the full 60px nav height, next to a 37.6px search button, which
+       is what made the bordered box look oversized and misaligned. The
+       wrapper above keeps 100% so the control stays vertically centred. */
+    .docs-header-theme :global(starlight-theme-select label) {
+      display: inline-flex;
+      align-items: center;
+      height: auto;
     }
 
     @media (max-width: 72rem) {

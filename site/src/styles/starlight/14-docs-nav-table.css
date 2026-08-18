@@ -15,15 +15,10 @@
   box-shadow: none !important;
 }
 
-.sidebar-content :where(a[aria-current='page'])::before {
-  content: "";
-  position: absolute;
-  inset-block: 0;
-  inset-inline-start: -1.1rem;
-  width: 2px;
-  background: #0aae7a;
-}
-
+/* The active-item marker lives in 20-docs-shell-closeout.css, as a border on
+   the link itself. A ::before implementation used to sit here and is gone:
+   that file loads later and killed it with `content: none !important`, so it
+   had been inert dead code that still looked like the source of truth. */
 @media (max-width: 71.99rem) {
   .right-sidebar-container {
 
