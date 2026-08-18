@@ -16,7 +16,14 @@ const RELEASE_DOWNLOAD = 'https://github.com/fstubner/netscli/releases/latest/do
  *  Gatekeeper or SmartScreen dialog with no context and assuming the
  *  download is malware. */
 const MACOS_UNSIGNED_HINT = 'Unsigned — right-click → Open on first launch';
-const WINDOWS_UNSIGNED_HINT = 'Unsigned — SmartScreen may warn; winget verifies the hash';
+/* Describes the row it is attached to, which is the direct .msi download.
+ * It used to end "winget verifies the hash" -- true of winget, and winget is
+ * not what this row does. Someone clicking Download gets the installer
+ * straight from GitHub Releases with nothing checking it, and was being told
+ * otherwise at the moment they did it. The checksums are real and published;
+ * this now points at them. */
+const WINDOWS_UNSIGNED_HINT =
+  'Unsigned — SmartScreen may warn; checksums are published with the release';
 
 export const installByPlatform: Record<Platform, PlatformInstall> = {
   windows: {
