@@ -183,3 +183,28 @@ html[data-theme='light'] .sl-markdown-content :not(pre) > code {
     padding-block-start: calc(var(--netscli-code-copy-size) + 0.5rem);
   }
 }
+
+/* Pointer devices: reveal the copy button on hover, not permanently.
+ *
+ * At 0.9 opacity always-on it sat on top of the first line of code, and any
+ * line longer than the block obscured its own text. Measured on
+ * /docs/install/ at 1280px: 5 of 18 blocks had glyphs underneath the button
+ * -- the long `iwr -useb https://…` and `curl -fsSL https://…` installers,
+ * exactly the ones a reader most needs to see in full.
+ *
+ * The narrow-screen band above stays: it is `hover: none` there, so a
+ * hover-reveal would leave no affordance at all. This split is Expressive
+ * Code's own default behaviour, and the widely-used pattern -- the button
+ * appears when you reach for it, and only then can it overlap anything.
+ */
+@media (hover: hover) and (min-width: 43.75rem) {
+  .sl-markdown-content .expressive-code .copy button {
+    opacity: 0;
+    transition: opacity 0.12s ease;
+  }
+  .sl-markdown-content .expressive-code .frame:hover .copy button,
+  .sl-markdown-content .expressive-code .frame:focus-within .copy button,
+  .sl-markdown-content .expressive-code .copy button:focus-visible {
+    opacity: 0.9;
+  }
+}
