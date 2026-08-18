@@ -63,3 +63,82 @@ export function initDocsSearchKeys(): void {
   document.addEventListener('keydown', handleKeyDown);
   onDispose(() => document.removeEventListener('keydown', handleKeyDown));
 }
+
+/**
+ * Two things Pagefind's default UI does not do: say anything when its own
+ * assets cannot be fetched, and give focus back when the dialog closes.
+ *
+ * Offline, the index request never resolves, so the drawer sits on
+ * "Searching for <query>…" indefinitely -- measured at 16s with no error, no
+ * retry and no way to tell a slow search from a dead one. And closing the
+ * dialog with Escape dropped focus to <body>, so a keyboard user landed at
+ * the top of the document instead of back on the button they opened.
+ */
+const MESSAGE_SELECTOR = '.pagefind-ui__message';
+const SEARCH_TIMEOUT_MS = 8000;
+const OFFLINE_NOTE = 'netscli-search-offline';
+
+export function initDocsSearchResilience(): void {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let opener: HTMLElement | null = null;
+
+  const clearNote = (dialog: Element) => {
+    dialog.querySelector(`.${OFFLINE_NOTE}`)?.remove();
+  };
+
+  const showNote = (dialog: Element) => {
+    if (dialog.querySelector(`.${OFFLINE_NOTE}`)) return;
+    const message = dialog.querySelector(MESSAGE_SELECTOR);
+    if (!message) return;
+    const note = document.createElement('p');
+    note.className = OFFLINE_NOTE;
+    note.setAttribute('role', 'status');
+    note.textContent = navigator.onLine
+      ? 'Search is not responding. Check your connection, then edit the query to try again.'
+      : 'Search needs a connection and you appear to be offline. The pages themselves still work.';
+    message.insertAdjacentElement('afterend', note);
+  };
+
+  const onInput = (event: Event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement) || !target.matches(INPUT_SELECTOR)) return;
+    const dialog = target.closest('dialog');
+    if (!dialog) return;
+    clearNote(dialog);
+    if (timer) clearTimeout(timer);
+    // Only complain if the drawer is still *searching* when the timer fires.
+    // A slow-but-working search resolves and rewrites this message itself.
+    timer = setTimeout(() => {
+      const message = dialog.querySelector(MESSAGE_SELECTOR);
+      if (message && /^\s*Searching/i.test(message.textContent ?? '')) showNote(dialog);
+    }, SEARCH_TIMEOUT_MS);
+  };
+
+  const rememberOpener = (event: Event) => {
+    const target = event.target;
+    if (target instanceof HTMLElement && target.closest('button[data-open-modal]')) {
+      opener = target.closest('button[data-open-modal]');
+    }
+  };
+
+  const onClose = (event: Event) => {
+    const dialog = event.target;
+    if (!(dialog instanceof HTMLDialogElement)) return;
+    clearNote(dialog);
+    if (timer) clearTimeout(timer);
+    // Native <dialog> restores focus to whatever was focused when it opened,
+    // which here is nothing -- Starlight opens it from a keyboard shortcut as
+    // well as a click. Put focus back on the trigger explicitly.
+    if (opener?.isConnected) opener.focus();
+  };
+
+  document.addEventListener('input', onInput, true);
+  document.addEventListener('click', rememberOpener, true);
+  document.addEventListener('close', onClose, true);
+  onDispose(() => {
+    if (timer) clearTimeout(timer);
+    document.removeEventListener('input', onInput, true);
+    document.removeEventListener('click', rememberOpener, true);
+    document.removeEventListener('close', onClose, true);
+  });
+}

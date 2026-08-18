@@ -3,7 +3,7 @@
   <defs>
     <linearGradient id="netscliGradient" x1="0" y1="0" x2="1200" y2="0" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#005a1e"/>
-      <stop offset="45%" stop-color="#0aae7a"/>
+      <stop offset="45%" stop-color="#22c55e"/>
       <stop offset="100%" stop-color="#1edcff"/>
     </linearGradient>
     <style>
@@ -53,25 +53,25 @@
       <tspan x="700" class="label">Hostname</tspan>
     </text>
     <text y="402">
-      <tspan x="195" fill="#0aae7a">workstation.local</tspan>
+      <tspan x="195" fill="#22c55e">workstation.local</tspan>
       <tspan x="350" fill="#f5c84c">lab-node-01</tspan>
       <tspan x="535" class="value">Dell Inc.</tspan>
       <tspan x="700" class="value">workstation</tspan>
     </text>
     <text y="426">
-      <tspan x="195" fill="#0aae7a">phone.local</tspan>
+      <tspan x="195" fill="#22c55e">phone.local</tspan>
       <tspan x="350" fill="#f5c84c">lab-node-02</tspan>
       <tspan x="535" class="value">Apple, Inc.</tspan>
       <tspan x="700" class="value">iphone</tspan>
     </text>
     <text y="450">
-      <tspan x="195" fill="#0aae7a">pi.local</tspan>
+      <tspan x="195" fill="#22c55e">pi.local</tspan>
       <tspan x="350" fill="#f5c84c">lab-node-03</tspan>
       <tspan x="535" class="value">Raspberry Pi</tspan>
       <tspan x="700" class="value">pi</tspan>
     </text>
     <text y="474">
-      <tspan x="195" fill="#0aae7a">nas.local</tspan>
+      <tspan x="195" fill="#22c55e">nas.local</tspan>
       <tspan x="350" fill="#f5c84c">lab-node-04</tspan>
       <tspan x="535" class="value">Dell Inc.</tspan>
       <tspan x="700" class="value">nas</tspan>
