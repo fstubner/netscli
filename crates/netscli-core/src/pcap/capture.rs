@@ -20,10 +20,6 @@ pub(super) fn check_support() -> Result<Vec<String>> {
     Ok(devices.into_iter().map(|d| d.name).collect())
 }
 
-pub(super) fn capture(config: PcapConfig) -> Result<PcapResult> {
-    capture_with_cancel(config, None)
-}
-
 pub(super) fn capture_with_cancel(
     config: PcapConfig,
     cancel: Option<PcapCancelToken>,

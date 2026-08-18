@@ -62,7 +62,7 @@ pub struct PingScanner {
 
 impl PingScanner {
     pub fn new(concurrency: usize) -> Self {
-        let concurrency = concurrency.max(1);
+        let concurrency = concurrency.clamp(1, crate::MAX_CONCURRENCY);
         Self {
             semaphore: Arc::new(Semaphore::new(concurrency)),
             backend: if *RAW_ICMP_OK.get_or_init(can_use_raw_icmpv4) {

@@ -45,7 +45,10 @@ async fn test_scan_localhost_common_ports() {
     let localhost: IpAddr = "127.0.0.1".parse().unwrap();
     let ports = vec![22, 80, 443, 8080];
 
-    let results = scanner.scan_host(localhost, ports.clone(), 1000).await;
+    let results = scanner
+        .scan_host(localhost, ports.clone(), 1000)
+        .await
+        .expect("valid port list");
 
     assert_eq!(results.len(), ports.len());
     for result in results {
@@ -76,7 +79,8 @@ async fn test_scan_open_localhost_port_returns_open_with_banner() {
     let scanner = PortScanner::new(4);
     let mut results = scanner
         .scan_host(IpAddr::from([127, 0, 0, 1]), vec![port], 1000)
-        .await;
+        .await
+        .expect("valid port list");
 
     assert_eq!(results.len(), 1);
     let result = results.remove(0);
@@ -100,7 +104,8 @@ async fn test_scan_closed_local_port_records_latency() {
     let scanner = PortScanner::new(4);
     let mut results = scanner
         .scan_host(IpAddr::from([127, 0, 0, 1]), vec![port], 1000)
-        .await;
+        .await
+        .expect("valid port list");
 
     assert_eq!(results.len(), 1);
     let result = results.remove(0);

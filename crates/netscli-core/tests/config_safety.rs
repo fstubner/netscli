@@ -70,6 +70,7 @@ async fn port_scanner_concurrency_zero_returns_results() {
     let res = scanner
         .scan_host(IpAddr::V4(Ipv4Addr::LOCALHOST), vec![1], 1)
         .await;
+    let res = res.expect("a one-port list is valid");
     assert_eq!(res.len(), 1);
     assert_eq!(res[0].port, 1);
 }
@@ -121,4 +122,54 @@ async fn ops_reject_oversized_port_lists() {
         ops.scan_ports("127.0.0.1", Some(too_many)).await.is_err(),
         "scan_ports accepted more than MAX_PORTS_PER_SCAN"
     );
+}
+
+// --- Engine-level limit enforcement ---------------------------------------
+//
+// `Ops` validated, the engines did not, and the engines are re-exported at
+// the crate root. A consumer building input by hand reached them directly,
+// so the documented safety limits simply did not apply. Each of these fails
+// against the previous code by returning results instead of an error.
+
+#[tokio::test]
+async fn port_scanner_rejects_a_list_over_the_cap() {
+    let scanner = PortScanner::new(8);
+    let too_many: Vec<u16> = (1..=(netscli_core::MAX_PORTS_PER_SCAN as u16 + 1)).collect();
+    let err = scanner
+        .scan_host(IpAddr::V4(Ipv4Addr::LOCALHOST), too_many, 1)
+        .await
+        .expect_err("a list over the cap must be refused, not scanned");
+    assert!(err.to_string().contains("too many ports"), "got: {err}");
+}
+
+#[tokio::test]
+async fn port_scanner_rejects_port_zero() {
+    let scanner = PortScanner::new(8);
+    let err = scanner
+        .scan_host(IpAddr::V4(Ipv4Addr::LOCALHOST), vec![0], 1)
+        .await
+        .expect_err("port 0 must be refused here too, not only in Ops");
+    assert!(err.to_string().contains("port 0"), "got: {err}");
+}
+
+#[tokio::test]
+async fn discover_engine_refuses_a_subnet_over_the_limit() {
+    // /0 asks for 4,294,967,294 addresses -- about 73 GB of Vec<IpAddr> --
+    // allocated before a single packet is sent.
+    let engine = netscli_core::DiscoverEngine::new(8);
+    let err = engine
+        .scan_subnet("0.0.0.0/0".parse().unwrap(), false)
+        .await
+        .expect_err("an unbounded subnet must be refused by the engine");
+    assert!(err.to_string().contains("subnet too large"), "got: {err}");
+}
+
+#[tokio::test]
+async fn engines_clamp_absurd_concurrency_instead_of_panicking() {
+    // Semaphore::new asserts on permits above usize::MAX >> 3, and these
+    // constructors return Self, so they had no way to report it.
+    let _ = PortScanner::new(usize::MAX);
+    let _ = netscli_core::DiscoverEngine::new(usize::MAX);
+    let _ = netscli_core::SweepEngine::new(usize::MAX);
+    let _ = netscli_core::InspectEngine::new(usize::MAX);
 }

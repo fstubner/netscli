@@ -12,6 +12,7 @@ use tokio::time::timeout;
 use super::probes::{first_banner_line, probe_http, probe_tls, read_banner};
 use super::services::{classify_connect_error, guess_service, is_http_port, is_tls_port};
 use super::types::{PortResult, PortStatus};
+use crate::error::Result;
 
 /// Concurrent TCP port scanner.
 ///
@@ -36,7 +37,7 @@ pub struct PortScanProgress {
 
 impl PortScanner {
     pub fn new(concurrency: usize) -> Self {
-        let concurrency = concurrency.max(1);
+        let concurrency = concurrency.clamp(1, crate::MAX_CONCURRENCY);
         Self {
             semaphore: Arc::new(Semaphore::new(concurrency)),
             concurrency,
@@ -48,27 +49,37 @@ impl PortScanner {
         target: IpAddr,
         ports: Vec<u16>,
         timeout_ms: u64,
-    ) -> Vec<PortResult> {
+    ) -> Result<Vec<PortResult>> {
         self.scan_host_with_progress(target, ports, timeout_ms, None)
             .await
     }
 
+    /// Scan `ports` on `target`.
+    ///
+    /// Validates the port list rather than trusting the caller. `Ops` does
+    /// the same check before calling in, but this is public API on a
+    /// published crate: a consumer building a `Vec<u16>` by hand reached the
+    /// scanner directly and neither the 4,096-port cap nor the port-0
+    /// rejection applied. The doc comment on `Ops::resolve_ports` claimed
+    /// "every scanning entry point funnels through here", and this was one
+    /// of two that did not.
     pub async fn scan_host_with_progress(
         &self,
         target: IpAddr,
         ports: Vec<u16>,
         timeout_ms: u64,
         progress: Option<Arc<dyn Fn(PortScanProgress) + Send + Sync>>,
-    ) -> Vec<PortResult> {
+    ) -> Result<Vec<PortResult>> {
         if ports.is_empty() {
-            return Vec::new();
+            return Ok(Vec::new());
         }
+        crate::validate_ports(&ports)?;
 
         let total = ports.len();
         let completed = Arc::new(AtomicUsize::new(0));
         let open_found = Arc::new(AtomicUsize::new(0));
 
-        stream::iter(ports)
+        let results = stream::iter(ports)
             .map(|port| {
                 let scanner = self.clone();
                 let completed = completed.clone();
@@ -98,7 +109,9 @@ impl PortScanner {
             })
             .buffer_unordered(self.concurrency)
             .collect::<Vec<PortResult>>()
-            .await
+            .await;
+
+        Ok(results)
     }
 
     async fn check_port(&self, target: IpAddr, port: u16, timeout_ms: u64) -> PortResult {

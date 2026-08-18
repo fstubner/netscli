@@ -38,7 +38,7 @@ impl InspectEngine {
         scan_timeout_ms: u64,
         dns_timeout_ms: u64,
     ) -> Self {
-        let concurrency = concurrency.max(1);
+        let concurrency = concurrency.clamp(1, crate::MAX_CONCURRENCY);
         Self {
             ping: PingScanner::new(concurrency),
             scan: PortScanner::new(concurrency),
@@ -49,6 +49,14 @@ impl InspectEngine {
     }
 
     pub async fn inspect(&self, host: String, ports: Vec<u16>) -> Result<InspectResult> {
+        // Validate before doing any work. `Ops::inspect_host` checks too, but
+        // this engine is public API and was reachable with a hand-built
+        // `Vec<u16>` that skipped both the 4,096-port cap and the port-0
+        // rejection.
+        if !ports.is_empty() {
+            crate::validate_ports(&ports)?;
+        }
+
         let ip_for_scan =
             crate::ops::resolve_host_ip_with_timeout(&host, self.dns_timeout_ms).await?;
 
@@ -63,7 +71,7 @@ impl InspectEngine {
 
         let (ping_res, ports_res, hostname) = tokio::join!(ping_fut, scan_fut, hostname_fut);
 
-        let ports = ports_res;
+        let ports = ports_res?;
         let open_ports = ports.iter().filter(|p| p.open).cloned().collect();
 
         Ok(InspectResult {

@@ -54,7 +54,7 @@ impl SweepEngine {
         scan_timeout_ms: u64,
         dns_timeout_ms: u64,
     ) -> Self {
-        let concurrency = concurrency.max(1);
+        let concurrency = concurrency.clamp(1, crate::MAX_CONCURRENCY);
         Self {
             discover: DiscoverEngine::new_with_timeouts(
                 concurrency,
@@ -106,7 +106,7 @@ impl SweepEngine {
         let hosts = self
             .discover
             .scan_subnet_with_progress(subnet, resolve_hostnames, discover_progress)
-            .await;
+            .await?;
         let total_hosts = hosts.len();
         let completed = Arc::new(AtomicUsize::new(0));
         let open_hosts = Arc::new(AtomicUsize::new(0));
@@ -124,9 +124,14 @@ impl SweepEngine {
                 let progress = progress.clone();
                 async move {
                     let host_ip = h.ip;
+                    // The port list is validated once by the caller, so a
+                    // per-host failure here would be the same error repeated
+                    // for every host. Treat it as "no open ports" for this
+                    // entry rather than aborting the whole sweep.
                     let open_ports = scanner
                         .scan_host(host_ip, (*ports).clone(), scan_timeout_ms)
                         .await
+                        .unwrap_or_default()
                         .into_iter()
                         .filter(|p| p.open)
                         .collect();
