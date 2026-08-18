@@ -1,0 +1,54 @@
+/* Contents list under the hero, instead of in the right-hand rail.
+ *
+ * The list is rendered by src/components/starlight/MarkdownContent.astro; see
+ * that file for why it keeps the `.right-sidebar-panel` class. These rules
+ * undo the parts of that class that only made sense in a fixed 208px rail.
+ */
+
+/* The column Starlight reserves for the rail has to collapse, or the article
+   keeps a dead gutter roughly a sidebar wide. TwoColumnContent.astro sizes
+   .main-pane by subtracting that width, so both change together. */
+@media (min-width: 72rem) {
+  .right-sidebar-container {
+    display: none !important;
+  }
+
+  [data-has-sidebar][data-has-toc] .main-pane,
+  .main-pane {
+    width: 100% !important;
+  }
+}
+
+/* Full content width, not the rail's 208px -- otherwise the multi-column
+   rule below can only ever produce one column. */
+.docs-toc-under-hero.right-sidebar-panel {
+  width: 100% !important;
+  max-width: none !important;
+  padding: 0 !important;
+}
+
+.docs-toc-under-hero .sl-container {
+  width: auto !important;
+  max-width: none !important;
+}
+
+/* The rail moves from the list onto each link. In the rail layout a single
+   border on the <ul> was the rail; laid out in columns it would mark only the
+   first column and leave the other two floating. A border per link gives each
+   column its own continuous rail, and the active link still lights it green. */
+/* Doubled class deliberately. These compete with `.right-sidebar-panel ...`
+   rules in 20-docs-shell-closeout.css that sit at the same specificity, and
+   the bundler does not emit these files in filename order -- both classes are
+   on the same element, so the extra class wins the tie regardless of order. */
+.docs-toc-under-hero.right-sidebar-panel :where(nav ul) {
+  border-inline-start: 0 !important;
+}
+
+.docs-toc-under-hero.right-sidebar-panel :where(a) {
+  margin-inline: 0 !important;
+  border-inline-start: 2px solid var(--sl-color-hairline) !important;
+}
+
+.docs-toc-under-hero.right-sidebar-panel :where(a[aria-current='true']) {
+  border-inline-start-color: #0aae7a !important;
+}
