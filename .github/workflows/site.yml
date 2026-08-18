@@ -67,6 +67,16 @@ jobs:
           node-version: 22
       - run: node scripts/check-file-size.mjs
 
+      # A ratchet on dead CSS, not a target. `css-shadowing.mjs` proves a
+      # declaration can never affect the page -- same selector, same media
+      # context, a later rule of equal-or-greater importance. It was written
+      # for B-23, run once in the pull request that added it, and then never
+      # again, so the count it had driven down grew back to 210 unnoticed.
+      # Lower the budget when you prune; it must never rise.
+      - name: Dead CSS budget
+        working-directory: site
+        run: npm run check:css
+
   build:
     name: Build + typecheck
     needs: [changes, maintainability]
