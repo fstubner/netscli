@@ -70,7 +70,11 @@ export async function exerciseDiscover(driver) {
   await assertCommand(driver, /netscli discover 127\.0\.0\.0\/30 --resolve --json/);
   await runActiveTool(driver);
   await assertOperationToastReturnsToTab(driver, /Discover/i);
-  await waitForText(driver, '[data-testid="statusbar"]', /\d+ hosts?/i, 25_000);
+  // At least one, not "0 hosts". 127.0.0.0/30 contains the loopback address
+  // the probe server runs on, so a working backend always finds it -- and
+  // /\d+ hosts?/ matched "0 hosts", meaning a total Discover regression went
+  // green.
+  await waitForText(driver, '[data-testid="statusbar"]', /[1-9]\d* hosts?/i, 25_000);
   await assertNoErrorStrip(driver);
 }
 
@@ -81,7 +85,14 @@ export async function exerciseSweep(driver, port) {
   await replaceInput(driver, '[data-testid="sweep-ports-input"]', String(port));
   await assertCommand(driver, new RegExp(`netscli sweep 127\\.0\\.0\\.0\\/30 -p ${port} --resolve --json`));
   await runActiveTool(driver);
-  await waitForText(driver, '[data-testid="statusbar"]', /\d+ hosts? .* \d+ with open ports?/i, 30_000);
+  // Both counts must be non-zero: the sweep targets the probe server's own
+  // port on loopback, so a working backend finds a host and an open port.
+  await waitForText(
+    driver,
+    '[data-testid="statusbar"]',
+    /[1-9]\d* hosts? .* [1-9]\d* with open ports?/i,
+    30_000,
+  );
   await waitForText(driver, '[data-testid="result-table"]', /MAC/i);
   await waitForText(driver, '[data-testid="result-table"]', /RTT/i);
   await assertNoErrorStrip(driver);
@@ -91,7 +102,9 @@ export async function exerciseInterfaces(driver) {
   await addToolTab(driver, 'Interfaces');
   await withElement(driver, '[data-testid="run-active-tab"]');
   await assertCommand(driver, /netscli interfaces --json/);
-  await waitForText(driver, '[data-testid="statusbar"]', /\d+ interfaces?/i, 20_000);
+  // Every machine has at least a loopback interface, so zero here is a
+  // backend failure rather than a legitimate empty result.
+  await waitForText(driver, '[data-testid="statusbar"]', /[1-9]\d* interfaces?/i, 20_000);
   await waitForRow(driver, '[data-testid^="result-row-iface-"]', 20_000);
   await waitForText(driver, '[data-testid="result-table"]', /App/i);
   await assertKeyboardSelection(driver);
@@ -102,25 +115,44 @@ export async function exerciseArp(driver) {
   await addToolTab(driver, 'ARP Table');
   await withElement(driver, '[data-testid="run-active-tab"]');
   await assertCommand(driver, /netscli arp --json/);
+  // Deliberately still tolerates zero, unlike the assertions above. An empty
+  // neighbour cache is a legitimate state on a freshly booted CI runner, so
+  // requiring >= 1 here would be flaky rather than strict. A hard backend
+  // failure is still caught: the status bar would show an error instead of a
+  // count, and assertNoErrorStrip below would fire.
   await waitForText(driver, '[data-testid="statusbar"]', /\d+ ARP entries?/i, 20_000);
   await assertNoErrorStrip(driver);
 }
 
 export async function exercisePcapValidation(driver) {
   await clickButtonText(driver, '.menu-button', 'Tools');
+  // Packet Capture must always be listed, on every build.
+  //
+  // This used to `return false` and pass when the menu item was missing, so
+  // the entire capture surface disappearing was indistinguishable from a
+  // healthy skip. It is now a hard failure: builds without the feature keep
+  // the tool visible and show setup guidance instead of hiding it, so an
+  // absent entry means something broke.
   const pcapVisible = await driver.executeScript(
     "return Array.from(document.querySelectorAll('.menu-popover-item')).some((button) => button.textContent.trim() === 'Packet Capture');",
   );
-  if (!pcapVisible) {
-    await driver.findElement(By.css('.workspace')).click();
-    await waitForNoElement(driver, '.menu-popover');
-    return false;
-  }
+  assert.ok(
+    pcapVisible,
+    'Packet Capture must appear in the Tools menu on every build, with setup guidance when unsupported',
+  );
   await clickButtonText(driver, '.menu-popover-item', 'Packet Capture');
   await withElement(driver, '[data-testid="pcap-interface-input"]');
   const unavailable = await driver.findElements(By.css('[data-testid="pcap-unavailable-state"]'));
   if (unavailable.length > 0) {
-    await waitForText(driver, '[data-testid="pcap-unavailable-state"]', /Packet Capture/i);
+    // The expected state on a published build. Assert the guidance actually
+    // tells the user what to do, rather than just noting the element exists.
+    const guidance = await unavailable[0].getText();
+    assert.match(guidance, /packet capture/i, 'unavailable state should name the feature');
+    assert.match(
+      guidance,
+      /install|build|support|npcap|libpcap/i,
+      'unavailable state should say how to get a capture-capable build, not just that it is missing',
+    );
     await assertNoErrorStrip(driver);
     return false;
   }

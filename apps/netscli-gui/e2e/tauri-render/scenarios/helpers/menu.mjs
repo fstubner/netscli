@@ -202,7 +202,16 @@ async function assertInterfaceReadinessReflectsSelection(driver) {
     return { found: true, originalName, originalUp, downName };
   `);
   await closeSettingsDialog(driver);
-  if (!selection.found) return;
+  if (!selection.found) {
+    // A genuine skip, but say so. On a runner with a single healthy NIC
+    // there is no down interface to select, so this assertion has nothing to
+    // exercise -- it used to return silently, which reads in the log exactly
+    // like a pass.
+    console.log(
+      'SKIP assertInterfaceReadinessReflectsSelection: no down interface on this host to select',
+    );
+    return;
+  }
   await waitForText(driver, '[data-testid="statusbar"]', /Interface down/i);
 
   if (selection.originalName && selection.originalName !== selection.downName) {
@@ -232,11 +241,16 @@ async function openSettingsDialog(driver) {
 }
 
 async function closeSettingsDialog(driver) {
+  // A missing close button is a failure, not a no-op.
+  //
+  // This used to return silently when `.settings-close` was absent, so a
+  // dialog that could no longer be dismissed left the suite green -- and
+  // every later step ran against a modal that was still open, producing
+  // confusing downstream failures instead of naming the real one.
   const closeButtons = await driver.findElements(By.css('.settings-close'));
-  if (closeButtons.length > 0) {
-    await closeButtons[0].click();
-    await waitForNoElement(driver, '[data-testid="settings-dialog"]');
-  }
+  assert.ok(closeButtons.length > 0, 'settings dialog has no .settings-close button to dismiss it');
+  await closeButtons[0].click();
+  await waitForNoElement(driver, '[data-testid="settings-dialog"]');
 }
 
 async function openMenu(driver, menuLabel) {
