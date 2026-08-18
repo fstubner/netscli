@@ -1,5 +1,10 @@
 {
   "extends": "astro/tsconfigs/strict",
   "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist"]
+  // node_modules is listed explicitly. Setting `exclude` at all replaces
+  // TypeScript's implicit default of ["node_modules", "bower_components",
+  // "jspm_packages", outDir], so `"exclude": ["dist"]` alone pulled every
+  // dependency's sources into the program via the `**/*` include above.
+  // `skipLibCheck` hid the consequences rather than removing them.
+  "exclude": ["dist", "node_modules"]
 }

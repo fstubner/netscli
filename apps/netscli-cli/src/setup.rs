@@ -175,11 +175,21 @@ pub async fn print_status(json: bool, yaml: bool) -> Result<()> {
         return Err(anyhow!("Use only one of --json or --yaml"));
     }
 
+    // `doctor` does not persist anything (C-05).
+    //
+    // It is a read-only query -- "what does this build have?" -- and it used
+    // to rewrite the setup state file as a side effect of answering. That
+    // made a diagnostic command mutate state on a machine the user may only
+    // be inspecting, and it meant running `doctor` changed what the setup
+    // wizard would later report as last checked.
+    //
+    // The state value is still built, because `--json` and `--yaml` serialise
+    // it; it simply is not written back. The wizard runs its own
+    // `collect_status`, so nothing depends on `doctor` having saved.
     let deps = collect_status().await;
     let mut state = load_state().unwrap_or_default();
     state.last_checked = Some(Utc::now());
     state.deps = deps.clone();
-    save_state(&state)?;
 
     if yaml {
         println!("{}", serde_yaml_ng::to_string(&state)?);
