@@ -70,7 +70,7 @@ const faqGroups = grouped.sort(
 .faq summary::-webkit-details-marker{display:none}
 .faq summary::before{
   content:"+";font-family:ui-monospace,"SF Mono",Menlo,monospace;
-  color:#0aae7a;font-weight:700;width:14px;flex-shrink:0;
+  color:var(--netscli-accent);font-weight:700;width:14px;flex-shrink:0;
   transition:transform 150ms;
 }
 .faq details[open] summary::before{content:"−"}
@@ -112,7 +112,7 @@ const faqGroups = grouped.sort(
 }
 .faq .answer code{
   font-size:.8125rem;
-  color:#23d198;
+  color:var(--netscli-accent-bright);
   white-space:nowrap;
   overflow-wrap:normal;
   word-break:normal;
@@ -124,8 +124,8 @@ const faqGroups = grouped.sort(
   overflow-wrap:normal;
   word-break:normal;
 }
-.faq .answer a{color:#0aae7a;text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere}
-.faq .answer a:hover{color:#23d198}
+.faq .answer a{color:var(--netscli-accent);text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere}
+.faq .answer a:hover{color:var(--netscli-accent-bright)}
 
 
 @media(max-width:600px){

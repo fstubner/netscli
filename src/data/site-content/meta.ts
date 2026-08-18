@@ -30,7 +30,7 @@ export const meta: Meta = {
 export const branding: Branding = {
   wordmark: '/assets/netscli-wordmark.png',
   wordmarkAlt: 'NetsCLI',
-  accentGradient: 'linear-gradient(90deg,#059669,#0aae7a 50%,#1edcff)',
+  accentGradient: 'linear-gradient(90deg,#16a34a,#22c55e 50%,#1edcff)',
   bg: '#111',
   fg: '#d4d4d4',
 };

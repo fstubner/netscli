@@ -6,7 +6,7 @@ site-search button[data-open-modal] svg {
 
 site-search button[data-open-modal]:hover svg,
 site-search button[data-open-modal]:focus-visible svg {
-  color: #9ff8de;
+  color: var(--netscli-accent-high);
 }
 
 site-search button[data-open-modal] > kbd {
@@ -46,7 +46,7 @@ site-search button[data-close-modal] {
 site-search button[data-close-modal]:hover,
 site-search button[data-close-modal]:focus-visible {
   outline: 0;
-  background: rgba(10, 174, 122, 0.12) !important;
+  background: rgba(var(--netscli-accent-rgb), 0.12) !important;
   color: var(--sl-color-white) !important;
 }
 
@@ -56,7 +56,7 @@ site-search button[data-close-modal]:focus-visible {
   --pagefind-ui-background: #171b22;
   --pagefind-ui-border: rgba(140, 149, 166, 0.28);
   --pagefind-ui-border-width: 1px;
-  --pagefind-ui-tag: rgba(10, 174, 122, 0.12);
+  --pagefind-ui-tag: rgba(var(--netscli-accent-rgb), 0.12);
   --sl-search-corners: 6px;
 }#starlight__search .pagefind-ui__search-input {
   border-color: rgba(140, 149, 166, 0.32) !important;
@@ -70,7 +70,7 @@ site-search button[data-close-modal]:focus-visible {
   outline: 0 !important;
   border-color: rgba(159, 248, 222, 0.72) !important;
   box-shadow:
-    0 0 0 2px rgba(10, 174, 122, 0.16),
+    0 0 0 2px rgba(var(--netscli-accent-rgb), 0.16),
     inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
 }
 
@@ -86,13 +86,13 @@ site-search button[data-close-modal]:focus-visible {
 #starlight__search .pagefind-ui__result-nested:hover,
 #starlight__search .pagefind-ui__result-nested:focus-within {
   outline: 0 !important;
-  border-color: rgba(10, 174, 122, 0.34);
+  border-color: rgba(var(--netscli-accent-rgb), 0.34);
 
 }
 
 #starlight__search mark {
-  color: #9ff8de !important;
-  background: rgba(10, 174, 122, 0.16) !important;
+  color: var(--netscli-accent-high) !important;
+  background: rgba(var(--netscli-accent-rgb), 0.16) !important;
   border-radius: 3px;
   padding-inline: 0.12em;
 }
@@ -189,7 +189,7 @@ html[data-theme='light'] starlight-menu-button[aria-expanded='true'] button {
 }
 
 .sidebar-content a[aria-current='page']:hover {
-  background: rgba(10, 174, 122, 0.15);
+  background: rgba(var(--netscli-accent-rgb), 0.15);
   box-shadow: none;
 }
 
@@ -222,7 +222,7 @@ html[data-theme='light'] starlight-menu-button[aria-expanded='true'] button {
 
   .sidebar-pane {
     background:
-      linear-gradient(180deg, rgba(10, 174, 122, 0.035), transparent 9rem),
+      linear-gradient(180deg, rgba(var(--netscli-accent-rgb), 0.035), transparent 9rem),
       var(--sl-color-bg-sidebar);
   }
 

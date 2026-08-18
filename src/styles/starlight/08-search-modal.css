@@ -143,7 +143,7 @@ html[data-theme='light'] #starlight__search .pagefind-ui__message .search-data {
 }
 
 html[data-theme='light'] #starlight__search .pagefind-ui__search-clear::before {
-  background-color: #007a54;
+  background-color: #146b2e;
 }
 
 html[data-theme='light'] #starlight__search .pagefind-ui__result-inner {
@@ -172,8 +172,8 @@ html[data-theme='light'] #starlight__search .pagefind-ui__result-excerpt {
 }
 
 html[data-theme='light'] #starlight__search mark {
-  color: #064934 !important;
-  background: #d9f8ef !important;
+  color: #0b4a1f !important;
+  background: #dcf8e4 !important;
 }
 
 html[data-theme='light']

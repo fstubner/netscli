@@ -25,8 +25,8 @@
 
   .docs-mobile-section-menu a[aria-current='page'] {
     color: var(--sl-color-white);
-    border-inline-start-color: #0aae7a;
-    background: rgba(10, 174, 122, 0.07);
+    border-inline-start-color: var(--netscli-accent);
+    background: rgba(var(--netscli-accent-rgb), 0.07);
   }
 
   mobile-starlight-toc {
@@ -71,7 +71,7 @@
   }
 
   mobile-starlight-toc .caret {
-    color: #0aae7a !important;
+    color: var(--netscli-accent) !important;
   }
 
   mobile-starlight-toc details[open] .toggle,
@@ -127,9 +127,9 @@
   mobile-starlight-toc .dropdown a[aria-current='true'],
   mobile-starlight-toc .dropdown a[aria-current='true']:hover,
   mobile-starlight-toc .dropdown a[aria-current='true']:focus-visible {
-    color: #9ff8de !important;
-    border-inline-start-color: #0aae7a !important;
-    background: rgba(10, 174, 122, 0.06) !important;
+    color: var(--netscli-accent-high) !important;
+    border-inline-start-color: var(--netscli-accent) !important;
+    background: rgba(var(--netscli-accent-rgb), 0.06) !important;
   }
 
   mobile-starlight-toc .isMobile a[aria-current='true']::after {
@@ -163,8 +163,8 @@ html[data-theme='light'] .docs-mobile-section-menu a[aria-current='page'],
 html[data-theme='light'] mobile-starlight-toc .dropdown a[aria-current='true'],
 html[data-theme='light'] mobile-starlight-toc .dropdown a[aria-current='true']:hover,
 html[data-theme='light'] mobile-starlight-toc .dropdown a[aria-current='true']:focus-visible {
-  color: #064934 !important;
-  border-inline-start-color: #007a54 !important;
+  color: #0b4a1f !important;
+  border-inline-start-color: #146b2e !important;
   background: rgba(0, 122, 84, 0.055) !important;
 }
 

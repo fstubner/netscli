@@ -25,7 +25,7 @@
 
 .sidebar-content :where(details > ul a[aria-current='page']) {
 
-  background: rgba(10, 174, 122, 0.12) !important;
+  background: rgba(var(--netscli-accent-rgb), 0.12) !important;
   box-shadow: none !important;
 }
 

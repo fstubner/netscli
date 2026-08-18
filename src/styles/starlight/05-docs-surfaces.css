@@ -192,7 +192,7 @@ html[data-theme='light'] .sl-markdown-content .expressive-code pre {
 
 .sl-markdown-content thead tr {
   background: #252b36;
-  box-shadow: inset 0 -2px 0 rgba(10, 174, 122, 0.55);
+  box-shadow: inset 0 -2px 0 rgba(var(--netscli-accent-rgb), 0.55);
 }
 
 .sl-markdown-content th {

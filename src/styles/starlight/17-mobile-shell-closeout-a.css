@@ -131,7 +131,7 @@
   }
 
   .docs-mobile-section-caret {
-    color: #0aae7a;
+    color: var(--netscli-accent);
     font-size: 1rem;
     line-height: 1;
 

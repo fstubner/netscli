@@ -96,8 +96,8 @@
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(circle at 0 0, rgba(10, 174, 122, 0.1), transparent 26rem),
-    linear-gradient(125deg, rgba(10, 174, 122, 0.04), rgba(255, 255, 255, 0.018) 38%, transparent 72%);
+    radial-gradient(circle at 0 0, rgba(var(--netscli-accent-rgb), 0.1), transparent 26rem),
+    linear-gradient(125deg, rgba(var(--netscli-accent-rgb), 0.04), rgba(255, 255, 255, 0.018) 38%, transparent 72%);
 }
 
 .main-pane > .content-panel:first-of-type > .sl-container,
@@ -127,7 +127,7 @@ html[data-theme='light'] .main-pane > .content-panel:first-child::before {
 }
 
 .sl-markdown-content a {
-  color: #0aae7a;
+  color: var(--netscli-accent);
   text-underline-offset: 3px;
 }
 
@@ -157,10 +157,10 @@ html[data-theme='light'] .main-pane > .content-panel:first-child::before {
 }
 
 .sl-markdown-content :not(pre) > code {
-  border: 1px solid rgba(10, 174, 122, 0.18);
+  border: 1px solid rgba(var(--netscli-accent-rgb), 0.18);
   border-radius: 0.24rem;
 
-  color: #9ff8de;
+  color: var(--netscli-accent-high);
   font-family: var(--__sl-font-mono);
   font-size: 0.9em;
   line-height: 1.45;
@@ -175,7 +175,7 @@ html[data-theme='light'] .main-pane > .content-panel:first-child::before {
   --ec-codeLineHt: 1.64;
   --ec-codePadBlk: 1rem;
   --ec-codePadInl: 1.15rem;
-  --ec-focusBrd: #9ff8de;
+  --ec-focusBrd: var(--netscli-accent-high);
   --ec-sbThumbCol: rgba(140, 149, 166, 0.22);
   --ec-sbThumbHoverCol: rgba(159, 248, 222, 0.32);
   --ec-frm-frameBoxShdCssVal: 0 18px 46px rgba(0, 0, 0, 0.34);
@@ -184,10 +184,10 @@ html[data-theme='light'] .main-pane > .content-panel:first-child::before {
   --ec-frm-trmTtbDotsFg: #8c95a6;
   --ec-frm-trmTtbDotsOpa: 0.48;
   --ec-frm-trmBg: #10151b;
-  --ec-frm-inlBtnFg: #9ff8de;
-  --ec-frm-inlBtnBg: #9ff8de;
-  --ec-frm-inlBtnBrd: #9ff8de;
-  --ec-frm-tooltipSuccessBg: #0aae7a;
+  --ec-frm-inlBtnFg: var(--netscli-accent-high);
+  --ec-frm-inlBtnBg: var(--netscli-accent-high);
+  --ec-frm-inlBtnBrd: var(--netscli-accent-high);
+  --ec-frm-tooltipSuccessBg: var(--netscli-accent);
 
 }
 
@@ -232,7 +232,7 @@ html[data-theme='light'] .sl-markdown-content .expressive-code .frame {
 
 html[data-theme='light'] .sl-markdown-content :not(pre) > code {
 
-  color: #064934;
+  color: #0b4a1f;
 }
 
 html[data-theme='light'] .sl-markdown-content .expressive-code {
@@ -242,9 +242,9 @@ html[data-theme='light'] .sl-markdown-content .expressive-code {
   --ec-frm-trmTtbBg: #edf2f3;
   --ec-frm-trmTtbBrdBtmCol: rgba(17, 24, 39, 0.1);
   --ec-frm-trmBg: #f7faf9;
-  --ec-frm-inlBtnFg: #007a54;
-  --ec-frm-inlBtnBg: #007a54;
-  --ec-frm-inlBtnBrd: #007a54;
+  --ec-frm-inlBtnFg: #146b2e;
+  --ec-frm-inlBtnBg: #146b2e;
+  --ec-frm-inlBtnBrd: #146b2e;
 }
 
 html[data-theme='light'] .sl-markdown-content .expressive-code pre {
@@ -259,7 +259,7 @@ html[data-theme='light'] .sl-markdown-content .expressive-code .ec-line :where(s
 
 html[data-theme='light'] .sl-markdown-content .expressive-code .ec-line :where(span[style*='#0A3069']),
 html[data-theme='light'] .sl-markdown-content .expressive-code .ec-line :where(span[style*='#0550AE']) {
-  --1: #007a54 !important;
+  --1: #146b2e !important;
 }
 
 .sl-markdown-content table {
