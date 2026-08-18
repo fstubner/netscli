@@ -12,8 +12,6 @@ export interface Meta {
   description: string;
   /** Short form used in OG / Twitter cards. Falls back to description. */
   ogDescription?: string;
-  /** Comma-separated keyword list. */
-  keywords: string;
   /** Site name for OG. */
   siteName: string;
   author: { name: string; url: string };

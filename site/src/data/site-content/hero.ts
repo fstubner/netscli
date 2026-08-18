@@ -7,7 +7,12 @@ export const hero: Hero = {
   // information. The platform list is the part a visitor cannot get anywhere
   // else above the fold.
   badge: 'Windows · Linux · macOS',
-  heading: 'A modern network scanner',
+  // The H1 is the strongest on-page signal after the title, and this one used
+  // to be "A modern network scanner" -- no brand, no differentiator, and
+  // "modern" is not a word anyone searches for. Naming the surfaces says what
+  // is actually different about it, and "AI agents" carries the MCP server in
+  // language a visitor who has never heard of MCP still understands.
+  heading: 'A network scanner for the desktop, the terminal, and AI agents',
   subhead:
     // Packet capture is scoped deliberately. Listing it alongside the other
     // operations claimed it works "from the desktop app, terminal UI, CLI, or
