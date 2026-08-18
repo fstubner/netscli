@@ -5,7 +5,7 @@
 #starlight__search .pagefind-ui__result-nested:focus-within {
   background: #2b313d !important;
   box-shadow:
-    inset 2px 0 0 rgba(10, 174, 122, 0.74),
+    inset 2px 0 0 rgba(var(--netscli-accent-rgb), 0.74),
     inset 0 -1px 0 rgba(140, 149, 166, 0.13);
 }
 
@@ -14,9 +14,9 @@
   --ec-codeBg: #20242b;
   --ec-codeFg: #d7dce5;
   --ec-frm-trmBg: #20242b;
-  --ec-frm-inlBtnFg: #9ff8de;
-  --ec-frm-inlBtnBg: #9ff8de;
-  --ec-frm-inlBtnBrd: #9ff8de;
+  --ec-frm-inlBtnFg: var(--netscli-accent-high);
+  --ec-frm-inlBtnBg: var(--netscli-accent-high);
+  --ec-frm-inlBtnBrd: var(--netscli-accent-high);
   --netscli-code-copy-inset: 0.65rem;
   --netscli-code-copy-size: 1.85rem;
   --netscli-code-copy-space: 3.2rem;
@@ -39,7 +39,7 @@
   inset-inline: 0;
   z-index: 1;
   height: 2px;
-  background: rgba(10, 174, 122, 0.55);
+  background: rgba(var(--netscli-accent-rgb), 0.55);
 }
 
 .sl-markdown-content .expressive-code pre {
@@ -71,7 +71,7 @@
 
 .sl-markdown-content .expressive-code .copy button:hover,
 .sl-markdown-content .expressive-code .copy button:focus-visible {
-  border-color: rgba(10, 174, 122, 0.42);
+  border-color: rgba(var(--netscli-accent-rgb), 0.42);
   background: #2b313d;
 }
 
@@ -96,11 +96,11 @@ html[data-theme='light'] .sl-markdown-content tbody tr:nth-child(even):hover {
 .sl-markdown-content .sl-anchor-link,
 .sl-markdown-content .sl-anchor-link:focus,
 .sl-markdown-content .sl-heading-wrapper:hover .sl-anchor-link {
-  color: #0aae7a !important;
+  color: var(--netscli-accent) !important;
 }
 
 .sl-markdown-content .sl-anchor-icon > svg {
-  color: #0aae7a;
+  color: var(--netscli-accent);
 }.pagination-links a {
   align-items: flex-start;
   color: var(--sl-color-gray-1) !important;
@@ -120,11 +120,11 @@ html[data-theme='light'] .pagination-links a:hover {
 
 .pagination-links a > svg {
   margin-block-start: 0.12rem;
-  color: #0aae7a;
+  color: var(--netscli-accent);
 }
 
 html[data-theme='light'] .pagination-links a > svg {
-  color: #007a54;
+  color: #146b2e;
 }
 
 html[data-theme='light'] #starlight__search .pagefind-ui__result-inner,

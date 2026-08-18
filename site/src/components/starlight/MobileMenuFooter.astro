@@ -86,8 +86,8 @@ const projectLinks = navLinks.filter((link) => link.mobileGroup === 'project');
     .docs-mobile-site-nav a:hover,
     .docs-mobile-site-nav a:focus-visible,
     .docs-mobile-site-nav a[aria-current='page'] {
-      background: rgba(10, 174, 122, 0.12);
-      border-inline-start-color: #0aae7a;
+      background: rgba(var(--netscli-accent-rgb), 0.12);
+      border-inline-start-color: var(--netscli-accent);
       color: var(--sl-color-white);
     }
 

@@ -153,7 +153,7 @@ const groups = [
   border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s;
 }
 .os-tab:hover{color:#ccc}
-.os-tab.active{color:#fafafa;border-bottom-color:#0aae7a;font-weight:500}
+.os-tab.active{color:#fafafa;border-bottom-color:var(--netscli-accent);font-weight:500}
 .os-panel{display:none}
 .os-panel.active{display:block}
 .reco{
@@ -187,13 +187,13 @@ const groups = [
 /* Direct-download rows reuse the command-bar treatment but are links, so
    they get no copy button and an affordance colour instead. */
 a.install-download{
-  display:block;text-decoration:none;color:#0aae7a;font-weight:500;
+  display:block;text-decoration:none;color:var(--netscli-accent);font-weight:500;
 }
-a.install-download:hover{color:#23d198;background:rgba(10,174,122,.08)}
+a.install-download:hover{color:var(--netscli-accent-bright);background:rgba(var(--netscli-accent-rgb),.08)}
 .alt a.install-download{padding-right:16px}
 .footer-note{margin-top:14px;font-size:.8125rem;color:#808080}
-.footer-note a{color:#0aae7a;text-decoration:underline;text-underline-offset:3px}
-.footer-note a:hover{color:#23d198}
+.footer-note a{color:var(--netscli-accent);text-decoration:underline;text-underline-offset:3px}
+.footer-note a:hover{color:var(--netscli-accent-bright)}
 
 /* Try it sidebar — one row per command, each row gets .has-copy so the
    existing copy-button JS auto-attaches a button. */
@@ -261,13 +261,13 @@ a.install-download:hover{color:#23d198;background:rgba(10,174,122,.08)}
 .surface-download-btn{
   display:inline-flex;flex-direction:column;align-items:flex-start;gap:2px;
   padding:9px 14px;border-radius:8px;
-  background:rgba(10,174,122,.10);border:1px solid rgba(10,174,122,.45);
-  color:#0aae7a;font-size:.85rem;font-weight:500;text-decoration:none;
+  background:rgba(var(--netscli-accent-rgb),.10);border:1px solid rgba(var(--netscli-accent-rgb),.45);
+  color:var(--netscli-accent);font-size:.85rem;font-weight:500;text-decoration:none;
   transition:background .15s,color .15s,border-color .15s;
 }
 .surface-download-btn:hover{
-  background:rgba(10,174,122,.20);
-  border-color:rgba(10,174,122,.6);
+  background:rgba(var(--netscli-accent-rgb),.20);
+  border-color:rgba(var(--netscli-accent-rgb),.6);
   color:#1ec88c;
 }
 .surface-download-btn .dl-label{font-size:.85rem;line-height:1.2}

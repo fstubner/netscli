@@ -42,7 +42,7 @@
 
 .sl-markdown-content .expressive-code .copy button[data-copied] {
 
-  color: #9ff8de !important;
+  color: var(--netscli-accent-high) !important;
 }html[data-theme='light'] #starlight__search .pagefind-ui__search-input {
   background: #ffffff !important;
   box-shadow: none !important;
@@ -51,5 +51,5 @@
 html[data-theme='light'] .sl-markdown-content .expressive-code .copy button[data-copied] {
 
   background: #e5f3ef !important;
-  color: #064934 !important;
+  color: #0b4a1f !important;
 }

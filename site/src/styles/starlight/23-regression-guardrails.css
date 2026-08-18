@@ -12,7 +12,7 @@
 }
 
 .sidebar-content :where(details > ul a[aria-current='page']) {
-  border-inline-start-color: #0aae7a !important;
+  border-inline-start-color: var(--netscli-accent) !important;
 }
 
 .docs-mobile-section-nav summary,

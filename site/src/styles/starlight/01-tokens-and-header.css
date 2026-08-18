@@ -2,9 +2,9 @@
 
 html[data-theme='dark'],
 html[data-theme='dark'] ::backdrop {
-  --sl-color-accent-low: #06291e;
-  --sl-color-accent: #0aae7a;
-  --sl-color-accent-high: #9ff8de;
+  --sl-color-accent-low: #0a2a13;
+  --sl-color-accent: var(--netscli-accent);
+  --sl-color-accent-high: var(--netscli-accent-high);
   --sl-color-white: #f4f4f4;
   --sl-color-gray-1: #e7edf6;
   --sl-color-gray-2: #c2cad8;
@@ -16,7 +16,7 @@ html[data-theme='dark'] ::backdrop {
   --sl-color-bg: #111111;
   --sl-color-bg-nav: rgba(17, 17, 17, 0.92);
   --sl-color-bg-sidebar: #111111;
-  --sl-color-bg-inline-code: rgba(10, 174, 122, 0.09);
+  --sl-color-bg-inline-code: rgba(var(--netscli-accent-rgb), 0.09);
   --sl-color-hairline: rgba(255, 255, 255, 0.08);
   --sl-color-hairline-light: rgba(255, 255, 255, 0.1);
   --sl-color-hairline-shade: #070707;
@@ -25,9 +25,9 @@ html[data-theme='dark'] ::backdrop {
 
 html[data-theme='light'],
 html[data-theme='light'] ::backdrop {
-  --sl-color-accent-low: #d9f8ef;
-  --sl-color-accent: #007a54;
-  --sl-color-accent-high: #064934;
+  --sl-color-accent-low: #dcf8e4;
+  --sl-color-accent: #146b2e;
+  --sl-color-accent-high: #0b4a1f;
   --sl-color-white: #111827;
   --sl-color-gray-1: #243044;
   --sl-color-gray-2: #44516a;
@@ -177,7 +177,7 @@ header.header::after {
 
   box-shadow:
     0 14px 34px rgba(0, 0, 0, 0.28),
-    0 1px 0 rgba(10, 174, 122, 0.12) !important;
+    0 1px 0 rgba(var(--netscli-accent-rgb), 0.12) !important;
 }
 
 html[data-docs-scrolled='true'] header.header::after {
@@ -230,8 +230,8 @@ starlight-menu-button button {
 starlight-menu-button button:hover,
 starlight-menu-button button:focus-visible,
 starlight-menu-button[aria-expanded='true'] button {
-  background: rgba(10, 174, 122, 0.12);
-  border-color: rgba(10, 174, 122, 0.28);
+  background: rgba(var(--netscli-accent-rgb), 0.12);
+  border-color: rgba(var(--netscli-accent-rgb), 0.28);
   color: var(--sl-color-white);
 }
 
@@ -252,7 +252,7 @@ site-search button[data-open-modal]:hover {
     rgba(17, 22, 29, 0.96);
   color: var(--sl-color-white);
   box-shadow:
-    0 0 0 1px rgba(10, 174, 122, 0.16),
+    0 0 0 1px rgba(var(--netscli-accent-rgb), 0.16),
     inset 0 1px 0 rgba(255, 255, 255, 0.035);
 }
 
@@ -260,6 +260,6 @@ site-search button[data-open-modal]:focus-visible {
   outline: 0;
   border-color: rgba(159, 248, 222, 0.62);
   box-shadow:
-    0 0 0 2px rgba(10, 174, 122, 0.18),
+    0 0 0 2px rgba(var(--netscli-accent-rgb), 0.18),
     inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }

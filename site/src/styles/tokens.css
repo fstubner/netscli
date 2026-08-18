@@ -15,4 +15,25 @@
      this in starlight/01-tokens-and-header.css. */
   --netscli-nav-height: 3.75rem;
   --netscli-shell-width: 72rem;
+
+  /* Brand accent.
+   *
+   * Was #0aae7a, which sits at hue 160 -- right on the green/teal boundary.
+   * In large areas it read green, but at 15px on the near-black background,
+   * with thin antialiased strokes, it read blue: inline links looked like a
+   * different colour from the buttons above them. #22c55e is hue 142 and
+   * reads green at any size. Contrast on the dark background went from
+   * 6.6:1 to 8.2:1 with it.
+   *
+   * The -rgb form is the same colour as a bare triple, for the rgba() call
+   * sites that need an alpha. There were 108 hard-coded copies of the old
+   * value across 20 files before this; changing it should be one edit here.
+   * The docs light theme keeps its own darker pair in
+   * starlight/01-tokens-and-header.css, as it did before. */
+  --netscli-accent: #22c55e;
+  --netscli-accent-rgb: 34, 197, 94;
+  /* Hover and other lifted states. */
+  --netscli-accent-bright: #4ade80;
+  /* Pale tint for active text on dark surfaces. */
+  --netscli-accent-high: #a7f3c6;
 }

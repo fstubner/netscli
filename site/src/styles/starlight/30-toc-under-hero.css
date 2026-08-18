@@ -50,5 +50,5 @@
 }
 
 .docs-toc-under-hero.right-sidebar-panel :where(a[aria-current='true']) {
-  border-inline-start-color: #0aae7a !important;
+  border-inline-start-color: var(--netscli-accent) !important;
 }

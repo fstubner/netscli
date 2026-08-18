@@ -74,7 +74,7 @@
   .netscli-mobile-toc-wrapper mobile-starlight-toc .dropdown a:hover,
   .netscli-mobile-toc-wrapper mobile-starlight-toc .dropdown a:focus-visible,
   .netscli-mobile-toc-wrapper mobile-starlight-toc .dropdown a[aria-current='true'] {
-    color: #9ff8de !important;
+    color: var(--netscli-accent-high) !important;
   }
 
   .docs-mobile-section-menu {

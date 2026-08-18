@@ -22,7 +22,7 @@
 
 .right-sidebar-panel :where(a):hover,
 .right-sidebar-panel :where(a):focus-visible {
-  color: #9ff8de !important;
+  color: var(--netscli-accent-high) !important;
   background: transparent !important;
   outline: 0 !important;
 }
@@ -30,9 +30,9 @@
 .right-sidebar-panel :where(a[aria-current='true']),
 .right-sidebar-panel :where(a[aria-current='page']),
 .right-sidebar-panel :where(a[aria-current='location']) {
-  color: #9ff8de !important;
+  color: var(--netscli-accent-high) !important;
   background: transparent !important;
-  border-inline-start-color: #0aae7a !important;
+  border-inline-start-color: var(--netscli-accent) !important;
 }
 
 html[data-theme='light'] .right-sidebar-panel :where(a):hover,
@@ -63,8 +63,8 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
 }
 
 .sidebar-content a[aria-current='page'] {
-  border-inline-start-color: #0aae7a !important;
-  background: rgba(10, 174, 122, 0.12) !important;
+  border-inline-start-color: var(--netscli-accent) !important;
+  background: rgba(var(--netscli-accent-rgb), 0.12) !important;
   box-shadow: none !important;
 }
 
@@ -124,7 +124,7 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
 
   .docs-mobile-section-separator,
   .docs-mobile-section-caret {
-    color: #0aae7a !important;
+    color: var(--netscli-accent) !important;
   }
 
   .docs-mobile-section-caret {
@@ -181,9 +181,9 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
   mobile-starlight-toc .dropdown a[aria-current='true'],
   mobile-starlight-toc .dropdown a[aria-current='true']:hover,
   mobile-starlight-toc .dropdown a[aria-current='true']:focus-visible {
-    color: #9ff8de !important;
-    background: rgba(10, 174, 122, 0.07) !important;
-    border-inline-start-color: #0aae7a !important;
+    color: var(--netscli-accent-high) !important;
+    background: rgba(var(--netscli-accent-rgb), 0.07) !important;
+    border-inline-start-color: var(--netscli-accent) !important;
   }
 
   mobile-starlight-toc .dropdown a[aria-current='true']::after,
@@ -230,7 +230,7 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
      * panel now follows the theme and hides what is behind it. The green
      * wash stays; it is decorative and reads on both. */
     background:
-      linear-gradient(180deg, rgba(10, 174, 122, 0.04), transparent 11rem),
+      linear-gradient(180deg, rgba(var(--netscli-accent-rgb), 0.04), transparent 11rem),
       var(--sl-color-bg-sidebar) !important;
     box-shadow: 18px 0 46px rgba(0, 0, 0, 0.36) !important;
     overflow: auto !important;
