@@ -248,12 +248,26 @@
                 <ComponentRef Id="ApplicationShortcutDesktop" />
             </Feature>
 
+            <!-- Retitled, and no longer optional (C-29).
+                 This advertised "PATH Environment Variable" in the installer's
+                 feature tree while containing no <Environment> element at all,
+                 so selecting or deselecting it did nothing to PATH. Worse, it
+                 was the only place the sidecar binary components are
+                 referenced and it was Absent="allow", so a user unticking
+                 what looked like a PATH option would have silently dropped
+                 those files from the install.
+
+                 The honest fix is to name what it actually installs and stop
+                 offering it as a choice. Adding a real <Environment> element
+                 instead was rejected: this is the desktop app, and putting a
+                 GUI executable on PATH is not something the installer should
+                 do on the user's behalf. The CLI ships as its own package and
+                 its own installer handles PATH. -->
             <Feature
                 Id="Environment"
-                Title="PATH Environment Variable"
-                Description="!(loc.PathEnvVarFeature)"
+                Title="Application binaries"
                 Level="1"
-                Absent="allow">
+                Absent="disallow">
             <ComponentRef Id="Path"/>
             {{#each binaries as |bin| ~}}
             <ComponentRef Id="{{ bin.id }}"/>

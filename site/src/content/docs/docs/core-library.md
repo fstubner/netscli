@@ -49,7 +49,7 @@ Most consumers start from `Ops`.
 | Type | Role |
 | --- | --- |
 | `Ops` | High-level async operation facade used by the CLI, TUI, Tauri backend, and MCP server. |
-| `OpsConfig` | Runtime limits and defaults for timeouts, concurrency, subnet size, and port count. |
+| `OpsConfig` | Runtime defaults for scan, ping and DNS timeouts, plus probe concurrency. |
 | Result structs | Shared data returned by scans, discovery, DNS, ARP, interfaces, sweep, inspect, and packet capture. |
 
 Expose new behavior through the facade so every interface gets the
