@@ -152,21 +152,10 @@ a.download-count:focus-visible,
 }
 
 @media (max-width: 49.99rem) {
-  .docs-header-actions,
-  .right-nav,
-  .mobile-actions {
-    gap: .45rem !important;
-  }
-
   .docs-header-search,
   .docs-header-search button {
     margin-inline-end: .15rem !important;
   }
-
-  .starlight-menu-button,
-  .starlight-menu-button button {
-    margin-inline-start: .15rem !important;
-  }    
 
   /* Not the section menu.
      PageSidebar renders the mobile section dropdown inside .right-sidebar, so

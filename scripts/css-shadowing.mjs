@@ -22,6 +22,12 @@
  * Usage:
  *   node scripts/css-shadowing.mjs            # report
  *   node scripts/css-shadowing.mjs --json     # machine-readable
+ *   node scripts/css-shadowing.mjs --max N    # exit 1 above N, for CI
+ *
+ * The --max form is a ratchet, not a target. It was added because this ran
+ * once, in the pull request that wrote it, and then nothing ran it again --
+ * so the count it had driven down grew back unnoticed. Set it to the current
+ * count; it can only be lowered.
  */
 
 import { readFileSync } from 'node:fs';
@@ -168,6 +174,23 @@ if (!runDirectly) {
   // no-op
 } else if (process.argv.includes('--json')) {
   console.log(JSON.stringify({ total: declarations.length, shadowed }, null, 2));
+} else if (process.argv.includes('--max')) {
+  const max = Number(process.argv[process.argv.indexOf('--max') + 1]);
+  console.log(
+    `${shadowed.length} provably shadowed declaration(s) of ${declarations.length}; budget ${max}.`,
+  );
+  if (shadowed.length > max) {
+    console.error(
+      [
+        `Shadowed-declaration budget exceeded by ${shadowed.length - max}.`,
+        'A shadowed declaration cannot affect the page: a later rule with the same',
+        'selector and media context, and at least equal importance, always wins.',
+        'Either delete it, or change the rule that shadows it. Run this without',
+        '--max to see them by file, or `node scripts/css-prune.mjs --write`.',
+      ].join(String.fromCharCode(10)),
+    );
+    process.exitCode = 1;
+  }
 } else {
   const byFile = new Map();
   for (const d of shadowed) byFile.set(d.file, (byFile.get(d.file) ?? 0) + 1);

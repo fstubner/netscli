@@ -24,12 +24,6 @@
     margin-right: 0 !important;
   }
 
-  .docs-header-menu starlight-menu-button button {
-    position: static !important;
-    inset: auto !important;
-    width: 2.5rem !important;
-    height: 2.5rem !important;
-  }
 }
 
 @media (max-width: 42rem) {
