@@ -229,6 +229,12 @@ starlight-theme-select select {
   background: transparent;
   font: inherit;
   cursor: pointer;
+  /* Upstream pads the <select> 10px top and bottom, which forced the label
+     that wraps it to 60px -- against the 37.6px search button beside it, so
+     the bordered box looked oversized and misaligned in the header. The
+     label's own min-height (2.35rem) sets the height now. */
+  padding-block: 0;
+  line-height: 1.2;
 }
 
 starlight-theme-select option {

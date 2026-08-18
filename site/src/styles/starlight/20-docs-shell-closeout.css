@@ -1,8 +1,18 @@
 /* Docs shell close-out: align desktop/mobile navigation states after the
    Starlight defaults and earlier responsive passes have loaded. */
+/* The "On this page" list gets the same rail-and-marker treatment as the
+   left nav. It had neither: no rail on the list, and the active link's
+   inline-start border was explicitly forced transparent, so the only cue was
+   a colour change on the text. */
+.right-sidebar-panel :where(nav ul) {
+  border-inline-start: 1px solid var(--sl-color-hairline);
+}
+
 .right-sidebar-panel :where(a) {
   display: block !important;
-  margin-inline: -0.45rem 0 !important;
+  /* -1px so the link's own 2px border covers the list's 1px rail, rather
+     than sitting 7.2px inside it as the old -0.45rem did. */
+  margin-inline: -1px 0 !important;
   padding: 0.28rem 0.45rem 0.28rem 0.65rem !important;
   border-inline-start: 2px solid transparent !important;
   color: var(--sl-color-gray-3) !important;
@@ -22,7 +32,7 @@
 .right-sidebar-panel :where(a[aria-current='location']) {
   color: #9ff8de !important;
   background: transparent !important;
-  border-inline-start-color: transparent !important;
+  border-inline-start-color: #0aae7a !important;
 }
 
 html[data-theme='light'] .right-sidebar-panel :where(a):hover,
@@ -38,24 +48,24 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
   border-inline-start: 0 !important;
 }
 
+/* Every link's border track sits on the rail, and the active one lights up.
+   The rail is the <ul>'s inline-start border; the list item adds 0.5rem of
+   inline padding, so a border on the link landed 7.8px inside the rail --
+   the highlight floated in the gap instead of marking the rail. Pulling the
+   link back by that padding plus the rail's own width puts the two in the
+   same place, and the matching padding increase keeps the text still. */
 .sidebar-content :where(details > ul a) {
-
-  width: calc(100% + 1px) !important;
-  padding-inline-start: calc(.85rem + 1px) !important;
+  margin-inline-start: calc(-0.5rem - 1px) !important;
+  width: calc(100% + 0.5rem + 1px) !important;
+  padding-inline-start: calc(.85rem + 0.5rem + 1px) !important;
   border-inline-start: 1px solid transparent !important;
   background-clip: border-box !important;
 }
 
 .sidebar-content a[aria-current='page'] {
-  margin-inline-start: -1px !important;
-  padding-inline-start: calc(.85rem + 1px) !important;
-  border-inline-start: 1px solid #0aae7a !important;
+  border-inline-start-color: #0aae7a !important;
   background: rgba(10, 174, 122, 0.12) !important;
   box-shadow: none !important;
-}
-
-.sidebar-content a[aria-current='page']::before {
-  content: none !important;
 }
 
 @media (max-width: 72rem) {
