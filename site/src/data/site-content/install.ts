@@ -25,17 +25,25 @@ const MACOS_UNSIGNED_HINT = 'Unsigned — right-click → Open on first launch';
 const WINDOWS_UNSIGNED_HINT =
   'Unsigned — SmartScreen may warn; checksums are published with the release';
 
+/* Both of these check the download against a SHA256 in their own manifest
+ * and abort on a mismatch, which is the thing the direct-download row cannot
+ * do for you. Stated on both rather than only on winget: scoop does it too,
+ * and naming one would have implied the other does not. */
+const WINDOWS_MANAGER_HASH_HINT = 'Verifies the download against the hash in its manifest';
+
 export const installByPlatform: Record<Platform, PlatformInstall> = {
   windows: {
     cli: [
       {
         label: 'Winget',
         command: 'winget install fstubner.netscli',
+        hint: WINDOWS_MANAGER_HASH_HINT,
       },
       {
         label: 'Scoop',
         command:
           'scoop bucket add fstubner https://github.com/fstubner/scoop-bucket && scoop install netscli',
+        hint: WINDOWS_MANAGER_HASH_HINT,
       },
       {
         label: 'PowerShell script',
@@ -51,11 +59,13 @@ export const installByPlatform: Record<Platform, PlatformInstall> = {
       {
         label: 'Winget',
         command: 'winget install fstubner.netscli.gui',
+        hint: WINDOWS_MANAGER_HASH_HINT,
       },
       {
         label: 'Scoop',
         command:
           'scoop bucket add fstubner https://github.com/fstubner/scoop-bucket && scoop install netscli-gui',
+        hint: WINDOWS_MANAGER_HASH_HINT,
       },
       {
         label: 'Installer',
