@@ -1,4 +1,5 @@
 use crate::arp::NetworkManager;
+use crate::error::Result;
 use crate::oui::lookup_vendor;
 use crate::ping::PingScanner;
 use futures::stream::{self, StreamExt};
@@ -56,7 +57,13 @@ impl DiscoverEngine {
         ping_timeout_ms: u64,
         dns_timeout_ms: u64,
     ) -> Self {
-        let concurrency = concurrency.max(1);
+        // Clamp both ends. `.max(1)` alone left the upper bound to
+        // `Semaphore::new`, which asserts `permits <= usize::MAX >> 3` --
+        // so a caller passing `usize::MAX` got a panic rather than an
+        // error, from a constructor that returns `Self` and cannot report
+        // one. Absurd input, but this is public API and a process abort is
+        // the wrong failure mode for it.
+        let concurrency = concurrency.clamp(1, crate::MAX_CONCURRENCY);
         Self {
             ping_scanner: PingScanner::new(concurrency),
             concurrency,
@@ -65,16 +72,24 @@ impl DiscoverEngine {
         }
     }
 
-    pub async fn scan_subnet(&self, subnet: Ipv4Net, resolve: bool) -> Vec<Host> {
+    pub async fn scan_subnet(&self, subnet: Ipv4Net, resolve: bool) -> Result<Vec<Host>> {
         self.scan_subnet_with_progress(subnet, resolve, None).await
     }
 
+    /// Ping-sweep a subnet, then resolve names for the hosts that answered.
+    ///
+    /// Enforces the /16 cap itself rather than trusting the caller. This is
+    /// public API re-exported at the crate root, and it used to collect every
+    /// address of whatever `Ipv4Net` it was given straight into a `Vec` --
+    /// `0.0.0.0/0` is 4,294,967,294 entries, roughly 73 GB, allocated before
+    /// a single packet is sent. `Ops` checked, the engine did not.
     pub async fn scan_subnet_with_progress(
         &self,
         subnet: Ipv4Net,
         resolve: bool,
         progress: Option<Arc<dyn Fn(DiscoverProgress) + Send + Sync>>,
-    ) -> Vec<Host> {
+    ) -> Result<Vec<Host>> {
+        crate::ops::validation::ensure_subnet_limit(&subnet, &subnet.to_string())?;
         let ips: Vec<IpAddr> = subnet.hosts().map(IpAddr::V4).collect();
 
         // 1) Ping first (fast), to avoid reverse-DNS work on dead hosts.
@@ -184,7 +199,7 @@ impl DiscoverEngine {
             HashMap::new()
         };
 
-        alive
+        Ok(alive
             .into_iter()
             .map(|r| {
                 let hostname = hostname_map.get(&r.ip).cloned().unwrap_or(None);
@@ -201,6 +216,6 @@ impl DiscoverEngine {
                     rtt_ms: r.rtt_ms,
                 }
             })
-            .collect()
+            .collect())
     }
 }

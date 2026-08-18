@@ -34,18 +34,41 @@ impl PcapEngine {
     }
 
     pub fn capture(config: PcapConfig) -> Result<PcapResult> {
-        capture::capture(config)
+        Self::capture_with_cancel(config, None)
     }
 
+    /// Capture packets to `config.output_file`.
+    ///
+    /// Refuses a config with no stopping condition. Every field of
+    /// `PcapConfig` is public, and the helper that guarantees at least one
+    /// bound lives in the `ops` layer -- so a caller constructing the config
+    /// directly with `duration: None, max_packets: None` got a loop that
+    /// breaks only on cancel, and `capture` does not even accept a cancel
+    /// token. It wrote packets until the filesystem filled.
     pub fn capture_with_cancel(
         config: PcapConfig,
         cancel: Option<PcapCancelToken>,
     ) -> Result<PcapResult> {
+        if config.duration.is_none() && config.max_packets.is_none() && cancel.is_none() {
+            return Err(crate::error::Error::invalid_input(
+                "packet capture needs a duration, a max packet count, or a cancel token",
+            ));
+        }
         capture::capture_with_cancel(config, cancel)
     }
 
+    /// Summarise packets from a capture file.
+    ///
+    /// `max_packets` is bounded here rather than trusted. `None` meant
+    /// "retain every packet", and `Ops::parse_pcap_file` forwarded the
+    /// caller's value untouched while the capture paths normalised theirs --
+    /// so a ~500 MB file of 10M small frames built 10M summaries, about 5 GB,
+    /// each carrying an unconditional 191-char hex preview.
     pub fn parse_file(path: PathBuf, max_packets: Option<usize>) -> Result<PcapParseResult> {
-        parse::parse_file(path, max_packets)
+        let bounded = max_packets
+            .unwrap_or(crate::MAX_PCAP_CAPTURE_PACKETS)
+            .min(crate::MAX_PCAP_CAPTURE_PACKETS);
+        parse::parse_file(path, Some(bounded))
     }
 }
 

@@ -53,7 +53,7 @@ impl Ops {
         );
         let hosts = engine
             .scan_subnet_with_progress(net, resolve, progress)
-            .await;
+            .await?;
         Ok((subnet_str, hosts))
     }
 
@@ -76,7 +76,7 @@ impl Ops {
         let scanner = PortScanner::new(self.cfg.concurrency);
         let results = scanner
             .scan_host_with_progress(ip, ports, self.cfg.scan_timeout_ms, progress)
-            .await;
+            .await?;
         Ok((ip, results))
     }
 
