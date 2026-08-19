@@ -19,8 +19,13 @@ netscli/
       src/              #   React frontend
       src-tauri/        #   Tauri Rust backend
   scripts/              # OUI generator, install scripts (excluded from workspace)
-  data/                 # Static datasets (oui.min.json.gz)
+  site/                 # Astro/Starlight landing page + docs (netscli.com)
+  docs/                 # Repo-internal docs (ARCHITECTURE, PUBLISHING, RELEASE) + assets
+  packaging/            # Distribution manifests and installer templates
 ```
+
+The OUI dataset ships inside the core crate at
+`crates/netscli-core/data/oui.min.json.gz`.
 
 **Dependency flow**: the `netscli` package (at `apps/netscli-cli/`) and `netscli-gui/src-tauri` depend on `netscli-core`. `netscli-mcp` wraps `netscli-core`. The `netscli` package also depends on `netscli-mcp`.
 
@@ -51,6 +56,7 @@ cd apps/netscli-gui && npm run test:tauri-render  # Tauri render automation
 # Linting & formatting
 cargo fmt                                     # apply rustfmt
 cargo clippy --all-targets -- -D warnings     # lint with warnings as errors
+cd apps/netscli-gui && npm run lint            # ESLint for the GUI frontend
 
 # OUI database refresh
 cd scripts && cargo run --bin generate-oui
@@ -76,8 +82,9 @@ cd scripts && cargo run --bin generate-oui
 | `pnet_packet/transport/datalink` | Raw networking |
 | `hickory-resolver` | Async DNS resolution |
 | `pcap` | Packet capture (optional feature) |
-| `clap` 4.4 (derive) | CLI argument parsing |
-| `ratatui` 0.29 + `crossterm` 0.27 | Terminal UI |
+| `clap` 4.6 (derive) | CLI argument parsing |
+| `ratatui` 0.30 + `crossterm` 0.29 | Terminal UI |
+| `ratatui-textarea` 0.9 | TUI input editing (replaced `tui-textarea`) |
 | `tauri` 2.0 | Desktop GUI framework |
 | React 19 + Vite + TypeScript | GUI frontend |
 
@@ -111,7 +118,8 @@ All network operations are async (tokio). Long-running operations accept progres
 
 - Guard with `#[cfg(unix)]` / `#[cfg(windows)]`
 - Windows: `ipconfig` crate for interfaces, `windows-sys` for WinSock, `tracert` command
-- Unix: `pnet_datalink`/`pnet_sys` for raw sockets, manual ICMP TTL probes for traceroute
+- Unix: `pnet_datalink`/`pnet_sys` for raw sockets
+- Traceroute shells out on every platform (`crates/netscli-core/src/trace.rs`): `tracert` on Windows, `traceroute` with a `tracepath` fallback elsewhere. There are no manual ICMP TTL probes.
 
 ## Core Modules (netscli-core/src/)
 
@@ -121,35 +129,41 @@ All network operations are async (tokio). Long-running operations accept progres
 | `ops.rs` | High-level operations facade (used by CLI, TUI, GUI, MCP) |
 | `common.rs` | Default constants (ports, timeouts, concurrency) |
 | `discover.rs` | Subnet host discovery (ping + DNS resolve) |
-| `scan.rs` | TCP port scanning with concurrency |
+| `scan/` | TCP port scanning with concurrency |
 | `ping.rs` | ICMP/TCP ping with dual backends (raw ICMP + TCP fallback) |
 | `arp.rs` | ARP table retrieval + MAC vendor lookup |
 | `oui.rs` | MAC vendor database (compressed gzip JSON) |
 | `dns.rs` | DNS lookup (A, AAAA, CNAME, MX, NS, TXT, SRV, PTR, SOA, CAA) |
 | `inspect.rs` | Combined host analysis (ping + scan + resolve) |
 | `sweep.rs` | Full network sweep (discover + scan all hosts) |
+| `trace.rs` | Traceroute; shells out to the platform tool |
+| `mdns.rs` | mDNS/DNS-SD device discovery (behind `mdns` feature flag) |
 | `pcap.rs` | Packet capture (behind `pcap` feature flag) |
 | `stats.rs` | Real-time traffic monitoring (sysinfo) |
 | `db.rs` | SQLite persistence (hosts table, scan_history table) |
+| `error.rs` | Typed error enum shared by the core |
 
 ## CLI App Files (apps/netscli-cli/src/)
 
 | File | Purpose |
 |------|---------|
-| `main.rs` | Entry point, subcommand dispatch, TUI launcher |
+| `main.rs` | Entry point and TUI launcher |
 | `args.rs` | Clap argument definitions and subcommand enums |
-| `tui.rs` | Interactive TUI main loop (ratatui) |
-| `formatter.rs` | TUI output formatting (ratatui Spans/Lines) |
-| `cli_formatter.rs` | Plain-text CLI output formatting |
+| `cli_dispatch.rs` + `cli_dispatch/` | Subcommand dispatch and per-command handlers |
+| `commands.rs` | Per-command business logic shared by the CLI and TUI |
+| `output.rs` | `--json`/`--yaml` output-format selection |
+| `tui/` | Interactive TUI (state, events, runtime, widgets, command catalog) |
+| `tui_formatter.rs` + `tui_formatter/` | TUI output formatting (ratatui Spans/Lines) |
+| `cli_formatter.rs` + `cli_formatter/` | Plain-text CLI output formatting |
 | `tui_settings.rs` | TUI config persistence (~/.netscli/tui-settings.json) |
 | `tui_export.rs` | Session export (Markdown/JSON) |
-| `trace.rs` | Traceroute (platform-specific implementations) |
-| `setup.rs` | First-run dependency wizard |
+| `trace.rs` | Re-export of `netscli_core::trace_route`; the implementation lives in the core |
+| `setup.rs` + `setup/` | First-run dependency wizard |
 | `mcp_service.rs` | Systemd service management (Linux) |
 
 ## Safety Limits
 
-Enforced in `ops.rs` and `server.rs`. Do not weaken without discussion.
+Enforced in `ops/validation.rs` (subnet size) and `common/ports/` (port count), and re-checked inside the engines themselves so a direct engine call cannot bypass them. Do not weaken without discussion.
 
 - Max subnet size: /16 (65,536 hosts)
 - Max port count per scan: 4,096
@@ -161,6 +175,9 @@ Enforced in `ops.rs` and `server.rs`. Do not weaken without discussion.
 - `pcap` — Enables packet capture (requires libpcap/Npcap at runtime)
   - Must be enabled on **all three**: `netscli-core`, `netscli-mcp`, `netscli-cli`
   - Chain: `netscli-cli/pcap` → `netscli-core/pcap` + `netscli-mcp/pcap` → `netscli-core/pcap`
+  - Off by default everywhere, including the published installers
+- `mdns` — Enables mDNS/DNS-SD discovery. Pure Rust (`mdns-sd`), no system dependency. Off in `netscli-core`'s defaults, but on in `netscli-mcp`'s and enabled explicitly by `netscli`, so every published build has it
+- `db` — Enables the `db` module and `Database` type (SQLite via sqlx). Off in `netscli-core`'s defaults, enabled by `netscli`
 
 ## Coding Style & Conventions
 
@@ -168,7 +185,7 @@ Enforced in `ops.rs` and `server.rs`. Do not weaken without discussion.
 - Prefer idiomatic Rust naming: `snake_case` modules/functions, `CamelCase` types
 - Crates use `kebab-case` names (e.g., `netscli-core`)
 - GUI frontend: TypeScript with React functional components, no class components
-- No dedicated JS/TS linter configured; keep changes aligned with existing patterns
+- GUI lint: ESLint via `apps/netscli-gui/eslint.config.js` (`npm run lint`)
 - Output formats: CLI subcommands support `--json` and `--yaml` flags
 
 ## Testing
@@ -181,7 +198,9 @@ Enforced in `ops.rs` and `server.rs`. Do not weaken without discussion.
 
 ## CLI Subcommands
 
-`discover`, `scan`, `inspect`, `sweep`, `ping`, `trace`, `dns`, `reverse`, `arp`, `interfaces`, `mdns`, `pcap`, `serve` (MCP server), `mcp-service`, `config`, `export`, `setup`, `doctor`
+`discover`, `scan`, `inspect`, `sweep`, `ping`, `trace`, `dns`, `reverse`, `arp`, `interfaces`, `mdns`, `serve` (MCP server), `mcp-service`, `completions`, `man`, `setup`, `doctor` — plus `pcap` when built with the `pcap` feature
+
+`config` and `export` are TUI slash-commands only (`/config`, `/export`); they are not CLI subcommands. The authoritative list is the `Commands` enum in `apps/netscli-cli/src/args.rs`.
 
 ## MCP Tools (9 default, 13 with `pcap` feature)
 
