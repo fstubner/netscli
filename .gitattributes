@@ -1,5 +1,4 @@
-# Ensure Unix line endings for shell scripts and JS binaries
-bin/*.js text eol=lf
+# Ensure Unix line endings for shell scripts
 *.sh text eol=lf
 
 # Let git handle line endings for other files
