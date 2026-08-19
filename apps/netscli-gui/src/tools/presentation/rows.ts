@@ -1,3 +1,4 @@
+import { formatNumber } from './values';
 import type { ToolResult } from '../../types/app';
 import type { PortResult } from '../../types/netscli';
 import type { ResultRow, ToolKind } from '../types';
@@ -245,10 +246,6 @@ export function buildRows(result: ToolResult | null): ResultRow[] {
       });
     }
   }
-}
-
-function formatNumber(value: number): string {
-  return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
 function interfaceKind(name: string, isLoopback: boolean): string {

@@ -1,3 +1,4 @@
+import { formatNumber } from './values';
 export interface TraceHopRow {
   hop: number;
   status: string;
@@ -82,6 +83,3 @@ function traceAverage(samples: string[]): string {
   return `${formatNumber(avg)} ms`;
 }
 
-function formatNumber(value: number): string {
-  return Number.isInteger(value) ? String(value) : value.toFixed(1);
-}

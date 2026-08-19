@@ -1,3 +1,4 @@
+import { formatNumber } from './values';
 import type { ToolResult } from '../../types/app';
 import { inspectPorts } from './ports';
 
@@ -64,6 +65,3 @@ function traceHopCount(lines: string[]): number {
   return lines.filter((line) => /^\s*\d+\s+/.test(line)).length;
 }
 
-function formatNumber(value: number): string {
-  return Number.isInteger(value) ? String(value) : value.toFixed(1);
-}
