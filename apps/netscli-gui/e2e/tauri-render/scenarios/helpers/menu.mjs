@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { By, Key } from '../../driver.mjs';
-import { clickButtonText, waitForText, withElement } from '../../ui.mjs';
+import { clickButtonText, waitForNoElement, waitForText } from '../../ui.mjs';
+import { closeSettingsDialog, openSettingsDialog } from './settingsDialog.mjs';
 
 async function assertMenuItems(driver, menuLabel, expectedItems) {
   await openMenu(driver, menuLabel);
@@ -216,14 +217,6 @@ async function waitForTabCount(driver, expected) {
   );
 }
 
-async function waitForNoElement(driver, selector) {
-  await driver.wait(
-    async () => (await driver.findElements(By.css(selector))).length === 0,
-    5_000,
-    `Expected no elements matching ${selector}`,
-  );
-}
-
 async function assertToolbarButtonDisabled(driver, title, expected) {
   const disabled = await driver
     .findElement(By.css(`.toolbar button[aria-label="${title}"]`))
@@ -245,6 +238,5 @@ export {
   ensureTrafficIndicatorsVisible,
   getActiveTabText,
   openMenu,
-  waitForNoElement,
   waitForTabCount,
 };

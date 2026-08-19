@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { By } from '../../driver.mjs';
-import { clickButtonText, waitForText } from '../../ui.mjs';
-import { waitForNoElement } from './menu.mjs';
+import { clickButtonText, waitForNoElement, waitForText, withElement } from '../../ui.mjs';
 
 /**
  * Settings dialog: opening it, asserting its shape, closing it.

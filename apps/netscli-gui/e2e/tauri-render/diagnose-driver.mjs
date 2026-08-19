@@ -98,7 +98,10 @@ const driver = spawn(
   { stdio: ['ignore', 'inherit', 'inherit'] },
 );
 
-let succeeded = false;
+// No initialiser: the first `trySession` below always assigns before anything
+// reads this, and if `waitForPort` throws first the process exits from the
+// `finally` without reaching the read.
+let succeeded;
 try {
   await waitForPort(port);
 

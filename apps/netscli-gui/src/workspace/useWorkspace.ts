@@ -149,6 +149,11 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
       selectedIndices: [0],
       selectionAnchor: 0,
     });
+    // Deliberately not the whole `activeTab`: depending on the object would
+    // refire whenever a result arrives and reset the selection under a run
+    // in progress, which is what the sort/filter comparison above exists to
+    // avoid.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab?.id, activeTab?.sortDir, activeTab?.sortKey, filterText]);
 
   useEffect(() => {
@@ -181,6 +186,13 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
       cancelled = true;
       unlisten?.();
     };
+    // Must run exactly once. `showToast` is rebuilt every render, so
+    // depending on it would tear down and re-register the Tauri listener
+    // continuously; `activeOps` is a `useRef` from `useTabLifecycle`, stable
+    // for the component's life, but the rule cannot see that across the hook
+    // boundary. Reading `activeOps.current` inside the callback is what makes
+    // the empty dep list correct rather than merely convenient.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function patchTab(id: string, patch: Partial<WorkspaceTab>) {

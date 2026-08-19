@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { By } from '../../driver.mjs';
-import { clickButtonText, waitForText } from '../../ui.mjs';
-import { getActiveTabText, waitForNoElement } from './menu.mjs';
+import { clickButtonText, waitForNoElement, waitForText } from '../../ui.mjs';
+import { getActiveTabText } from './menu.mjs';
 import { assertAlignment } from './alignment.mjs';
 
 async function assertCommandStatusAlignment(driver) {
