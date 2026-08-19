@@ -86,8 +86,12 @@ The Astro scaffold was designed to be trivially retargetable:
 1. Copy the entire `site/` directory to the new repo.
 2. Edit `src/data/site.ts` — name, description, install commands,
    FAQ items, surface cards, built-with list, GitHub repo slug.
-3. Replace images in `public/` (`gui-dashboard.png`, the screenshots,
-   and the wordmark at `public/assets/netscli-wordmark.png`).
+3. Replace the images the site actually renders: `public/gui-scan.png`
+   and its `.webp`, `public/assets/tui-discover.png` and its `.webp`,
+   `public/favicon.svg`, and the wordmark at
+   `public/assets/netscli-wordmark.png`. Each screenshot ships as a PNG
+   plus a WebP because the surface cards use `<picture>` — replace both,
+   or the browser gets the old one.
 4. If the product isn't software, edit
    `src/layouts/Page.astro` to swap the `SoftwareApplication`
    schema for whatever's more appropriate (`Product`, `WebSite`, …).
