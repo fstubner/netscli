@@ -1,19 +1,31 @@
 name: Release Drafter
 
+# Push to main only.
+#
+# It used to also run on pull_request (opened/reopened/synchronize). On a PR
+# event release-drafter does nothing but apply autolabels, and no autolabeler
+# is configured — so every one of those runs accomplished nothing while
+# holding `contents: write` on pull-request-triggered code. They also produced
+# the duplicate v0.2.7 drafts sitting in Releases.
 on:
   push:
     branches: [main]
-  pull_request:
-    types: [opened, reopened, synchronize]
 
+# Only what the draft update needs. `pull-requests: write` went with the
+# pull_request trigger; nothing here labels a PR.
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
   update_release_draft:
     runs-on: ubuntu-latest
     steps:
+      # The tag this proposes is a guess. version-resolver maps PR labels to
+      # a bump, no labels are applied here, so it always resolves to `patch`
+      # regardless of what actually changed — which is why it proposed v0.2.7
+      # for a release the repo had already numbered 0.3.0. The version that
+      # ships is the one set by hand across the seven files in
+      # docs/PUBLISHING.md; set the tag to match when you publish the draft.
       - uses: release-drafter/release-drafter@v7
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

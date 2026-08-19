@@ -75,6 +75,28 @@ updates:
         patterns:
           - "@tauri-apps/*"
 
+  # The Astro site has its own package.json and lockfile and was getting no
+  # updates at all -- the repo-wide security PRs that land on it are GitHub's
+  # separate alert flow, not this file. It builds and ships netscli.com, so
+  # its toolchain matters.
+  - package-ecosystem: npm
+    directory: "/site"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - javascript
+    groups:
+      astro:
+        patterns:
+          - astro
+          - "@astrojs/*"
+          - "@astrojs/starlight"
+
   # scripts/ has its own Cargo project.
   - package-ecosystem: cargo
     directory: "/scripts"
