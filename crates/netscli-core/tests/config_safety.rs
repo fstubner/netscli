@@ -173,3 +173,47 @@ async fn engines_clamp_absurd_concurrency_instead_of_panicking() {
     let _ = netscli_core::SweepEngine::new(usize::MAX);
     let _ = netscli_core::InspectEngine::new(usize::MAX);
 }
+
+// Each case below reached a real engine before this: the limits existed in
+// the crate's documentation and in one caller, but not in the code path a
+// library consumer or another surface actually took.
+
+#[tokio::test]
+async fn sweep_engine_rejects_bad_ports_before_the_ping_phase() {
+    // Port 0 used to survive all the way through: `sweep_with_progress` is
+    // public API and trusted its caller, then swallowed the per-host scan
+    // error, so this produced a full slow ping sweep and a plausible result
+    // where every host simply had no open ports.
+    let engine = netscli_core::SweepEngine::new(64);
+    let err = engine
+        .sweep("192.168.1.0/30".parse().unwrap(), vec![0], false)
+        .await
+        .expect_err("port 0 must be refused by the engine");
+    assert!(
+        err.to_string().contains("port") || err.to_string().contains("0"),
+        "got: {err}"
+    );
+}
+
+#[test]
+fn mdns_timeout_has_a_core_side_ceiling() {
+    // The TUI clamped this itself, which left `netscli mdns --timeout-ms
+    // 86400000` blocking for a day on every other surface.
+    assert_eq!(netscli_core::MAX_MDNS_TIMEOUT_MS, 30_000);
+}
+
+#[tokio::test]
+async fn ping_count_is_clamped_rather_than_unbounded() {
+    // The loop is sequential, so the count multiplies straight into
+    // wall-clock time. Only the summary's `sent` reveals the clamp.
+    let ops = netscli_core::Ops::new(netscli_core::OpsConfig {
+        ping_timeout_ms: 1,
+        dns_timeout_ms: 200,
+        ..Default::default()
+    });
+    let summary = ops
+        .ping_host_summary("127.0.0.1", netscli_core::MAX_PING_COUNT + 500)
+        .await
+        .expect("loopback ping summary");
+    assert_eq!(summary.sent, netscli_core::MAX_PING_COUNT);
+}

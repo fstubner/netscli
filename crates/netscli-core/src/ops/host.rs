@@ -12,6 +12,10 @@ impl Ops {
     }
 
     pub async fn ping_host_summary(&self, host: &str, count: u32) -> Result<PingSummary> {
+        // Clamped, not rejected: asking for more pings than the cap is a
+        // request for "a lot", and the loop below is sequential, so the count
+        // multiplies directly into how long this call blocks.
+        let count = count.min(crate::MAX_PING_COUNT);
         let ip = self.resolve_host_ip(host).await?;
         let scanner = PingScanner::new(1);
         let mut sent: u32 = 0;

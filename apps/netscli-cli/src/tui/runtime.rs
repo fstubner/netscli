@@ -17,7 +17,9 @@ pub async fn run_tui(concurrency: Option<usize>) -> Result<()> {
     let mut app = TuiApp::new();
     app.settings = crate::tui_settings::load_settings();
     if let Some(concurrency) = concurrency {
-        app.concurrency_override = Some(concurrency.clamp(1, 1024));
+        app.concurrency_override = Some(crate::tui_settings::clamp_max_concurrent_probes(
+            concurrency,
+        ));
     }
     app.apply_settings();
     let mut tasks = TaskRuntime::new();
