@@ -52,7 +52,10 @@ body.lightbox-open{overflow:hidden}
 .image-lightbox-frame img{
   display:block;
   max-width:100%;
-  max-height:calc(100vh - 160px);
+  /* Overlay padding, the close button row, the panel gaps and the
+     caption. Grew by the button's 36px + 12px gap when it moved into
+     the column. */
+  max-height:calc(100vh - 208px);
   margin:0 auto;
   object-fit:contain;
 }
@@ -67,9 +70,16 @@ body.lightbox-open{overflow:hidden}
 .image-lightbox-caption:empty{display:none}
 
 .image-lightbox-close{
-  position:absolute;
-  top:-14px;
-  right:-6px;
+  /* In the panel's flex column, above the frame and right-aligned.
+   *
+   * It used to be absolutely positioned at top:-14px right:-6px against the
+   * panel, which puts a 36px button 30px of the way back over the image: it
+   * straddled the top-right corner rather than clearing it. Nudging the
+   * offsets cannot fix that without pushing the button off-screen on narrow
+   * viewports, where the panel already reaches the overlay's padding. As a
+   * flex item it is simply never over the image, at any size. */
+  align-self:flex-end;
+  flex:0 0 auto;
   width:36px;
   height:36px;
   display:grid;
@@ -101,5 +111,6 @@ body.lightbox-open{overflow:hidden}
 
 @media(max-width:600px){
   .image-lightbox{padding:16px}
-  .image-lightbox-close{top:-10px;right:-2px}
+  /* Less chrome to subtract at this width: 16px overlay padding, not 32. */
+  .image-lightbox-frame img{max-height:calc(100vh - 176px)}
 }

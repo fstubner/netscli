@@ -14,9 +14,9 @@ export const faq: FaqItem[] = [
   {
     group: 'What it is',
     q: 'What is NetsCLI?',
-    a: 'NetsCLI is an open-source network scanner and diagnostics toolkit written in Rust. It discovers hosts on a subnet, scans TCP ports, queries DNS, traces routes, reads local interfaces and the ARP neighbor cache, and can capture packets when packet-capture support and the required system library are available. You can use it from the desktop app, terminal UI, CLI, or Model Context Protocol (MCP) server.',
+    a: 'NetsCLI is an open-source network scanner written in Rust. It discovers hosts on a subnet, scans TCP ports, queries DNS, traces routes, reads local interfaces and the ARP neighbor cache, and can capture packets when packet-capture support and the required system library are available. You can use it from the desktop app, terminal UI, CLI, or Model Context Protocol (MCP) server.',
     aHtml:
-      'NetsCLI is an open-source network scanner and diagnostics toolkit written in Rust. It discovers hosts on a subnet, scans TCP ports, queries DNS, traces routes, reads local interfaces and the ARP neighbor cache, and can capture packets when packet-capture support and the required system library are available. You can use it from the desktop app, <a href="#surfaces">terminal UI</a>, CLI, or Model Context Protocol (MCP) server.',
+      'NetsCLI is an open-source network scanner written in Rust. It discovers hosts on a subnet, scans TCP ports, queries DNS, traces routes, reads local interfaces and the ARP neighbor cache, and can capture packets when packet-capture support and the required system library are available. You can use it from the desktop app, <a href="#surfaces">terminal UI</a>, CLI, or Model Context Protocol (MCP) server.',
   },
   {
     group: 'Install and updates',
