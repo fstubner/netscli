@@ -56,7 +56,7 @@ cd apps/netscli-gui && npm run test:tauri-render  # Tauri render automation
 # Linting & formatting
 cargo fmt                                     # apply rustfmt
 cargo clippy --all-targets -- -D warnings     # lint with warnings as errors
-cd apps/netscli-gui && npm run lint            # ESLint for the GUI frontend
+cd apps/netscli-gui && npm run lint           # ESLint for the GUI frontend
 
 # OUI database refresh
 cd scripts && cargo run --bin generate-oui
