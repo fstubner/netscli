@@ -6,42 +6,6 @@
   border-bottom: 1px solid color-mix(in srgb, var(--red), transparent 55%);
 }
 
-/* Replaces the entire window when a render throws, so it carries its own
-   background rather than inheriting one from a shell that is no longer
-   mounted. */
-.error-boundary {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  align-items: flex-start;
-  min-height: 100vh;
-  padding: 32px;
-  color: var(--text-primary);
-  background: var(--bg-body);
-}
-
-.error-boundary h1 {
-  margin: 0;
-  font-size: 18px;
-}
-
-.error-boundary p {
-  max-width: 60ch;
-  margin: 0;
-  color: var(--text-secondary);
-}
-
-.error-boundary-detail {
-  max-width: 100%;
-  margin: 0;
-  padding: 10px 12px;
-  overflow-x: auto;
-  color: var(--red);
-  background: color-mix(in srgb, var(--red), transparent 92%);
-  border: 1px solid color-mix(in srgb, var(--red), transparent 60%);
-  border-radius: 4px;
-}
-
 .warning-strip {
   flex: 0 0 auto;
   display: flex;
