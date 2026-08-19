@@ -3,7 +3,7 @@ title: Overview
 description: NetsCLI documentation for the shared Rust core, CLI, TUI, desktop app, and MCP server.
 ---
 
-NetsCLI is a cross-platform network diagnostics toolkit written in Rust. It is built around one shared core library and several interfaces: a desktop app, terminal UI, command-line interface, and MCP server.
+NetsCLI is a cross-platform network scanner written in Rust. It is built around one shared core library and several interfaces: a desktop app, terminal UI, command-line interface, and MCP server.
 
 The goal is consistency. A port scan, DNS lookup, host inspection, or ARP cache read means the same thing whether you run it from the desktop app, a shell script, the TUI, or an AI agent.
 

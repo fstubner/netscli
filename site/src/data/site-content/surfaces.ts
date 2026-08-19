@@ -3,14 +3,14 @@ import type { SectionCopy, SurfaceCard } from './types';
 export const surfacesCopy: SectionCopy = {
   heading: 'Choose how to work with your network',
   leadHtml:
-    'Use the desktop app for review, the terminal UI for live sessions, the CLI for scripts, and MCP for agent workflows. They all call the same Rust core, so results stay consistent no matter which interface you choose. <a href="/docs/">Full docs →</a>',
+    'Four ways in, one engine behind them. Whichever you pick — desktop app, terminal UI, CLI or MCP — a port scan means the same thing and returns the same answer. <a href="/docs/">Full docs →</a>',
 };
 
 export const surfaces: SurfaceCard[] = [
   {
     title: 'Desktop app',
     body:
-      'Use the desktop app when you want tabs, sortable tables, filters, row details, history, and exports. It is the best interface for comparing results across scans, discovery, DNS, route checks, local inventory, and packet capture in builds that include packet-capture support.',
+      'The desktop app is where you compare results side by side. Tabs keep several investigations open at once, and every result is sortable, filterable, and exportable, with the full history kept as you go.',
     image: {
       src: '/gui-scan.png',
       webp: '/gui-scan.webp',
@@ -23,7 +23,7 @@ export const surfaces: SurfaceCard[] = [
   {
     title: 'Terminal UI',
     body:
-      'Run <code>netscli</code> with no subcommand to start the terminal UI. Use it when you want an interactive session without leaving the terminal, with command history, autocomplete, readable status colors, and local interface activity close to the current investigation.',
+      'Run <code>netscli</code> with no subcommand to start the terminal UI. It is the one to reach for when you are already in a shell and want to stay there — history and autocomplete included, with local interface activity beside the results.',
     image: {
       src: '/assets/tui-discover.png',
       webp: '/assets/tui-discover.webp',
@@ -52,7 +52,7 @@ export const surfaces: SurfaceCard[] = [
   {
     title: 'MCP server',
     body:
-      'Run <code>netscli serve</code> when an MCP client needs local network tools. The server exposes structured operations for discovery, scanning, ping, DNS, ARP, inspect, sweep, interfaces, and mDNS, with packet-capture tools available in packet-capture builds.',
+      'Run <code>netscli serve</code> when an MCP client needs local network tools. Every operation the CLI has is exposed as a structured tool, so an agent gets the same discovery, scanning and DNS results you would, in a shape it can parse.',
     codeHtml: `<span style="color:#888">// claude_desktop_config.json</span>
 <span style="color:#7b7b7b">{</span>
   <span style="color:#7c9fc7">"mcpServers"</span>: <span style="color:#7b7b7b">{</span>
