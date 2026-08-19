@@ -47,6 +47,32 @@ Out of scope:
 - Issues that require root or administrator access to exploit, when
   that access already grants equivalent capability without netscli.
 
+## What has never been reviewed
+
+There has been no security review of the supply chain. Specifically, none
+of the following has been examined:
+
+- `.github/workflows/` — including `publish.yml`, which holds tokens for
+  crates.io, the Homebrew tap, the Scoop bucket, winget and AUR.
+- `scripts/release/` — the publish scripts, which fetch release assets over
+  the network and rewrite packaging manifests from what they download.
+- `packaging/` — the manifests and installer templates.
+- `apps/netscli-gui/src-tauri/wix/` and `nsis/` — the Windows installer
+  templates.
+
+This is stated because the gap has already produced a real issue. Until
+2026-08-19 the MSI used Tauri's `downloadBootstrapper` default, which
+fetched and executed an installer over the network at install time,
+elevated, with no hash pinning. It was found by reading the bundle config,
+not by any review.
+
+Dependency scanning also has a blind spot worth naming: `npm audit
+--omit=dev` excludes the build toolchain that produces the shipped bundle,
+so a compromised bundler is not something the current checks would catch.
+
+If you are picking this up, treat those four areas as unaudited rather than
+as reviewed and clean.
+
 ## Dependencies
 
 The project uses Dependabot for automated dependency updates. Alerts
