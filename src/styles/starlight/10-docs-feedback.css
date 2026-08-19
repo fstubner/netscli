@@ -30,7 +30,7 @@
 
 #starlight__search .pagefind-ui__button {
 
-  justify-content: center !important;
+
   text-align: center !important;
 }
 
@@ -38,11 +38,6 @@
   --ec-codePadBlk: 0.62rem;
   --netscli-code-copy-inset: 0.48rem;
   margin-block: 0.9rem 1.2rem;
-}
-
-.sl-markdown-content .expressive-code .copy button[data-copied] {
-
-  color: var(--netscli-accent-high) !important;
 }html[data-theme='light'] #starlight__search .pagefind-ui__search-input {
   background: #ffffff !important;
   box-shadow: none !important;
@@ -50,6 +45,6 @@
 
 html[data-theme='light'] .sl-markdown-content .expressive-code .copy button[data-copied] {
 
-  background: #e5f3ef !important;
+
   color: #0b4a1f !important;
 }

@@ -80,14 +80,7 @@ site-search dialog .dialog-frame {
   border-color: rgba(140, 149, 166, 0.25);
   background: var(--sl-color-bg-inline-code);
 
-}
-
-html[data-theme='light'] .sl-markdown-content :not(pre) > code {
-
-  color: #243044;
-}
-
-.sl-markdown-content .expressive-code {
+}.sl-markdown-content .expressive-code {
   --ec-brdCol: rgba(140, 149, 166, 0.24);
   --ec-codeBg: #171c23;
   --ec-codeFg: #d7dce5;
@@ -104,7 +97,7 @@ html[data-theme='light'] .sl-markdown-content :not(pre) > code {
 
 .sl-markdown-content .expressive-code .frame {
 
-  border-color: rgba(140, 149, 166, 0.22);
+
   box-shadow:
     0 16px 36px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.035);
@@ -119,14 +112,9 @@ html[data-theme='light'] .sl-markdown-content :not(pre) > code {
   border-top: var(--ec-brdWd) solid var(--ec-brdCol) !important;
   border-top-left-radius: calc(var(--ec-brdRad) + var(--ec-brdWd)) !important;
   border-top-right-radius: calc(var(--ec-brdRad) + var(--ec-brdWd)) !important;
-}.sl-markdown-content .expressive-code .copy {
+}.sl-markdown-content .expressive-code .copy button {
 
-  inset-inline-end: calc(var(--ec-brdWd) + 0.55rem) !important;
-}
 
-.sl-markdown-content .expressive-code .copy button {
-
-  height: 2rem;
   background: #202631;
   border-radius: 4px;
   opacity: 0.92;

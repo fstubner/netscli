@@ -154,14 +154,7 @@ html[data-theme='light'] .sl-markdown-content .expressive-code pre {
   background: #f6f8fa !important;
 }html[data-theme='light'] .sl-markdown-content .expressive-code .frame::before {
   background: rgba(0, 122, 84, 0.42);
-}
-
-html[data-theme='light'] .sl-markdown-content .expressive-code .copy button {
-
-  background: #eef2f4;
-}
-
-html[data-theme='light'] .sl-markdown-content :not(pre) > code {
+}html[data-theme='light'] .sl-markdown-content :not(pre) > code {
   border-color: rgba(17, 24, 39, 0.16);
   background: #eef2f4;
 

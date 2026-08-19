@@ -3,7 +3,7 @@
 
   font-size: 0.72rem;
   font-weight: 760;
-  letter-spacing: 0.055em;
+
   line-height: 1.25;
   text-transform: none;
   white-space: nowrap;
@@ -145,7 +145,7 @@
 @media (max-width: 42rem) {
   .sl-markdown-content table {
 
-    border: 0;
+
     background: transparent;
     overflow: visible;
     max-width: 100%;
@@ -157,7 +157,7 @@
   .sl-markdown-content table tr {
 
     gap: 0.28rem;
-    padding: 0.8rem 0.9rem;
+
     border: 1px solid rgba(140, 149, 166, 0.18);
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.03);
@@ -166,7 +166,7 @@
   .sl-markdown-content table td,
   .sl-markdown-content table th {
 
-    width: auto;
+
     min-width: 0;
     padding: 0;
     border: 0;

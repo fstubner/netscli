@@ -34,14 +34,14 @@ site-search dialog .search-container {
 #starlight__search .pagefind-ui__form {
 
   inset-block-start: 0;
-  z-index: 4;
+
   flex: 0 0 auto;
   padding-block-end: 0.8rem;
   background: #252b36;
 }#starlight__search .pagefind-ui__drawer {
   min-height: 0;
 
-  overflow-y: auto;
+
   overscroll-behavior: contain;
   padding-inline-end: 0.2rem;
   position: relative;
@@ -61,13 +61,13 @@ site-search dialog .search-container {
 #starlight__search .pagefind-ui__drawer:has(.pagefind-ui__result)::before {
   top: 0;
 
-  background: linear-gradient(180deg, rgba(8, 12, 18, 0.14), rgba(8, 12, 18, 0));
+
 }
 
 #starlight__search .pagefind-ui__drawer:has(.pagefind-ui__result)::after {
   bottom: 0;
 
-  background: linear-gradient(0deg, rgba(8, 12, 18, 0.12), rgba(8, 12, 18, 0));
+
 }
 
 #starlight__search .pagefind-ui__results-area {

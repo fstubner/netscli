@@ -132,13 +132,13 @@
   }site-search dialog .search-container,
   #starlight__search {
 
-    grid-row: 1 !important;
+
     min-width: 0 !important;
   }
 
   site-search button[data-close-modal] {
 
-    grid-row: 1 !important;
+
     align-self: center !important;
   }}
 

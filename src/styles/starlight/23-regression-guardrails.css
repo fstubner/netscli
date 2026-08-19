@@ -5,7 +5,7 @@
 }
 
 .sidebar-content :where(details > ul a) {
-  margin-inline-start: -1px !important;
+
   width: calc(100% + 1px) !important;
   padding-inline-start: 0.75rem !important;
   border-inline-start: 2px solid transparent !important;
@@ -35,7 +35,7 @@
     margin-right: 3rem !important;
     flex: 0 0 2.75rem !important;
 
-    max-width: 2.75rem !important;
+
     min-width: 2.75rem !important;
   }
 
@@ -50,13 +50,13 @@
   site-search dialog {
 
     max-width: calc(100vw - 1rem) !important;
-    min-height: auto !important;
+
     margin: 0.5rem auto !important;
   }
 
   site-search dialog .dialog-frame {
 
-    grid-template-columns: minmax(0, 1fr) auto !important;
+
     gap: 0.85rem !important;
     padding: 1rem !important;
     align-items: start !important;
