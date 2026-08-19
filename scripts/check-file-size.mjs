@@ -48,13 +48,6 @@ const transitionExceptions = new Map([
     },
   ],
   [
-    'apps/netscli-gui/e2e/tauri-render/scenarios/helpers/menu.mjs',
-    {
-      maxLines: 345,
-      reason: 'render automation menu helpers; split menu/dialog helpers next',
-    },
-  ],
-  [
     'apps/netscli-cli/src/tui/runtime/input.rs',
     {
       maxLines: 330,

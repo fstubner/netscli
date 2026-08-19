@@ -193,8 +193,14 @@ NetsCLI Desktop can be submitted to the Microsoft Store later as an
 Before attempting it, prepare:
 
 - Partner Center developer enrollment and reserved app name.
-- A Store-specific Tauri Windows bundle config using the offline
-  WebView2 installer mode.
+- A Store-specific Tauri Windows bundle config using the **offline**
+  WebView2 installer mode. The default bundle now uses
+  `embedBootstrapper` (`apps/netscli-gui/src-tauri/tauri.conf.json`),
+  which removes the elevated network fetch the old `downloadBootstrapper`
+  default performed at install time but still needs a connection for the
+  runtime itself. The Store requires `offlineInstaller`, which embeds the
+  full runtime and adds roughly 130 MB to the installer -- worth taking
+  only for that channel, or if offline installs become a requirement.
 - Authenticode signing with a certificate that chains to a CA in the
   Microsoft Trusted Root Program. Sigstore release signatures are useful
   for artifact provenance, but they do not replace Store-required Windows

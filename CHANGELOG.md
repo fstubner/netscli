@@ -12,7 +12,7 @@ further copies in `package.json` and `tauri.conf.json`. See
 
 ## [Unreleased]
 
-## [0.3.0] — 2026-06-26
+## [0.3.0] — 2026-08-19
 
 ### Added
 
@@ -84,6 +84,79 @@ further copies in `package.json` and `tauri.conf.json`. See
   and license installation, Winget/Scoop/Homebrew reference manifests were
   refreshed, and packaging validation commands were added to the release
   checklist.
+
+### Fixed
+
+- **MCP server handled one request at a time.** The read loop awaited each
+  handler before parsing the next line, so a slow scan blocked every other
+  request on the connection, including cancellation. Handlers now run
+  concurrently under a semaphore. ([#169](https://github.com/fstubner/netscli/pull/169))
+- **Reading the ARP table blocked a runtime worker.** On Windows and macOS it
+  shells out to `arp` and waits on the child process; three callers invoked it
+  straight from async code. With MCP handlers capped at 16 concurrent, sixteen
+  of these could stall every worker — including the one reading stdin, so no
+  further request could even be parsed. Moved to a blocking thread.
+  ([#196](https://github.com/fstubner/netscli/pull/196))
+- **Safety limits were enforced in `Ops` but not in the engines.** The scan,
+  sweep, discover and inspect engines are public API re-exported at the crate
+  root, and called directly they applied no subnet, port or concurrency cap —
+  `0.0.0.0/0` collected 4,294,967,294 addresses into a `Vec` before sending a
+  packet. Every engine now enforces its own limits.
+  ([#198](https://github.com/fstubner/netscli/pull/198))
+- **Port 0 was rejected only by the MCP surface.** Now rejected everywhere.
+  ([#164](https://github.com/fstubner/netscli/pull/164))
+- **Panic paths in the core and silent corruption in the OUI generator.**
+  ([#172](https://github.com/fstubner/netscli/pull/172))
+- **TUI mis-measured wide characters**, so CJK and emoji in a remote-supplied
+  hostname or banner pushed box borders out of alignment.
+  ([#173](https://github.com/fstubner/netscli/pull/173))
+- **The desktop app described work it had not done.** The command preview
+  claimed five ports while three were scanned, truncated captures were
+  presented as complete, and the open-port count drifted from the rows below
+  it. ([#197](https://github.com/fstubner/netscli/pull/197))
+- **Packet Capture vanished on builds without capture support** instead of
+  explaining what was needed. ([#193](https://github.com/fstubner/netscli/pull/193))
+- **The desktop app was not keyboard operable**, and the result grid had
+  incorrect ARIA. ([#171](https://github.com/fstubner/netscli/pull/171))
+- **The website claimed packet capture in builds that do not ship it**, and
+  advertised a version that was never released.
+  ([#194](https://github.com/fstubner/netscli/pull/194),
+  [#208](https://github.com/fstubner/netscli/pull/208))
+
+### Changed
+
+- **Website rebuilt for every screen width.** The landing page and docs were
+  swept across six widths and both themes, and the shell, navigation, contents
+  list, colour and typography were reworked to hold up at all of them. The
+  brand accent moved from a teal-green that read blue in small text to one that
+  reads green at any size, and contrast improved with it.
+  ([#190](https://github.com/fstubner/netscli/pull/190)–[#209](https://github.com/fstubner/netscli/pull/209))
+- **Search, head metadata and page titles rewritten** so the site describes
+  what it is rather than repeating adjectives.
+  ([#204](https://github.com/fstubner/netscli/pull/204))
+- **Per-PR site previews on Cloudflare Pages**, and GitHub Pages deploys are
+  manual-only. ([#165](https://github.com/fstubner/netscli/pull/165),
+  [#136](https://github.com/fstubner/netscli/pull/136))
+
+### Changed (internal)
+
+- **CI gates report unconditionally**, so branch protection can require them,
+  and both required checks were closed against a job that fails without
+  failing the gate. ([#161](https://github.com/fstubner/netscli/pull/161),
+  [#187](https://github.com/fstubner/netscli/pull/187))
+- **The end-to-end suite can now fail.** Several scenarios were structurally
+  incapable of it. ([#199](https://github.com/fstubner/netscli/pull/199))
+- **The Tauri render suite is schedule-only** and no longer gates releases.
+  ([#178](https://github.com/fstubner/netscli/pull/178))
+- **A dead-CSS budget runs in CI**, holding the docs override stack at its
+  current 210 provably shadowed declarations.
+  ([#207](https://github.com/fstubner/netscli/pull/207))
+- **Node 22, jsdom 30, ESLint 10, react-hooks 7**, and three Rust dependency
+  bumps. ([#187](https://github.com/fstubner/netscli/pull/187)–[#189](https://github.com/fstubner/netscli/pull/189))
+- **Release pipeline hardened**: tag validation on the AUR jobs, a checksum
+  that could be contaminated by progress output, and the publish long tail.
+  ([#158](https://github.com/fstubner/netscli/pull/158),
+  [#200](https://github.com/fstubner/netscli/pull/200))
 
 ## [0.2.6] — 2026-05-06
 

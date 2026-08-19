@@ -45,6 +45,9 @@
       "../../../crates/netscli-core/data/oui.min.json.gz": "data/oui.min.json.gz"
     },
     "windows": {
+      "webviewInstallMode": {
+        "type": "embedBootstrapper"
+      },
       "wix": {
         "template": "wix/main.wxs"
       },

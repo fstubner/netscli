@@ -1,5 +1,13 @@
 # Maintainer: Felix Stubner <felix.stubner@gmail.com>
 #
+# These values are a template, not what users install.
+#
+# scripts/release/publish-*.sh fetch the real .sha256 from the published
+# release, rewrite version, url and hash, verify the result, and push that to
+# the tap or bucket. What is committed here is whatever the last edit left
+# behind -- currently a 0.3.0 label over the v0.2.6 digests -- and reading it
+# as the shipped manifest is a mistake that has been made before.
+#
 # Sibling package to netscli-bin (the CLI/TUI). Ships the Tauri desktop
 # app as a self-contained .AppImage rather than the .deb, since pacman
 # users typically prefer not to depend on dpkg/Debian conventions for

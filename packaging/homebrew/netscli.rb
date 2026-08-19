@@ -1,14 +1,20 @@
-# Formula for Homebrew. After cutting release vX.Y.Z:
-# 1. Update `version`.
-# 2. Replace each `sha256` value with the real SHA256 of the matching
-#    platform asset (read from the `.sha256` files on the release page).
-# 3. Publish this file in fstubner/homebrew-tap (or submit to
-#    homebrew-core once the project has a few releases under its belt).
+# Formula for Homebrew, published to fstubner/homebrew-tap.
 #
-# Usage after tap is published:
+# The values below are a template, not what users install.
+# `scripts/release/publish-homebrew.sh` runs from publish.yml on every
+# release: it fetches the real .sha256 sidecars from the published assets,
+# rewrites `version` and every `sha256` here, checks that exactly four valid
+# digests came out, and pushes the result to the tap. What is committed in
+# this repo is whatever the last edit left behind, so it can and does lag --
+# reading it as the shipped manifest is a mistake that has been made before.
+#
+# Editing it by hand is only needed if you are bootstrapping the tap or the
+# publish job is broken; in that case take each digest from the `.sha256`
+# asset on the release page.
+#
+# Usage:
 #   brew tap fstubner/tap
 #   brew install netscli
-
 class Netscli < Formula
   desc "Network diagnostics CLI, terminal UI, and MCP server"
   homepage "https://netscli.com"

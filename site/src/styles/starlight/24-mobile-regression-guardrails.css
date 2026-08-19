@@ -28,43 +28,12 @@
 
   .docs-header-search {
     margin-inline-end: .35rem !important;
-  }  
-
-  /* Not the section menu.
-     PageSidebar renders the mobile section dropdown inside .right-sidebar, so
-     this rule -- written to flatten the ToC rail -- also stripped the marker
-     off the current page in that menu. Every other entry there reserves 2px
-     for a border, so the one item that should have been marked was the only
-     one with no border at all. */
-  .right-sidebar
-    :where(a:hover, a[aria-current="true"], a[aria-current="page"]):not(
-      .docs-mobile-section-menu a,
-      mobile-starlight-toc .dropdown a
-    ) {
-    background: transparent !important;
-
-  }
-
-  .content-panel table,
+  }.content-panel table,
   .sl-markdown-content table {
 
-    width: max-content !important;
+
     min-width: 100% !important;
-  }.content-panel th,
-  .content-panel td,
-  .sl-markdown-content th,
-  .sl-markdown-content td {
-
-    white-space: normal !important;
-  }
-
-  .content-panel td::before,
-  .sl-markdown-content td::before {
-
-    display: none !important;
-  }
-
-  .content-panel thead th,
+  }.content-panel thead th,
   .sl-markdown-content thead th {
     font-weight: 700 !important;
   }
@@ -78,14 +47,14 @@
 
   site-search dialog {
 
-    max-height: calc(100dvh - 1rem) !important;
+
     min-height: auto !important;
     overflow: auto !important;
   }
 
   site-search dialog .dialog-frame {
 
-    grid-template-columns: minmax(0, 1fr) auto !important;
+
     grid-template-areas:
       "search close"
       "drawer drawer" !important;
@@ -115,13 +84,7 @@
 
   site-search dialog .pagefind-ui__drawer {
 
-    width: 100% !important;
+
     max-width: none !important;
     min-height: 9rem !important;
-  }
-
-  site-search dialog .pagefind-ui__search-input {
-    width: 100% !important;
-
-  }
-}
+  }}

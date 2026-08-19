@@ -1,4 +1,5 @@
 import { isTauri } from '../services/env';
+import { validateFieldValue } from '../tools/fieldValidation';
 import * as netscli from '../services/netscli';
 import type { ToolResult } from '../types/app';
 import type { DnsRecord } from '../types/netscli';
@@ -198,9 +199,19 @@ export function validateTab(tab: WorkspaceTab): string | null {
   if (tab.kind === 'pcap' && tab.form.mode === 'Open File') {
     return null;
   }
-  const missing = TOOL_CONFIG[tab.kind].fields.find(
-    (field) => field.required && !tab.form[field.key]?.trim(),
-  );
+  const fields = TOOL_CONFIG[tab.kind].fields;
+  const missing = fields.find((field) => field.required && !tab.form[field.key]?.trim());
   if (missing) return `${missing.label} is required`;
+
+  // Shape, not just presence. Numeric fields are already bounded by their
+  // `min`/`max`; the free-text ones were gated on presence alone, so
+  // `ports: "hello"` was accepted here and only failed after a round trip to
+  // the backend.
+  for (const field of fields) {
+    const value = tab.form[field.key];
+    if (!value) continue;
+    const problem = validateFieldValue(field.key, value);
+    if (problem) return problem;
+  }
   return null;
 }

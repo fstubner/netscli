@@ -5,7 +5,7 @@
     --sl-mobile-toc-height: 3rem;
   }.right-sidebar {
 
-    width: 100% !important;
+
     height: auto !important;
     padding: 0 !important;
     overflow: visible !important;
@@ -20,12 +20,12 @@
     border-top: 0 !important;
     border-bottom: 1px solid var(--sl-color-hairline-light) !important;
 
-    box-shadow: none !important;
+
   }
 
   mobile-starlight-toc summary {
 
-    padding-block: 0.45rem !important;
+
     padding-inline: clamp(1rem, 4vw, 1.5rem) !important;
     border-bottom: 0 !important;
     gap: 0.75rem !important;
@@ -34,34 +34,25 @@
   mobile-starlight-toc .toggle {
 
     gap: 0.65rem !important;
-    border: 1px solid rgba(140, 149, 166, 0.22) !important;
+
     border-radius: 6px !important;
     background: rgba(255, 255, 255, 0.035) !important;
     color: var(--sl-color-gray-1) !important;
     font-weight: 720 !important;
-  }
-
-  mobile-starlight-toc details[open] .toggle,
-  mobile-starlight-toc details .toggle:hover,
-  mobile-starlight-toc summary:focus-visible .toggle {
-
-    color: var(--sl-color-white) !important;
-  }
-
-  mobile-starlight-toc .caret {
+  }mobile-starlight-toc .caret {
     color: var(--netscli-accent);
   }
 
   mobile-starlight-toc .display-current {
     min-width: 0;
 
-    font-size: 0.82rem !important;
+
   }
 
   mobile-starlight-toc .dropdown {
 
     border-color: var(--sl-color-hairline-light) !important;
-    border-inline: 0 !important;
+
     background: #171b22 !important;
     box-shadow: 0 18px 46px rgba(0, 0, 0, 0.34) !important;
   }mobile-starlight-toc .dropdown a:hover,
@@ -139,14 +130,7 @@ html[data-theme='light'] mobile-starlight-toc .caret {
 
 html[data-theme='light'] mobile-starlight-toc .display-current {
   color: #44516a !important;
-}
-
-html[data-theme='light'] mobile-starlight-toc .dropdown {
-
-  box-shadow: 0 18px 42px rgba(17, 24, 39, 0.14) !important;
-}
-
-.sl-markdown-content .expressive-code .copy .feedback {
+}.sl-markdown-content .expressive-code .copy .feedback {
   position: absolute !important;
   width: 1px !important;
   height: 1px !important;

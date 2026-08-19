@@ -11,7 +11,7 @@
 
   .docs-topbar {
 
-    max-width: calc(100vw - 4.5rem) !important;
+
     margin-inline: 0 !important;
     padding-inline-start: max(0.65rem, env(safe-area-inset-left)) !important;
     padding-inline-end: max(0.5rem, env(safe-area-inset-right)) !important;
@@ -22,7 +22,7 @@
 
   .docs-header-search {
 
-    flex: 0 0 2.5rem !important;
+
     width: 2.5rem !important;
     max-width: 2.5rem !important;
     min-width: 2.5rem !important;
@@ -45,11 +45,7 @@
     inset-block-start: var(--sl-nav-height) !important;
   }}
 
-@media (min-width: 50rem) {
-  .docs-mobile-section-nav {
-    display: none !important;
-  }
-}
+@media (min-width: 50rem) {}
 
 @media (max-width: 71.99rem) {
   :root {

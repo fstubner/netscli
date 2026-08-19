@@ -3,14 +3,7 @@
 .sidebar-content {
   --netscli-sidebar-rail-inset: clamp(2.2rem, 3vw, 3.15rem);
   padding-inline-start: var(--netscli-sidebar-rail-inset) !important;
-}
-
-.sidebar-content :where(details > ul) {
-
-  border-inline-start: 1px solid var(--sl-color-hairline) !important;
-}
-
-.sidebar-content :where(a[aria-current='page']) {
+}.sidebar-content :where(a[aria-current='page']) {
   position: relative;
   box-shadow: none !important;
 }
@@ -22,7 +15,7 @@
 @media (max-width: 71.99rem) {
   .right-sidebar-container {
 
-    width: 100% !important;
+
     flex: 0 0 100% !important;
     order: -1;
     background: var(--sl-color-bg);
@@ -38,7 +31,7 @@
 
   .right-sidebar {
 
-    width: 100% !important;
+
     height: auto !important;
     padding: 0 !important;
     overflow: visible !important;
@@ -117,7 +110,7 @@
   mobile-starlight-toc .dropdown a:hover,
   mobile-starlight-toc .dropdown a:focus-visible {
 
-    background: rgba(255, 255, 255, 0.045) !important;
+
     outline: 0 !important;
   }
 

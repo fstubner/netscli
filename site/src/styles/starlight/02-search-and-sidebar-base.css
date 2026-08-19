@@ -63,7 +63,7 @@ site-search button[data-close-modal]:focus-visible {
   border-radius: 6px !important;
 
   color: var(--sl-color-gray-1) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+
 }
 
 #starlight__search .pagefind-ui__search-input:focus {
@@ -72,16 +72,7 @@ site-search button[data-close-modal]:focus-visible {
   box-shadow:
     0 0 0 2px rgba(var(--netscli-accent-rgb), 0.16),
     inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
-}
-
-#starlight__search .pagefind-ui__result-title:not(:where(.pagefind-ui__result-nested *)),
-#starlight__search .pagefind-ui__result-nested,
-#starlight__search .pagefind-ui__result-tags {
-
-  background: rgba(17, 22, 29, 0.78) !important;
-}
-
-#starlight__search .pagefind-ui__result-title:not(:where(.pagefind-ui__result-nested *)):hover,
+}#starlight__search .pagefind-ui__result-title:not(:where(.pagefind-ui__result-nested *)):hover,
 #starlight__search .pagefind-ui__result-title:not(:where(.pagefind-ui__result-nested *)):focus-within,
 #starlight__search .pagefind-ui__result-nested:hover,
 #starlight__search .pagefind-ui__result-nested:focus-within {
@@ -125,14 +116,7 @@ html[data-theme='light'] #starlight__search {
   --pagefind-ui-background: #ffffff;
   --pagefind-ui-border: rgba(17, 24, 39, 0.14);
   --pagefind-ui-tag: rgba(0, 122, 84, 0.11);
-}
-
-html[data-theme='light'] #starlight__search .pagefind-ui__search-input {
-
-  border-color: rgba(17, 24, 39, 0.16) !important;
-}
-
-html[data-theme='light'] starlight-menu-button button {
+}html[data-theme='light'] starlight-menu-button button {
   background: rgba(17, 24, 39, 0.035);
   color: var(--sl-color-gray-2);
 }
@@ -185,7 +169,7 @@ html[data-theme='light'] starlight-menu-button[aria-expanded='true'] button {
   color: var(--sl-color-white);
 
   border-color: transparent;
-  box-shadow: none;
+
 }
 
 .sidebar-content a[aria-current='page']:hover {

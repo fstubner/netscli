@@ -17,13 +17,22 @@ async function assertCommandStatusAlignment(driver) {
     const dotRect = dot.getBoundingClientRect();
     const statusRect = status.getBoundingClientRect();
     const statusStyle = getComputedStyle(status);
-    const dotStyle = getComputedStyle(dot);
     const commandStyle = getComputedStyle(document.querySelector('[data-testid="command-strip"]'));
     const statusRightInset = parseFloat(statusStyle.paddingRight);
     return {
       leftDelta: Math.abs(terminalRect.left - dotRect.left),
       commandLeftInset: parseFloat(commandStyle.paddingLeft),
-      dotMarginTop: dotStyle.marginTop,
+      // The thing this is meant to check is that the dot sits on the
+      // footer text's optical centre. Measure that, rather than the 1px
+      // nudge that currently achieves it: the nudge is font-metric and DPI
+      // dependent, so pinning it binds the suite to one runner image and
+      // goes red on a restyle that keeps the alignment correct.
+      dotTextCenterDelta: (() => {
+        const text = document.querySelector('[data-testid="statusbar"] .status-left');
+        if (!text) return null;
+        const t = text.getBoundingClientRect();
+        return Math.abs((dotRect.top + dotRect.height / 2) - (t.top + t.height / 2));
+      })(),
       leftText: document.querySelector('[data-testid="statusbar"] .status-left')?.textContent ?? '',
       rightText: document.querySelector('[data-testid="statusbar"] .status-right')?.textContent ?? '',
       statusLeftInset: parseFloat(statusStyle.paddingLeft),
@@ -35,7 +44,10 @@ async function assertCommandStatusAlignment(driver) {
     state.commandLeftInset < state.statusLeftInset,
     `Command prompt icon should sit closer to the edge than the status dot, got ${state.commandLeftInset}/${state.statusLeftInset}px`,
   );
-  assert.equal(state.dotMarginTop, '1px', 'Status dot should sit 1px lower to align with footer text');
+  assert.ok(
+    state.dotTextCenterDelta !== null && state.dotTextCenterDelta <= 2,
+    `Status dot should sit on the footer text's centre, off by ${state.dotTextCenterDelta}px`,
+  );
   assert.match(state.leftText, /Mbps/i, 'Traffic rates should be grouped with the selected interface on the left');
   assert.doesNotMatch(state.rightText, /v\d+\./i, 'Footer should not duplicate the About version');
   assertAlignment('Command copy icon vs status padding', state.rightDelta, 3);
