@@ -41,21 +41,14 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='true']),
 html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='page']),
 html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location']) {
   color: #0e7a33 !important;
-}
-
-.sidebar-content :where(details > ul > li) {
-
-  border-inline-start: 0 !important;
-}
-
-/* Every link's border track sits on the rail, and the active one lights up.
+}/* Every link's border track sits on the rail, and the active one lights up.
    The rail is the <ul>'s inline-start border; the list item adds 0.5rem of
    inline padding, so a border on the link landed 7.8px inside the rail --
    the highlight floated in the gap instead of marking the rail. Pulling the
    link back by that padding plus the rail's own width puts the two in the
    same place, and the matching padding increase keeps the text still. */
 .sidebar-content :where(details > ul a) {
-  margin-inline-start: calc(-0.5rem - 1px) !important;
+
   width: calc(100% + 0.5rem + 1px) !important;
   padding-inline-start: calc(.85rem + 0.5rem + 1px) !important;
   border-inline-start: 1px solid transparent !important;
@@ -75,7 +68,7 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
 
   .docs-topbar {
 
-    max-width: calc(100vw - 4.15rem) !important;
+
     gap: 0.45rem !important;
   }
 
@@ -86,7 +79,7 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
     max-width: 2.5rem !important;
     min-width: 2.5rem !important;
 
-    margin-right: 0.15rem !important;
+
   }
 
   .docs-header-search site-search,
@@ -196,7 +189,7 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
 @media (max-width: 49.99rem) {
   .right-sidebar-container {
 
-    min-height: 0 !important;
+
     margin: 0 !important;
     padding: 0 !important;
     border: 0 !important;
@@ -245,7 +238,7 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
 
   site-search dialog {
 
-    max-width: calc(100vw - 1rem) !important;
+
     min-height: min(100dvh - 1rem, 44rem) !important;
     margin: 0.5rem auto !important;
     border-radius: 8px !important;
@@ -253,7 +246,7 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
 
   site-search dialog .dialog-frame {
 
-    grid-template-columns: minmax(0, 1fr) auto !important;
+
     align-items: center !important;
     align-content: start !important;
     gap: 0.75rem !important;
@@ -262,17 +255,9 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
 
   site-search dialog .dialog-frame > * {
     align-self: start !important;
-  }
+  }site-search button[data-close-modal] {
 
-  site-search dialog .search-container,
-  #starlight__search {
 
-    min-width: 0 !important;
-  }
-
-  site-search button[data-close-modal] {
-
-    grid-row: 1 !important;
     align-self: start !important;
   }
 }

@@ -166,7 +166,7 @@ html[data-theme='light'] .main-pane {
   border: 1px solid rgba(var(--netscli-accent-rgb), 0.18);
   border-radius: 0.24rem;
 
-  color: var(--netscli-accent-high);
+
   font-family: var(--__sl-font-mono);
   font-size: 0.9em;
   line-height: 1.45;
@@ -201,9 +201,7 @@ html[data-theme='light'] .main-pane {
 
   border-radius: 8px !important;
   border: 1px solid rgba(140, 149, 166, 0.18);
-  box-shadow:
-    0 18px 46px rgba(0, 0, 0, 0.34),
-    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+
 }
 
 .sl-markdown-content .expressive-code .frame.is-terminal .header {
@@ -234,14 +232,7 @@ html[data-theme='light'] .sl-markdown-content .expressive-code .frame {
   box-shadow:
     0 12px 34px rgba(17, 24, 39, 0.11),
     inset 0 1px 0 rgba(255, 255, 255, 0.78);
-}
-
-html[data-theme='light'] .sl-markdown-content :not(pre) > code {
-
-  color: #0b4a1f;
-}
-
-html[data-theme='light'] .sl-markdown-content .expressive-code {
+}html[data-theme='light'] .sl-markdown-content .expressive-code {
   --ec-brdCol: rgba(17, 24, 39, 0.12);
   --ec-codeBg: #f7faf9;
   --ec-codeFg: #243044;
@@ -279,9 +270,7 @@ html[data-theme='light'] .sl-markdown-content .expressive-code .ec-line :where(s
   border-radius: 8px;
   overflow: hidden;
 
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.025) inset,
-    0 12px 28px rgba(0, 0, 0, 0.12);
+
   font-size: 0.875rem;
   table-layout: auto;
 }
