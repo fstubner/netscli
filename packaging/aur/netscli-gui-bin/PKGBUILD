@@ -2,11 +2,11 @@
 #
 # These values are a template, not what users install.
 #
-# scripts/release/publish-*.sh fetch the real .sha256 from the published
-# release, rewrite version, url and hash, verify the result, and push that to
-# the tap or bucket. What is committed here is whatever the last edit left
-# behind -- currently a 0.3.0 label over the v0.2.6 digests -- and reading it
-# as the shipped manifest is a mistake that has been made before.
+# publish.yml's `aur-gui` job renders this file on every release; the
+# sha256sums lines below hold placeholder names rather than real-looking
+# digests, and the render step refuses to push a file with one left in it.
+# See the sibling packaging/aur/PKGBUILD for the full reasoning, including
+# why the literal marker must stay out of these comments.
 #
 # Sibling package to netscli-bin (the CLI/TUI). Ships the Tauri desktop
 # app as a self-contained .AppImage rather than the .deb, since pacman
@@ -31,8 +31,8 @@ depends=('gcc-libs' 'glibc' 'webkit2gtk-4.1' 'gtk3' 'libayatana-appindicator')
 source=("LICENSE-${pkgver}::https://raw.githubusercontent.com/fstubner/netscli/v${pkgver}/LICENSE"
         "${_appname}.png::https://raw.githubusercontent.com/fstubner/netscli/v${pkgver}/apps/netscli-gui/src-tauri/icons/128x128.png")
 source_x86_64=("${pkgname}-${pkgver}.AppImage::https://github.com/fstubner/netscli/releases/download/v${pkgver}/netscli-gui-linux-x86_64.AppImage")
-sha256sums=('6f035a96b0da6e99589b2a1656f59bee8c6519686d8a94627301e074746041d3' '021f1d939fe496033ef90a47d29e7a1bd11ea83cfe0ffc445cb5b88418240882')
-sha256sums_x86_64=('bfd48226a173ee5997530e5b6fd211fc39d2c5cd6b9b2d0c054185b054a85e60')
+sha256sums=('@@SHA256_LICENSE@@' '@@SHA256_ICON@@')
+sha256sums_x86_64=('@@SHA256_X86_64@@')
 
 package() {
   install -Dm755 "${srcdir}/${pkgname}-${pkgver}.AppImage" \
