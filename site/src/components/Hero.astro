@@ -304,6 +304,7 @@ const { hero, social } = site;
 .hero-desktop-menu{
   position:absolute;top:calc(100% + 6px);left:0;z-index:20;
   width:min(260px,calc(100vw - 48px));min-width:0;box-sizing:border-box;
+  /* See the wrapped-layout rule below, which widens this to the trigger. */
   padding:5px;border-radius:8px;
   background:#181b20;border:1px solid rgba(255,255,255,.12);
   box-shadow:0 18px 40px rgba(0,0,0,.42);
@@ -416,9 +417,15 @@ const { hero, social } = site;
   }
   .hero-cta-main,
   .hero-cta-sub{display:contents}
+  /* Full width once the CTA has wrapped into a column. At 174px the button
+     sat as a short centred pill above two full-width command bars, and the
+     installer menu -- anchored to its left edge -- opened off to one side
+     and past the column. Matching the bars lines all four rows up on the
+     same edges and gives the menu the same width to open into. */
   .hero-primary-wrap{
     order:1;
-    width:174px;
+    width:min(100%,380px);
+    flex:0 1 min(100%,380px);
   }
   .hero-command-wide{
     order:3;
@@ -429,6 +436,15 @@ const { hero, social } = site;
     order:4;
     flex:0 1 min(100%,380px);
     width:min(100%,380px);
+  }
+  /* Exactly the button's outer edges, not its padding box. The trigger has
+     a 1px gradient border, so a plain `width:100%` left the menu inset by a
+     pixel on each side, which reads as a misalignment against the command
+     bars directly below it. */
+  .hero-desktop-menu{
+    left:-1px;
+    width:calc(100% + 2px);
+    max-width:calc(100% + 2px);
   }
   .hero-command{padding-right:50px;gap:3px}
   .hero-install-link{
@@ -445,7 +461,10 @@ const { hero, social } = site;
     width:min(100%,calc(100vw - 32px));
     gap:10px 18px;
   }
-  .hero-primary-wrap{width:168px}
+  .hero-primary-wrap{
+    width:min(100%,330px);
+    flex-basis:min(100%,330px);
+  }
   .hero-install-link{font-size:.72rem}
   .hero-command-wide,
   .hero-cta-sub .hero-command{
