@@ -1,8 +1,37 @@
 # NetsCLI Security Review
 
 Date: 2026-05-29
+Last re-verified: 2026-08-19
+Next review due: 2026-11-19, and before any release that changes CI,
+packaging, or the installer templates.
 
-Scope: React/Tauri GUI, Tauri backend commands, `netscli-core`, CLI/TUI dispatch paths, and MCP tool handlers. This review focused on frontend injection/storage/URL risks, Tauri privilege boundaries, filesystem access, network scan safety limits, DNS privacy behavior, PCAP capture behavior, and dependency advisories.
+Scope: React/Tauri GUI, Tauri backend commands, `netscli-core`, CLI/TUI
+dispatch paths, and MCP tool handlers. This review focused on frontend
+injection/storage/URL risks, Tauri privilege boundaries, filesystem access,
+network scan safety limits, DNS privacy behavior, PCAP capture behavior, and
+dependency advisories.
+
+### Out of scope, and why that matters
+
+This review has never covered the supply chain. Not examined here:
+
+- `.github/workflows/` — including `publish.yml`, which holds tokens for
+  crates.io, the Homebrew tap, the Scoop bucket, winget and AUR.
+- `scripts/release/` — the publish scripts that fetch release assets over
+  the network and rewrite packaging manifests from them.
+- `packaging/` — the manifests and installer templates themselves.
+- `apps/netscli-gui/src-tauri/wix/` and `nsis/` — the installer templates.
+
+That gap has produced at least one real finding since: until 2026-08-19 the
+MSI used Tauri's `downloadBootstrapper` default, which fetched and executed
+an installer over the network at install time, elevated, with no hash
+pinning. Nothing in this document's scope would have caught it.
+
+The dependency conclusion below also rests on `npm audit --omit=dev`, which
+excludes the build toolchain that produces the shipped bundle. A compromised
+bundler is a supply-chain risk this review does not measure.
+
+Extending scope to the four areas above is tracked as B-39.
 
 ## Summary
 

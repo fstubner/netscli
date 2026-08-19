@@ -132,7 +132,11 @@ async function assertSettingsDialog(driver) {
       ratio: dialogRect ? dialogRect.width / dialogRect.height : 0,
       height: dialogRect ? Math.round(dialogRect.height) : 0,
       operationRole: checkbox?.getAttribute('role') ?? '',
-      checkboxWidth: checkboxStyle?.width ?? '',
+      // "Compact square boxes" is the requirement; 18px was one way to
+      // satisfy it. Measure squareness and a size range instead, so a font
+      // or DPI change does not fail a checkbox that is still both.
+      checkboxWidthPx: checkboxBox ? checkboxBox.getBoundingClientRect().width : 0,
+      checkboxHeightPx: checkboxBox ? checkboxBox.getBoundingClientRect().height : 0,
       checkboxRadius: checkboxStyle?.borderRadius ?? '',
     };
   `);
@@ -145,7 +149,14 @@ async function assertSettingsDialog(driver) {
   assert.equal(themeControl.operationRole, '', 'Notification rows should rely on native checkbox semantics');
   assert.ok(themeControl.ratio >= 1.15, `Settings dialog should stay wider than tall, got ratio ${themeControl.ratio}`);
   assert.ok(themeControl.height <= 540, `Settings dialog should stay compact, got ${themeControl.height}px`);
-  assert.equal(themeControl.checkboxWidth, '18px', 'Preference checkboxes should use compact square boxes');
+  assert.ok(
+    themeControl.checkboxWidthPx >= 14 && themeControl.checkboxWidthPx <= 22,
+    `Preference checkboxes should stay compact, got ${themeControl.checkboxWidthPx}px`,
+  );
+  assert.ok(
+    Math.abs(themeControl.checkboxWidthPx - themeControl.checkboxHeightPx) <= 1,
+    `Preference checkboxes should be square, got ${themeControl.checkboxWidthPx}x${themeControl.checkboxHeightPx}`,
+  );
   assert.ok(['0px', '2px', '3px', '4px'].includes(themeControl.checkboxRadius), 'Preference checkboxes should not look like pill toggles');
   await driver.findElement(By.css('[data-testid="settings-interface-trigger"]')).click();
   await waitForText(driver, '.settings-interface-list', /\S/);
