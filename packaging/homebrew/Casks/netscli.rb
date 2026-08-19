@@ -4,22 +4,24 @@
 # Two architectures because Tauri builds are not universal -- Apple Silicon
 # and Intel get distinct .dmg artifacts on every release.
 #
-# The values below are a template, not what users install.
-# `scripts/release/publish-homebrew.sh` rewrites `version` and every `sha256`
-# from the published release's .sha256 sidecars and pushes that to the tap.
-# What is committed here is whatever the last edit left behind.
+# Nothing installs this file. `scripts/release/publish-homebrew-cask.sh`
+# regenerates the tap's copy wholesale from its own heredoc, substituting
+# digests it has re-hashed from the downloaded assets. This copy is the
+# reference for what that output should look like.
 #
-# Edit by hand only when bootstrapping the tap or when the publish job is
-# broken; take each digest from the `.sha256` asset on the release page.
+# The digests are `@@...@@` placeholders on purpose. They used to be
+# real-looking 64-hex values left over from an old release, which is the
+# worst of both: too plausible to notice, too stale to work. A placeholder
+# fails loudly if it ever reaches a tap.
 cask "netscli" do
   version "0.3.0"
 
   on_arm do
-    sha256 "faf62fe3f56709b46865a6f35b5bcda4db6a37c4395eb904d1b73214f497e69e"
+    sha256 "@@SHA256_MACOS_AARCH64@@"
     url "https://github.com/fstubner/netscli/releases/download/v#{version}/netscli-gui-macos-aarch64.dmg"
   end
   on_intel do
-    sha256 "28354f51e623f9be5a875c6284df9ee1207ae182e0667293475d485a1bb41675"
+    sha256 "@@SHA256_MACOS_X86_64@@"
     url "https://github.com/fstubner/netscli/releases/download/v#{version}/netscli-gui-macos-x86_64.dmg"
   end
 
