@@ -105,7 +105,10 @@ export async function executeTool(
       return {
         kind: 'mdns',
         data: await netscli.discoverMdns(
-          numberOrUndefined(tab.form.timeout_ms),
+          // `numberOrUndefined` here was the one numeric field that skipped
+          // the registry's own min/max, despite the comment on that field
+          // claiming this path already applied them.
+          boundedNumberOrUndefined(tab, 'timeout_ms'),
           serviceTypes(tab.form.service_types),
           opId,
         ),

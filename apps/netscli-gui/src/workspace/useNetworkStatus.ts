@@ -12,6 +12,10 @@ import {
 } from './demoMode';
 
 const INTERFACE_REFRESH_INTERVAL_MS = 30000;
+// Three misses is 90 seconds of no interface data -- long enough that a slow
+// first poll or a single transient failure stays silent, short enough that a
+// user staring at "Detecting..." gets told why.
+const INTERFACE_FAILURES_BEFORE_WARNING = 3;
 const NETWORK_STATS_INTERVAL_MS = 3000;
 
 function isDocumentVisible(): boolean {
@@ -47,6 +51,7 @@ export function useNetworkStatus(showToast: (toast: Omit<WorkspaceToast, 'id'>) 
   );
   const initializedTrafficInterface = useRef(false);
   const trafficInterfaceNameRef = useRef(trafficInterfaceName);
+  const interfaceFailures = useRef(0);
 
   useEffect(() => {
     trafficInterfaceNameRef.current = trafficInterfaceName;
@@ -105,9 +110,30 @@ export function useNetworkStatus(showToast: (toast: Omit<WorkspaceToast, 'id'>) 
           setInterfaces(allInterfaces);
           initializeTrafficInterface(iface, allInterfaces);
         }
+
+        // Every failure here used to be swallowed on a 30s timer, so a
+        // backend that had stopped answering showed a permanent
+        // "Detecting..." and an empty interface list in the capture form,
+        // with nothing to distinguish that from a slow first poll.
+        if (iface || allInterfaces) {
+          interfaceFailures.current = 0;
+        } else {
+          reportInterfaceFailure();
+        }
       } catch {
-        return;
+        if (!stopped) reportInterfaceFailure();
       }
+    };
+
+    // Announce once, on the way past the threshold, and stay quiet until a
+    // poll succeeds again. A toast every 30 seconds would be its own defect.
+    const reportInterfaceFailure = () => {
+      interfaceFailures.current += 1;
+      if (interfaceFailures.current !== INTERFACE_FAILURES_BEFORE_WARNING) return;
+      showToast({
+        kind: 'interaction',
+        message: 'Network interfaces are not responding. Interface-dependent tools may be unavailable.',
+      });
     };
 
     void loadInterfaceInfo();
@@ -121,6 +147,9 @@ export function useNetworkStatus(showToast: (toast: Omit<WorkspaceToast, 'id'>) 
       document.removeEventListener('visibilitychange', onVisibilityChange);
       window.clearInterval(id);
     };
+    // `showToast` is rebuilt every render, so depending on it would tear down
+    // and restart the 30s poll continuously.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [demoScreenshotMode]);
 
   useEffect(() => {

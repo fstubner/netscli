@@ -59,6 +59,22 @@ function scanResult() {
   return { kind: 'scan', data: SCAN_PORTS } as never;
 }
 
+// Backend order, deliberately not ascending: sorted by port these become
+// 22, 80, 443, 8080, 8443, so every row's build index differs from where it
+// is rendered.
+const UNSORTED_SCAN_PORTS = [8443, 22, 443, 80, 8080].map((port) => ({
+  port,
+  open: true,
+  status: 'open',
+  service: `svc-${port}`,
+  latency_ms: 1,
+  banner: '',
+}));
+
+function unsortedScanResult() {
+  return { kind: 'scan', data: UNSORTED_SCAN_PORTS } as never;
+}
+
 describe('tab selection', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -139,7 +155,7 @@ describe('tab selection', () => {
     expect(result.current.activeTabId).toBe(secondTabId);
 
     act(() => {
-      result.current.selectRowInTab(firstTabId, 3);
+      result.current.selectRowInTab(firstTabId, 'scan-port-8080-3');
     });
 
     await waitFor(() => {
@@ -153,24 +169,53 @@ describe('tab selection', () => {
     });
   });
 
-  it('clamps a jump against the target tab row count, not the active one', async () => {
+  // Was a clamp test, when this took an index. An id cannot be out of range,
+  // so what it guarded -- a stale reference must not move the selection --
+  // is now expressed as an id the tab does not hold.
+  it('leaves the selection alone for a row id the tab does not hold', async () => {
     const { result } = renderWorkspace();
     const firstTabId = result.current.activeTabId;
     act(() => {
-      result.current.patchTab(firstTabId, { result: scanResult() });
+      result.current.patchTab(firstTabId, { result: scanResult(), selectedIndex: 2, selectedIndices: [2] });
     });
     act(() => {
       result.current.addTab('arp');
     });
 
     act(() => {
-      result.current.selectRowInTab(firstTabId, 99);
+      result.current.selectRowInTab(firstTabId, 'scan-port-9999-0');
     });
 
     await waitFor(() => {
       const target = result.current.tabs.find((item) => item.id === firstTabId);
-      // 5 fixture rows, so the clamp lands on the last index.
-      expect(target?.selectedIndex).toBe(SCAN_PORTS.length - 1);
+      expect(target?.selectedIndex).toBe(2);
+    });
+  });
+
+  // The search dialog enumerates rows with `buildRows(tab.result)` -- backend
+  // order -- while the table renders `filterAndSortRows(...)`. Passing an
+  // index between the two selected whatever happened to sit at that position
+  // in the other list.
+  //
+  // The existing fixture hid this: its ports are already ascending, so build
+  // order and display order agree and any index works. These ports do not.
+  it('jumps to the row that was searched for, not the one at that position', async () => {
+    const { result } = renderWorkspace();
+    const tabId = result.current.activeTabId;
+    act(() => {
+      result.current.patchTab(tabId, { result: unsortedScanResult() });
+    });
+
+    // Port 8443 arrives first from the backend but sorts last of five.
+    act(() => {
+      result.current.selectRowInTab(tabId, 'scan-port-8443-0');
+    });
+
+    await waitFor(() => {
+      const target = result.current.tabs.find((item) => item.id === tabId);
+      // Index 4, not the 0 an index-carrying caller would have produced.
+      expect(target?.selectedIndex).toBe(4);
+      expect(result.current.rows[target?.selectedIndex ?? -1]?.data.port).toBe(8443);
     });
   });
 
@@ -178,7 +223,7 @@ describe('tab selection', () => {
     const { result } = renderWorkspace();
     expect(() => {
       act(() => {
-        result.current.selectRowInTab('no-such-tab', 3);
+        result.current.selectRowInTab('no-such-tab', 'scan-port-22-0');
       });
     }).not.toThrow();
   });

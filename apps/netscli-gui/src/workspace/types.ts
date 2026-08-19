@@ -27,7 +27,7 @@ export interface WorkspaceModel {
   patchForm: (id: string, key: string, value: string) => void;
   selectRow: (index: number, mode?: RowSelectionMode) => void;
   /** Select a row in a named tab, which need not be the active one. */
-  selectRowInTab: (tabId: string, index: number) => void;
+  selectRowInTab: (tabId: string, rowId: string) => void;
   selectAllRows: () => void;
   addTab: (kind: ToolKind) => void;
   openHostTool: (kind: 'scan' | 'inspect', host: string) => void;

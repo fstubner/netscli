@@ -184,6 +184,14 @@ function validateResultDataShape(kind: ToolKind, data: unknown) {
     if (!Array.isArray(data)) {
       throw new Error(`Result bundle data for ${kind} must be an array`);
     }
+    // "Is an array" was the whole check, so `[null]` imported cleanly and
+    // then threw inside `buildRows` during render -- past every catch, in a
+    // `useMemo`. Row builders read fields off each entry, so an entry that
+    // is not an object cannot be one of these rows.
+    const bad = data.findIndex((entry) => !entry || typeof entry !== 'object' || Array.isArray(entry));
+    if (bad !== -1) {
+      throw new Error(`Result bundle data for ${kind} has a non-object entry at index ${bad}`);
+    }
     return;
   }
 

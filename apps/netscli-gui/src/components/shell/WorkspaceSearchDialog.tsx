@@ -11,7 +11,7 @@ interface WorkspaceSearchDialogProps {
   tabs: WorkspaceTab[];
   onClose: () => void;
   onOpenHistoryEntry: (entry: HistoryEntry) => void;
-  onSelectRow: (tabId: string, rowIndex: number) => void;
+  onSelectRow: (tabId: string, rowId: string) => void;
   onSelectTab: (tabId: string) => void;
 }
 
@@ -30,7 +30,7 @@ type SearchItem =
       primary: string;
       secondary: string;
       searchText: string;
-      rowIndex: number;
+      rowId: string;
       tabId: string;
     }
   | {
@@ -71,7 +71,7 @@ export function WorkspaceSearchDialog({
     if (item.kind === 'tab') {
       onSelectTab(item.tabId);
     } else if (item.kind === 'row') {
-      onSelectRow(item.tabId, item.rowIndex);
+      onSelectRow(item.tabId, item.rowId);
     } else {
       onOpenHistoryEntry(item.entry);
     }
@@ -200,11 +200,11 @@ function tabItems(tab: WorkspaceTab): SearchItem[] {
     searchText: tabText.toLowerCase(),
     tabId: tab.id,
   };
-  const rowItems = buildRows(tab.result).map((row, rowIndex) => rowItem(tab, row, rowIndex));
+  const rowItems = buildRows(tab.result).map((row) => rowItem(tab, row));
   return [tabItem, ...rowItems];
 }
 
-function rowItem(tab: WorkspaceTab, row: ResultRow, rowIndex: number): SearchItem {
+function rowItem(tab: WorkspaceTab, row: ResultRow): SearchItem {
   const config = TOOL_CONFIG[tab.kind];
   return {
     id: `row-${tab.id}-${row.id}`,
@@ -212,7 +212,7 @@ function rowItem(tab: WorkspaceTab, row: ResultRow, rowIndex: number): SearchIte
     primary: rowTitle(row),
     secondary: `${config.label} - ${tabTitle(tab)}`,
     searchText: `${row.searchText} ${config.label} ${tab.title} ${Object.values(tab.form).join(' ')}`.toLowerCase(),
-    rowIndex,
+    rowId: row.id,
     tabId: tab.id,
   };
 }

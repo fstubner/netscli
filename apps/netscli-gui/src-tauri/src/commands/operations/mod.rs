@@ -10,12 +10,15 @@ pub(crate) use scan::{
     discover_network, inspect_host_cmd, ping_host, scan_ports, sweep_network, trace_route_cmd,
 };
 
+use std::collections::HashMap;
 use std::future::Future;
+use std::sync::Arc;
 
 use netscli_core::{Ops, OpsConfig};
 use tauri::Emitter;
+use tokio::sync::Mutex as AsyncMutex;
 
-use crate::state::OperationManager;
+use crate::state::{OperationHandle, OperationManager};
 
 pub(super) type JsonResult = Result<serde_json::Value, String>;
 
@@ -62,11 +65,38 @@ where
         });
 
         manager.register(op_id.clone(), handle, pcap_cancel).await;
-        let res = rx.await.map_err(|_| "Operation cancelled".to_string())?;
-        manager.remove(&op_id).await;
-        res
+
+        // Constructed *after* `register`, so its `Drop` can never run before
+        // the entry it removes exists. Cleanup used to sit after the `await`
+        // below, which meant a dropped invoke future -- a webview reload
+        // mid-run -- skipped it and left the entry in the map for good.
+        let _cleanup = RemoveOnDrop {
+            registry: manager.registry(),
+            op_id: op_id.clone(),
+        };
+        rx.await.map_err(|_| "Operation cancelled".to_string())?
     } else {
         job().await
+    }
+}
+
+/// Removes an operation from the manager however its future ends: returned,
+/// errored, or dropped.
+struct RemoveOnDrop {
+    registry: Arc<AsyncMutex<HashMap<String, OperationHandle>>>,
+    op_id: String,
+}
+
+impl Drop for RemoveOnDrop {
+    fn drop(&mut self) {
+        // `Drop` cannot await, so the removal is spawned. Nothing waits on
+        // the entry being gone -- op ids are unique per run, so a late
+        // removal cannot strand a later operation.
+        let registry = Arc::clone(&self.registry);
+        let op_id = std::mem::take(&mut self.op_id);
+        tauri::async_runtime::spawn(async move {
+            registry.lock().await.remove(&op_id);
+        });
     }
 }
 
