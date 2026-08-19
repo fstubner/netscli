@@ -83,9 +83,23 @@ export function renderReleaseList(
     const header = el('div', 'release-head');
     const headingGroup = el('div', 'release-title-group');
     const heading = document.createElement('h2');
-    const releaseUrl = release.html_url || `https://github.com/${repo}/releases`;
-    const link = externalLink(releaseUrl, release.name || release.tag_name || 'Release');
-    heading.appendChild(link);
+    const label = release.name || release.tag_name || 'Release';
+    if (release.unreleased) {
+      // No link. Nothing has confirmed the tag exists, and `html_url` would
+      // point at a GitHub 404 if it does not -- which is what the v0.3.0 card
+      // did while the version was bumped in the repo but never tagged.
+      heading.appendChild(document.createTextNode(label));
+      // Labelled only once GitHub has answered. Before that we do not know it
+      // is unreleased, only that we have not confirmed it is released.
+      if (release.confirmedUnreleased) {
+        const pending = el('span', 'release-unreleased');
+        pending.textContent = 'Not yet released';
+        heading.appendChild(pending);
+      }
+    } else {
+      const releaseUrl = release.html_url || `https://github.com/${repo}/releases`;
+      heading.appendChild(externalLink(releaseUrl, label));
+    }
 
     const meta = document.createElement('p');
     meta.className = 'release-meta';

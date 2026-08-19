@@ -148,6 +148,20 @@ const fallbackReleases = parseLocalChangelog(changelogText);
   align-items:start;
 }
 .release-list{display:grid;gap:18px;padding:0}
+/* Shown instead of a tag link when GitHub has no release under that tag. */
+.release-unreleased{
+  margin-left:10px;
+  padding:2px 8px;
+  border:1px solid rgba(var(--netscli-accent-rgb),.32);
+  border-radius:999px;
+  background:rgba(var(--netscli-accent-rgb),.06);
+  color:var(--netscli-accent);
+  font-size:.6875rem;
+  font-weight:600;
+  letter-spacing:.02em;
+  vertical-align:middle;
+  white-space:nowrap;
+}
 .release-timeline{
   position:sticky;
   top:calc(var(--nav-height, 72px) + 22px);
