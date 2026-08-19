@@ -12,6 +12,33 @@ further copies in `package.json` and `tauri.conf.json`. See
 
 ## [Unreleased]
 
+### Changed
+
+- **The MCP server now scans only local networks by default.** This is the
+  one surface driven by a model rather than by the person at the keyboard,
+  so the instruction to scan a third party can arrive from a web page or a
+  file someone else wrote — and the packets leave from your machine and
+  your IP. RFC1918, loopback, link-local and the carrier-grade NAT range
+  overlay networks use are allowed; set `NETSCLI_MCP_ALLOW_PUBLIC_TARGETS=1`
+  to reach past them.
+- **Scan results returned to a model are capped.** The full probe response
+  (`raw`) is no longer included and banners are truncated, both being bytes
+  chosen by the scanned host.
+- **Tool failures are returned as MCP `isError` results** rather than
+  JSON-RPC errors, so a failed scan no longer reads to a client as a broken
+  server.
+
+### Fixed
+
+- **Four ways an MCP client could wedge or kill the server**: no overall
+  request deadline, permits acquired after spawning rather than before, a
+  single invalid UTF-8 byte on stdin terminating the process, and client
+  disconnect cancelling nothing.
+- **The concurrent packet-capture limit could be bypassed** by calling the
+  blocking capture tool, which never registered a job.
+- **`discover_network` with no arguments failed on a host whose interface
+  carries a /8**, because the substituted default exceeded the /16 cap.
+
 ## [0.3.0] — 2026-08-19
 
 ### Added
