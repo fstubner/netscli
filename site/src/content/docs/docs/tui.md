@@ -30,7 +30,7 @@ Common interactive commands mirror the CLI operations:
 
 ```text
 /discover 192.168.1.0/24
-/scan 192.168.1.1 -p 22,80,443
+/scan 192.168.1.1 22,80,443
 /sweep 192.168.1.0/24 22,80,443
 /dns netscli.com
 /reverse 192.168.1.1
