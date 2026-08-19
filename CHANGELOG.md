@@ -12,6 +12,26 @@ further copies in `package.json` and `tauri.conf.json`. See
 
 ## [Unreleased]
 
+### Changed
+
+- **`netscli scan --json` now reports every port, not just the open ones.**
+  Filtering to open ports made "all closed", "all filtered" and "every
+  probe errored" the same empty array, so a script could not tell a clean
+  scan from a host that refused every probe. Each entry carries `open` and
+  `status`, so callers that want only open ports can filter for them.
+
+### Fixed
+
+- **Safety limits that only one caller was applying.** `SweepEngine::sweep`
+  validates its port list instead of trusting the caller and silently
+  returning "no open ports"; mDNS browse duration, `ping -c` and packet
+  captures given a packet count but no duration all gained the core-side
+  ceiling they were documented to have.
+- **`netscli trace` no longer prints router-supplied hostnames unsanitised.**
+  Hop names come from PTR records controlled by whoever runs those routers,
+  and this was the last plain-text output path without the terminal-safety
+  pass every other one had.
+
 ## [0.3.0] — 2026-08-19
 
 ### Added
