@@ -184,13 +184,37 @@ const groups = [
 }
 .install-hint{font-size:.7rem;color:#808080;margin:8px 0 0}
 .alt-hint{display:block;font-size:.7rem;color:#7b7b7b;margin-top:2px;line-height:1.35}
-/* Direct-download rows reuse the command-bar treatment but are links, so
-   they get no copy button and an affordance colour instead. */
+/* Direct-download rows sit in the same column as the commands, but this is
+   an action, not something to type.
+   It used to be a bare monospace link with `display:block`, so it filled the
+   whole 522px column and its hover painted that entire strip -- a 522x21px
+   tint with no padding, on text set in the same face as the code above it.
+   It read as a command and hovered like a bar. It is a button now: its own
+   box, sized to its label, in the body face. */
 a.install-download{
-  display:block;text-decoration:none;color:var(--netscli-accent);font-weight:500;
+  display:inline-flex;
+  align-items:center;
+  gap:.4em;
+  width:max-content;
+  max-width:100%;
+  font-family:inherit;
+  font-size:.8125rem;
+  font-weight:500;
+  line-height:1;
+  color:var(--netscli-accent);
+  text-decoration:none;
+  padding:8px 14px;
+  border:1px solid rgba(var(--netscli-accent-rgb),.32);
+  border-radius:7px;
+  background:rgba(var(--netscli-accent-rgb),.06);
+  transition:background 140ms ease,border-color 140ms ease,color 140ms ease;
 }
-a.install-download:hover{color:var(--netscli-accent-bright);background:rgba(var(--netscli-accent-rgb),.08)}
-.alt a.install-download{padding-right:16px}
+a.install-download:hover,
+a.install-download:focus-visible{
+  color:var(--netscli-accent-bright);
+  border-color:rgba(var(--netscli-accent-rgb),.62);
+  background:rgba(var(--netscli-accent-rgb),.14);
+}
 .footer-note{margin-top:14px;font-size:.8125rem;color:#808080}
 .footer-note a{color:var(--netscli-accent);text-decoration:underline;text-underline-offset:3px}
 .footer-note a:hover{color:var(--netscli-accent-bright)}
@@ -246,7 +270,8 @@ a.install-download:hover{color:var(--netscli-accent-bright);background:rgba(var(
     padding:12px 14px;
   }
   .alt-label{font-size:.82rem}
-  .alt-cmd{
+  /* 44px reserves room for the copy button, which only command rows have. */
+  .alt-cmd:not(.install-download){
     padding-right:44px;
     line-height:1.45;
   }
@@ -304,7 +329,7 @@ a.install-download:hover{color:var(--netscli-accent-bright);background:rgba(var(
      recommended command truncated to one line the alternates below it broke
      mid-token across four -- the Scoop line did exactly that at 375px. Same
      treatment, same reason: the copy button carries the full command. */
-  .alt-cmd{
+  .alt-cmd:not(.install-download){
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
