@@ -34,7 +34,7 @@ like "what's the IP of the device that just joined" or "is port 22 open
 on 192.168.1.42". Existing tools work but they aren't great to drive from
 an agent. Half a dozen CLI invocations, brittle output parsing, no shared
 context. So I built an MCP server first. `netscli serve`, nine tools by
-default (ten in the `-pcap` build), JSON-RPC over stdio, structured results.
+default (13 in the `-pcap` build), JSON-RPC over stdio, structured results.
 
 Then the TUI. Coding agents like Claude Code have put real work into
 autocomplete, command history, in-place progress, and mouse selection
@@ -505,7 +505,7 @@ The MCP server exposes 9 tools by default (13 in `-pcap` builds, which add `capt
 1. `discover_network` - Discover live hosts on a network subnet
 2. `scan_ports` - Scan TCP ports on a host
 3. `ping_host` - Ping a host with statistics
-4. `dns_lookup` - DNS lookup (forward or reverse)
+4. `dns_lookup` - Forward DNS lookup, all record types (reverse lookups are not exposed over MCP)
 5. `get_arp_table` - Get ARP/neighbor table with vendor information
 6. `inspect_host` - Comprehensive host inspection
 7. `sweep_network` - Sweep a network (discover hosts then scan ports)

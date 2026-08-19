@@ -3,22 +3,27 @@
 Astro site that GitHub Pages serves for this project. The deploy
 workflow lives at `.github/workflows/pages.yml`.
 
-Everything project-specific lives in `src/data/site.ts`. Fork the site
-into another repo and that's the one file you edit to retarget the
-landing at a different product — title, description, install commands,
-FAQ, surface cards, screenshots, built-with stack, version.
+Everything project-specific lives in `src/data/site-content/`. Fork the
+site into another repo and that's the one directory you edit to retarget
+the landing at a different product — title, description, install commands,
+FAQ, surface cards, screenshots, built-with stack, version. `src/data/site.ts`
+assembles those files into the single `site` export every component reads.
 
 ## Layout
 
 ```
 site/
-├── astro.config.mjs          — canonical site URL
-├── package.json              — astro dep, npm scripts
+├── astro.config.mjs          — canonical site URL, Starlight docs config
+├── package.json              — astro + starlight deps, npm scripts
 ├── tsconfig.json             — extends astro/tsconfigs/strict
+├── scripts/                  — a11y, file-size and dead-CSS checks run in CI
 ├── public/                   — static passthrough (favicon, CNAME, images…)
 ├── src/
-│   ├── data/site.ts          — all project-specific content
-│   ├── styles/global.css     — theme + layout + section styles
+│   ├── data/site-content/    — all project-specific content
+│   ├── data/site.ts          — assembles site-content into the `site` export
+│   ├── content/docs/         — Starlight docs pages (Markdown)
+│   ├── styles/               — tokens, global styles, Starlight overrides
+│   ├── scripts/              — client-side TypeScript for the landing + docs
 │   ├── layouts/Page.astro    — meta, OG, JSON-LD schema
 │   ├── components/*.astro    — Nav, Hero, Surfaces, Install, Faq, Footer
 │   └── pages/index.astro     — page composition + client script
@@ -35,7 +40,7 @@ npm run build      # static output into dist/
 npm run preview    # serve dist/
 ```
 
-Node 22+ is required. Astro 6.
+Node 22+ is required. Astro 7 with Starlight.
 
 ## How the download count works
 
@@ -46,17 +51,19 @@ the public GitHub REST API on page load:
 - `GET /repos/{owner}/{repo}/releases` → sums `download_count` across
   all release assets.
 
-The repo slug comes from `site.social.repo` in `src/data/site.ts`.
+The repo slug comes from `site.social.repo`, set in
+`src/data/site-content/footer.ts`.
 
-If the user is rate-limited (unauthenticated API calls get 60/hour per
-IP), the requests fail silently and the em-dash placeholders stay
-visible. We never show "0 downloads" — it's always either a real
-number or a dash.
+Each metric starts hidden and is only revealed once a request confirms
+it. If the user is rate-limited (unauthenticated API calls get 60/hour
+per IP), the requests fail silently and the metric stays hidden, along
+with the separator beside it. We never show "0 downloads" or a stale
+placeholder — it's a real number or nothing.
 
 ## Analytics
 
-`src/data/site.ts` → `analytics.cloudflareToken` controls the
-Cloudflare Web Analytics beacon. Set to a string token to enable, or
+`src/data/site-content/footer.ts` → `analytics.cloudflareToken` controls
+the Cloudflare Web Analytics beacon. Set to a string token to enable, or
 remove the property to disable.
 
 Cloudflare Web Analytics is free with unlimited pageviews, sets no
@@ -84,7 +91,7 @@ reason.
 The Astro scaffold was designed to be trivially retargetable:
 
 1. Copy the entire `site/` directory to the new repo.
-2. Edit `src/data/site.ts` — name, description, install commands,
+2. Edit `src/data/site-content/` — name, description, install commands,
    FAQ items, surface cards, built-with list, GitHub repo slug.
 3. Replace the images the site actually renders: `public/gui-scan.png`
    and its `.webp`, `public/assets/tui-discover.png` and its `.webp`,

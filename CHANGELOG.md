@@ -63,6 +63,18 @@ further copies in `package.json` and `tauri.conf.json`. See
 - **Linux/macOS install docs clarified.** mDNS is documented as the default
   pure-Rust capability in published builds, while packet capture remains
   the optional workflow that depends on libpcap/Npcap support.
+- **Website rebuilt for every screen width.** The landing page and docs were
+  swept across six widths and both themes, and the shell, navigation, contents
+  list, colour and typography were reworked to hold up at all of them. The
+  brand accent moved from a teal-green that read blue in small text to one that
+  reads green at any size, and contrast improved with it.
+  ([#190](https://github.com/fstubner/netscli/pull/190)–[#209](https://github.com/fstubner/netscli/pull/209))
+- **Search, head metadata and page titles rewritten** so the site describes
+  what it is rather than repeating adjectives.
+  ([#204](https://github.com/fstubner/netscli/pull/204))
+- **Per-PR site previews on Cloudflare Pages**, and GitHub Pages deploys are
+  manual-only. ([#165](https://github.com/fstubner/netscli/pull/165),
+  [#136](https://github.com/fstubner/netscli/pull/136))
 
 ### Changed (internal)
 
@@ -84,6 +96,23 @@ further copies in `package.json` and `tauri.conf.json`. See
   and license installation, Winget/Scoop/Homebrew reference manifests were
   refreshed, and packaging validation commands were added to the release
   checklist.
+- **CI gates report unconditionally**, so branch protection can require them,
+  and both required checks were closed against a job that fails without
+  failing the gate. ([#161](https://github.com/fstubner/netscli/pull/161),
+  [#187](https://github.com/fstubner/netscli/pull/187))
+- **The end-to-end suite can now fail.** Several scenarios were structurally
+  incapable of it. ([#199](https://github.com/fstubner/netscli/pull/199))
+- **The Tauri render suite is schedule-only** and no longer gates releases.
+  ([#178](https://github.com/fstubner/netscli/pull/178))
+- **A dead-CSS budget runs in CI**, holding the docs override stack at its
+  current 126 provably shadowed declarations.
+  ([#207](https://github.com/fstubner/netscli/pull/207))
+- **Node 22, jsdom 30, ESLint 10, react-hooks 7**, and three Rust dependency
+  bumps. ([#187](https://github.com/fstubner/netscli/pull/187)–[#189](https://github.com/fstubner/netscli/pull/189))
+- **Release pipeline hardened**: tag validation on the AUR jobs, a checksum
+  that could be contaminated by progress output, and the publish long tail.
+  ([#158](https://github.com/fstubner/netscli/pull/158),
+  [#200](https://github.com/fstubner/netscli/pull/200))
 
 ### Fixed
 
@@ -122,41 +151,6 @@ further copies in `package.json` and `tauri.conf.json`. See
   advertised a version that was never released.
   ([#194](https://github.com/fstubner/netscli/pull/194),
   [#208](https://github.com/fstubner/netscli/pull/208))
-
-### Changed
-
-- **Website rebuilt for every screen width.** The landing page and docs were
-  swept across six widths and both themes, and the shell, navigation, contents
-  list, colour and typography were reworked to hold up at all of them. The
-  brand accent moved from a teal-green that read blue in small text to one that
-  reads green at any size, and contrast improved with it.
-  ([#190](https://github.com/fstubner/netscli/pull/190)–[#209](https://github.com/fstubner/netscli/pull/209))
-- **Search, head metadata and page titles rewritten** so the site describes
-  what it is rather than repeating adjectives.
-  ([#204](https://github.com/fstubner/netscli/pull/204))
-- **Per-PR site previews on Cloudflare Pages**, and GitHub Pages deploys are
-  manual-only. ([#165](https://github.com/fstubner/netscli/pull/165),
-  [#136](https://github.com/fstubner/netscli/pull/136))
-
-### Changed (internal)
-
-- **CI gates report unconditionally**, so branch protection can require them,
-  and both required checks were closed against a job that fails without
-  failing the gate. ([#161](https://github.com/fstubner/netscli/pull/161),
-  [#187](https://github.com/fstubner/netscli/pull/187))
-- **The end-to-end suite can now fail.** Several scenarios were structurally
-  incapable of it. ([#199](https://github.com/fstubner/netscli/pull/199))
-- **The Tauri render suite is schedule-only** and no longer gates releases.
-  ([#178](https://github.com/fstubner/netscli/pull/178))
-- **A dead-CSS budget runs in CI**, holding the docs override stack at its
-  current 210 provably shadowed declarations.
-  ([#207](https://github.com/fstubner/netscli/pull/207))
-- **Node 22, jsdom 30, ESLint 10, react-hooks 7**, and three Rust dependency
-  bumps. ([#187](https://github.com/fstubner/netscli/pull/187)–[#189](https://github.com/fstubner/netscli/pull/189))
-- **Release pipeline hardened**: tag validation on the AUR jobs, a checksum
-  that could be contaminated by progress output, and the publish long tail.
-  ([#158](https://github.com/fstubner/netscli/pull/158),
-  [#200](https://github.com/fstubner/netscli/pull/200))
 
 ## [0.2.6] — 2026-05-06
 
