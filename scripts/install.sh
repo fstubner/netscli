@@ -178,7 +178,15 @@ install_libpcap() {
         echo "sudo not found; cannot auto-install libpcap."
         return 1
       fi
-      sudo apt-get update && sudo apt-get install -y libpcap-dev tcpdump
+      # `update` and `install` were chained with &&, so an unreachable
+      # mirror or an expired repo signature reported itself as "libpcap
+      # installation failed" on machines where the cached index would have
+      # installed it fine. Refreshing the index is best-effort; only the
+      # install decides the outcome.
+      if ! sudo apt-get update; then
+        echo "apt-get update failed; continuing with the cached package index."
+      fi
+      sudo apt-get install -y libpcap-dev tcpdump
       return $?
     fi
     if have_cmd dnf; then
@@ -323,10 +331,14 @@ case ":${PATH}:" in
     ;;
 esac
 
-echo ""
-echo "Installed successfully."
-
+# The libpcap step runs BEFORE the success message, and the message reports
+# what actually happened. It used to be the other way round: "Installed
+# successfully." printed first, then a non-fatal libpcap attempt underneath
+# it. A user who set NETSCLI_PCAP=1 because they wanted packet capture read
+# the success line and got a binary that cannot capture.
+CAPTURE_READY=1
 if is_true "$NETSCLI_PCAP"; then
+  echo ""
   if have_libpcap; then
     echo "libpcap detected — no system install needed."
   elif is_true "$NETSCLI_SKIP_LIBPCAP"; then
@@ -336,6 +348,7 @@ if is_true "$NETSCLI_PCAP"; then
     if install_libpcap; then
       echo "libpcap installation completed."
     else
+      CAPTURE_READY=0
       echo "libpcap installation failed — install it manually:"
       if [[ "$OS" == "darwin" ]]; then
         echo "  brew install libpcap tcpdump"
@@ -345,6 +358,14 @@ if is_true "$NETSCLI_PCAP"; then
       echo "Or run: netscli setup"
     fi
   fi
+fi
+
+echo ""
+if [[ "$CAPTURE_READY" -eq 1 ]]; then
+  echo "Installed successfully."
+else
+  echo "Installed ${BINARY_NAME}, but packet capture is NOT ready."
+  echo "Install libpcap as described above, then re-check with: ${BINARY_NAME} doctor"
 fi
 
 echo "Try:"
