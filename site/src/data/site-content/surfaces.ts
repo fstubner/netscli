@@ -52,7 +52,7 @@ export const surfaces: SurfaceCard[] = [
   {
     title: 'MCP server',
     body:
-      'Run <code>netscli serve</code> when an MCP client needs local network tools. Every operation the CLI has is exposed as a structured tool, so an agent gets the same discovery, scanning and DNS results you would, in a shape it can parse.',
+      'Run <code>netscli serve</code> when an MCP client needs local network tools. Discovery, scanning, ping, DNS, ARP and interfaces are all exposed as structured tools, so an agent gets the same results you would, in a shape it can parse.',
     codeHtml: `<span style="color:#888">// claude_desktop_config.json</span>
 <span style="color:#7b7b7b">{</span>
   <span style="color:#7c9fc7">"mcpServers"</span>: <span style="color:#7b7b7b">{</span>
