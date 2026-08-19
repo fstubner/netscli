@@ -1,6 +1,5 @@
 use std::sync::{Arc, Mutex};
 
-use serde::Deserialize;
 use serde_json::{json, Value};
 
 use super::errors::RpcError;
@@ -15,7 +14,7 @@ use super::schemas::{
     parse_params, DiscoverParams, DnsParams, InitializeParams, PcapParams, PingHostParams,
     ScanParams, SweepParams,
 };
-use super::tools::{mcp_tool_error_text, mcp_tool_result_text, tools_list};
+use super::tools::tools_list;
 
 #[cfg(feature = "mdns")]
 use super::operations::op_discover_mdns;
@@ -240,61 +239,10 @@ async fn dispatch_tool_inner(name: &str, params: Value) -> Result<Value, RpcErro
     }
 }
 
-async fn handle_tools_call(
-    state: &SharedState,
-    params: Value,
-) -> Result<serde_json::Value, RpcError> {
-    #[cfg(not(feature = "pcap"))]
-    let _ = state;
+mod tool_call;
+use tool_call::handle_tools_call;
 
-    #[derive(Deserialize)]
-    struct ToolCallParams {
-        name: String,
-        #[serde(default, rename = "arguments")]
-        args: serde_json::Value,
-    }
-
-    let p: ToolCallParams = parse_params(params)?;
-    let args = if p.args.is_null() {
-        Value::Object(serde_json::Map::new())
-    } else {
-        p.args
-    };
-
-    #[cfg(feature = "pcap")]
-    {
-        match p.name.as_str() {
-            "start_pcap_capture" => {
-                let mut guard = lock(state)?;
-                return Ok(mcp_tool_result_text(start_pcap_capture_job(
-                    &mut guard, args,
-                )?));
-            }
-            "get_pcap_capture_status" => {
-                let guard = lock(state)?;
-                return Ok(mcp_tool_result_text(pcap_job_status(&guard, args)?));
-            }
-            "get_pcap_capture_result" => {
-                let guard = lock(state)?;
-                return Ok(mcp_tool_result_text(pcap_job_result(&guard, args)?));
-            }
-            _ => {}
-        }
-    }
-
-    match dispatch_tool(&p.name, args).await {
-        Ok(output) => Ok(mcp_tool_result_text(output)),
-        // A tool that ran and failed is a *result*, not a protocol fault.
-        // Returning -32000 here made "host unreachable" look to the client
-        // like a broken server, and the model never saw the message it needed
-        // in order to try something else. Framing problems keep their codes.
-        Err(RpcError::ToolError(message)) => Ok(mcp_tool_error_text(&message)),
-        Err(RpcError::MethodNotFound) => {
-            Err(RpcError::InvalidParams(format!("Unknown tool: {}", p.name)))
-        }
-        Err(other) => Err(other),
-    }
-}
-
+#[cfg(test)]
+mod policy_tests;
 #[cfg(test)]
 mod tests;
