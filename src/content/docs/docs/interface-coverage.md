@@ -55,7 +55,7 @@ The MCP server exposes shared network operations to AI-agent clients. It does no
 
 Most NetsCLI operations work in the standard published builds. A few capabilities depend on how the app was packaged or what is installed on the machine:
 
-- Packet Capture appears only in builds that include packet-capture support. Capturing packets also needs Npcap on Windows or libpcap on Linux/macOS.
+- Packet capture runs only on builds that include packet-capture support, and also needs Npcap on Windows or libpcap on Linux/macOS. On the CLI the `pcap` subcommand is absent from standard builds.
 - mDNS discovery is included in the published CLI, desktop app, and MCP server. Library consumers can still build `netscli-core` without the `mdns` feature if they need a leaner dependency set.
 - The desktop app keeps Packet Capture visible even in builds without capture support, and shows setup guidance in place of results. Tools whose feature is genuinely absent from the build, such as mDNS discovery, are hidden.
 - If a runtime dependency is missing, NetsCLI keeps the rest of the app usable and explains what to install for that feature.

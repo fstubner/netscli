@@ -47,7 +47,7 @@ Supported operations include:
 - mDNS Discovery
 - Interfaces
 - ARP Table
-- Packet Capture when packet-capture support is enabled
+- Packet Capture, which is always listed but only runs on a capture-enabled build
 
 ## Filters
 
@@ -119,7 +119,7 @@ Settings control:
 
 Most desktop tools are available in the standard desktop build. Packet capture is handled explicitly:
 
-- Packet Capture appears only in builds that include packet-capture support. Capturing packets also needs Npcap on Windows or libpcap on Linux/macOS.
+- Packet Capture stays in the tool list in every build. Running a capture needs a build that includes packet-capture support, plus Npcap on Windows or libpcap on Linux/macOS. Without those, the tab opens and shows setup guidance instead of running.
 - mDNS Discovery is included in the standard published desktop build.
-- If a feature is not available in the current build, the desktop app hides that tool.
+- A tool whose feature is genuinely absent from the build is hidden. That applies to mDNS Discovery; Packet Capture is the deliberate exception, because the published installers ship without it and a hidden tab explained nothing.
 - If a required runtime library is missing, only that feature is unavailable. The rest of the desktop app keeps working and shows setup guidance for the missing dependency.
