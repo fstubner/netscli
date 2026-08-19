@@ -6,3 +6,9 @@ Allow: /
 # to ship alongside it with all 13 lastmod values frozen at 2026-07-02, and
 # this file pointed at that stale copy rather than the generated one (B-24).
 Sitemap: https://netscli.com/sitemap-index.xml
+
+# A curated map of this site for answer engines, generated from the same
+# content the pages render (src/pages/llms.txt.ts) so it cannot drift from
+# them. Not a standard robots.txt directive -- a discovery hint, since the
+# convention has no other advertised location.
+# llms.txt: https://netscli.com/llms.txt

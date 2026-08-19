@@ -12,13 +12,30 @@ export default defineConfig({
       // src/layouts/Page.astro, so the noindex that layout emits for a
       // preview build does not reach them. Inject it here too, or a
       // preview deploy leaves 11 of 14 pages crawlable.
-      head:
-        process.env.NETSCLI_PREVIEW === '1'
+      head: [
+        // Starlight emits `twitter:card: summary_large_image` on every docs
+        // page but supplies no image, so sharing a docs link produced a card
+        // that declared a large image and had none. The landing page and the
+        // changelog set theirs in Page.astro; these are the same asset.
+        { tag: 'meta', attrs: { property: 'og:image', content: 'https://netscli.com/assets/tui-discover.png' } },
+        { tag: 'meta', attrs: { name: 'twitter:image', content: 'https://netscli.com/assets/tui-discover.png' } },
+        {
+          tag: 'meta',
+          attrs: {
+            name: 'twitter:image:alt',
+            content: 'netscli terminal UI running /discover with sanitized lab hostnames, vendors, and response times',
+          },
+        },
+        ...(process.env.NETSCLI_PREVIEW === '1'
           ? [{ tag: 'meta', attrs: { name: 'robots', content: 'noindex, nofollow' } }]
-          : [],
+          : []),
+      ],
       title: 'NetsCLI docs',
+      // "network scanner", not "network scanner and diagnostics toolkit" --
+      // one name for the product, matching the title, H1 and description on
+      // the landing page.
       description:
-        'Technical documentation for NetsCLI, a Rust-based network scanner and diagnostics toolkit with a desktop app, terminal UI, CLI, MCP server, and shared core library.',
+        'Technical documentation for NetsCLI, a Rust-based network scanner with a desktop app, terminal UI, CLI, MCP server, and shared core library.',
       disable404Route: true,
       logo: {
         src: './public/assets/netscli-wordmark.png',
