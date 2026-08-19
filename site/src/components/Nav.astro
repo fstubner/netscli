@@ -54,8 +54,18 @@ const onHome = pathname === '/';
 </script>
 
 <style is:global>
-/* nav */
-nav{
+/* nav
+ *
+ * Every rule here is scoped to `nav[data-site-nav]`, the one element this
+ * component renders. They used to select the bare `nav` element, and these
+ * styles are `is:global` -- so the whole top-bar treatment landed on any
+ * other <nav> on the page. The changelog's release timeline is a <nav>, and
+ * it was picking up `position:sticky; top:0`, the translucent bar
+ * background, the green bottom border, a 12px backdrop blur and the
+ * scrolled drop shadow, which is what made a sticky sidebar look like a
+ * floating toolbar.
+ */
+nav[data-site-nav]{
   position:sticky;top:0;z-index:10;
   /* Border-box, so this is the whole bar including its border -- the docs
      header sets the same value the same way. Sizing it from the inner box
@@ -68,15 +78,15 @@ nav{
   transition:box-shadow 160ms ease,border-color 160ms ease;
 }
 
-body:not(.nav-scrolled) nav{
+body:not(.nav-scrolled) nav[data-site-nav]{
   box-shadow:none !important;
 }
 
-body:not(.nav-scrolled) nav::after{
+body:not(.nav-scrolled) nav[data-site-nav]::after{
   opacity:0 !important;
 }
 
-nav::after{
+nav[data-site-nav]::after{
   content:"";
   position:absolute;
   left:0;right:0;bottom:-22px;
@@ -86,13 +96,13 @@ nav::after{
   background:linear-gradient(180deg,rgba(0,0,0,.42),rgba(0,0,0,0));
   transition:opacity 160ms ease;
 }
-body.nav-scrolled nav{
+body.nav-scrolled nav[data-site-nav]{
   border-bottom-color:rgba(var(--netscli-accent-rgb),.12);
   box-shadow:
     0 12px 28px rgba(0,0,0,.28),
     0 1px 0 rgba(var(--netscli-accent-rgb),.08) !important;
 }
-body.nav-scrolled nav::after{
+body.nav-scrolled nav[data-site-nav]::after{
   opacity:1;
 }
 .nav-inner{

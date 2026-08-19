@@ -77,10 +77,9 @@ const fallbackReleases = parseLocalChangelog(changelogText);
         See what changed in each release, why it matters, and whether there
         are install, compatibility, or security notes before you update.
       </p>
-      <div class="changelog-actions">
-        <a class="external-link" href={`${hero.sourceUrl}/releases`}>GitHub releases</a>
-        <a href="/docs/">Docs</a>
-      </div>
+      <p class="changelog-actions">
+        <a class="external-link" href={`${hero.sourceUrl}/releases`}>All releases on GitHub</a>
+      </p>
     </header>
 
     <div class="changelog-content">
@@ -131,16 +130,20 @@ const fallbackReleases = parseLocalChangelog(changelogText);
 .changelog-hero p{
   margin:12px 0 0;color:#a3a3a3;font-size:.95rem;max-width:680px;
 }
+/* A text link, not a button. Two bordered pills sat under the intro as if
+   they were the page's primary actions; the only one worth keeping is a
+   pointer to the source of the notes, and the Docs link is already in the
+   top bar two lines above it. */
 .changelog-actions{
-  display:flex;gap:10px;flex-wrap:wrap;margin-top:22px;
+  margin:18px 0 0;
+  font-size:.875rem;
 }
 .changelog-actions a{
-  display:inline-flex;align-items:center;min-height:38px;padding:8px 13px;
-  border:1px solid rgba(255,255,255,.12);border-radius:8px;
-  color:#d7d7d7;text-decoration:none;font-size:.83rem;font-weight:600;
-  background:rgba(255,255,255,.035);
+  color:var(--netscli-accent);
+  text-decoration:underline;
+  text-underline-offset:3px;
 }
-.changelog-actions a:hover{border-color:rgba(var(--netscli-accent-rgb),.45);color:#1ec88c}
+.changelog-actions a:hover{color:var(--netscli-accent-bright)}
 .changelog-content{
   display:grid;
   grid-template-columns:minmax(0,1fr) 8.5rem;
@@ -287,11 +290,17 @@ const fallbackReleases = parseLocalChangelog(changelogText);
   line-height:1.65;
   padding:0;
 }
-.release-summary + .release-heading{
-  margin-top:18px;
-}
+/* Both margins, explicitly.
+ *
+ * Only `margin-top` was set, so the bottom fell through to the UA default
+ * for h5 -- 1.67em, which computes to 25.65px against this font-size. A
+ * heading therefore sat 18px below the previous list and 25px above its own,
+ * binding it to the section it had just ended instead of the one it
+ * introduces. More space above than below now, which is the relationship a
+ * section heading is supposed to have. */
 .release-body .release-heading{
-  color:#e5e5e5;font-size:.96rem;line-height:1.35;margin-top:18px;
+  color:#e5e5e5;font-size:.96rem;line-height:1.35;
+  margin:26px 0 9px;
 }
 .release-body .release-heading:first-child{margin-top:0}
 .release-paragraph{margin:0;max-width:none;min-width:0;overflow-wrap:anywhere}
