@@ -33,7 +33,9 @@ pub use dns::{resolve_a, resolve_aaaa};
 pub use inspect::{InspectEngine, InspectResult};
 #[cfg(feature = "mdns")]
 pub use mdns::{MdnsEngine, MdnsService, COMMON_SERVICE_TYPES};
-pub use ops::{resolve_host_ip, Ops, OpsConfig, PingSummary, MAX_CONCURRENCY};
+pub use ops::{
+    resolve_host_ip, resolve_host_ip_with_timeout, Ops, OpsConfig, PingSummary, MAX_CONCURRENCY,
+};
 pub use oui::lookup_vendor;
 pub use pcap::{
     PcapCancelToken, PcapConfig, PcapEngine, PcapPacketSummary, PcapParseResult, PcapResult,

@@ -2,15 +2,18 @@ mod dispatch;
 mod errors;
 #[cfg(feature = "pcap")]
 mod jobs;
+mod limits;
 mod operations;
 mod protocol;
 mod schemas;
+mod targets;
 mod tools;
 
 use std::sync::{Arc, Mutex};
 
 use tokio::io::{self, AsyncBufReadExt, AsyncWriteExt, BufReader, BufWriter};
 use tokio::sync::{mpsc, Semaphore};
+use tokio::task::JoinSet;
 
 use dispatch::{handle_request, ServerState};
 use protocol::{JsonRpcRequest, JsonRpcResponse};
@@ -23,6 +26,20 @@ use protocol::{JsonRpcRequest, JsonRpcResponse};
 /// limit queue rather than being rejected — ordering of *responses* is not
 /// guaranteed by JSON-RPC, but every request still gets answered.
 const MAX_CONCURRENT_REQUESTS: usize = 16;
+
+/// Longest any single request may run before it is abandoned.
+///
+/// The per-probe timeouts are bounded, but nothing bounded probes multiplied
+/// by timeout: `ping_host` with `count=256` at the 10-minute per-probe
+/// ceiling is roughly 42 hours, and it holds one of the permits above for
+/// all of it. Sixteen such calls wedged the server with no way back.
+const MAX_REQUEST_DURATION: std::time::Duration = std::time::Duration::from_secs(15 * 60);
+
+/// Longest line accepted on stdin.
+///
+/// `next_line` grows a `String` without limit, so a client that sends
+/// megabytes and no newline was an unbounded allocation.
+const MAX_REQUEST_LINE_BYTES: usize = 4 * 1024 * 1024;
 
 pub use tools::tools_list;
 
@@ -59,7 +76,9 @@ pub async fn run_server() -> anyhow::Result<()> {
 
     let stdin = io::stdin();
     let stdout = io::stdout();
-    let mut reader = BufReader::new(stdin).lines();
+    // `.take()` bounds a single line; `lines()` on its own grows without
+    // limit. The reader is rebuilt per line below so the cap applies to each.
+    let mut reader = BufReader::new(stdin);
     let state = Arc::new(Mutex::new(ServerState::default()));
     let limiter = Arc::new(Semaphore::new(MAX_CONCURRENT_REQUESTS));
 
@@ -96,10 +115,35 @@ pub async fn run_server() -> anyhow::Result<()> {
         }
     };
 
-    while let Some(line) = reader.next_line().await? {
+    // Handles are held so shutdown can abort them. Discarding them meant a
+    // client disconnect cancelled nothing: the writer below waited on every
+    // in-flight scan, which for a long capture is an hour.
+    let mut handlers: JoinSet<()> = JoinSet::new();
+
+    loop {
+        let mut line = String::new();
+        match read_bounded_line(&mut reader, &mut line).await {
+            Ok(0) => break,
+            Ok(_) => {}
+            // Invalid UTF-8 used to end the whole server through `?`,
+            // dropping every in-flight scan and answering nothing -- while
+            // malformed *JSON* was handled gracefully two lines below. One
+            // stray byte is a bad message, not a reason to exit.
+            Err(LineError::Invalid(reason)) => {
+                tracing::warn!(reason, "unreadable line on stdin");
+                send(&tx, &JsonRpcResponse::parse_error());
+                continue;
+            }
+            Err(LineError::Fatal(e)) => return Err(e.into()),
+        }
+        let line = line.trim_end().to_string();
         if line.trim().is_empty() {
             continue;
         }
+
+        // Reap finished handlers so the set does not grow for the life of
+        // the process.
+        while handlers.try_join_next().is_some() {}
 
         let request = match serde_json::from_str::<JsonRpcRequest>(&line) {
             Ok(req) => req,
@@ -123,20 +167,41 @@ pub async fn run_server() -> anyhow::Result<()> {
             continue;
         }
 
-        // Read the next line immediately instead of awaiting the handler.
-        // This is the whole point: a slow `sweep_network` no longer blocks
-        // the requests queued behind it, including its own cancellation.
+        // The permit is taken *here*, before spawning, so the semaphore
+        // bounds admission and not merely execution. Acquiring it inside the
+        // task meant a client could stack up unbounded tasks, each holding a
+        // full `params` value, faster than they completed; backpressure now
+        // reaches stdin, which is where it can actually slow the client down.
+        //
+        // Reading the next line still does not wait on the handler, so a slow
+        // `sweep_network` does not block requests queued behind it.
+        let Ok(permit) = Arc::clone(&limiter).acquire_owned().await else {
+            break;
+        };
+
         let state = Arc::clone(&state);
-        let limiter = Arc::clone(&limiter);
         let tx = tx.clone();
-        tokio::spawn(async move {
-            // `acquire_owned` on an Arc'd semaphore that is never closed
-            // only fails if the semaphore is closed, so this cannot error
-            // in practice; drop the permit-holding task if it ever does.
-            let Ok(_permit) = limiter.acquire_owned().await else {
-                return;
-            };
-            let response = handle_request(state, request).await;
+        // `Option<Option<_>>` distinguishes absent from explicit null; a
+        // notification never reaches here, so the outer layer is always Some.
+        let id = request.id.clone().flatten();
+        handlers.spawn(async move {
+            let _permit = permit;
+            // A hard ceiling on the whole call. Per-probe timeouts are
+            // bounded but their product was not, and a request that never
+            // returns holds its permit forever.
+            let response =
+                match tokio::time::timeout(MAX_REQUEST_DURATION, handle_request(state, request))
+                    .await
+                {
+                    Ok(response) => response,
+                    Err(_) => {
+                        tracing::warn!(
+                            timeout_s = MAX_REQUEST_DURATION.as_secs(),
+                            "request exceeded the maximum duration"
+                        );
+                        JsonRpcResponse::request_timeout(id, MAX_REQUEST_DURATION.as_secs())
+                    }
+                };
             match serde_json::to_string(&response) {
                 Ok(s) => {
                     let _ = tx.send(s);
@@ -146,11 +211,56 @@ pub async fn run_server() -> anyhow::Result<()> {
         });
     }
 
-    // Dropping the last sender ends the writer loop; the clones held by
-    // still-running handlers keep it alive until they finish.
+    // EOF: the client is gone, so nothing is waiting for these answers.
+    // Aborting is what makes disconnect actually cancel -- the writer used
+    // to block until the longest in-flight scan finished, which for an
+    // hour-long capture meant an hour.
+    let aborted = handlers.len();
+    handlers.shutdown().await;
     drop(tx);
     let requests_handled = writer_task.await.unwrap_or(0);
 
-    tracing::info!(requests_handled, "netscli MCP server shutting down");
+    tracing::info!(
+        requests_handled,
+        aborted,
+        "netscli MCP server shutting down"
+    );
     Ok(())
+}
+
+/// Why a line could not be read.
+enum LineError {
+    /// The bytes were not a usable line, but the transport is still fine.
+    Invalid(&'static str),
+    /// The transport itself failed.
+    Fatal(std::io::Error),
+}
+
+/// Read one line, bounded, treating undecodable bytes as a bad message
+/// rather than the end of the server.
+async fn read_bounded_line<R>(reader: &mut R, out: &mut String) -> Result<usize, LineError>
+where
+    R: tokio::io::AsyncBufRead + Unpin,
+{
+    let mut raw = Vec::new();
+    // One byte past the limit, so an over-long line is detected rather than
+    // silently truncated into something that might still parse as JSON.
+    let mut limited = tokio::io::AsyncReadExt::take(reader, MAX_REQUEST_LINE_BYTES as u64 + 1);
+    let read = limited
+        .read_until(b'\n', &mut raw)
+        .await
+        .map_err(LineError::Fatal)?;
+    if read == 0 {
+        return Ok(0);
+    }
+    if raw.len() > MAX_REQUEST_LINE_BYTES {
+        return Err(LineError::Invalid("line exceeds the maximum request size"));
+    }
+    match String::from_utf8(raw) {
+        Ok(text) => {
+            out.push_str(&text);
+            Ok(read)
+        }
+        Err(_) => Err(LineError::Invalid("line is not valid UTF-8")),
+    }
 }

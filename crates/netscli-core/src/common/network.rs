@@ -141,10 +141,29 @@ pub fn detect_default_ipv4_addr() -> Option<std::net::Ipv4Addr> {
     None
 }
 
+/// Prefix the default narrows to when the interface's own is wider than the
+/// safety cap. A /24 is the range a person means by "my network".
+const NARROWED_DEFAULT_PREFIX: u8 = 24;
+
 pub fn default_ipv4_subnet_string() -> String {
-    detect_default_ipv4_subnet()
-        .map(|n| format!("{}/{}", n.network(), n.prefix_len()))
-        .unwrap_or_else(|| DEFAULT_SUBNET.to_string())
+    let Some(net) = detect_default_ipv4_subnet() else {
+        return DEFAULT_SUBNET.to_string();
+    };
+
+    // An interface legitimately carrying a /8 -- a 10.0.0.0/8 corporate
+    // network, or Docker -- produced a default that the /16 cap then
+    // refused, so the *no-arguments* call failed with "subnet too large".
+    // That is the first call anything makes. Narrow to the /24 around this
+    // host instead of handing back a range that cannot be scanned.
+    if net.prefix_len() >= 16 {
+        return format!("{}/{}", net.network(), net.prefix_len());
+    }
+    match detect_default_ipv4_addr()
+        .and_then(|addr| Ipv4Net::new(addr, NARROWED_DEFAULT_PREFIX).ok())
+    {
+        Some(narrowed) => format!("{}/{}", narrowed.network(), narrowed.prefix_len()),
+        None => DEFAULT_SUBNET.to_string(),
+    }
 }
 
 #[cfg(test)]

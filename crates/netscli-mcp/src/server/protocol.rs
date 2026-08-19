@@ -48,6 +48,25 @@ impl JsonRpcResponse {
             id: Some(serde_json::Value::Null),
         }
     }
+
+    /// A request that hit the server's overall time ceiling.
+    ///
+    /// Carries the original id: the client is still waiting on that id, and
+    /// answering it is the difference between a slow tool and a server that
+    /// silently never replies.
+    pub(super) fn request_timeout(id: Option<serde_json::Value>, seconds: u64) -> Self {
+        Self {
+            jsonrpc: "2.0".to_string(),
+            result: None,
+            error: Some(JsonRpcError {
+                // -32000 is the server-defined range; this is a server
+                // condition rather than a malformed request.
+                code: -32000,
+                message: format!("request exceeded the maximum duration of {seconds}s"),
+            }),
+            id,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]

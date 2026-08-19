@@ -61,6 +61,36 @@ For Claude Desktop / Code, with the `netscli` binary installed:
 }
 ```
 
+## Which hosts it will scan
+
+By default this server only scans the local networks: RFC1918 ranges,
+loopback, link-local, and the carrier-grade NAT range that overlay networks
+like Tailscale use. A request aimed anywhere else is refused.
+
+The reason is that this surface is driven by a model rather than by the
+person at the keyboard, and a model may be reading a web page, an issue
+comment, or a file someone else wrote. The size limits bound how much can be
+scanned in one call; they say nothing about whose network it is, and the
+packets leave from your machine and your IP.
+
+To scan public hosts — your own servers, for instance — start the server
+with the opt-in:
+
+```json
+{
+  "mcpServers": {
+    "netscli": {
+      "command": "netscli",
+      "args": ["serve"],
+      "env": { "NETSCLI_MCP_ALLOW_PUBLIC_TARGETS": "1" }
+    }
+  }
+}
+```
+
+This is a policy, not a sandbox. It stops a model being talked into scanning
+a stranger; it does not constrain whoever starts the server.
+
 ## License
 
 MIT

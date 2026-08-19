@@ -3,6 +3,7 @@ use super::schemas::{
     clamp_concurrency, clamp_timeout_ms, normalize_ports, validate_subnet, DiscoverParams,
     DnsParams, PcapParams, PingHostParams, ScanParams, SweepParams,
 };
+use super::targets::ensure_host_allowed;
 
 // NOTE: Hostname/IP resolution is shared in netscli-core (`netscli_core::resolve_host_ip`).
 
@@ -37,6 +38,7 @@ pub(super) async fn op_scan_ports(
         scan_timeout_ms: timeout_ms,
         ..Default::default()
     };
+    ensure_host_allowed(&p.host, netscli_core::DEFAULT_DNS_TIMEOUT_MS).await?;
     let ops = netscli_core::Ops::new(cfg);
     let (_ip, res) = ops
         .scan_ports(&p.host, ports)
@@ -58,6 +60,7 @@ pub(super) async fn op_inspect_host(
         dns_timeout_ms: timeout_ms,
     };
     let ops = netscli_core::Ops::new(cfg);
+    ensure_host_allowed(&p.host, netscli_core::DEFAULT_DNS_TIMEOUT_MS).await?;
     ops.inspect_host(p.host, ports)
         .await
         .map_err(|e| RpcError::ToolError(e.to_string()))
@@ -88,7 +91,10 @@ pub(super) async fn op_ping_host(p: PingHostParams) -> Result<netscli_core::Ping
     if p.host.trim().is_empty() {
         return Err(RpcError::InvalidParams("host is required".to_string()));
     }
-    let _ = p.max_concurrent; // retained for forward-compat with older clients
+    // Accepted from older clients but genuinely unused: the ping loop is
+    // sequential. It is no longer advertised in the tool schema, which was
+    // telling callers about a knob that did nothing.
+    let _ = p.max_concurrent;
     let count = p.count.unwrap_or(1).clamp(1, 256);
     let timeout_ms = clamp_timeout_ms(p.timeout, netscli_core::DEFAULT_PING_TIMEOUT_MS);
 
@@ -99,6 +105,7 @@ pub(super) async fn op_ping_host(p: PingHostParams) -> Result<netscli_core::Ping
         dns_timeout_ms: timeout_ms,
         ..Default::default()
     };
+    ensure_host_allowed(&p.host, timeout_ms).await?;
     let ops = netscli_core::Ops::new(cfg);
     ops.ping_host_summary(&p.host, count)
         .await
@@ -156,12 +163,26 @@ impl PcapCaptureRequest {
     }
 }
 
+/// Longest a *blocking* `capture_pcap` call may run.
+///
+/// Core allows an hour, which is right for a capture written to a file and
+/// collected later -- that is what `start_pcap_capture` is for. A synchronous
+/// tool call is a different shape: it occupies a request slot for its whole
+/// duration, and no client is usefully blocked for an hour.
+#[cfg(feature = "pcap")]
+const MAX_INTERACTIVE_CAPTURE_SECONDS: u64 = 120;
+
 #[cfg(feature = "pcap")]
 pub(super) fn validate_pcap_capture_params(p: PcapParams) -> Result<PcapCaptureRequest, RpcError> {
     if p.interface.trim().is_empty() {
         return Err(RpcError::InvalidParams("interface is required".to_string()));
     }
-    let duration = p.duration;
+    // Clamped here as well as in core: an interactive tool call holding a
+    // request permit for an hour is a different problem from a capture file
+    // being too long, and the job API exists for the long case.
+    let duration = p
+        .duration
+        .map(|seconds| seconds.min(MAX_INTERACTIVE_CAPTURE_SECONDS));
     let max_packets = match p.max_packets {
         Some(0) => {
             return Err(RpcError::InvalidParams(
@@ -189,10 +210,34 @@ pub(super) fn validate_pcap_capture_params(p: PcapParams) -> Result<PcapCaptureR
     })
 }
 
+/// Concurrent captures, counted across both capture tools.
+///
+/// `MAX_RUNNING_PCAP_JOBS` only ever counted entries in the job map, which
+/// `start_pcap_capture` populates and the blocking `capture_pcap` does not --
+/// so the cap was bypassed by calling the other tool. The resource being
+/// protected is the machine's capture capacity, which is a property of the
+/// process rather than of one map, so the limit lives here where both paths
+/// must pass through it.
+#[cfg(feature = "pcap")]
+static PCAP_CAPTURE_SLOTS: tokio::sync::Semaphore =
+    tokio::sync::Semaphore::const_new(MAX_CONCURRENT_PCAP_CAPTURES);
+
+#[cfg(feature = "pcap")]
+pub(super) const MAX_CONCURRENT_PCAP_CAPTURES: usize = 4;
+
 #[cfg(feature = "pcap")]
 pub(super) async fn run_pcap_capture(
     request: PcapCaptureRequest,
 ) -> Result<netscli_core::PcapResult, RpcError> {
+    // `try_acquire`, not `acquire`: waiting would hold one of the server's
+    // request permits for however long the running captures take, which is
+    // the wedge this limit exists to prevent. Refusing immediately tells the
+    // client something actionable instead.
+    let _slot = PCAP_CAPTURE_SLOTS.try_acquire().map_err(|_| {
+        RpcError::ToolError(format!(
+            "too many packet captures are already running (max {MAX_CONCURRENT_PCAP_CAPTURES})"
+        ))
+    })?;
     let ops = netscli_core::Ops::default();
     ops.capture_pcap_async(
         request.interface,

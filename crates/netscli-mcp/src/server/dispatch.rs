@@ -15,7 +15,7 @@ use super::schemas::{
     parse_params, DiscoverParams, DnsParams, InitializeParams, PcapParams, PingHostParams,
     ScanParams, SweepParams,
 };
-use super::tools::{mcp_tool_result_text, tools_list};
+use super::tools::{mcp_tool_error_text, mcp_tool_result_text, tools_list};
 
 #[cfg(feature = "mdns")]
 use super::operations::op_discover_mdns;
@@ -119,7 +119,14 @@ async fn handle_request_inner(
         return Err(RpcError::NotInitialized);
     }
 
-    let params = req.params.clone().unwrap_or(Value::Null);
+    // Absent params become an empty object, not null. `tools/call` already
+    // did this for its `arguments`, so `{"method":"discover_network","id":1}`
+    // failed with -32602 while the identical call through `tools/call`
+    // succeeded -- every field on these param structs is optional.
+    let params = match req.params.clone() {
+        None | Some(Value::Null) => Value::Object(serde_json::Map::new()),
+        Some(value) => value,
+    };
 
     match req.method.as_str() {
         // MCP lifecycle
@@ -174,6 +181,15 @@ async fn handle_request_inner(
 /// shape it (legacy methods return it as-is; `tools/call` wraps it via
 /// `mcp_tool_result_text`).
 async fn dispatch_tool(name: &str, params: Value) -> Result<Value, RpcError> {
+    let mut result = dispatch_tool_inner(name, params).await?;
+    // One choke point for both callers. Applying this per-arm would mean
+    // every tool added later had to remember, and the tool most likely to
+    // carry remote bytes is whichever one is written next.
+    super::limits::cap_remote_text(&mut result);
+    Ok(super::limits::cap_result_size(result))
+}
+
+async fn dispatch_tool_inner(name: &str, params: Value) -> Result<Value, RpcError> {
     match name {
         "discover_network" => {
             let p: DiscoverParams = parse_params(params)?;
@@ -266,12 +282,18 @@ async fn handle_tools_call(
         }
     }
 
-    let output = dispatch_tool(&p.name, args).await.map_err(|e| match e {
-        RpcError::MethodNotFound => RpcError::InvalidParams(format!("Unknown tool: {}", p.name)),
-        other => other,
-    })?;
-
-    Ok(mcp_tool_result_text(output))
+    match dispatch_tool(&p.name, args).await {
+        Ok(output) => Ok(mcp_tool_result_text(output)),
+        // A tool that ran and failed is a *result*, not a protocol fault.
+        // Returning -32000 here made "host unreachable" look to the client
+        // like a broken server, and the model never saw the message it needed
+        // in order to try something else. Framing problems keep their codes.
+        Err(RpcError::ToolError(message)) => Ok(mcp_tool_error_text(&message)),
+        Err(RpcError::MethodNotFound) => {
+            Err(RpcError::InvalidParams(format!("Unknown tool: {}", p.name)))
+        }
+        Err(other) => Err(other),
+    }
 }
 
 #[cfg(test)]
