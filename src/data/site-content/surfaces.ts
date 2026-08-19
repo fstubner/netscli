@@ -17,7 +17,7 @@ export const surfaces: SurfaceCard[] = [
       alt:
         'NetsCLI Desktop dark theme scan view showing sanitized demo port results, row details, command preview, and status bar',
       width: 1377,
-      height: 862,
+      height: 740,
     },
   },
   {
