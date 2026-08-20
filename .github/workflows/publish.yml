@@ -87,24 +87,30 @@ jobs:
       - name: Install libpcap (workspace builds need pkg-config + libpcap headers)
         run: sudo apt-get update && sudo apt-get install -y libpcap-dev pkg-config
 
-      - name: cargo publish (netscli-core)
-        run: cargo publish -p netscli-core --token "$CARGO_TOKEN"
-        env:
-          CARGO_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-
-      - name: Wait for crates.io index (netscli-core)
-        run: sleep 90
-
-      - name: cargo publish (netscli-mcp)
-        run: cargo publish -p netscli-mcp --token "$CARGO_TOKEN"
-        env:
-          CARGO_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-
-      - name: Wait for crates.io index (netscli-mcp)
-        run: sleep 90
-
-      - name: cargo publish (netscli)
-        run: cargo publish -p netscli --token "$CARGO_TOKEN"
+      # Verify all three before uploading any of them.
+      #
+      # This used to be three sequential `cargo publish` calls with two
+      # hardcoded `sleep 90` index waits between them. The failure that shape
+      # invites is the expensive one: netscli-core uploads, netscli-mcp or
+      # netscli then fails to package, and 0.3.0 of the core crate is public
+      # and permanent -- crates.io has no unpublish -- while the CLI never
+      # ships. The only way out is burning the next patch number across all
+      # three.
+      #
+      # Publishing the set in one command removes that. Cargo resolves the
+      # not-yet-published inter-crate dependencies from the workspace,
+      # packages every member, builds each packaged copy to verify it
+      # compiles standing alone, and only then uploads -- in dependency
+      # order, waiting on the index itself rather than on a guessed sleep.
+      # Anything wrong with packaging or compilation is caught while nothing
+      # has been uploaded.
+      #
+      # What this does NOT make atomic: an upload failing partway through
+      # after an earlier one succeeded. crates.io has no transaction across
+      # crates, so that window cannot be closed from here -- it is just far
+      # narrower than "the CLI does not package".
+      - name: cargo publish (all three crates)
+        run: cargo publish -p netscli-core -p netscli-mcp -p netscli --token "$CARGO_TOKEN"
         env:
           CARGO_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
