@@ -2,7 +2,7 @@ import { buildRows, filterAndSortRows } from '../tools/presentation';
 import type { ResultRow, RowSelectionMode, WorkspaceTab } from '../tools/types';
 import type { DefaultInterfaceInfo } from '../types/netscli';
 import { enrichInterfaceRows } from './interfaceRows';
-import { clampIndex, normalizeSelection, rangeBetween } from './selection';
+import { clampIndex, indexOfRowId, normalizeSelection, rangeBetween } from './selection';
 
 /**
  * Row-selection commands for the workspace.
@@ -18,6 +18,7 @@ export function useSelection({
   filterText,
   patchTab,
   rows,
+  setFilterText,
   tabs,
   trafficInterfaceName,
 }: {
@@ -25,6 +26,7 @@ export function useSelection({
   defaultInterface: DefaultInterfaceInfo | null;
   filterText: string;
   patchTab: (id: string, patch: Partial<WorkspaceTab>) => void;
+  setFilterText: (value: string) => void;
   rows: ResultRow[];
   tabs: WorkspaceTab[];
   trafficInterfaceName: string | null;
@@ -88,18 +90,34 @@ export function useSelection({
    *
    * Addressing the tab by id removes the ordering dependency: rows for the
    * destination tab are derived here rather than read from the active-tab
-   * memo, so the index is clamped against the right list.
+   * memo, so the position is resolved against the right list.
+   *
+   * Takes a row *id* rather than an index for the same class of reason. The
+   * caller enumerates rows in backend order; this list is sorted and
+   * filtered, so an index meant one row to the search dialog and a different
+   * one to the table.
    */
-  function selectRowInTab(tabId: string, index: number) {
+  function selectRowInTab(tabId: string, rowId: string) {
     const tab = tabs.find((item) => item.id === tabId);
     if (!tab) return;
-    const tabRows = filterAndSortRows(
-      enrichInterfaceRows(buildRows(tab.result ?? null), defaultInterface?.name, trafficInterfaceName),
-      tab,
-      filterText,
+    const tabRows = enrichInterfaceRows(
+      buildRows(tab.result ?? null),
+      defaultInterface?.name,
+      trafficInterfaceName,
     );
-    if (tabRows.length === 0) return;
-    const nextIndex = clampIndex(index, tabRows.length);
+    let visible = filterAndSortRows(tabRows, tab, filterText);
+    let nextIndex = indexOfRowId(visible, rowId);
+
+    // The row exists but the active filter hides it. Clearing the filter is
+    // the only outcome that honours the request: leaving it selects nothing
+    // and says nothing, which reads as a dead control.
+    if (nextIndex === -1 && filterText) {
+      setFilterText('');
+      visible = filterAndSortRows(tabRows, tab, '');
+      nextIndex = indexOfRowId(visible, rowId);
+    }
+    if (nextIndex === -1) return;
+
     patchTab(tabId, {
       selectedIndex: nextIndex,
       selectedIndices: [nextIndex],

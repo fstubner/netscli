@@ -8,15 +8,19 @@ const transitionExceptions = new Map([
   [
     'apps/netscli-gui/src/tools/presentation.test.ts',
     {
-      maxLines: 520,
-      reason: 'broad presentation-helper fixture coverage; split by helper family next',
+      maxLines: 500,
+      reason:
+        'broad presentation-helper fixture coverage. The value/CSV helpers split out to ' +
+        'presentation.values.test.ts; row and column building are the next families out.',
     },
   ],
   [
     'apps/netscli-gui/src/styles/results.css',
     {
-      maxLines: 460,
-      reason: 'dense result/table/detail styling; split by table/detail/selection next',
+      maxLines: 435,
+      reason:
+        'dense result/table/detail styling. The error-boundary block split out to ' +
+        'error-boundary.css; table/detail/selection are the next split.',
     },
   ],
   [

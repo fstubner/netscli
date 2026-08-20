@@ -1,13 +1,13 @@
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use netscli_core::PcapCancelToken;
 use tokio::sync::Mutex as AsyncMutex;
 
 #[derive(Default)]
 pub(crate) struct OperationManager {
-    tasks: AsyncMutex<HashMap<String, OperationHandle>>,
+    tasks: Arc<AsyncMutex<HashMap<String, OperationHandle>>>,
 }
 
 #[derive(Default)]
@@ -15,7 +15,7 @@ pub(crate) struct ArtifactRegistry {
     paths: Mutex<HashSet<PathBuf>>,
 }
 
-struct OperationHandle {
+pub(crate) struct OperationHandle {
     task: tauri::async_runtime::JoinHandle<()>,
     pcap_cancel: Option<PcapCancelToken>,
 }
@@ -38,9 +38,16 @@ impl OperationManager {
         }
     }
 
-    pub(crate) async fn remove(&self, op_id: &str) {
-        let mut tasks = self.tasks.lock().await;
-        tasks.remove(op_id);
+    /// An owned handle to the task map, for cleanup that has to outlive the
+    /// borrow of this state.
+    ///
+    /// `run_json_operation` holds a `tauri::State`, which cannot be moved
+    /// into a `Drop` impl. Without one, an operation whose invoke future was
+    /// dropped -- a webview reload mid-run -- never reached the `remove`
+    /// after its `await`, so its entry stayed in the map for the life of the
+    /// process.
+    pub(crate) fn registry(&self) -> Arc<AsyncMutex<HashMap<String, OperationHandle>>> {
+        Arc::clone(&self.tasks)
     }
 
     pub(crate) async fn cancel(&self, op_id: &str) -> bool {

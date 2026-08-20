@@ -80,6 +80,7 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
     filterText,
     patchTab,
     rows,
+    setFilterText,
     tabs,
     trafficInterfaceName,
   });
