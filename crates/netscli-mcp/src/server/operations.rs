@@ -12,9 +12,7 @@ mod pcap;
 #[cfg(not(feature = "pcap"))]
 pub(in crate::server) use pcap::op_capture_pcap;
 #[cfg(feature = "pcap")]
-pub(in crate::server) use pcap::{
-    op_capture_pcap, run_pcap_capture, validate_pcap_capture_params,
-};
+pub(in crate::server) use pcap::{op_capture_pcap, run_pcap_capture, validate_pcap_capture_params};
 
 /// Settle the subnet before anything is checked or scanned.
 ///
