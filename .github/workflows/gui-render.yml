@@ -9,12 +9,23 @@ name: GUI Render
 # wry writes that file into Tauri's own WebView2 profile instead, so the
 # driver looked in a directory that never had it.
 #
-# The previous note here blamed WebView2 150+ ignoring
-# WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS on an elevated host and concluded no
-# fix was possible on our side. That was measured and found wrong: the app
-# does honour the variable and does open the port. The elevation caveat may
-# still apply to a hosted runner, which is exactly what a dispatch of this
-# workflow now tells us.
+# That fix is proven on an ordinary non-elevated Windows machine, where the
+# suite now attaches and drives the app through real scenarios.
+#
+# It does NOT make this workflow pass, and the reason is the other half of
+# the original note, which was right: on a hosted runner the app never opens
+# the debug port at all. A dispatch on 2026-08-20 failed with "Timed out
+# waiting for port" after a clean build, with WebView2 and Edge both at
+# 151.0.4129.72, so this is not the version mismatch it can look like.
+#
+# So there were two problems stacked on each other. The port-file location
+# is fixed. WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS being ignored -- which
+# Microsoft documents as intended on an elevated host, and hosted Windows
+# runners are elevated -- is not, and cannot be from our side.
+#
+# The step below now reports elevation, so the next run measures that rather
+# than inferring it. Until it changes, the value of this suite is local and
+# on any non-elevated Windows host, where it does run.
 #
 # Run per-PR it cost ~13 minutes on every PR touching the GUI or core — nine
 # of the last ten runs failed, all at the same step, for that same reason.
@@ -108,6 +119,14 @@ jobs:
           } else { Write-Host "msedge.exe      : NOT FOUND" }
 
           Write-Host "session type    : $([Environment]::UserInteractive)"
+          # Elevation is the documented reason WebView2 ignores
+          # WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS, and it is the remaining
+          # blocker here -- so measure it rather than assume it.
+          $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+          $principal = New-Object Security.Principal.WindowsPrincipal($identity)
+          $elevated = $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+          Write-Host "user            : $($identity.Name)"
+          Write-Host "elevated        : $elevated"
 
       - name: Run Tauri render test
         run: npm run test:tauri-render
