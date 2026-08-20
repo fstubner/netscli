@@ -27,9 +27,22 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Both jobs below set `timeout-minutes`; GitHub's default is 360. A stalled
+  # `apt-get` once held CI jobs at that default for six hours (see ci.yml),
+  # and these run the same system-dependency installs.
+  #
+  # A timeout here is safe to recover from: the job uploads assets to an
+  # existing release, so a missed asset is re-uploaded by re-running the job.
+  # Downstream, publish.yml's `wait_for_asset` fails with a clear message
+  # rather than publishing a manifest for something that is not there.
+  #
+  # Sized against measured runs: the slowest observed job is the Windows GUI
+  # installer at ~7 minutes, so 60 leaves ample room for a cold cache,
+  # cross-compilation and bundling while still bounding a genuine hang.
   release:
     name: Build and Release
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     permissions:
       contents: write
       # id-token: write is required for sigstore keyless signing. Cosign
@@ -233,6 +246,7 @@ jobs:
   gui:
     name: Build GUI installer
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     permissions:
       contents: write
       id-token: write
