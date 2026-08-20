@@ -335,6 +335,47 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+  # Prove the crates still package, long before release day.
+  #
+  # `cargo publish` is the one step of a release that cannot be undone:
+  # crates.io has no unpublish, only yank, and a yanked version still holds
+  # its number forever. Until now nothing exercised packaging until the
+  # release was already public and the upload was running.
+  #
+  # Dry-running all three together is what makes this possible at all. The
+  # dependent crates require `netscli-core = "^0.3.0"`, which does not exist
+  # on the index before release, so packaging them individually fails on
+  # resolution -- with or without `--no-verify`. Passing the whole set lets
+  # cargo resolve them from the workspace instead, and it builds each
+  # packaged copy to confirm it compiles standing alone.
+  #
+  # Push and dispatch only, not pull_request. It compiles the packaged copy
+  # of the workspace from scratch, which is minutes, and a packaging break
+  # caught at merge is still caught a long way from a release.
+  publish-dry-run:
+    name: Crate packaging (publish dry run)
+    needs: [changes, lint]
+    if: needs.changes.outputs.code == 'true' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpcap-dev pkg-config
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.96.0"
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          shared-key: publish-dry-run
+      # Mirrors the real publish in publish.yml exactly, minus the upload.
+      # If these two ever diverge, this check stops meaning anything.
+      - name: cargo publish --dry-run (all three crates)
+        run: cargo publish --dry-run -p netscli-core -p netscli-mcp -p netscli
+
   # ─── Required status check ────────────────────────────────────────────
   #
   # This is the ONLY job from this workflow that should be marked required
@@ -357,6 +398,7 @@ jobs:
       - test
       - gui-build
       - release-build
+      - publish-dry-run
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
