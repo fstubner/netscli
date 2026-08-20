@@ -28,6 +28,11 @@ pub(super) fn parse_params<T: DeserializeOwned>(val: Value) -> Result<T, RpcErro
     serde_json::from_value(val).map_err(|e| RpcError::InvalidParams(e.to_string()))
 }
 
+/// Check a client-supplied subnet for both size and scope.
+///
+/// The two live together so a caller cannot apply one and forget the other.
+/// Size alone was never sufficient: a /16 of someone else's address space is
+/// still a /16.
 pub(super) fn validate_subnet(subnet: &str) -> Result<(), RpcError> {
     let net: Ipv4Net = subnet
         .parse()
@@ -41,7 +46,7 @@ pub(super) fn validate_subnet(subnet: &str) -> Result<(), RpcError> {
             "subnet too large: {subnet} (max /16)"
         )));
     }
-    Ok(())
+    super::targets::ensure_subnet_allowed(&net, subnet)
 }
 
 /// Normalize an MCP-supplied port list into what `Ops` expects.

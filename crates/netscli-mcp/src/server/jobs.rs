@@ -179,7 +179,14 @@ pub(super) fn start_pcap_capture_job(
         )));
     }
     let job_id = state.allocate_pcap_job_id();
-    request.ensure_default_output_file(format!("netscli-{job_id}.pcap"));
+    // Timestamped, because the job counter restarts at 1 with the process
+    // and libpcap's savefile truncates: two runs of the server both wrote
+    // `netscli-pcap-1.pcap`, and the second silently replaced the first.
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    request.ensure_default_output_file(format!("netscli-{job_id}-{stamp}.pcap"));
     let job = Arc::new(Mutex::new(PcapCaptureJob::new()));
     state.pcap_jobs.insert(job_id.clone(), job.clone());
 

@@ -8,11 +8,20 @@ pub fn tools_list() -> serde_json::Value {
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "subnet": { "type": "string", "default": "192.168.1.0/24" },
+                    "subnet": {
+                        "type": "string",
+                        "default": "192.168.1.0/24",
+                        "description": "IPv4 CIDR, at most a /16. Defaults to the local subnet."
+                    },
                     "resolveHostnames": { "type": "boolean", "default": false },
-                    "timeout": { "type": "number", "default": 1000 },
-                    "maxConcurrent": { "type": "number", "default": 256 }
+                    "timeout": { "type": "number", "default": 1000, "minimum": 10, "maximum": 600000 },
+                    "maxConcurrent": { "type": "number", "default": 256, "minimum": 1, "maximum": 1024 }
                 }
+            },
+            "annotations": {
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "openWorldHint": true
             }
         }),
         json!({
@@ -22,11 +31,20 @@ pub fn tools_list() -> serde_json::Value {
                 "type": "object",
                 "properties": {
                     "host": { "type": "string" },
-                    "ports": { "type": "array", "items": { "type": "number" } },
-                    "timeout": { "type": "number", "default": 500 },
-                    "maxConcurrent": { "type": "number", "default": 256 }
+                    "ports": {
+                        "type": "array",
+                        "items": { "type": "number", "minimum": 1, "maximum": 65535 },
+                        "maxItems": 4096
+                    },
+                    "timeout": { "type": "number", "default": 500, "minimum": 10, "maximum": 600000 },
+                    "maxConcurrent": { "type": "number", "default": 256, "minimum": 1, "maximum": 1024 }
                 },
                 "required": ["host"]
+            },
+            "annotations": {
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "openWorldHint": true
             }
         }),
         json!({
@@ -37,10 +55,14 @@ pub fn tools_list() -> serde_json::Value {
                 "properties": {
                     "host": { "type": "string" },
                     "count": { "type": "number", "default": 1, "minimum": 1, "maximum": 256 },
-                    "timeout": { "type": "number", "default": 1000 },
-                    "maxConcurrent": { "type": "number", "default": 64 }
+                    "timeout": { "type": "number", "default": 1000, "minimum": 10, "maximum": 600000 }
                 },
                 "required": ["host"]
+            },
+            "annotations": {
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "openWorldHint": true
             }
         }),
         json!({
@@ -57,6 +79,11 @@ pub fn tools_list() -> serde_json::Value {
                     }
                 },
                 "required": ["host"]
+            },
+            "annotations": {
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "openWorldHint": true
             }
         }),
         json!({
@@ -65,6 +92,11 @@ pub fn tools_list() -> serde_json::Value {
             "inputSchema": {
                 "type": "object",
                 "properties": {}
+            },
+            "annotations": {
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "openWorldHint": false
             }
         }),
         json!({
@@ -74,9 +106,20 @@ pub fn tools_list() -> serde_json::Value {
                 "type": "object",
                 "properties": {
                     "host": { "type": "string" },
-                    "ports": { "type": "array", "items": { "type": "number" } }
+                    "ports": {
+                        "type": "array",
+                        "items": { "type": "number", "minimum": 1, "maximum": 65535 },
+                        "maxItems": 4096
+                    },
+                    "timeout": { "type": "number", "default": 500, "minimum": 10, "maximum": 600000 },
+                    "maxConcurrent": { "type": "number", "default": 256, "minimum": 1, "maximum": 1024 }
                 },
                 "required": ["host"]
+            },
+            "annotations": {
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "openWorldHint": true
             }
         }),
         json!({
@@ -91,6 +134,11 @@ pub fn tools_list() -> serde_json::Value {
                     "timeout": { "type": "number", "default": 500 },
                     "maxConcurrent": { "type": "number", "default": 256 }
                 }
+            },
+            "annotations": {
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "openWorldHint": true
             }
         }),
         json!({
@@ -99,6 +147,11 @@ pub fn tools_list() -> serde_json::Value {
             "inputSchema": {
                 "type": "object",
                 "properties": {}
+            },
+            "annotations": {
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "openWorldHint": false
             }
         }),
     ];
@@ -114,11 +167,16 @@ pub fn tools_list() -> serde_json::Value {
                 "properties": {
                     "interface": { "type": "string" },
                     "filter": { "type": "string" },
-                    "duration": { "type": "number", "default": 10 },
+                    "duration": { "type": "number", "default": 10, "minimum": 1, "maximum": 120 },
                     "outputFile": { "type": "string", "default": "capture.pcap" },
                     "maxPackets": { "type": "number" }
                 },
                 "required": ["interface"]
+            },
+            "annotations": {
+                "readOnlyHint": false,
+                "destructiveHint": false,
+                "openWorldHint": true
             }
         }));
         tools.push(json!({
@@ -134,6 +192,11 @@ pub fn tools_list() -> serde_json::Value {
                     "maxPackets": { "type": "number" }
                 },
                 "required": ["interface"]
+            },
+            "annotations": {
+                "readOnlyHint": false,
+                "destructiveHint": false,
+                "openWorldHint": true
             }
         }));
         tools.push(json!({
@@ -145,6 +208,11 @@ pub fn tools_list() -> serde_json::Value {
                     "jobId": { "type": "string" }
                 },
                 "required": ["jobId"]
+            },
+            "annotations": {
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "openWorldHint": false
             }
         }));
         tools.push(json!({
@@ -156,6 +224,11 @@ pub fn tools_list() -> serde_json::Value {
                     "jobId": { "type": "string" }
                 },
                 "required": ["jobId"]
+            },
+            "annotations": {
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "openWorldHint": false
             }
         }));
         tools
@@ -181,6 +254,11 @@ pub fn tools_list() -> serde_json::Value {
                         "description": "Explicit service types to browse (e.g. [\"_http._tcp.local.\", \"_airplay._tcp.local.\"]). Omit to use a curated default set."
                     }
                 }
+            },
+            "annotations": {
+                "readOnlyHint": true,
+                "destructiveHint": false,
+                "openWorldHint": true
             }
         }));
         tools
@@ -197,5 +275,17 @@ pub(super) fn mcp_tool_result_text(val: serde_json::Value) -> serde_json::Value 
                 "text": serde_json::to_string_pretty(&val).unwrap_or_else(|_| "<serialization error>".to_string())
             }
         ]
+    })
+}
+
+/// A tool that ran and failed, in the shape MCP defines for that.
+///
+/// `isError` is what tells a client the call completed but the work did not,
+/// so the model can read the reason and adapt. A JSON-RPC error in the same
+/// situation reads as a transport or server fault.
+pub(super) fn mcp_tool_error_text(message: &str) -> serde_json::Value {
+    json!({
+        "content": [{ "type": "text", "text": message }],
+        "isError": true,
     })
 }
