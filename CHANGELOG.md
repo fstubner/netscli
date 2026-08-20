@@ -32,6 +32,11 @@ further copies in `package.json` and `tauri.conf.json`. See
 - **Tool failures are returned as MCP `isError` results** rather than
   JSON-RPC errors, so a failed scan no longer reads to a client as a broken
   server.
+- **The desktop app's CSV export escapes spreadsheet formulas.** A cell
+  beginning `=` `+` `-` or `@` is evaluated on open by Excel and
+  LibreOffice, and exported cells carry banners and hostnames the scanned
+  host chose. Values that parse as numbers are untouched, so a negative
+  latency is still a number.
 
 ### Fixed
 
@@ -52,6 +57,27 @@ further copies in `package.json` and `tauri.conf.json`. See
   blocking capture tool, which never registered a job.
 - **`discover_network` with no arguments failed on a host whose interface
   carries a /8**, because the substituted default exceeded the /16 cap.
+- **Workspace search jumped to the wrong row.** The search dialog listed
+  rows in backend order and the table renders them sorted and filtered, so
+  the position it handed over meant a different row — which is every scan,
+  since each tool has a default sort.
+- **A malformed result bundle blanked the window.** Import validated only
+  that array-backed kinds got an array, so a bad entry threw during render
+  with nothing to catch it, taking every other tab's state with it.
+- **The desktop app stayed on "Detecting…" in silence** when interface
+  polling kept failing, leaving the capture form with no interfaces and no
+  explanation.
+- **AUR packages are published against a re-hashed asset.** Both AUR jobs
+  took the published `.sha256` sidecar on trust rather than downloading the
+  asset and hashing it, which is the circular check the release scripts
+  exist to prevent; the other registries already did this correctly.
+- **The Windows installer verifies Npcap before running it.** `install.ps1`
+  downloaded the Npcap installer from an overridable URL and launched it
+  elevated with nothing checked; it now verifies the Authenticode signature
+  and signer, and refuses to run an unsigned or unexpected binary.
+- **`install.sh` no longer claims success before installing libpcap.** A
+  user who asked for capture support could read "Installed successfully" and
+  get a binary that cannot capture.
 
 ## [0.3.0] — 2026-08-19
 
