@@ -47,6 +47,25 @@ env:
   TAG: ${{ github.event.inputs.tag || github.ref_name }}
 
 jobs:
+  # Every job below sets `timeout-minutes`; GitHub's default is 360.
+  #
+  # These are sized differently from ci.yml, and the reason matters. These
+  # jobs fire on `release: published` at the same moment release.yml starts
+  # building, so a publish job legitimately spends most of its life *waiting*
+  # for the asset it needs. `wait_for_asset` in scripts/release/lib.sh bounds
+  # that itself: 30 polls at 30s, so 15 minutes, and then it fails with a
+  # message naming the URL that never appeared.
+  #
+  # That graceful failure is worth protecting. A job timeout below ~15
+  # minutes would pre-empt it and replace a clear explanation with an opaque
+  # cancellation, so 30 leaves the designed wait intact plus room to download,
+  # re-hash and push, while still bounding a true hang.
+  #
+  # A timeout mid-publish is recoverable but not free: each registry job is
+  # independent and re-runnable (see the note on the fan-out below), and the
+  # summary job reports which registries actually landed. Publishing is not
+  # transactional across registries either way -- that is a property of the
+  # design, not something a timeout introduces.
   # ─── crates.io ──────────────────────────────────────────────────────
   # Bottom-up publish (netscli-core → netscli-mcp → netscli). Sleep
   # between each to let the index update; downstream crates' resolvers
@@ -54,6 +73,7 @@ jobs:
   crates-io:
     name: crates.io
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -92,6 +112,7 @@ jobs:
   homebrew:
     name: Homebrew tap
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -105,6 +126,7 @@ jobs:
   scoop:
     name: Scoop bucket
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -121,6 +143,7 @@ jobs:
   winget:
     name: Winget
     runs-on: windows-latest
+    timeout-minutes: 30
     steps:
       # The `winget-releaser` action fetches the release's asset list
       # via the GitHub API and bails fast if the matching .exe is not
@@ -166,6 +189,7 @@ jobs:
   aur:
     name: AUR
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -275,6 +299,7 @@ jobs:
   homebrew-cask:
     name: Homebrew Cask
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -291,6 +316,7 @@ jobs:
   scoop-gui:
     name: Scoop bucket (GUI)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -308,6 +334,7 @@ jobs:
   winget-gui:
     name: Winget (GUI)
     runs-on: windows-latest
+    timeout-minutes: 30
     steps:
       # Same wait-then-submit pattern as the CLI Winget job above. The
       # GUI .msi takes longer to build than the CLI .exe (Tauri bundle
@@ -349,6 +376,7 @@ jobs:
   aur-gui:
     name: AUR (GUI)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -459,6 +487,7 @@ jobs:
       - winget-gui
       - aur-gui
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Report each registry's result
         shell: bash
