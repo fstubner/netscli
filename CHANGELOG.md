@@ -102,6 +102,14 @@ further copies in `package.json` and `tauri.conf.json`. See
 
 ### Changed (internal)
 
+- **The Tauri render suite can run.** It had never passed: every run ended
+  at session creation, because msedgedriver looks for the debug port in a
+  `DevToolsActivePort` file inside its own temporary profile while wry
+  writes that file into Tauri's. The harness now starts the app itself and
+  attaches to it, which skips the lookup entirely. It does not pass yet --
+  the remaining failures are assertions to triage -- but it drives the real
+  app for the first time, and the throughput bug above is what it found.
+
 - **GUI architecture split into maintainable ownership modules.**
   `App.tsx` and the old single CSS file were decomposed into workspace
   state, tool presentation helpers, shell components, result/detail
@@ -214,6 +222,15 @@ further copies in `package.json` and `tauri.conf.json`. See
 - **`install.sh` no longer claims success before installing libpcap.** A
   user who asked for capture support could read "Installed successfully" and
   get a binary that cannot capture.
+- **The desktop app's throughput reading no longer disappears on a VPN or
+  tunnel interface.** Traffic counters come from a different enumeration
+  than the interface list, and the two disagree: on one Windows machine
+  seven of twelve interfaces had no counterpart, including the Tailscale
+  adapter that was up and was what the app selected by default. The status
+  bar then dropped the whole reading -- numbers, unit and divider -- with
+  nothing to explain it, permanently. Selection now prefers an interface
+  whose throughput can actually be read, and where none can, the bar says
+  "no traffic data" instead of showing nothing.
 
 ## [0.2.6] — 2026-05-06
 
