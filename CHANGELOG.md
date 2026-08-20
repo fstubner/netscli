@@ -102,6 +102,17 @@ further copies in `package.json` and `tauri.conf.json`. See
 
 ### Changed (internal)
 
+- **The release pipeline verifies before it commits to anything.** The
+  three crates are now published in one command, so cargo packages and
+  compiles all of them before uploading any -- previously an upload of
+  `netscli-core` could succeed and leave that version permanent on
+  crates.io, which has no unpublish, while a later crate failed to package.
+  CI runs the same command as a dry run on every push, so packaging is
+  exercised long before a release rather than for the first time during
+  one. Release Drafter also resolves its version from tags instead of from
+  the last published release, which had it proposing v0.2.7 for a repo
+  already tagged v0.3.0.
+
 - **The Tauri render suite can run.** It had never passed: every run ended
   at session creation, because msedgedriver looks for the debug port in a
   `DevToolsActivePort` file inside its own temporary profile while wry
