@@ -34,7 +34,16 @@ export function StatusBar({
   const interfaceAddress = preferredStatusAddress(interfaceInfo?.ips ?? [], addressPreference);
   const resultText = activeTab ? footerResultText(activeTab, rowCount, selectedCount) : null;
   const operationText = activeTab?.busy ? `Running ${TOOL_CONFIG[activeTab.kind].label}` : null;
+  // Three states, not two. `null` is "no answer yet", which is momentary and
+  // correctly shows nothing. `available: false` is the backend saying it
+  // cannot read counters for this interface -- which is not momentary, and
+  // used to render as an absent element, so the traffic display simply
+  // vanished with no way to tell a broken feature from a missing one. It is
+  // permanent for anyone whose interface is a tunnel or VPN adapter, because
+  // traffic counters come from a different enumeration than the interface
+  // list and those adapters appear in only one of them.
   const showTrafficStats = Boolean(networkStats?.available);
+  const trafficUnavailable = Boolean(networkStats && !networkStats.available);
 
   return (
     <footer className="statusbar" data-testid="statusbar">
@@ -62,6 +71,18 @@ export function StatusBar({
               stats={networkStats}
               unit={trafficDisplayUnit}
             />
+          </>
+        )}
+        {trafficUnavailable && (
+          <>
+            <span className="divider" />
+            <span
+              className="traffic-unavailable"
+              data-testid="traffic-unavailable"
+              data-tooltip={`No traffic counters for ${interfaceInfo?.name ?? 'this interface'}. Pick another interface in Settings to see throughput.`}
+            >
+              no traffic data
+            </span>
           </>
         )}
         {operationText && (

@@ -48,3 +48,22 @@ pub(crate) async fn get_default_interface() -> Result<serde_json::Value, String>
         None => Err("No network interface found".to_string()),
     }
 }
+
+/// Interface names the traffic monitor can actually read counters for.
+///
+/// This is deliberately a separate list from `list_interfaces`. The two come
+/// from different enumerations -- interfaces from the platform adapter list,
+/// counters from `sysinfo` -- and they do not agree: tunnel and VPN adapters
+/// routinely appear in the first and not the second. Selecting one of those
+/// leaves the traffic display permanently empty, so the frontend needs to
+/// know which names are monitorable *before* it picks one.
+#[tauri::command]
+pub(crate) async fn list_monitorable_interfaces(
+    monitor: tauri::State<'_, Mutex<Option<NetworkMonitor>>>,
+) -> Result<Vec<String>, String> {
+    let mut monitor = monitor
+        .lock()
+        .map_err(|e| format!("Failed to acquire monitor lock: {e}"))?;
+    let monitor = monitor.get_or_insert_with(NetworkMonitor::new);
+    Ok(monitor.available_interfaces())
+}

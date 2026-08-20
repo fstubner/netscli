@@ -10,10 +10,10 @@ use commands::{
     cancel_operation, capture_pcap, choose_file_save_default_directory,
     clear_file_save_default_directory, discover_mdns, discover_network, dns_lookup,
     export_text_file, get_arp_table, get_default_interface, get_file_save_preferences,
-    get_network_stats, inspect_host_cmd, list_interfaces, mdns_capability, open_pcap_file,
-    open_result_bundle, open_saved_artifact, pcap_capability, ping_host, reveal_saved_artifact,
-    reverse_dns_lookup, save_result_bundle, scan_ports, set_file_save_ask_each_time, sweep_network,
-    trace_route_cmd,
+    get_network_stats, inspect_host_cmd, list_interfaces, list_monitorable_interfaces,
+    mdns_capability, open_pcap_file, open_result_bundle, open_saved_artifact, pcap_capability,
+    ping_host, reveal_saved_artifact, reverse_dns_lookup, save_result_bundle, scan_ports,
+    set_file_save_ask_each_time, sweep_network, trace_route_cmd,
 };
 use netscli_core::NetworkMonitor;
 use state::{ArtifactRegistry, OperationManager};
@@ -75,6 +75,7 @@ fn main() {
             choose_file_save_default_directory,
             clear_file_save_default_directory,
             get_network_stats,
+            list_monitorable_interfaces,
             get_default_interface
         ])
         .run(tauri::generate_context!())

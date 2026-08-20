@@ -35,6 +35,43 @@ function toStatusInterface(iface: InterfaceInfo): DefaultInterfaceInfo {
   };
 }
 
+/**
+ * Choose the interface whose throughput to display.
+ *
+ * Preferring a monitorable name is the whole point. Traffic counters come
+ * from a different enumeration than the interface list, and tunnel and VPN
+ * adapters routinely appear in the list without appearing in the counters --
+ * on one machine, seven of twelve interfaces had no counterpart, including
+ * the Tailscale adapter that was up and was what the old order selected
+ * first. The result was a status bar that silently showed no throughput at
+ * all, permanently.
+ *
+ * The previous order is kept as the fallback rather than replaced: if
+ * nothing is monitorable, showing the platform's default interface and an
+ * honest "no traffic data" beats showing nothing at all.
+ */
+export function pickTrafficInterface(
+  iface: DefaultInterfaceInfo | null,
+  allInterfaces: InterfaceInfo[],
+  monitorable: string[],
+): string | null {
+  const canMonitor = (name: string | undefined | null): name is string =>
+    Boolean(name) && monitorable.includes(name as string);
+
+  const usable = allInterfaces.filter((item) => item.is_up && !item.is_loopback);
+  return (
+    // The platform default, but only if its throughput can actually be read.
+    (canMonitor(iface?.name) ? iface?.name : undefined) ??
+    usable.find((item) => canMonitor(item.name))?.name ??
+    allInterfaces.find((item) => canMonitor(item.name))?.name ??
+    // Nothing monitorable: fall back to what this always did.
+    iface?.name ??
+    usable[0]?.name ??
+    allInterfaces[0]?.name ??
+    null
+  );
+}
+
 export function useNetworkStatus(showToast: (toast: Omit<WorkspaceToast, 'id'>) => void) {
   const demoScreenshotMode = isDemoScreenshotMode();
   const [networkStats, setNetworkStats] = useState<NetworkStats | null>(
@@ -100,15 +137,18 @@ export function useNetworkStatus(showToast: (toast: Omit<WorkspaceToast, 'id'>) 
     const loadInterfaceInfo = async () => {
       if (!isDocumentVisible()) return;
       try {
-        const [iface, allInterfaces] = await Promise.all([
+        const [iface, allInterfaces, monitorable] = await Promise.all([
           netscli.getDefaultInterface().catch(() => null),
           netscli.listInterfaces().catch(() => null),
+          // Failure here is not fatal: an empty list simply means selection
+          // falls back to the order it always used.
+          netscli.listMonitorableInterfaces().catch(() => []),
         ]);
         if (stopped) return;
         if (iface) setDefaultInterface(iface);
         if (allInterfaces) {
           setInterfaces(allInterfaces);
-          initializeTrafficInterface(iface, allInterfaces);
+          initializeTrafficInterface(iface, allInterfaces, monitorable ?? []);
         }
 
         // Every failure here used to be swallowed on a 30s timer, so a
@@ -180,16 +220,15 @@ export function useNetworkStatus(showToast: (toast: Omit<WorkspaceToast, 'id'>) 
     };
   }, [demoScreenshotMode, trafficInterfaceName]);
 
-  function initializeTrafficInterface(iface: DefaultInterfaceInfo | null, allInterfaces: InterfaceInfo[]) {
+  function initializeTrafficInterface(
+    iface: DefaultInterfaceInfo | null,
+    allInterfaces: InterfaceInfo[],
+    monitorable: string[],
+  ) {
     if (initializedTrafficInterface.current) return;
     const saved = initialTrafficInterfaceName();
     const savedExists = saved && allInterfaces.some((item) => item.name === saved);
-    const fallback =
-      iface?.name ??
-      allInterfaces.find((item) => item.is_up && !item.is_loopback)?.name ??
-      allInterfaces[0]?.name ??
-      null;
-    const next = savedExists ? saved : fallback;
+    const next = savedExists ? saved : pickTrafficInterface(iface, allInterfaces, monitorable);
     if (next) {
       setTrafficInterfaceNameState(next);
       window.localStorage.setItem('netscli-traffic-interface', next);
