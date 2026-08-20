@@ -81,7 +81,13 @@ async fn ping_scanner_concurrency_zero_returns_result() {
     let res = scanner.ping(IpAddr::V4(Ipv4Addr::LOCALHOST), 10).await;
 
     assert_eq!(res.ip, IpAddr::V4(Ipv4Addr::LOCALHOST));
-    assert_eq!(res.seq, 1);
+    // `PING_SEQ` is a process-global counter and cargo runs every test in one
+    // process, so the old `seq == 1` held only while this happened to be the
+    // first ping in the binary. Any later test that pings -- and one now does
+    // -- reorders that by thread scheduling alone. What this test is actually
+    // about is that concurrency 0 returns a usable result instead of hanging,
+    // so assert the sequence is allocated, not that it is first.
+    assert!(res.seq >= 1);
     assert!(res.method.is_some());
 }
 
