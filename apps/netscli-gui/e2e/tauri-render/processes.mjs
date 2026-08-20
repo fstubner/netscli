@@ -71,7 +71,7 @@ export function waitForPort(port, timeoutMs = 20_000) {
  * Kill a spawned process *and everything it spawned*.
  *
  * `child.kill()` alone signals only the direct child (M-13). The processes
- * this suite starts are supervisors — `tauri-driver` spawns the platform
+ * this suite starts are supervisors — msedgedriver spawns the platform
  * WebDriver, which spawns the browser — so the grandchildren survived, kept
  * holding their ports, and the next run failed to bind or attached to a stale
  * session. On CI the job simply hung until its timeout.

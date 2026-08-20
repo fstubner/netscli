@@ -76,6 +76,9 @@ export default tseslint.config(
         fetch: 'readonly',
         process: 'readonly',
         setTimeout: 'readonly',
+        // Used to speak CDP directly for viewport resizing, which an
+        // attached WebDriver session cannot do. Global since Node 22.4.
+        WebSocket: 'readonly',
       },
     },
   },

@@ -1,7 +1,15 @@
 import { artifactsDir, npmBin } from './tauri-render/paths.mjs';
 import { getFreePort, run, stopProcess } from './tauri-render/processes.mjs';
 import { closeServer, startProbeServer } from './tauri-render/probe-server.mjs';
-import { By, createDriver, findApplication, resolveNativeDriverPath, startTauriDriver } from './tauri-render/driver.mjs';
+import {
+  By,
+  createDriver,
+  findApplication,
+  launchApplication,
+  resolveNativeDriverPath,
+  setViewport,
+  startNativeDriver,
+} from './tauri-render/driver.mjs';
 import {
   assertNoHorizontalOverflow,
   assertTheme,
@@ -26,7 +34,8 @@ import { alignmentReport } from './tauri-render/scenarios/helpers/alignment.mjs'
 const DESKTOP_WINDOW = { x: 0, y: 0, width: 1000, height: 970 };
 const NARROW_WINDOW = { width: 520, height: 720 };
 
-let tauriDriverProcess;
+let nativeDriverProcess;
+let appProcess;
 let probeServer;
 
 async function main() {
@@ -54,26 +63,31 @@ async function main() {
   const nativeDriverPath = await resolveNativeDriverPath();
   const application = findApplication();
   process.env.NETSCLI_EXPORT_DIR = artifactsDir;
-  tauriDriverProcess = await startTauriDriver(nativeDriverPath, webdriverPort);
+  // We start the app, so we choose its debug port; the driver then attaches
+  // to it rather than launching anything. See driver.mjs for why.
+  const debugPort = await getFreePort();
+  appProcess = await launchApplication(application, debugPort);
+  nativeDriverProcess = await startNativeDriver(nativeDriverPath, webdriverPort);
 
   let driver;
   try {
-    driver = await createDriver(webdriverPort, application);
+    driver = await createDriver(webdriverPort, debugPort);
   } catch (error) {
     // Session creation is where this harness fails most often, and the
     // WebDriver error alone ("session not created: DevToolsActivePort
     // file doesn't exist") says nothing about the cause. Everything
     // useful is in the native driver's own output.
-    const driverLog = tauriDriverProcess?.getDriverOutput?.() ?? '';
+    const driverLog = nativeDriverProcess?.getDriverOutput?.() ?? '';
     console.error('\n--- tauri-driver / native driver output ---');
     console.error(driverLog.trim() || '(no output captured)');
     console.error('--- end driver output ---');
-    console.error(`app under test: ${application}`);
+    console.error((appProcess?.getOutput?.() ?? '').trim() || '(no app output captured)');
+    console.error(`app under test: ${application} (debug port ${debugPort})`);
     throw error;
   }
 
   try {
-    await driver.manage().window().setRect(DESKTOP_WINDOW);
+    await setViewport(debugPort, DESKTOP_WINDOW);
     await withElement(driver, '[data-testid="app-shell"]', 20_000);
 
     const shell = await withElement(driver, '[data-testid="app-shell"]');
@@ -136,7 +150,7 @@ async function main() {
     await assertTheme(driver, 'light');
     await saveScreenshot(driver, 'tauri-render-light.png');
 
-    await driver.manage().window().setRect(NARROW_WINDOW);
+    await setViewport(debugPort, NARROW_WINDOW);
     await assertNoHorizontalOverflow(driver);
     await withElement(driver, '[data-testid="run-active-tab"]');
     await withElement(driver, '.workspace');
@@ -152,9 +166,13 @@ async function main() {
   }
 }
 
-process.on('exit', () => stopProcess(tauriDriverProcess));
+process.on('exit', () => {
+  stopProcess(nativeDriverProcess);
+  stopProcess(appProcess);
+});
 process.on('SIGINT', () => {
-  stopProcess(tauriDriverProcess);
+  stopProcess(nativeDriverProcess);
+  stopProcess(appProcess);
   process.exit(130);
 });
 
@@ -175,7 +193,8 @@ ${drifts.length} alignment drift(s) within tolerance of failing:`);
       }
     }
     await closeServer(probeServer).catch(() => undefined);
-    stopProcess(tauriDriverProcess);
+    stopProcess(nativeDriverProcess);
+    stopProcess(appProcess);
   });
 
 async function ensureSettingsToggleOn(driver, testId) {
