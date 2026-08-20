@@ -19,17 +19,78 @@ permissions:
 jobs:
   update_release_draft:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      # The tag this proposes is a guess. version-resolver maps PR labels to
-      # a bump, no labels are applied here, so it always resolves to `patch`
-      # regardless of what actually changed — which is why it proposed v0.2.7
-      # for a release the repo had already numbered 0.3.0. The version that
-      # ships is the one set by hand across the seven files in
-      # docs/PUBLISHING.md; set the tag to match when you publish the draft.
+      # Needed only for the tags; release-drafter itself works over the API.
+      # `fetch-depth: 0` because a shallow clone carries no tag history.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      # Resolve the version from tags rather than letting release-drafter
+      # derive it.
       #
+      # Left to itself it counts forward from the last *published* release
+      # and applies a label-based bump. This repo tags well before it
+      # publishes, and no autolabeler is configured, so it read "latest
+      # release is v0.2.6, default bump is patch" and proposed v0.2.7 --
+      # while the repo was tagged v0.3.0 and every version file said 0.3.0.
+      # Publishing that draft would have cut a v0.2.7 release out of 0.3.0
+      # code. It was deleted twice; it came back both times, because nothing
+      # about the situation had changed.
+      #
+      # Tags know better. If the newest tag has no published release, that
+      # tag *is* the pending release and the draft should carry its version.
+      # Only once it has actually shipped does the next draft move on.
+      - name: Resolve version from tags
+        id: version
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          latest=$(git tag --list 'v[0-9]*' --sort=-v:refname | head -1)
+          if [[ -z "$latest" ]]; then
+            echo "No version tags yet; leaving the version to release-drafter."
+            echo "version=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          stripped="${latest#v}"
+          published=false
+          if draft=$(gh release view "$latest" --json isDraft --jq '.isDraft' 2>/dev/null); then
+            # A draft for this tag still means the version has not shipped.
+            [[ "$draft" == "false" ]] && published=true
+          fi
+
+          if [[ "$published" == "true" ]]; then
+            IFS='.' read -r major minor patch <<< "$stripped"
+            version="${major}.${minor}.$((patch + 1))"
+            echo "$latest is published; next draft is v${version}."
+          else
+            version="$stripped"
+            echo "$latest is tagged but unpublished; the draft is that release."
+          fi
+
+          # The version that actually ships is set by hand across the files
+          # docs/PUBLISHING.md lists. If the tag and the workspace disagree,
+          # one of them is wrong and the draft is about to inherit it -- so
+          # say so here rather than let it pass silently.
+          workspace=$(grep -m1 '^version = ' crates/netscli-core/Cargo.toml | sed 's/.*"\(.*\)".*/\1/')
+          if [[ "$version" != "$workspace" ]]; then
+            echo "::warning::Draft version v${version} does not match the workspace version ${workspace}. One of the tag, the draft, or docs/PUBLISHING.md's file list is out of step."
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
       # SHA-pinned like every action in release.yml. `@v7` is a tag the
       # upstream owner can move at any time, and this job hands whatever it
       # resolves to a `contents: write` token on main.
       - uses: release-drafter/release-drafter@34d80673e067bdc0c24568d3af899c216adcfaa9 # v7.7.0
+        with:
+          # Empty falls back to release-drafter's own resolution, which is
+          # the right behaviour for a repo with no tags yet.
+          version: ${{ steps.version.outputs.version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
