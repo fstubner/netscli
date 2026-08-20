@@ -2,6 +2,7 @@ use super::CommandContext;
 use crate::output::{output_format, print_structured, OutputFormat};
 use crate::trace;
 use anyhow::Result;
+use netscli_core::sanitize_for_terminal;
 
 pub(super) async fn run_ping(
     ctx: CommandContext<'_>,
@@ -44,8 +45,11 @@ pub(super) async fn run_trace(
     match format {
         OutputFormat::Json | OutputFormat::Yaml => print_structured(format, &res)?,
         OutputFormat::Text => {
+            // Hop names come from PTR records of routers on the path, which
+            // whoever runs those routers controls. This was the one plain-text
+            // path still printing remote strings unsanitised.
             for line in res.lines {
-                println!("{line}");
+                println!("{}", sanitize_for_terminal(&line));
             }
         }
     }

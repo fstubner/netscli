@@ -5,7 +5,7 @@ mod terminal;
 
 pub use constants::{
     DEFAULT_CONCURRENCY, DEFAULT_DNS_TIMEOUT_MS, DEFAULT_PING_TIMEOUT_MS, DEFAULT_PORTS,
-    DEFAULT_SCAN_TIMEOUT_MS, DEFAULT_SUBNET,
+    DEFAULT_SCAN_TIMEOUT_MS, DEFAULT_SUBNET, MAX_MDNS_TIMEOUT_MS, MAX_PING_COUNT,
 };
 pub use network::{
     default_ipv4_subnet_string, detect_default_ipv4_addr, detect_default_ipv4_subnet,
