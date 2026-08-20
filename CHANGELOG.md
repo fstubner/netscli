@@ -12,73 +12,6 @@ further copies in `package.json` and `tauri.conf.json`. See
 
 ## [Unreleased]
 
-### Changed
-
-- **`netscli scan --json` now reports every port, not just the open ones.**
-  Filtering to open ports made "all closed", "all filtered" and "every
-  probe errored" the same empty array, so a script could not tell a clean
-  scan from a host that refused every probe. Each entry carries `open` and
-  `status`, so callers that want only open ports can filter for them.
-- **The MCP server now scans only local networks by default.** This is the
-  one surface driven by a model rather than by the person at the keyboard,
-  so the instruction to scan a third party can arrive from a web page or a
-  file someone else wrote — and the packets leave from your machine and
-  your IP. RFC1918, loopback, link-local and the carrier-grade NAT range
-  overlay networks use are allowed; set `NETSCLI_MCP_ALLOW_PUBLIC_TARGETS=1`
-  to reach past them.
-- **Scan results returned to a model are capped.** The full probe response
-  (`raw`) is no longer included and banners are truncated, both being bytes
-  chosen by the scanned host.
-- **Tool failures are returned as MCP `isError` results** rather than
-  JSON-RPC errors, so a failed scan no longer reads to a client as a broken
-  server.
-- **The desktop app's CSV export escapes spreadsheet formulas.** A cell
-  beginning `=` `+` `-` or `@` is evaluated on open by Excel and
-  LibreOffice, and exported cells carry banners and hostnames the scanned
-  host chose. Values that parse as numbers are untouched, so a negative
-  latency is still a number.
-
-### Fixed
-
-- **Safety limits that only one caller was applying.** `SweepEngine::sweep`
-  validates its port list instead of trusting the caller and silently
-  returning "no open ports"; mDNS browse duration, `ping -c` and packet
-  captures given a packet count but no duration all gained the core-side
-  ceiling they were documented to have.
-- **`netscli trace` no longer prints router-supplied hostnames unsanitised.**
-  Hop names come from PTR records controlled by whoever runs those routers,
-  and this was the last plain-text output path without the terminal-safety
-  pass every other one had.
-- **Four ways an MCP client could wedge or kill the server**: no overall
-  request deadline, permits acquired after spawning rather than before, a
-  single invalid UTF-8 byte on stdin terminating the process, and client
-  disconnect cancelling nothing.
-- **The concurrent packet-capture limit could be bypassed** by calling the
-  blocking capture tool, which never registered a job.
-- **`discover_network` with no arguments failed on a host whose interface
-  carries a /8**, because the substituted default exceeded the /16 cap.
-- **Workspace search jumped to the wrong row.** The search dialog listed
-  rows in backend order and the table renders them sorted and filtered, so
-  the position it handed over meant a different row — which is every scan,
-  since each tool has a default sort.
-- **A malformed result bundle blanked the window.** Import validated only
-  that array-backed kinds got an array, so a bad entry threw during render
-  with nothing to catch it, taking every other tab's state with it.
-- **The desktop app stayed on "Detecting…" in silence** when interface
-  polling kept failing, leaving the capture form with no interfaces and no
-  explanation.
-- **AUR packages are published against a re-hashed asset.** Both AUR jobs
-  took the published `.sha256` sidecar on trust rather than downloading the
-  asset and hashing it, which is the circular check the release scripts
-  exist to prevent; the other registries already did this correctly.
-- **The Windows installer verifies Npcap before running it.** `install.ps1`
-  downloaded the Npcap installer from an overridable URL and launched it
-  elevated with nothing checked; it now verifies the Authenticode signature
-  and signer, and refuses to run an unsigned or unexpected binary.
-- **`install.sh` no longer claims success before installing libpcap.** A
-  user who asked for capture support could read "Installed successfully" and
-  get a binary that cannot capture.
-
 ## [0.3.0] — 2026-08-19
 
 ### Added
@@ -142,6 +75,30 @@ further copies in `package.json` and `tauri.conf.json`. See
 - **Per-PR site previews on Cloudflare Pages**, and GitHub Pages deploys are
   manual-only. ([#165](https://github.com/fstubner/netscli/pull/165),
   [#136](https://github.com/fstubner/netscli/pull/136))
+
+- **`netscli scan --json` now reports every port, not just the open ones.**
+  Filtering to open ports made "all closed", "all filtered" and "every
+  probe errored" the same empty array, so a script could not tell a clean
+  scan from a host that refused every probe. Each entry carries `open` and
+  `status`, so callers that want only open ports can filter for them.
+- **The MCP server now scans only local networks by default.** This is the
+  one surface driven by a model rather than by the person at the keyboard,
+  so the instruction to scan a third party can arrive from a web page or a
+  file someone else wrote — and the packets leave from your machine and
+  your IP. RFC1918, loopback, link-local and the carrier-grade NAT range
+  overlay networks use are allowed; set `NETSCLI_MCP_ALLOW_PUBLIC_TARGETS=1`
+  to reach past them.
+- **Scan results returned to a model are capped.** The full probe response
+  (`raw`) is no longer included and banners are truncated, both being bytes
+  chosen by the scanned host.
+- **Tool failures are returned as MCP `isError` results** rather than
+  JSON-RPC errors, so a failed scan no longer reads to a client as a broken
+  server.
+- **The desktop app's CSV export escapes spreadsheet formulas.** A cell
+  beginning `=` `+` `-` or `@` is evaluated on open by Excel and
+  LibreOffice, and exported cells carry banners and hostnames the scanned
+  host chose. Values that parse as numbers are untouched, so a negative
+  latency is still a number.
 
 ### Changed (internal)
 
@@ -218,6 +175,45 @@ further copies in `package.json` and `tauri.conf.json`. See
   advertised a version that was never released.
   ([#194](https://github.com/fstubner/netscli/pull/194),
   [#208](https://github.com/fstubner/netscli/pull/208))
+
+- **Safety limits that only one caller was applying.** `SweepEngine::sweep`
+  validates its port list instead of trusting the caller and silently
+  returning "no open ports"; mDNS browse duration, `ping -c` and packet
+  captures given a packet count but no duration all gained the core-side
+  ceiling they were documented to have.
+- **`netscli trace` no longer prints router-supplied hostnames unsanitised.**
+  Hop names come from PTR records controlled by whoever runs those routers,
+  and this was the last plain-text output path without the terminal-safety
+  pass every other one had.
+- **Four ways an MCP client could wedge or kill the server**: no overall
+  request deadline, permits acquired after spawning rather than before, a
+  single invalid UTF-8 byte on stdin terminating the process, and client
+  disconnect cancelling nothing.
+- **The concurrent packet-capture limit could be bypassed** by calling the
+  blocking capture tool, which never registered a job.
+- **`discover_network` with no arguments failed on a host whose interface
+  carries a /8**, because the substituted default exceeded the /16 cap.
+- **Workspace search jumped to the wrong row.** The search dialog listed
+  rows in backend order and the table renders them sorted and filtered, so
+  the position it handed over meant a different row — which is every scan,
+  since each tool has a default sort.
+- **A malformed result bundle blanked the window.** Import validated only
+  that array-backed kinds got an array, so a bad entry threw during render
+  with nothing to catch it, taking every other tab's state with it.
+- **The desktop app stayed on "Detecting…" in silence** when interface
+  polling kept failing, leaving the capture form with no interfaces and no
+  explanation.
+- **AUR packages are published against a re-hashed asset.** Both AUR jobs
+  took the published `.sha256` sidecar on trust rather than downloading the
+  asset and hashing it, which is the circular check the release scripts
+  exist to prevent; the other registries already did this correctly.
+- **The Windows installer verifies Npcap before running it.** `install.ps1`
+  downloaded the Npcap installer from an overridable URL and launched it
+  elevated with nothing checked; it now verifies the Authenticode signature
+  and signer, and refuses to run an unsigned or unexpected binary.
+- **`install.sh` no longer claims success before installing libpcap.** A
+  user who asked for capture support could read "Installed successfully" and
+  get a binary that cannot capture.
 
 ## [0.2.6] — 2026-05-06
 
