@@ -1,16 +1,56 @@
 use super::errors::RpcError;
 use super::schemas::{
     clamp_concurrency, clamp_timeout_ms, normalize_ports, validate_subnet, DiscoverParams,
-    DnsParams, PcapParams, PingHostParams, ScanParams, SweepParams,
+    DnsParams, PingHostParams, ScanParams, SweepParams,
 };
 use super::targets::ensure_host_allowed;
 
 // NOTE: Hostname/IP resolution is shared in netscli-core (`netscli_core::resolve_host_ip`).
 
+mod pcap;
+
+#[cfg(not(feature = "pcap"))]
+pub(in crate::server) use pcap::op_capture_pcap;
+#[cfg(feature = "pcap")]
+pub(in crate::server) use pcap::{
+    op_capture_pcap, run_pcap_capture, validate_pcap_capture_params,
+};
+
+/// Settle the subnet before anything is checked or scanned.
+///
+/// The default used to be substituted deep inside `Ops`, which meant the
+/// no-subnet call skipped the target policy entirely -- safe in practice,
+/// because the substituted value is the operator's own interface, but safe
+/// by accident rather than by decision. Two things follow from resolving it
+/// here instead: the policy applies to every path, and the subnet that gets
+/// checked is the exact string that gets scanned rather than a second
+/// derivation that could differ if an interface changed in between.
+///
+/// The visible consequence is that a machine whose LAN carries public
+/// addresses -- some universities and ISPs still do this -- now gets a clear
+/// refusal naming its own subnet, instead of silently scanning it. That is
+/// the honest outcome: the operator opts in once and knows why.
+fn resolved_subnet(requested: Option<String>) -> Result<String, RpcError> {
+    resolve_and_check(requested, netscli_core::default_ipv4_subnet_string)
+}
+
+/// The body of `resolved_subnet`, with the default supplied by the caller.
+///
+/// Split solely so a test can pin the case that matters and cannot otherwise
+/// be reached: a machine whose own interface carries public addresses. The
+/// real default comes from whatever interface the test host happens to have,
+/// so a test using it asserts nothing.
+fn resolve_and_check(
+    requested: Option<String>,
+    default: impl FnOnce() -> String,
+) -> Result<String, RpcError> {
+    let subnet = requested.unwrap_or_else(default);
+    validate_subnet(&subnet)?;
+    Ok(subnet)
+}
+
 pub(super) async fn op_discover(p: DiscoverParams) -> Result<Vec<netscli_core::Host>, RpcError> {
-    if let Some(ref subnet) = p.subnet {
-        validate_subnet(subnet)?;
-    }
+    let subnet = resolved_subnet(p.subnet)?;
     let concurrency = clamp_concurrency(p.max_concurrent, netscli_core::DEFAULT_CONCURRENCY);
     let timeout_ms = clamp_timeout_ms(p.timeout, netscli_core::DEFAULT_PING_TIMEOUT_MS);
     let cfg = netscli_core::OpsConfig {
@@ -21,7 +61,7 @@ pub(super) async fn op_discover(p: DiscoverParams) -> Result<Vec<netscli_core::H
     };
     let ops = netscli_core::Ops::new(cfg);
     let (_subnet, hosts) = ops
-        .discover_ipv4(p.subnet, p.resolve_hostnames.unwrap_or(false))
+        .discover_ipv4(Some(subnet), p.resolve_hostnames.unwrap_or(false))
         .await
         .map_err(|e| RpcError::ToolError(e.to_string()))?;
     Ok(hosts)
@@ -67,9 +107,7 @@ pub(super) async fn op_inspect_host(
 }
 
 pub(super) async fn op_sweep(p: SweepParams) -> Result<Vec<netscli_core::SweepEntry>, RpcError> {
-    if let Some(ref subnet) = p.subnet {
-        validate_subnet(subnet)?;
-    }
+    let subnet = resolved_subnet(p.subnet)?;
     let ports = normalize_ports(p.ports)?;
     let concurrency = clamp_concurrency(p.max_concurrent, netscli_core::DEFAULT_CONCURRENCY);
     let timeout_ms = clamp_timeout_ms(p.timeout, netscli_core::DEFAULT_SCAN_TIMEOUT_MS);
@@ -81,7 +119,7 @@ pub(super) async fn op_sweep(p: SweepParams) -> Result<Vec<netscli_core::SweepEn
     };
     let ops = netscli_core::Ops::new(cfg);
     let (_subnet, res) = ops
-        .sweep_ipv4(p.subnet, ports, p.resolve_hostnames.unwrap_or(false))
+        .sweep_ipv4(Some(subnet), ports, p.resolve_hostnames.unwrap_or(false))
         .await
         .map_err(|e| RpcError::ToolError(e.to_string()))?;
     Ok(res)
@@ -144,145 +182,6 @@ pub(super) fn op_list_interfaces() -> Vec<netscli_core::InterfaceInfo> {
     ops.list_interfaces()
 }
 
-#[cfg(feature = "pcap")]
-#[derive(Debug)]
-pub(super) struct PcapCaptureRequest {
-    interface: String,
-    filter: Option<String>,
-    duration: Option<u64>,
-    output_file: Option<String>,
-    max_packets: Option<usize>,
-}
-
-#[cfg(feature = "pcap")]
-impl PcapCaptureRequest {
-    pub(super) fn ensure_default_output_file(&mut self, output_file: String) {
-        if self.output_file.is_none() {
-            self.output_file = Some(output_file);
-        }
-    }
-}
-
-/// Longest a *blocking* `capture_pcap` call may run.
-///
-/// Core allows an hour, which is right for a capture written to a file and
-/// collected later -- that is what `start_pcap_capture` is for. A synchronous
-/// tool call is a different shape: it occupies a request slot for its whole
-/// duration, and no client is usefully blocked for an hour.
-#[cfg(feature = "pcap")]
-const MAX_INTERACTIVE_CAPTURE_SECONDS: u64 = 120;
-
-#[cfg(feature = "pcap")]
-pub(super) fn validate_pcap_capture_params(p: PcapParams) -> Result<PcapCaptureRequest, RpcError> {
-    if p.interface.trim().is_empty() {
-        return Err(RpcError::InvalidParams("interface is required".to_string()));
-    }
-    // Clamped here as well as in core: an interactive tool call holding a
-    // request permit for an hour is a different problem from a capture file
-    // being too long, and the job API exists for the long case.
-    let duration = p
-        .duration
-        .map(|seconds| seconds.min(MAX_INTERACTIVE_CAPTURE_SECONDS));
-    let max_packets = match p.max_packets {
-        Some(0) => {
-            return Err(RpcError::InvalidParams(
-                "maxPackets must be greater than 0".to_string(),
-            ));
-        }
-        Some(n) => {
-            if n > (usize::MAX as u64) {
-                return Err(RpcError::InvalidParams("maxPackets too large".to_string()));
-            }
-            Some(n as usize)
-        }
-        None => None,
-    };
-    let output_file = p
-        .output_file
-        .map(validate_mcp_pcap_output_file)
-        .transpose()?;
-    Ok(PcapCaptureRequest {
-        interface: p.interface,
-        filter: p.filter,
-        duration,
-        output_file,
-        max_packets,
-    })
-}
-
-/// Concurrent captures, counted across both capture tools.
-///
-/// `MAX_RUNNING_PCAP_JOBS` only ever counted entries in the job map, which
-/// `start_pcap_capture` populates and the blocking `capture_pcap` does not --
-/// so the cap was bypassed by calling the other tool. The resource being
-/// protected is the machine's capture capacity, which is a property of the
-/// process rather than of one map, so the limit lives here where both paths
-/// must pass through it.
-#[cfg(feature = "pcap")]
-static PCAP_CAPTURE_SLOTS: tokio::sync::Semaphore =
-    tokio::sync::Semaphore::const_new(MAX_CONCURRENT_PCAP_CAPTURES);
-
-#[cfg(feature = "pcap")]
-pub(super) const MAX_CONCURRENT_PCAP_CAPTURES: usize = 4;
-
-#[cfg(feature = "pcap")]
-pub(super) async fn run_pcap_capture(
-    request: PcapCaptureRequest,
-) -> Result<netscli_core::PcapResult, RpcError> {
-    // `try_acquire`, not `acquire`: waiting would hold one of the server's
-    // request permits for however long the running captures take, which is
-    // the wedge this limit exists to prevent. Refusing immediately tells the
-    // client something actionable instead.
-    let _slot = PCAP_CAPTURE_SLOTS.try_acquire().map_err(|_| {
-        RpcError::ToolError(format!(
-            "too many packet captures are already running (max {MAX_CONCURRENT_PCAP_CAPTURES})"
-        ))
-    })?;
-    let ops = netscli_core::Ops::default();
-    ops.capture_pcap_async(
-        request.interface,
-        request.filter,
-        request.duration,
-        request.output_file,
-        request.max_packets,
-    )
-    .await
-    .map_err(|e| RpcError::ToolError(e.to_string()))
-}
-
-#[cfg(feature = "pcap")]
-pub(super) async fn op_capture_pcap(p: PcapParams) -> Result<netscli_core::PcapResult, RpcError> {
-    let request = validate_pcap_capture_params(p)?;
-    run_pcap_capture(request).await
-}
-
-#[cfg(feature = "pcap")]
-fn validate_mcp_pcap_output_file(output_file: String) -> Result<String, RpcError> {
-    let path = std::path::PathBuf::from(output_file.trim());
-    let filename = path
-        .file_name()
-        .and_then(|name| name.to_str())
-        .ok_or_else(|| RpcError::InvalidParams("outputFile must include a filename".to_string()))?;
-    if path.components().count() != 1 {
-        return Err(RpcError::InvalidParams(
-            "outputFile for MCP packet capture must be a filename, not a path".to_string(),
-        ));
-    }
-    if !filename.to_ascii_lowercase().ends_with(".pcap") {
-        return Err(RpcError::InvalidParams(
-            "outputFile must end in .pcap".to_string(),
-        ));
-    }
-    Ok(filename.to_string())
-}
-
-#[cfg(not(feature = "pcap"))]
-pub(super) async fn op_capture_pcap(_p: PcapParams) -> Result<netscli_core::PcapResult, RpcError> {
-    Err(RpcError::ToolError(
-        "pcap support disabled at compile time".to_string(),
-    ))
-}
-
 #[cfg(feature = "mdns")]
 pub(super) async fn op_discover_mdns(
     p: super::schemas::MdnsParams,
@@ -295,4 +194,43 @@ pub(super) async fn op_discover_mdns(
     ops.discover_mdns(&service_types, std::time::Duration::from_millis(timeout_ms))
         .await
         .map_err(|e| RpcError::ToolError(e.to_string()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_publicly_addressed_interface_is_refused_rather_than_scanned() {
+        // The case this whole change exists for. Before, the default was
+        // substituted inside `Ops` after every check had run, so a host whose
+        // LAN is publicly addressed -- some universities and ISPs still do
+        // this -- had its own subnet scanned with no policy consulted.
+        let err = resolve_and_check(None, || "203.0.113.0/24".to_string())
+            .expect_err("a public default must be refused, not silently scanned");
+        let message = err.to_string();
+        assert!(message.contains("203.0.113.0/24"), "got: {message}");
+        assert!(
+            message.contains("NETSCLI_MCP_ALLOW_PUBLIC_TARGETS"),
+            "got: {message}"
+        );
+    }
+
+    #[test]
+    fn an_ordinary_private_default_is_returned_unchanged() {
+        let subnet = resolve_and_check(None, || "192.168.1.0/24".to_string())
+            .expect("a private default must pass");
+        assert_eq!(subnet, "192.168.1.0/24");
+    }
+
+    #[test]
+    fn an_explicit_subnet_wins_over_the_default() {
+        // The default must not be consulted at all when one was supplied,
+        // or a bad default could override a good request.
+        let subnet = resolve_and_check(Some("10.1.2.0/24".to_string()), || {
+            panic!("the default must not be evaluated when a subnet was given")
+        })
+        .expect("an explicit private subnet must pass");
+        assert_eq!(subnet, "10.1.2.0/24");
+    }
 }
