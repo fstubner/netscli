@@ -169,6 +169,12 @@ export async function getNetworkStats(interfaceName?: string | null): Promise<Ne
   return invoke<NetworkStats>('get_network_stats', { interface: interfaceName?.trim() || null });
 }
 
+/** Interfaces the traffic monitor can read counters for -- a different, and
+ *  usually smaller, set than `listInterfaces`. See the Rust command. */
+export async function listMonitorableInterfaces(): Promise<string[]> {
+  return invoke<string[]>('list_monitorable_interfaces');
+}
+
 export async function getDefaultInterface(): Promise<DefaultInterfaceInfo> {
   return invoke<DefaultInterfaceInfo>('get_default_interface');
 }

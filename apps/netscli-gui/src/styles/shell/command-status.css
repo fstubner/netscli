@@ -64,6 +64,15 @@
   white-space: nowrap;
 }
 
+/* Shown when the backend reports no traffic counters for the selected
+   interface. Muted rather than styled as an error: it is a limitation of
+   which adapters expose counters, not a fault the user caused. */
+.traffic-unavailable {
+  min-width: 0;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
 .traffic-rate {
   display: inline-flex;
   align-items: center;
