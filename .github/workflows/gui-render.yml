@@ -2,11 +2,19 @@ name: GUI Render
 
 # Schedule and manual only — deliberately NOT on pull_request.
 #
-# This suite cannot currently pass. WebView2 Runtime 150+ ignores
-# WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS on an elevated host, which is by
-# design per Microsoft, so tauri-driver can never hand msedgedriver the
-# remote-debugging port it needs. Tracked upstream at wry#1782; there is no
-# change on our side that fixes it.
+# The suite now drives the app by *attaching* to it rather than letting
+# msedgedriver launch it. See e2e/tauri-render/driver.mjs for the full
+# reasoning; briefly: msedgedriver reads the debug port back out of a
+# `DevToolsActivePort` file in the temporary user-data-dir it created, and
+# wry writes that file into Tauri's own WebView2 profile instead, so the
+# driver looked in a directory that never had it.
+#
+# The previous note here blamed WebView2 150+ ignoring
+# WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS on an elevated host and concluded no
+# fix was possible on our side. That was measured and found wrong: the app
+# does honour the variable and does open the port. The elevation caveat may
+# still apply to a hosted runner, which is exactly what a dispatch of this
+# workflow now tells us.
 #
 # Run per-PR it cost ~13 minutes on every PR touching the GUI or core — nine
 # of the last ten runs failed, all at the same step, for that same reason.
@@ -70,19 +78,6 @@ jobs:
         run: npm ci
         working-directory: apps/netscli-gui
 
-      - name: Install tauri-driver
-        # Pinned (B-34). `--locked` honours *that crate's* lockfile but says
-        # nothing about which version gets installed, so this floated to
-        # whatever was newest at job time -- a silent, unreviewed dependency
-        # bump on a job that drives the real app. Dependabot does not watch
-        # `cargo install` lines, so bumping this is a deliberate edit.
-        run: cargo install tauri-driver --locked --version 2.0.6
-
-      # This job has been failing with "session not created:
-      # DevToolsActivePort file doesn't exist", which is msedgedriver's
-      # generic "the thing I launched never came up" error and says
-      # nothing about why. Capture the environment so the next failure is
-      # diagnosable from the log instead of by guesswork.
       - name: Diagnose WebView2 / driver environment
         shell: pwsh
         continue-on-error: true
@@ -112,7 +107,6 @@ jobs:
             Write-Host "msedge.exe      : $((Get-Item $edge).VersionInfo.ProductVersion)"
           } else { Write-Host "msedge.exe      : NOT FOUND" }
 
-          Write-Host "tauri-driver    : $(tauri-driver --version 2>&1)"
           Write-Host "session type    : $([Environment]::UserInteractive)"
 
       - name: Run Tauri render test
