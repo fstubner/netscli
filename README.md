@@ -34,7 +34,7 @@ like "what's the IP of the device that just joined" or "is port 22 open
 on 192.168.1.42". Existing tools work but they aren't great to drive from
 an agent. Half a dozen CLI invocations, brittle output parsing, no shared
 context. So I built an MCP server first. `netscli serve`, nine tools by
-default (ten in the `-pcap` build), JSON-RPC over stdio, structured results.
+default (13 in the `-pcap` build), JSON-RPC over stdio, structured results.
 
 Then the TUI. Coding agents like Claude Code have put real work into
 autocomplete, command history, in-place progress, and mouse selection
@@ -163,7 +163,7 @@ $env:NETSCLI_PCAP=1; iwr -useb https://raw.githubusercontent.com/fstubner/netscl
 Windows CLI installer details:
 - Installs `netscli.exe` to `$env:USERPROFILE\.cargo\bin` by default (override with `INSTALL_DIR`).
 - Installs from `fstubner/netscli` by default (override with `REPO`) and installs the latest release by default (override with `NETSCLI_VERSION`).
-- When `NETSCLI_PCAP=1` is set: installs the `-pcap` asset and runs the Npcap installer (admin required; skip with `NETSCLI_SKIP_NPCAP=1`).
+- When `NETSCLI_PCAP=1` is set: installs the `-pcap` asset and runs the Npcap installer (admin required; skip with `NETSCLI_SKIP_NPCAP=1`). The Npcap installer's Authenticode signature is checked before it is launched, and it is not run at all unless the signer is the Nmap Project — override the expected name with `NETSCLI_NPCAP_SIGNER` if they publish a new one.
 - If the release publishes a matching `.sha256` asset, the script verifies the download automatically; you can also set `NETSCLI_SHA256` or `NETSCLI_SHA256_URL`.
 
 ### Verifying Release Signatures
@@ -505,7 +505,7 @@ The MCP server exposes 9 tools by default (13 in `-pcap` builds, which add `capt
 1. `discover_network` - Discover live hosts on a network subnet
 2. `scan_ports` - Scan TCP ports on a host
 3. `ping_host` - Ping a host with statistics
-4. `dns_lookup` - DNS lookup (forward or reverse)
+4. `dns_lookup` - Forward DNS lookup, all record types (reverse lookups are not exposed over MCP)
 5. `get_arp_table` - Get ARP/neighbor table with vendor information
 6. `inspect_host` - Comprehensive host inspection
 7. `sweep_network` - Sweep a network (discover hosts then scan ports)

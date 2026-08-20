@@ -66,6 +66,7 @@ nul
 .claude/
 
 # Local agent/browser tooling state
+.agent-evidence/
 .agents/
 .playwright-cli/
 .playwright-mcp/

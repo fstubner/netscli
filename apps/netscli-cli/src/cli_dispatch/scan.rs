@@ -42,8 +42,13 @@ pub(super) async fn run_scan(
     let results = commands::run_scan(ctx.ops, ctx.db, host, ports).await?;
     match format {
         OutputFormat::Json | OutputFormat::Yaml => {
-            let open: Vec<_> = results.iter().filter(|p| p.open).cloned().collect();
-            print_structured(format, &open)?;
+            // Every port, not just the open ones. Filtering here made "all
+            // closed", "all filtered" and "every probe errored" the same
+            // empty array, so a script could not tell a clean scan from a
+            // host that refused every probe -- a distinction the text
+            // formatter has always shown. Each entry carries `open` and
+            // `status`, so callers that want only open ports still can.
+            print_structured(format, &results)?;
         }
         OutputFormat::Text => {
             println!(

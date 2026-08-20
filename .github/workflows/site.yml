@@ -35,6 +35,11 @@ jobs:
           fetch-depth: 0
       - id: filter
         shell: bash
+        # Through `env:` rather than straight into the script — see the
+        # equivalent note in ci.yml's `changes` job.
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
           if [[ "${{ github.event_name }}" != "pull_request" ]]; then
@@ -42,9 +47,7 @@ jobs:
             exit 0
           fi
 
-          base='${{ github.event.pull_request.base.sha }}'
-          head='${{ github.event.pull_request.head.sha }}'
-          files=$(git diff --name-only "$base" "$head")
+          files=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
           echo "Changed files:"
           echo "$files" | sed 's/^/  /'
 

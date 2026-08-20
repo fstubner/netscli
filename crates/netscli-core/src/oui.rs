@@ -81,15 +81,31 @@ fn read_map(path: &Path) -> Option<HashMap<String, String>> {
         let bytes = fs::read(path).ok()?;
         parse_gz(&bytes)
     } else {
-        let data = fs::read_to_string(path).ok()?;
+        let file = fs::File::open(path).ok()?;
+        let mut data = String::new();
+        std::io::Read::take(file, MAX_OUI_BYTES)
+            .read_to_string(&mut data)
+            .ok()?;
         parse_json(&data)
     }
 }
 
+/// Ceiling on the OUI dataset, compressed or not.
+///
+/// The bundled file is 1.3 MB decompressed, so this leaves room for a much
+/// larger vendor list while refusing an implausible one. `NETSCLI_OUI_PATH`
+/// points this at an arbitrary file, and the gzip path amplifies: a few
+/// hundred KB on disk can decompress without limit into a `String`.
+const MAX_OUI_BYTES: u64 = 32 * 1024 * 1024;
+
 fn parse_gz(bytes: &[u8]) -> Option<HashMap<String, String>> {
-    let mut decoder = flate2::read::GzDecoder::new(bytes);
+    let decoder = flate2::read::GzDecoder::new(bytes);
     let mut buf = String::new();
-    decoder.read_to_string(&mut buf).ok()?;
+    // Bounded read: a truncated result fails `parse_json` rather than being
+    // silently accepted as a short vendor list.
+    std::io::Read::take(decoder, MAX_OUI_BYTES)
+        .read_to_string(&mut buf)
+        .ok()?;
     parse_json(&buf)
 }
 

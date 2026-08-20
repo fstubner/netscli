@@ -18,6 +18,12 @@ impl Ops {
         service_types: &[String],
         timeout: std::time::Duration,
     ) -> Result<Vec<crate::mdns::MdnsService>> {
+        // Clamp rather than reject: a browse is a "wait this long" request,
+        // not an addressing mistake, so trimming an over-long wait gives the
+        // caller results instead of an error. The engines are the authority
+        // on their own limits -- `Ops` used to pass this straight through,
+        // leaving the TUI as the only surface that bounded it.
+        let timeout = timeout.min(std::time::Duration::from_millis(crate::MAX_MDNS_TIMEOUT_MS));
         if service_types.is_empty() {
             crate::mdns::MdnsEngine::discover_common(timeout).await
         } else {

@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { By, Key } from '../driver.mjs';
-import { assertCommand, assertNoErrorStrip, assertTheme, clickButtonText, replaceInput, waitForText, withElement } from '../ui.mjs';
+import { assertCommand, assertNoErrorStrip, assertTheme, clickButtonText, replaceInput, waitForNoElement, waitForText, withElement } from '../ui.mjs';
 import { assertExportArtifactsCreated, countExportArtifacts } from './helpers/export.mjs';
 import { assertAboutDialogPolish, assertEmptyStateCentered, assertTrafficArrowsAreLedStyle, forceTabOverflow } from './helpers/polish.mjs';
 import { assertCommandStatusAlignment, assertInteractiveCursorTreatment, assertSuppressesNativeContextMenu, assertThemedTooltips, assertToastHasTimeoutBar } from './helpers/interaction.mjs';
-import { assertEmptyWorkspaceState, assertExitMenuItemNeutralUntilHover, assertInterfaceReadinessReflectsSelection, assertMenuIncludes, assertMenuItemDisabled, assertMenuItems, assertMenuKeyboardNavigation, assertToolbarButtonDisabled, clickMenuItem, countTabs, ensureTrafficIndicatorsVisible, getActiveTabText, waitForNoElement, waitForTabCount } from './helpers/menu.mjs';
+import { assertEmptyWorkspaceState, assertExitMenuItemNeutralUntilHover, assertInterfaceReadinessReflectsSelection, assertMenuIncludes, assertMenuItemDisabled, assertMenuItems, assertMenuKeyboardNavigation, assertToolbarButtonDisabled, clickMenuItem, countTabs, ensureTrafficIndicatorsVisible, getActiveTabText, waitForTabCount } from './helpers/menu.mjs';
 import { assertSettingsDialog, closeSettingsDialog, openSettingsDialog } from './helpers/settingsDialog.mjs';
 import { assertActiveTabVisible, assertDetailPaneCanFillWorkspace, assertEmptyToolLauncherVisible, assertOverflowTabClickSelection, assertTabAddControlPlacement, assertTabOverflowTreatment, assertTabToolPopoverTopLayer, assertTabToolPopoverVisible } from './helpers/tabs.mjs';
 

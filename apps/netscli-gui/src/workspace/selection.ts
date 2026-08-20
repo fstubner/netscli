@@ -22,3 +22,17 @@ export function rangeBetween(start: number, end: number): number[] {
   return Array.from({ length: high - low + 1 }, (_item, offset) => low + offset);
 }
 
+/**
+ * Find a row's position in the list a tab is actually rendering.
+ *
+ * Positions are only meaningful against one specific ordering. Workspace
+ * search enumerates rows in backend order and the table renders them sorted
+ * and filtered, so an index taken from one and applied to the other agreed
+ * only when no sort and no filter were in play -- which is never, since
+ * every tool kind has a DEFAULT_SORT. Row ids survive both operations, so
+ * they are what should cross the boundary.
+ */
+export function indexOfRowId(rows: { id: string }[], rowId: string): number {
+  return rows.findIndex((row) => row.id === rowId);
+}
+

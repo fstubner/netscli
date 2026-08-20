@@ -87,6 +87,13 @@ impl SweepEngine {
         resolve_hostnames: bool,
         progress: Option<Arc<dyn Fn(SweepProgress) + Send + Sync>>,
     ) -> Result<Vec<SweepEntry>> {
+        // Validate before the ping phase, not after it. This is public API
+        // re-exported at the crate root, and it used to trust the caller: a
+        // library caller passing port 0 got a full slow ping sweep and then a
+        // plausible result where every host had no open ports, because the
+        // per-host error below is deliberately swallowed. The comment there
+        // claiming the caller had already validated is only true now.
+        crate::validate_ports(&ports)?;
         let discover_progress = progress.clone().map(|cb| {
             Arc::new(move |p: crate::discover::DiscoverProgress| {
                 let phase = match p.phase {

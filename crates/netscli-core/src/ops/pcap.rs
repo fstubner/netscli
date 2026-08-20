@@ -115,7 +115,12 @@ fn normalize_capture_limits(
         None if max_packets.is_none() => {
             Some(std::time::Duration::from_secs(DEFAULT_PCAP_CAPTURE_SECONDS))
         }
-        None => None,
+        // A packet count with no duration used to mean "no time limit at
+        // all", so a capture waiting for packets that never arrive on a quiet
+        // interface ran until something else stopped it -- past the very
+        // ceiling this function enforces when a duration *is* given. The cap
+        // is the cap either way.
+        None => Some(std::time::Duration::from_secs(MAX_PCAP_CAPTURE_SECONDS)),
     };
 
     Ok((duration, max_packets))

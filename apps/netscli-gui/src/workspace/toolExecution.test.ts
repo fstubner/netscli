@@ -9,6 +9,7 @@ vi.mock('../services/env', () => ({
 
 vi.mock('../services/netscli', () => ({
   dnsLookup: vi.fn(),
+  discoverMdns: vi.fn(() => Promise.resolve([])),
 }));
 
 describe('validateTab', () => {
@@ -97,5 +98,33 @@ describe('executeTool DNS "ALL" aggregation', () => {
     tab.form.record = 'ALL';
 
     await expect(executeTool(tab, 'op-4', 256)).rejects.toThrow(/cancelled/i);
+  });
+});
+
+// The mDNS timeout was the one numeric field sent to the backend without the
+// registry's own min/max, even though the comment on that field said this
+// path applied them.
+describe('numeric form bounds', () => {
+  it('clamps the mDNS timeout to the range its field declares', async () => {
+    const netscli = await import('../services/netscli');
+    const tab = createTab('mdns');
+    // Indexed rather than `.at(-1)`, which needs a newer lib target than
+    // this project sets.
+    const lastTimeout = () => {
+      const calls = vi.mocked(netscli.discoverMdns).mock.calls;
+      return calls[calls.length - 1]?.[0];
+    };
+
+    tab.form.timeout_ms = '999999';
+    await executeTool(tab, 'op-mdns-1', 64);
+    expect(lastTimeout()).toBe(30000);
+
+    tab.form.timeout_ms = '1';
+    await executeTool(tab, 'op-mdns-2', 64);
+    expect(lastTimeout()).toBe(500);
+
+    tab.form.timeout_ms = '3000';
+    await executeTool(tab, 'op-mdns-3', 64);
+    expect(lastTimeout()).toBe(3000);
   });
 });

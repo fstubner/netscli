@@ -47,7 +47,11 @@ pub struct TuiSettings {
 }
 
 pub fn clamp_max_concurrent_probes(value: usize) -> usize {
-    value.clamp(1, 1024)
+    // Derived, not repeated. A literal here matched `MAX_CONCURRENCY` by
+    // coincidence, and C-10 was exactly that coincidence lapsing: the MCP
+    // server clamped to 4096 while `Ops` clamped to 1024, so values in
+    // between were accepted at the boundary and silently reduced.
+    value.clamp(1, netscli_core::MAX_CONCURRENCY)
 }
 
 fn normalize_settings(mut settings: TuiSettings) -> TuiSettings {

@@ -6,6 +6,8 @@
 #   winget install netscli-gui   -> GUI
 # Moniker resolves to the chosen identifier as long as it's unique in
 # the catalog.
+#
+# InstallerSha256 is a placeholder — see the note in gui/0.3.0/.
 
 PackageIdentifier: fstubner.netscli.gui
 PackageVersion: 0.2.4
@@ -13,7 +15,7 @@ Installers:
   - Architecture: x64
     InstallerType: wix
     InstallerUrl: https://github.com/fstubner/netscli/releases/download/v0.2.4/netscli-gui-windows-x86_64.msi
-    InstallerSha256: BDEF02B05D636627057DB8B395F9D38D76D9F884C634310D17F078D1EC86788D
+    InstallerSha256: '@@INSTALLER_SHA256@@'
     Scope: user
 ManifestType: installer
 ManifestVersion: 1.9.0

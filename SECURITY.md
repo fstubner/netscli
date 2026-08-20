@@ -70,6 +70,13 @@ Dependency scanning also has a blind spot worth naming: `npm audit
 --omit=dev` excludes the build toolchain that produces the shipped bundle,
 so a compromised bundler is not something the current checks would catch.
 
+Packet capture on Windows is covered by no test at all. The
+`--features pcap` test steps in `.github/workflows/ci.yml` are gated
+`if: runner.os == 'Linux'`, and the feature cannot even be built on Windows
+without the Npcap SDK installed — without it the link step fails with
+`LNK1181: cannot open input file 'wpcap.lib'`. So the Npcap paths, which are
+the reason the feature matters on Windows, are exercised by nothing anywhere.
+
 If you are picking this up, treat those four areas as unaudited rather than
 as reviewed and clean.
 

@@ -140,8 +140,9 @@ export const TOOL_CONFIG: Record<ToolKind, ToolConfig> = {
       // DEFAULT_FORM carried `timeout_ms` with no field to set it, so the
       // value went straight to the backend through `numberOrUndefined`, which
       // does not clamp -- every other numeric field is bounded by its `min`
-      // and `max` here. The command preview and the execution path already
-      // handled it; only the input was missing.
+      // and `max` here. Adding the input left the execution path still
+      // calling the unclamped helper, so these bounds only became real when
+      // `toolExecution` switched to `boundedNumberOrUndefined`.
       { key: 'timeout_ms', label: 'Timeout', type: 'number', compact: true, placeholder: '3000', min: 500, max: 30000, step: 100 },
     ],
   },

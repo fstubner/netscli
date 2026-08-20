@@ -106,6 +106,11 @@ function App() {
     if (activeTab.busy || activeTab.result) return;
     workspace.clearAutoRun(activeTab.id);
     requestRun(activeTab.id);
+    // `requestRun` and `workspace` are rebuilt every render, so depending on
+    // them would refire this on every render and re-trigger the auto-run.
+    // The three fields listed are the whole trigger: a tab became active,
+    // finished, or produced a result.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab?.id, activeTab?.busy, activeTab?.result]);
 
   useKeyboardShortcuts({

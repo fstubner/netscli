@@ -13,6 +13,19 @@ on:
         required: true
         type: string
 
+# Keyed on the tag, not the ref: `workflow_dispatch` and `release: published`
+# reach the same tag by different refs, and two runs uploading assets for one
+# tag race each other on `softprops/action-gh-release`.
+#
+# `cancel-in-progress: false` deliberately, unlike ci.yml/site.yml. A cancelled
+# matrix leg leaves the release with some assets uploaded and some missing,
+# and publish.yml is meanwhile polling for exactly the assets that will now
+# never arrive. Queueing a duplicate run is harmless — it rebuilds and
+# re-uploads the same files.
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
 jobs:
   release:
     name: Build and Release
@@ -278,8 +291,13 @@ jobs:
         run: npm ci
         working-directory: apps/netscli-gui
 
+      # The trailing `-- --locked` is forwarded by the Tauri CLI to cargo, so
+      # the Rust half of the installer gets the same lockfile enforcement the
+      # CLI job above already has. Without it a signed .msi/.dmg could be
+      # built against resolved-at-CI-time dependency versions that no
+      # committed Cargo.lock ever pinned. `npm ci` covers the frontend half.
       - name: tauri build
-        run: npm run tauri -- build --target ${{ matrix.target }}
+        run: npm run tauri -- build --target ${{ matrix.target }} -- --locked
         working-directory: apps/netscli-gui
 
       # Tauri puts bundles under apps/netscli-gui/src-tauri/target/<TARGET>/

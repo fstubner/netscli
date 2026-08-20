@@ -14,7 +14,8 @@ same MCP surface inside a different host process.
 - `discover_network` — live hosts on a subnet.
 - `scan_ports` — TCP port scan on a host.
 - `ping_host` — ping with packet-loss and RTT statistics.
-- `dns_lookup` — forward or reverse DNS, all record types.
+- `dns_lookup` — forward DNS, all record types. Reverse lookups are
+  not exposed over MCP.
 - `get_arp_table` — ARP/neighbour table with vendor resolution.
 - `inspect_host` — comprehensive host inspection (ping + scan + DNS).
 - `sweep_network` — discovery + port scan in one call.

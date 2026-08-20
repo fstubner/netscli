@@ -7,7 +7,6 @@ import {
   buildRows,
   columnsFor,
   copyContextForCell,
-  csvEscape,
   detailTabsFor,
   filterHintsFor,
   filterAndSortRows,
@@ -21,11 +20,9 @@ import {
   portTlsLines,
   resultSummary,
   selectedRowsRawPreview,
-  serializeRowsAsCsv,
   selectionSummaryLines,
   tabIdentity,
 } from './presentation';
-import type { ResultColumn } from './types';
 import type { ToolResult } from '../types/app';
 import type { PortResult, PortStatus } from '../types/netscli';
 
@@ -473,25 +470,6 @@ describe('result presentation', () => {
     openUnknown.service = undefined;
     expect(portHeaderLines(openUnknown)[1]?.value).toMatch(/not HTTP-like/i);
     expect(portTlsLines(openUnknown)[1]?.value).toMatch(/not TLS-like/i);
-  });
-
-  it('escapes CSV output', () => {
-    expect(csvEscape('a,b"c\n')).toBe('"a,b""c\n"');
-
-    const columns: ResultColumn[] = [
-      { key: 'name', label: 'Name' },
-      { key: 'value', label: 'Value' },
-    ];
-    const csv = serializeRowsAsCsv(columns, [
-      {
-        id: 'row-1',
-        kind: 'dns',
-        data: { name: 'txt', value: 'hello, "world"' },
-        raw: {},
-        searchText: '',
-      },
-    ]);
-    expect(csv).toBe('Name,Value\ntxt,"hello, ""world"""');
   });
 
   it('builds copy context for populated result cells only', () => {

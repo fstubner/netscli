@@ -6,7 +6,7 @@
   "architecture": {
     "64bit": {
       "url": "https://github.com/fstubner/netscli/releases/download/v0.3.0/netscli-gui-windows-x86_64.msi",
-      "hash": "064ef2b5cda0b70131d07002ea6a51fc0cebea863072211e6643a0bb5252fd7e"
+      "hash": "@@SHA256_WINDOWS_GUI@@"
     }
   },
   "installer": {
