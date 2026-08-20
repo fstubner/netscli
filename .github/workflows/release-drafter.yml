@@ -26,6 +26,10 @@ jobs:
       # for a release the repo had already numbered 0.3.0. The version that
       # ships is the one set by hand across the seven files in
       # docs/PUBLISHING.md; set the tag to match when you publish the draft.
-      - uses: release-drafter/release-drafter@v7
+      #
+      # SHA-pinned like every action in release.yml. `@v7` is a tag the
+      # upstream owner can move at any time, and this job hands whatever it
+      # resolves to a `contents: write` token on main.
+      - uses: release-drafter/release-drafter@34d80673e067bdc0c24568d3af899c216adcfaa9 # v7.7.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

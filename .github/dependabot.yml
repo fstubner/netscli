@@ -123,9 +123,10 @@ updates:
       - dependencies
       - ci
     # dtolnay/rust-toolchain's numeric refs are Rust toolchain versions
-    # (1.96.0, not the action's release). We pin to @stable with an
-    # explicit `toolchain` input everywhere, so Dependabot has nothing
-    # to bump here, but keep this ignore as a belt-and-braces guard.
+    # (1.96.0, not the action's release). Every workflow now pins it by
+    # commit SHA with an explicit `toolchain` input, so Dependabot has
+    # nothing to bump here, but keep this ignore as a belt-and-braces
+    # guard against it reading the `# stable` marker as a version.
     ignore:
       - dependency-name: "dtolnay/rust-toolchain"
     groups:

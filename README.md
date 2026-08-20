@@ -163,7 +163,7 @@ $env:NETSCLI_PCAP=1; iwr -useb https://raw.githubusercontent.com/fstubner/netscl
 Windows CLI installer details:
 - Installs `netscli.exe` to `$env:USERPROFILE\.cargo\bin` by default (override with `INSTALL_DIR`).
 - Installs from `fstubner/netscli` by default (override with `REPO`) and installs the latest release by default (override with `NETSCLI_VERSION`).
-- When `NETSCLI_PCAP=1` is set: installs the `-pcap` asset and runs the Npcap installer (admin required; skip with `NETSCLI_SKIP_NPCAP=1`).
+- When `NETSCLI_PCAP=1` is set: installs the `-pcap` asset and runs the Npcap installer (admin required; skip with `NETSCLI_SKIP_NPCAP=1`). The Npcap installer's Authenticode signature is checked before it is launched, and it is not run at all unless the signer is the Nmap Project — override the expected name with `NETSCLI_NPCAP_SIGNER` if they publish a new one.
 - If the release publishes a matching `.sha256` asset, the script verifies the download automatically; you can also set `NETSCLI_SHA256` or `NETSCLI_SHA256_URL`.
 
 ### Verifying Release Signatures

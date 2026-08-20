@@ -20,6 +20,27 @@ on:
         required: true
         type: string
 
+# Keyed on the tag, not the ref, because `workflow_dispatch` and
+# `release: published` reach the same tag by different refs and would
+# otherwise not see each other.
+#
+# `cancel-in-progress: false` deliberately, unlike every other workflow here.
+# The jobs below push to registries the moment they succeed, and AUR has no
+# review step — cancelling halfway leaves some registries on the new version
+# and some on the old, with no record of which. Queueing costs a few idle
+# minutes; the duplicate run is a no-op, since every publish script is
+# idempotent for a tag it has already pushed.
+concurrency:
+  group: publish-${{ github.event.inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+# These jobs hold five publishing secrets between them (crates.io, the tap,
+# the bucket, winget, AUR) and every one of those is a PAT or an SSH key —
+# none of them needs GITHUB_TOKEN to write to this repo. Read is what the
+# checkouts need and nothing here wants more.
+permissions:
+  contents: read
+
 # Resolve the tag once at the workflow level so every job sees the same
 # version regardless of trigger.
 env:
@@ -167,24 +188,35 @@ jobs:
           . scripts/release/lib.sh
           validate_tag "$TAG"
 
-      - name: Wait for Linux release assets + compute SHA256s
+      # This step used to read the `.sha256` sidecar and write its contents
+      # straight into the PKGBUILD without ever downloading the binary. That
+      # verifies nothing: sidecar and asset come from the same origin, so a
+      # tampered asset shipped with a matching sidecar sails through, and AUR
+      # has no review step to catch it. `verified_sha` (lib.sh) is the fix the
+      # four publish-*.sh scripts already use — it downloads the asset, hashes
+      # the bytes, and aborts unless the sidecar agrees. These two AUR jobs do
+      # their work inline in YAML and so were the last callers still trusting
+      # the sidecar (C-35, B-03).
+      #
+      # It also folds in the availability poll this step used to do by hand:
+      # `verified_sha` calls `wait_for_asset` first.
+      - name: Verify Linux release assets + compute SHA256s
         id: shas
         env:
           TAG: ${{ env.TAG }}
         run: |
           set -euo pipefail
+          # Each `run:` block is a fresh shell, so the Validate tag step's
+          # source of lib.sh does not carry over to this one.
+          . scripts/release/lib.sh
           BASE="https://github.com/fstubner/netscli/releases/download/${TAG}"
           for arch in x86_64 aarch64; do
-            url="${BASE}/netscli-linux-${arch}.sha256"
-            echo "→ ${url}"
-            for i in {1..30}; do
-              if curl -fsSL --head "$url" >/dev/null 2>&1; then break; fi
-              echo "  not yet; retry in 30s ($i/30)"
-              sleep 30
-            done
-            sha=$(curl -fsSL "$url" | awk '{print $1}')
+            echo "→ verifying netscli-linux-${arch}"
+            sha=$(verified_sha "$BASE" "netscli-linux-${arch}")
             echo "${arch}=${sha}" >> "$GITHUB_OUTPUT"
           done
+          # LICENSE is hashed from the bytes we fetch, so there is no sidecar
+          # to distrust here.
           license_url="https://raw.githubusercontent.com/fstubner/netscli/${TAG}/LICENSE"
           echo "→ ${license_url}"
           license_sha=$(curl -fsSL "$license_url" | sha256sum | awk '{print $1}')
@@ -211,6 +243,15 @@ jobs:
             -e "s|^sha256sums_aarch64=.*|sha256sums_aarch64=('${SHA_AARCH64}')|" \
             packaging/aur/PKGBUILD > packaging/aur/PKGBUILD.rendered
           mv packaging/aur/PKGBUILD.rendered packaging/aur/PKGBUILD
+          # The committed template carries @@…@@ placeholders instead of
+          # real-looking digests, so any sed above that silently failed to
+          # match leaves one behind. Catch that here rather than pushing a
+          # PKGBUILD to AUR, which has no review step.
+          if grep -q '@@' packaging/aur/PKGBUILD; then
+            echo "ERROR: rendered PKGBUILD still contains unsubstituted placeholders" >&2
+            cat packaging/aur/PKGBUILD >&2
+            exit 1
+          fi
           echo "--- rendered ---"
           cat packaging/aur/PKGBUILD
 
@@ -323,22 +364,23 @@ jobs:
           . scripts/release/lib.sh
           validate_tag "$TAG"
 
-      - name: Wait for Linux GUI .AppImage + compute SHA256
+      # Same sidecar-trust fix as the CLI AUR job above: hash the AppImage we
+      # actually downloaded and require the sidecar to agree, rather than
+      # copying the sidecar into the PKGBUILD unchecked.
+      - name: Verify Linux GUI .AppImage + compute SHA256
         id: shas
         env:
           TAG: ${{ env.TAG }}
         run: |
           set -euo pipefail
+          # Fresh shell per step — the Validate tag step's source is gone.
+          . scripts/release/lib.sh
           BASE="https://github.com/fstubner/netscli/releases/download/${TAG}"
-          url="${BASE}/netscli-gui-linux-x86_64.AppImage.sha256"
-          echo "→ ${url}"
-          for i in {1..30}; do
-            if curl -fsSL --head "$url" >/dev/null 2>&1; then break; fi
-            echo "  not yet; retry in 30s ($i/30)"
-            sleep 30
-          done
-          sha=$(curl -fsSL "$url" | awk '{print $1}')
+          echo "→ verifying netscli-gui-linux-x86_64.AppImage"
+          sha=$(verified_sha "$BASE" "netscli-gui-linux-x86_64.AppImage")
           echo "x86_64=${sha}" >> "$GITHUB_OUTPUT"
+          # LICENSE and the icon are hashed from the bytes we fetch; no
+          # sidecar is involved.
           license_url="https://raw.githubusercontent.com/fstubner/netscli/${TAG}/LICENSE"
           echo "→ ${license_url}"
           license_sha=$(curl -fsSL "$license_url" | sha256sum | awk '{print $1}')
@@ -365,6 +407,12 @@ jobs:
             -e "s|^sha256sums_x86_64=.*|sha256sums_x86_64=('${SHA_X86_64}')|" \
             packaging/aur/netscli-gui-bin/PKGBUILD > packaging/aur/netscli-gui-bin/PKGBUILD.rendered
           mv packaging/aur/netscli-gui-bin/PKGBUILD.rendered packaging/aur/netscli-gui-bin/PKGBUILD
+          # Same leftover-placeholder check as the CLI AUR job.
+          if grep -q '@@' packaging/aur/netscli-gui-bin/PKGBUILD; then
+            echo "ERROR: rendered PKGBUILD still contains unsubstituted placeholders" >&2
+            cat packaging/aur/netscli-gui-bin/PKGBUILD >&2
+            exit 1
+          fi
           echo "--- rendered ---"
           cat packaging/aur/netscli-gui-bin/PKGBUILD
 
@@ -378,3 +426,71 @@ jobs:
           ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
           commit_message: "netscli-gui ${{ env.TAG }}"
           updpkgsums: false
+
+  # ─── Fan-out summary ───────────────────────────────────────────────
+  #
+  # The nine jobs above are deliberately independent — crates.io landing
+  # while AUR fails is a normal, recoverable state, and each job re-runs on
+  # its own. The cost of that independence was that "did this release
+  # actually reach every registry?" could only be answered by opening nine
+  # job pages, and a single failure among eight greens is easy to miss.
+  #
+  # This job REPORTS, it does not gate, and that is on purpose: failing the
+  # run on a partial publish would contradict the independence above and
+  # make a red X mean "one registry needs a rerun", which is
+  # indistinguishable at a glance from "the release is broken". The table
+  # goes to the run summary and any incomplete registry gets a ::warning::.
+  #
+  # `needs` result values: success | failure | cancelled | skipped. The
+  # allowlist is copied from ci.yml's `ci-gate` on purpose — see the note
+  # there about a runner that never started reporting "abandoned", a state
+  # that matched neither arm of a failure/cancelled denylist.
+  summary:
+    name: Publish summary
+    if: always()
+    needs:
+      - crates-io
+      - homebrew
+      - scoop
+      - winget
+      - aur
+      - homebrew-cask
+      - scoop-gui
+      - winget-gui
+      - aur-gui
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report each registry's result
+        shell: bash
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          TAG: ${{ env.TAG }}
+        run: |
+          set -euo pipefail
+          echo "$NEEDS" | jq -r 'to_entries[] | "  \(.key): \(.value.result)"'
+
+          {
+            echo "### Publish fan-out for ${TAG}"
+            echo ""
+            echo "| Registry | Result |"
+            echo "| --- | --- |"
+            echo "$NEEDS" | jq -r 'to_entries[] | "| \(.key) | \(.value.result) |"'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          incomplete=$(echo "$NEEDS" | jq -r '
+            to_entries
+            | map(select(.value.result != "success" and .value.result != "skipped"))
+            | map("\(.key)=\(.value.result)")
+            | join(", ")
+          ')
+
+          if [[ -n "$incomplete" ]]; then
+            echo "::warning::Publish incomplete for ${TAG} — these registries did not update: ${incomplete}"
+            {
+              echo ""
+              echo "**${TAG} did not reach every registry.** Re-run the failed jobs from the"
+              echo "Actions tab, or \`workflow_dispatch\` this workflow with tag \`${TAG}\`."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "All registries published for ${TAG}."
+          fi

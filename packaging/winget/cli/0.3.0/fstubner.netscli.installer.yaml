@@ -4,6 +4,8 @@
 # initial Winget package must therefore be submitted as a portable
 # package. Future automated winget-releaser updates should preserve this
 # installer type from the accepted microsoft/winget-pkgs manifest.
+#
+# InstallerSha256 is a placeholder — see the note in gui/0.3.0/.
 
 PackageIdentifier: fstubner.netscli
 PackageVersion: 0.3.0
@@ -11,7 +13,7 @@ Installers:
   - Architecture: x64
     InstallerType: portable
     InstallerUrl: https://github.com/fstubner/netscli/releases/download/v0.3.0/netscli-windows-x86_64.exe
-    InstallerSha256: 2D074426FE5BB79E42A6D211F1A705634E90E576C1DDA9BABADE0FCF05A86B1D
+    InstallerSha256: '@@INSTALLER_SHA256@@'
     Commands:
       - netscli
 ManifestType: installer

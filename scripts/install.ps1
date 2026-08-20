@@ -12,6 +12,9 @@
 #   - NETSCLI_SKIP_NPCAP=1: with NETSCLI_PCAP=1, skip the Npcap installer
 #                          (for users who already have Npcap installed)
 #   - NETSCLI_NPCAP_URL: Override the Npcap installer URL
+#   - NETSCLI_NPCAP_SIGNER: Override the Authenticode signer name the Npcap
+#     installer must carry (default: the Nmap Project's two published
+#     signing names). The installer is not run if it does not match.
 #   - NETSCLI_SHA256 / NETSCLI_SHA256_URL: supply the expected checksum
 #     explicitly. By default the installer fetches "<asset>.sha256" from
 #     the release and REFUSES to install if it cannot be verified.
@@ -71,12 +74,77 @@ function Test-NpcapInstalled {
   return $false
 }
 
+# Running the Npcap installer elevated is the most dangerous thing this
+# script does, and until now it did so on bytes fetched over a
+# user-overridable URL with nothing checked at all. release.yml's "Install
+# Npcap SDK" step refuses to do the equivalent for the Npcap *SDK* — it pins
+# a SHA256 rather than let an unverified third-party download into a binary
+# we then cosign-sign.
+#
+# A pinned hash is the wrong tool here, though. npcap.com serves a new
+# installer on every point release, so a pin would break `NETSCLI_PCAP=1` on
+# a schedule nobody here controls, and a check that breaks on a schedule is a
+# check people learn to disable. Authenticode survives version bumps: the
+# Nmap Project signs every Npcap release, so verify the signature is valid
+# and the signer is who we expect.
+#
+# Two names are accepted because the project's code signing key was reissued
+# to "Nmap Software LLC" in Npcap 1.76 (2023-07-19), replacing the older
+# "Insecure.Com LLC" — which anything a user pins with NETSCLI_NPCAP_URL
+# below that version still carries.
+function Test-NpcapSignature([string]$path) {
+  $accepted = if ($env:NETSCLI_NPCAP_SIGNER) {
+    @($env:NETSCLI_NPCAP_SIGNER)
+  } else {
+    @("Nmap Software LLC", "Insecure.Com LLC")
+  }
+
+  $sig = Get-AuthenticodeSignature -FilePath $path
+  if ($sig.Status -ne "Valid") {
+    Write-Host "Npcap installer signature is not valid (status: $($sig.Status))." -ForegroundColor Red
+    if ($sig.StatusMessage) {
+      Write-Host "  $($sig.StatusMessage)" -ForegroundColor Red
+    }
+    return $false
+  }
+  if (-not $sig.SignerCertificate) {
+    Write-Host "Npcap installer carries no signer certificate." -ForegroundColor Red
+    return $false
+  }
+
+  # SimpleName is the certificate's CN on its own, which avoids parsing the
+  # full distinguished name (the rest of which — locality, serial — changes
+  # whenever the cert is reissued).
+  $signer = $sig.SignerCertificate.GetNameInfo(
+    [System.Security.Cryptography.X509Certificates.X509NameType]::SimpleName, $false)
+
+  foreach ($name in $accepted) {
+    if ($signer -eq $name) {
+      Write-Host "Npcap installer signed by: $signer" -ForegroundColor Green
+      return $true
+    }
+  }
+
+  Write-Host "Npcap installer is signed by '$signer', which is not an accepted signer." -ForegroundColor Red
+  Write-Host "Expected one of: $($accepted -join ', ')" -ForegroundColor Red
+  Write-Host "Set NETSCLI_NPCAP_SIGNER if the Nmap Project has published a new signing name." -ForegroundColor Yellow
+  return $false
+}
+
 function Install-Npcap([string]$downloadDir, [string]$url) {
   $npcapExe = Join-Path $downloadDir "npcap-installer.exe"
   Write-Host "Downloading Npcap from: $url" -ForegroundColor Cyan
   Invoke-WebRequest -Uri $url -OutFile $npcapExe
   if (-not (Test-Path $npcapExe)) {
     Write-Host "Npcap download failed." -ForegroundColor Red
+    return $false
+  }
+
+  # Fail closed. Verification comes before the elevation prompt, not after,
+  # so an installer we cannot vouch for is never handed admin rights.
+  Write-Host "Verifying Npcap installer signature..." -ForegroundColor Cyan
+  if (-not (Test-NpcapSignature $npcapExe)) {
+    Write-Host "Refusing to run an unverified Npcap installer." -ForegroundColor Red
     return $false
   }
 

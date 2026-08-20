@@ -2,11 +2,17 @@
 #
 # The values below are a template, not what users install.
 # `scripts/release/publish-homebrew.sh` runs from publish.yml on every
-# release: it fetches the real .sha256 sidecars from the published assets,
-# rewrites `version` and every `sha256` here, checks that exactly four valid
-# digests came out, and pushes the result to the tap. What is committed in
-# this repo is whatever the last edit left behind, so it can and does lag --
-# reading it as the shipped manifest is a mistake that has been made before.
+# release: it downloads each asset, hashes the bytes, checks the result
+# against the published .sha256 sidecar, rewrites `version` and every
+# `sha256` in the tap's copy of this file, verifies exactly four valid
+# digests came out, and pushes that.
+#
+# The digests here are @@…@@ placeholders on purpose. They used to be
+# real-looking 64-hex values left behind by whichever release last touched
+# the file -- a 0.3.0 label over v0.2.6-era digests -- which read as the
+# shipped manifest and would have installed a binary that fails Homebrew's
+# integrity check if anyone had copied them into the tap. A placeholder is
+# unmistakably unfilled.
 #
 # Editing it by hand is only needed if you are bootstrapping the tap or the
 # publish job is broken; in that case take each digest from the `.sha256`
@@ -24,22 +30,22 @@ class Netscli < Formula
   on_macos do
     on_arm do
       url "https://github.com/fstubner/netscli/releases/download/v#{version}/netscli-macos-aarch64"
-      sha256 "66935b1b627e5e58d7d24ef92f8153381dcbbf06ff79807314ddce47a73a7907"
+      sha256 "@@SHA256_MACOS_AARCH64@@"
     end
     on_intel do
       url "https://github.com/fstubner/netscli/releases/download/v#{version}/netscli-macos-x86_64"
-      sha256 "4e136a0b3fd287d7a86f70983c1be5bb4bd56f6c9d4f7b4da73e7bad23b644a3"
+      sha256 "@@SHA256_MACOS_X86_64@@"
     end
   end
 
   on_linux do
     on_arm do
       url "https://github.com/fstubner/netscli/releases/download/v#{version}/netscli-linux-aarch64"
-      sha256 "26f3d174b533d826deff96dc095b2c6067029baaecf757aef2fc227fa846d924"
+      sha256 "@@SHA256_LINUX_AARCH64@@"
     end
     on_intel do
       url "https://github.com/fstubner/netscli/releases/download/v#{version}/netscli-linux-x86_64"
-      sha256 "b3e7c97722982a1b7538866d05f7b51094a8b80fd049508e7e3f1f840e40e730"
+      sha256 "@@SHA256_LINUX_X86_64@@"
     end
   end
 

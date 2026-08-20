@@ -8,6 +8,13 @@
 #   winget install fstubner.netscli.gui
 # The `netscli-gui` moniker may resolve after the package is accepted
 # into the Winget catalog.
+#
+# InstallerSha256 is a placeholder. Nothing reads this file — the
+# `winget-gui` job in publish.yml uses `winget-releaser`, which computes
+# the digest from the release asset itself — so the snapshot exists to
+# record the manifest *shape*, per winget/README.md. It previously carried
+# a real-looking digest identical to the one in 0.2.6/, which means at
+# least one of the two described a build it did not match.
 
 PackageIdentifier: fstubner.netscli.gui
 PackageVersion: 0.3.0
@@ -15,7 +22,7 @@ Installers:
   - Architecture: x64
     InstallerType: wix
     InstallerUrl: https://github.com/fstubner/netscli/releases/download/v0.3.0/netscli-gui-windows-x86_64.msi
-    InstallerSha256: 064EF2B5CDA0B70131D07002EA6A51FC0CEBEA863072211E6643A0BB5252FD7E
+    InstallerSha256: '@@INSTALLER_SHA256@@'
     Scope: user
 ManifestType: installer
 ManifestVersion: 1.9.0
