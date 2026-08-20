@@ -12,7 +12,7 @@ further copies in `package.json` and `tauri.conf.json`. See
 
 ## [Unreleased]
 
-## [0.3.0] — 2026-08-19
+## [0.3.0] — 2026-08-20
 
 ### Added
 
