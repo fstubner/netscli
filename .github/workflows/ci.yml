@@ -40,6 +40,18 @@ permissions:
   contents: read
 
 jobs:
+  # Every job below sets `timeout-minutes`. GitHub's default is 360, and on
+  # 2026-08-19 a stalled `apt-get` in "Install system dependencies" sat there
+  # for the full six hours on five branches at once, then failed the gate --
+  # burning a day of runner time to report a problem visible in the first
+  # minute.
+  #
+  # The values are sized against measured runs, not guessed: with a warm
+  # cache the slowest job here is ~3 minutes, and a fully cold build of the
+  # workspace (GTK/WebKit + Tauri, release profile with LTO) is well under
+  # 20. Each limit leaves roughly an order of magnitude of headroom over
+  # what the job actually needs, so a timeout means something is wrong
+  # rather than merely slow.
   # Classify the diff so the expensive jobs can skip themselves without
   # the workflow disappearing from the PR's check list. Done with plain
   # git rather than a paths-filter action to avoid adding another
@@ -47,6 +59,7 @@ jobs:
   changes:
     name: Detect changes
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       code: ${{ steps.filter.outputs.code }}
     steps:
@@ -92,6 +105,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -111,6 +125,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
       # install.sh is user-facing; the release/ scripts hold GH_TOKEN and
@@ -149,6 +164,7 @@ jobs:
     needs: [changes, maintainability]
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
       # libpcap-dev: netscli-core pcap feature. GTK/WebKit: netscli-gui
@@ -189,6 +205,7 @@ jobs:
     needs: [changes, lint]
     if: needs.changes.outputs.code == 'true'
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -234,6 +251,7 @@ jobs:
     needs: [changes, lint]
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -285,6 +303,7 @@ jobs:
     needs: [changes, test]
     if: needs.changes.outputs.code == 'true'
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -339,6 +358,7 @@ jobs:
       - gui-build
       - release-build
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Verify no upstream job failed
         shell: bash
