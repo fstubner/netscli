@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import { By } from '../driver.mjs';
-import { addToolTab, assertCommand, assertNoErrorStrip, clickButtonText, replaceInput, runActiveTool, waitForRow, waitForText, withElement } from '../ui.mjs';
+import { addToolTab, assertCommand, assertNoErrorStrip, clickButtonText, replaceInput, runActiveTool, waitForNoElement, waitForRow, waitForText, withElement } from '../ui.mjs';
 import { dismissDnsWarningIfPresent, assertOperationToastReturnsToTab } from './helpers/interaction.mjs';
-import { waitForNoElement } from './helpers/menu.mjs';
 import { assertKeyboardSelection } from './helpers/table.mjs';
 import { assertFieldSelectPopoverVisible, assertFilterPlaceholder } from './helpers/tabs.mjs';
 

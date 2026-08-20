@@ -9,6 +9,22 @@ export async function withElement(driver, selector, timeoutMs = 10_000) {
   return driver.wait(until.elementLocated(By.css(selector)), timeoutMs);
 }
 
+/**
+ * The inverse of `withElement`: wait until nothing matches.
+ *
+ * Lives here rather than in `menu.mjs` because putting it there made
+ * `settingsDialog.mjs` import from `menu.mjs` while `menu.mjs` needed the
+ * dialog helpers back — a cycle that was "resolved" by dropping the import
+ * entirely, leaving both modules calling undefined names.
+ */
+export async function waitForNoElement(driver, selector) {
+  await driver.wait(
+    async () => (await driver.findElements(By.css(selector))).length === 0,
+    5_000,
+    `Expected no elements matching ${selector}`,
+  );
+}
+
 export async function replaceInput(driver, selector, value) {
   const input = await withElement(driver, selector);
   await input.click();
