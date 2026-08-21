@@ -8,8 +8,15 @@ name: Site Preview
 # `--branch=pr-<N>`, which Cloudflare treats as a *preview* deployment.
 # There is no code path here that produces a production deployment.
 #
-# Until the two repository secrets exist this workflow runs and cleanly
-# reports "not configured" rather than failing — see docs/PUBLISHING.md.
+# A missing secret fails this workflow rather than skipping it.
+#
+# It used to skip and report success. Fork PRs cannot see secrets, so
+# skipping looked like the considerate choice -- but the job-level `if`
+# below already excludes forks, so the only way to reach the check with no
+# token is a misconfigured repository. That state produced a green "Site
+# Preview" tick on every PR for weeks while deploying nothing, and the
+# notice explaining why was visible only inside the job log. A check that
+# passes without doing its job is worse than one that is absent.
 
 on:
   pull_request:
@@ -44,20 +51,21 @@ jobs:
           cache-dependency-path: site/package-lock.json
 
       - name: Check configuration
-        id: cfg
         env:
           CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          if [[ -n "$CF_TOKEN" && -n "$CF_ACCOUNT" ]]; then
-            echo "configured=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Cloudflare preview not configured — set CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID to enable. See docs/PUBLISHING.md."
+          missing=()
+          [[ -z "$CF_TOKEN" ]] && missing+=("CLOUDFLARE_API_TOKEN")
+          [[ -z "$CF_ACCOUNT" ]] && missing+=("CLOUDFLARE_ACCOUNT_ID")
+
+          if (( ${#missing[@]} > 0 )); then
+            echo "::error::Cloudflare preview is not configured: ${missing[*]} not set. Add the secret, or delete this workflow if previews are not wanted. See docs/PUBLISHING.md."
+            exit 1
           fi
+          echo "Cloudflare preview configured."
 
       - name: npm ci
-        if: steps.cfg.outputs.configured == 'true'
         run: npm ci
         working-directory: site
 
@@ -66,14 +74,12 @@ jobs:
       # production Astro build, so without it every PR deploy would report
       # into netscli.com's real analytics property and be crawlable.
       - name: Build site (preview mode)
-        if: steps.cfg.outputs.configured == 'true'
         run: npm run build
         working-directory: site
         env:
           NETSCLI_PREVIEW: '1'
 
       - name: Verify the preview build is not indexable
-        if: steps.cfg.outputs.configured == 'true'
         working-directory: site
         run: |
           set -euo pipefail
@@ -92,7 +98,6 @@ jobs:
           echo "All $(find dist -name '*.html' | wc -l) pages are noindex, and no analytics beacon is present."
 
       - name: Deploy to Cloudflare Pages (preview)
-        if: steps.cfg.outputs.configured == 'true'
         id: deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -111,7 +116,7 @@ jobs:
           echo "url=${url}" >> "$GITHUB_OUTPUT"
 
       - name: Comment the preview URL
-        if: steps.cfg.outputs.configured == 'true' && steps.deploy.outputs.url != ''
+        if: steps.deploy.outputs.url != ''
         uses: actions/github-script@v9
         env:
           PREVIEW_URL: ${{ steps.deploy.outputs.url }}
