@@ -258,12 +258,19 @@ Two artifacts in one tap, `fstubner/homebrew-tap`:
 | Artifact | File | Job | Install |
 | --- | --- | --- | --- |
 | CLI | `Formula/netscli.rb` | `homebrew` | `brew install fstubner/tap/netscli` |
-| Desktop | `Casks/netscli.rb` | `homebrew-cask` | `brew install --cask fstubner/tap/netscli` |
+| Desktop | `Casks/netscli-gui.rb` | `homebrew-cask` | `brew install --cask fstubner/tap/netscli-gui` |
 
-**The Formula and the Cask share the token `netscli`.** A bare
-`brew install netscli` is ambiguous — always qualify with `--cask` for the
-desktop app, and prefer the fully-qualified `fstubner/tap/netscli` form in
-documentation so it works without a separate `brew tap` step.
+**The Cask's token is `netscli-gui`, not `netscli`.** It used to be
+`netscli`, sharing a token with the CLI Formula in the same tap, which made
+a bare `brew install netscli` ambiguous and left Homebrew as the only
+registry that did not distinguish the two artifacts by name — scoop has
+`netscli`/`netscli-gui`, AUR `netscli-bin`/`netscli-gui-bin`, winget
+`fstubner.netscli`/`fstubner.netscli.gui`.
+
+`publish-homebrew-cask.sh` deletes a leftover `Casks/netscli.rb` the first
+time it runs against a tap that still has one. Prefer the fully-qualified
+`fstubner/tap/...` form in documentation so it works without a separate
+`brew tap` step.
 
 `publish-homebrew.sh` sed-patches the version and awk-patches each `sha256`
 that follows a matching url line. `publish-homebrew-cask.sh` regenerates the
