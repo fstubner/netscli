@@ -1,6 +1,12 @@
 # Homebrew Cask for the netscli desktop app (Tauri 2 + React).
 #
 # Lives alongside Formula/netscli.rb (the CLI) in fstubner/homebrew-tap.
+#
+# The token is `netscli-gui`, not `netscli`. A tap that holds a formula and a
+# cask under one token makes `brew install netscli` ambiguous, and it made
+# Homebrew the only registry where the two artifacts were not distinguished
+# by name -- scoop has netscli/netscli-gui, AUR netscli-bin/netscli-gui-bin,
+# winget fstubner.netscli/fstubner.netscli.gui.
 # Two architectures because Tauri builds are not universal -- Apple Silicon
 # and Intel get distinct .dmg artifacts on every release.
 #
@@ -13,7 +19,7 @@
 # real-looking 64-hex values left over from an old release, which is the
 # worst of both: too plausible to notice, too stale to work. A placeholder
 # fails loudly if it ever reaches a tap.
-cask "netscli" do
+cask "netscli-gui" do
   version "0.3.0"
 
   on_arm do

@@ -29,8 +29,8 @@ brew audit --strict --online fstubner/tap/netscli
 brew install fstubner/tap/netscli
 brew test fstubner/tap/netscli
 
-brew audit --cask --strict fstubner/tap/netscli
-brew install --cask fstubner/tap/netscli
+brew audit --cask --strict fstubner/tap/netscli-gui
+brew install --cask fstubner/tap/netscli-gui
 ```
 
 The Cask installs DMGs for the desktop app. macOS signing and

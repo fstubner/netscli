@@ -232,7 +232,7 @@ listing) so the app does not invent a competing updater path.
 | Platform | Command |
 |----------|---------|
 | Windows | `winget install fstubner.netscli.gui` |
-| macOS | `brew install --cask fstubner/tap/netscli` |
+| macOS | `brew install --cask fstubner/tap/netscli-gui` |
 | Linux (any distro, AppImage) | `yay -S netscli-gui-bin` |
 | Windows (Scoop) | `scoop install netscli-gui` |
 
