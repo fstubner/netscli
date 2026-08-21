@@ -24,9 +24,23 @@ on:
     paths:
       - 'site/**'
       - '.github/workflows/site-preview.yml'
+  # Keep a `main` preview that tracks main, so there is always somewhere to
+  # see the site as it currently is. It cannot come from the PR path: that
+  # deploys `--branch=pr-<N>`, so the main alias only ever moved when
+  # someone ran wrangler by hand, and it silently fell behind between times.
+  #
+  # This is still a preview, not production. netscli.com is served from
+  # GitHub Pages by pages.yml and is untouched here.
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - '.github/workflows/site-preview.yml'
 
 concurrency:
-  group: site-preview-${{ github.event.pull_request.number }}
+  # `pull_request.number` is empty on a push, which would put every push in
+  # one unnamed group with the PR runs. `ref_name` is defined for both.
+  group: site-preview-${{ github.event.pull_request.number || github.ref_name }}
   cancel-in-progress: true
 
 permissions:
@@ -40,7 +54,13 @@ jobs:
     # Secrets are not exposed to pull_request runs from forks, so a fork PR
     # would otherwise fail on an empty token. Skip rather than fail; the
     # maintainer can deploy a preview from a local branch if needed.
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    #
+    # A push to main is always same-repo, and `github.event.pull_request` is
+    # null there -- so without the first clause this guard is false and the
+    # main preview never runs.
+    if: >-
+      github.event_name == 'push' ||
+      github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - uses: actions/checkout@v7
 
@@ -107,16 +127,25 @@ jobs:
           set -euo pipefail
           # --branch is what makes this a preview rather than a production
           # deployment. Never pass the project's production branch here.
+          #
+          # `main` is safe to pass *for this project* because
+          # netscli-site-preview has no production branch configured -- its
+          # apex netscli-site-preview.pages.dev returns 404 while the branch
+          # aliases resolve, which is what an all-preview project looks like.
+          # If a production branch is ever set on it, and it is set to main,
+          # this line starts producing production deployments of the preview
+          # project. Point it at a name that is not the production branch.
           npx --yes wrangler@4 pages deploy dist \
             --project-name=netscli-site-preview \
-            --branch="pr-${{ github.event.pull_request.number }}" \
+            --branch="${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || 'main' }}" \
             --commit-dirty=true \
             | tee deploy.log
           url=$(grep -oE 'https://[a-z0-9.-]+\.pages\.dev' deploy.log | tail -1)
           echo "url=${url}" >> "$GITHUB_OUTPUT"
 
       - name: Comment the preview URL
-        if: steps.deploy.outputs.url != ''
+        # Only a pull_request run has somewhere to put this.
+        if: github.event_name == 'pull_request' && steps.deploy.outputs.url != ''
         uses: actions/github-script@v9
         env:
           PREVIEW_URL: ${{ steps.deploy.outputs.url }}
