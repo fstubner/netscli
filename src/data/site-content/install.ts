@@ -92,11 +92,12 @@ export const installByPlatform: Record<Platform, PlatformInstall> = {
     ],
     desktop: [
       {
-        // Fully qualified, and --cask is required: the tap holds a
-        // Formula and a Cask that share the token `netscli`, so a bare
-        // `brew install netscli` is ambiguous.
+        // `--cask` because it is a cask, not because the name is
+        // ambiguous. The token was `netscli`, colliding with the CLI
+        // formula in the same tap; it is `netscli-gui` now, matching how
+        // scoop, AUR and winget already name the two artifacts.
         label: 'Homebrew',
-        command: 'brew install --cask fstubner/tap/netscli',
+        command: 'brew install --cask fstubner/tap/netscli-gui',
       },
       {
         label: 'Apple Silicon',
