@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type MouseEvent } from 'react';
 
 import './App.css';
 
+import { handleAppFrameMouseDown } from './components/shell/appFrameDrag';
+import { clearArpThenRun } from './workspace/clearArpThenRun';
 import { AppDialogs } from './components/shell/AppDialogs';
 import { AppFrame } from './components/shell/AppFrame';
 import { AppTooltip } from './components/shell/AppTooltip';
@@ -140,12 +142,6 @@ function App() {
     void appWindowAction(action);
   }
 
-  function handleAppFrameMouseDown(event: MouseEvent<HTMLDivElement>) {
-    const target = event.target as HTMLElement;
-    if (target.closest('button,input,select,a,[role="button"],.menu-popover')) return;
-    void appWindowAction('drag');
-  }
-
   function openContentContextMenu(event: MouseEvent<HTMLElement>, cell?: ResultCellContext) {
     if (!activeTab) return;
     event.preventDefault();
@@ -211,6 +207,11 @@ function App() {
         onExportCsv={() => workspace.exportCurrent('csv')}
         onExportJson={() => workspace.exportCurrent('json')}
         onRunActive={runActive}
+        onRunActiveWithArpClear={() =>
+          void clearArpThenRun(activeTab?.id, requestRun, (id, error) =>
+            workspace.patchTab(id, { error }),
+          )
+        }
         runDisabledReason={pcapUnavailableReason ?? undefined}
       />
 

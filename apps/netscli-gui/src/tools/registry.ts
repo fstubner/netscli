@@ -33,6 +33,16 @@ export const TOOL_KINDS: ToolKind[] = [
 
 export const SCAN_TOOL_KINDS: ToolKind[] = ['scan', 'ping', 'trace', 'discover', 'inspect', 'sweep'];
 
+/**
+ * Tools where clearing the neighbour cache first changes the answer.
+ *
+ * Discover and sweep both merge probe replies with what the OS already
+ * believes, so a stale entry reads as a live host; the ARP tab shows that
+ * cache directly. Everything else either targets one host or never consults
+ * the cache, so offering it there would be noise.
+ */
+export const ARP_CLEAR_TOOL_KINDS: ToolKind[] = ['discover', 'sweep', 'arp'];
+
 export const LOOKUP_TOOL_KINDS: ToolKind[] = ['dns', 'reverse', 'mdns', 'interfaces', 'arp', 'pcap'];
 
 export function availableToolKinds(

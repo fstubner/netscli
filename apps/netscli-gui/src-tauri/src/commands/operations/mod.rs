@@ -4,7 +4,8 @@ mod scan;
 
 pub(crate) use capture::{capture_pcap, open_pcap_file, pcap_capability};
 pub(crate) use lookup::{
-    discover_mdns, dns_lookup, get_arp_table, list_interfaces, mdns_capability, reverse_dns_lookup,
+    clear_arp_table, discover_mdns, dns_lookup, get_arp_table, list_interfaces, mdns_capability,
+    reverse_dns_lookup,
 };
 pub(crate) use scan::{
     discover_network, inspect_host_cmd, ping_host, scan_ports, sweep_network, trace_route_cmd,
