@@ -1,9 +1,15 @@
 import assert from 'node:assert/strict';
 import { By } from '../driver.mjs';
-import { assertCommand, assertNoErrorStrip, clickButtonText, replaceInput, runActiveTool, waitForRow, waitForText } from '../ui.mjs';
+import { addToolTab, assertCommand, assertNoErrorStrip, clickButtonText, replaceInput, runActiveTool, waitForRow, waitForText } from '../ui.mjs';
 import { assertAdvancedFilterTopLayer } from './helpers/tabs.mjs';
 
 export async function exerciseScan(driver, port) {
+  // Open a scan tab rather than assuming the app starts on one. It starts
+  // on Discover -- "what is on this network" needs no host, a scan does --
+  // so the scan inputs this reaches for do not exist until we ask for them.
+  // Every other scenario here already opens its own tab; scan was the one
+  // exception, and only because it happened to match the startup tab.
+  await addToolTab(driver, 'Port Scan');
   await replaceInput(driver, '[data-testid="result-filter"]', '');
   await replaceInput(driver, '[data-testid="scan-host-input"]', '127.0.0.1');
   await replaceInput(driver, '[data-testid="scan-ports-input"]', String(port));
