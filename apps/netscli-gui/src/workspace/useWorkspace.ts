@@ -22,7 +22,10 @@ import { useWorkspaceToast } from './useWorkspaceToast';
 export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
   const demoScreenshotMode = isDemoScreenshotMode();
   const [tabs, setTabs] = useState<WorkspaceTab[]>(() =>
-    demoScreenshotMode ? createDemoScreenshotTabs() : [createTab('scan')],
+    // Discover, not scan: the first useful question on an unfamiliar
+    // network is "what is on it", and scan needs a host you do not have
+    // yet. Scan remains one click away in the tab strip.
+    demoScreenshotMode ? createDemoScreenshotTabs() : [createTab('discover')],
   );
   const [activeTabId, setActiveTabId] = useState(() => tabs[0]?.id ?? '');
   const [filterText, setFilterText] = useState('');

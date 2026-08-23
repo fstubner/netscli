@@ -11,6 +11,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useWorkspace } from './useWorkspace';
+import type { WorkspaceModel } from './types';
 
 // The hook reaches for Tauri and for persisted history on mount; neither
 // exists under jsdom. Stub them so the tests exercise state logic only.
@@ -55,6 +56,21 @@ const SCAN_PORTS = [22, 80, 443, 8080, 8443].map((port) => ({
   banner: '',
 }));
 
+/**
+ * A scan tab of this test's own.
+ *
+ * These cases patch scan-shaped results in, so they need a scan tab -- not
+ * whatever the app currently opens with. They used to lean on the default
+ * being `scan`; when it became `discover` the rows were built and sorted as
+ * discover rows and a scan-specific index stopped meaning anything.
+ */
+function withScanTab(result: { current: WorkspaceModel }) {
+  act(() => {
+    result.current.addTab('scan');
+  });
+  return result.current.activeTabId;
+}
+
 function scanResult() {
   return { kind: 'scan', data: SCAN_PORTS } as never;
 }
@@ -89,7 +105,7 @@ describe('tab selection', () => {
   it('keeps a tab selection when switching away and back', async () => {
     const { result } = renderWorkspace();
 
-    const firstTabId = result.current.activeTabId;
+    const firstTabId = withScanTab(result);
     act(() => {
       result.current.patchTab(firstTabId, { result: scanResult() });
     });
@@ -174,7 +190,7 @@ describe('tab selection', () => {
   // is now expressed as an id the tab does not hold.
   it('leaves the selection alone for a row id the tab does not hold', async () => {
     const { result } = renderWorkspace();
-    const firstTabId = result.current.activeTabId;
+    const firstTabId = withScanTab(result);
     act(() => {
       result.current.patchTab(firstTabId, { result: scanResult(), selectedIndex: 2, selectedIndices: [2] });
     });
@@ -201,7 +217,7 @@ describe('tab selection', () => {
   // order and display order agree and any index works. These ports do not.
   it('jumps to the row that was searched for, not the one at that position', async () => {
     const { result } = renderWorkspace();
-    const tabId = result.current.activeTabId;
+    const tabId = withScanTab(result);
     act(() => {
       result.current.patchTab(tabId, { result: unsortedScanResult() });
     });

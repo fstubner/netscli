@@ -12,6 +12,21 @@ use std::sync::{
     Arc,
 };
 
+/// How a host came to be in the results.
+///
+/// Worth reporting rather than flattening, because the two carry different
+/// confidence. A host that answered a probe is definitely there now; a host
+/// known only from the neighbour table is one the OS has spoken to
+/// recently, which is usually but not always still true.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum FoundBy {
+    /// Answered an ICMP or TCP probe during this scan.
+    Probe,
+    /// Did not answer, but is in the ARP/neighbour table.
+    Neighbor,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct Host {
     pub ip: IpAddr,
@@ -19,6 +34,8 @@ pub struct Host {
     pub mac: Option<String>,
     pub vendor: Option<String>,
     pub rtt_ms: Option<u64>,
+    /// Additive field: existing consumers that ignore it are unaffected.
+    pub found_by: FoundBy,
 }
 
 pub struct DiscoverEngine {
@@ -199,23 +216,54 @@ impl DiscoverEngine {
             HashMap::new()
         };
 
-        Ok(alive
-            .into_iter()
-            .map(|r| {
-                let hostname = hostname_map.get(&r.ip).cloned().unwrap_or(None);
-                let mac_entry = arp_map.get(&r.ip);
-                let mac_str = mac_entry.map(|e| e.mac.to_string());
-                let vendor = mac_entry
-                    .and_then(|e| e.vendor.clone())
-                    .or_else(|| mac_str.as_deref().and_then(lookup_vendor));
-                Host {
-                    ip: r.ip,
-                    hostname,
-                    mac: mac_str,
-                    vendor,
-                    rtt_ms: r.rtt_ms,
-                }
+        let build = |ip: IpAddr, rtt_ms: Option<u64>, found_by: FoundBy| {
+            let mac_entry = arp_map.get(&ip);
+            let mac_str = mac_entry.map(|e| e.mac.to_string());
+            let vendor = mac_entry
+                .and_then(|e| e.vendor.clone())
+                .or_else(|| mac_str.as_deref().and_then(lookup_vendor));
+            Host {
+                ip,
+                hostname: hostname_map.get(&ip).cloned().unwrap_or(None),
+                mac: mac_str,
+                vendor,
+                rtt_ms,
+                found_by,
+            }
+        };
+
+        let mut hosts: Vec<Host> = alive
+            .iter()
+            .map(|r| build(r.ip, r.rtt_ms, FoundBy::Probe))
+            .collect();
+
+        // Anything the OS has an ARP entry for is on this link, whether or
+        // not it answered us. Plenty of devices do not: consumer IoT
+        // routinely ignores ICMP, and Windows drops echo requests by
+        // default. Discarding them meant discovery reported a fraction of
+        // the network -- measured at 13 of 25 known devices on one ordinary
+        // LAN -- while the table needed to find them was already loaded, and
+        // used only to decorate the hosts that had replied.
+        let answered: std::collections::HashSet<IpAddr> = alive.iter().map(|r| r.ip).collect();
+        let mut neighbors: Vec<IpAddr> = arp_map
+            .keys()
+            .copied()
+            .filter(|ip| !answered.contains(ip))
+            .filter(|ip| match ip {
+                // Only within the range that was asked for. The neighbour
+                // table spans every interface, so it holds addresses from
+                // other subnets entirely.
+                IpAddr::V4(v4) => subnet.contains(v4),
+                IpAddr::V6(_) => false,
             })
-            .collect())
+            .collect();
+        neighbors.sort_unstable();
+        hosts.extend(
+            neighbors
+                .into_iter()
+                .map(|ip| build(ip, None, FoundBy::Neighbor)),
+        );
+
+        Ok(hosts)
     }
 }

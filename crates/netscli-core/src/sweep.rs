@@ -193,6 +193,7 @@ mod tests {
                 mac: Some("00:17:88:6E:6C:5C".to_string()),
                 vendor: Some("Philips Lighting BV".to_string()),
                 rtt_ms: Some(4),
+                found_by: crate::FoundBy::Probe,
             },
             open_ports: vec![PortResult {
                 port: 443,
