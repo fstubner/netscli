@@ -114,10 +114,43 @@ async fn hosts_serialize_with_the_fields_downstream_reads() {
         mac: Some("00:11:22:33:44:55".to_string()),
         vendor: Some("Example Corp".to_string()),
         rtt_ms: Some(3),
+        found_by: netscli_core::FoundBy::Probe,
     };
 
     let value = serde_json::to_value(&host).expect("Host serializes");
-    for key in ["ip", "hostname", "mac", "vendor"] {
+    for key in ["ip", "hostname", "mac", "vendor", "found_by"] {
         assert!(value.get(key).is_some(), "missing {key}: {value}");
+    }
+}
+
+#[tokio::test]
+async fn a_host_that_never_answers_is_still_reported_when_the_os_knows_it() {
+    // Discovery used to keep only hosts that replied to a probe, and drop
+    // everything else -- while already holding the ARP table it needed to
+    // know better, using it merely to decorate the survivors. On one
+    // ordinary LAN that reported 13 of 25 devices: consumer IoT routinely
+    // ignores ICMP, and Windows drops echo requests by default.
+    //
+    // This cannot assert a specific count without a known network, so it
+    // asserts the property that made those devices vanish: every host is
+    // labelled with how it was found, and a host found only in the
+    // neighbour table is a legitimate result rather than something to
+    // discard.
+    let engine = DiscoverEngine::new_with_timeouts(8, 300, 300);
+    let hosts = engine
+        .scan_subnet(loopback_slash_30(), false)
+        .await
+        .unwrap();
+
+    for host in &hosts {
+        match host.found_by {
+            // A probe reply is the only thing that can carry an RTT.
+            netscli_core::FoundBy::Probe => {}
+            // A neighbour did not answer, so it cannot have one.
+            netscli_core::FoundBy::Neighbor => assert!(
+                host.rtt_ms.is_none(),
+                "a neighbour-only host cannot have an RTT: {host:?}"
+            ),
+        }
     }
 }

@@ -121,6 +121,7 @@ fn hostile_host() -> netscli_core::discover::Host {
         mac: Some("aa:bb:cc:dd:ee:ff".to_string()),
         vendor: None,
         rtt_ms: Some(1),
+        found_by: netscli_core::FoundBy::Probe,
     }
 }
 

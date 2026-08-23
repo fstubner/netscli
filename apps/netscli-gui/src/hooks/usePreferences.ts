@@ -51,14 +51,21 @@ function initialCommandBarVisible(): boolean {
   return window.localStorage.getItem('netscli-command-bar') !== 'off';
 }
 
+// Toasts are opt-in. They were opt-out, which meant a new user met the app
+// through a stream of notifications about things they had just done
+// themselves and could already see on screen. Both toggles remain in
+// Settings for anyone who wants the running commentary.
+//
+// Errors are not covered by these: a failure still surfaces, because the
+// alternative is a table that stays empty with no reason given.
 function initialInteractionToasts(): boolean {
-  if (typeof window === 'undefined') return true;
-  return window.localStorage.getItem('netscli-interaction-toasts') !== 'off';
+  if (typeof window === 'undefined') return false;
+  return window.localStorage.getItem('netscli-interaction-toasts') === 'on';
 }
 
 function initialOperationToasts(): boolean {
-  if (typeof window === 'undefined') return true;
-  return window.localStorage.getItem('netscli-operation-toasts') !== 'off';
+  if (typeof window === 'undefined') return false;
+  return window.localStorage.getItem('netscli-operation-toasts') === 'on';
 }
 
 function initialReleaseNotifications(): boolean {

@@ -29,7 +29,7 @@ pub use common::{
 };
 #[cfg(feature = "db")]
 pub use db::{Database, HostRecord, ScanHistoryRecord};
-pub use discover::{DiscoverEngine, DiscoverPhase, DiscoverProgress, Host};
+pub use discover::{DiscoverEngine, DiscoverPhase, DiscoverProgress, FoundBy, Host};
 pub use dns::{resolve_a, resolve_aaaa};
 pub use inspect::{InspectEngine, InspectResult};
 #[cfg(feature = "mdns")]
