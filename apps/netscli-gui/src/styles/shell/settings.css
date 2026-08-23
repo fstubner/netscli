@@ -1,36 +1,21 @@
 .settings-overlay {
-  /* The app draws its own chrome, and it is lopsided: 117px above the
-     workspace (title bar 34 + toolbar 45 + tab strip 38) against 27px of
-     status bar below. Centring on the viewport is therefore centred on the
-     window but sits 45px above the optical centre of the content, which is
-     what reads as "not quite centred".
-
-     Padding the overlay by each side's chrome makes the centring box the
-     content region exactly, while the backdrop still covers the whole
-     window. These numbers are measured, so `assertSettingsDialogCentring`
-     in the e2e suite re-measures them against the running app -- a silent
-     45px drift when someone changes the toolbar height is not something
-     anyone would notice for months. */
-  --chrome-above-workspace: 117px;
-  --chrome-below-workspace: 27px;
-
+  /* Centred on the viewport, which is what "centred" means to someone
+     looking at the window. An earlier version padded this by the chrome
+     above and below the workspace so the dialog sat at the centre of the
+     content region instead; that is defensible geometry and it read as
+     wrong, so the ruler loses to the eye here. */
   position: fixed;
   inset: 0;
   z-index: var(--z-modal);
   display: grid;
   place-items: center;
-  padding: var(--chrome-above-workspace) 18px var(--chrome-below-workspace);
+  padding: 18px;
   background: rgba(0, 0, 0, 0.34);
 }
 
 .settings-dialog {
   width: min(680px, calc(100vw - 32px));
-  /* Leaves 16px of breathing room inside the content region on a window too
-     short for the dialog's natural height. */
-  max-height: min(
-    540px,
-    calc(100vh - var(--chrome-above-workspace) - var(--chrome-below-workspace) - 16px)
-  );
+  max-height: min(540px, calc(100vh - 36px));
   display: flex;
   flex-direction: column;
   border: 1px solid var(--border-strong);

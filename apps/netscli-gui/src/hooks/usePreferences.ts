@@ -64,11 +64,17 @@ function storedNumber(key: string): number | null {
 function repairZeroDefaults(): void {
   const REPAIRED = 'netscli-prefs-repaired-zero-defaults';
   if (window.localStorage.getItem(REPAIRED) === 'done') return;
-  window.localStorage.setItem(REPAIRED, 'done');
 
+  // Repair first, mark second. Marking first burns the one chance this gets:
+  // if anything writes the bad value back before the work happens -- another
+  // instance of the app sharing the profile, a crash between the two lines --
+  // the marker says "handled" forever and the install stays serialised with
+  // no way back. Observed exactly that: a profile went 1 -> 256 -> 1 with the
+  // marker set, and nothing could recover it.
   if (window.localStorage.getItem('netscli-max-concurrent-probes') === '1') {
     window.localStorage.setItem('netscli-max-concurrent-probes', '256');
   }
+  window.localStorage.setItem(REPAIRED, 'done');
 }
 
 function initialTrafficPrecision(): TrafficPrecision {
