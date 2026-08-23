@@ -64,6 +64,7 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
     closeTab,
     closeAllTabs,
     closeOtherTabs: closeOtherTabsFor,
+    isTabActive,
     needsAutoRun,
     clearAutoRun,
   } = useTabLifecycle({
@@ -199,13 +200,6 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // `runTab`'s closure captures `activeTabId` as it was when the run
-  // started, which is exactly the wrong value: the completion toast asks
-  // whether the user is looking at the tab *now*, after a scan that may
-  // have taken a minute. A ref reads the current value at completion.
-  const activeTabIdRef = useRef(activeTabId);
-  activeTabIdRef.current = activeTabId;
-
   function patchTab(id: string, patch: Partial<WorkspaceTab>) {
     setTabs((prev) => prev.map((tab) => (tab.id === id ? { ...tab, ...patch } : tab)));
   }
@@ -239,7 +233,7 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
     }
     await runWorkspaceTab({
       activeOps,
-      isTabActive: (id) => activeTabIdRef.current === id,
+      isTabActive,
       maxConcurrentProbes: options.maxConcurrentProbes,
       patchTab,
       persistentHistory: options.persistentHistory,
