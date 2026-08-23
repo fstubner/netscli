@@ -5,11 +5,13 @@
 //! and any address this host owns. Both properties are load-bearing: see the
 //! note on `send_icmp_echo_v4` for the failure each one fixes.
 
-use std::net::IpAddr;
+use std::net::{IpAddr, Ipv6Addr};
 use windows_sys::Win32::Foundation::INVALID_HANDLE_VALUE;
 use windows_sys::Win32::NetworkManagement::IpHelper::{
-    IcmpCloseHandle, IcmpCreateFile, IcmpSendEcho, ICMP_ECHO_REPLY, IP_REQ_TIMED_OUT, IP_SUCCESS,
+    Icmp6CreateFile, Icmp6SendEcho2, IcmpCloseHandle, IcmpCreateFile, IcmpSendEcho,
+    ICMPV6_ECHO_REPLY_LH, ICMP_ECHO_REPLY, IP_REQ_TIMED_OUT, IP_SUCCESS,
 };
+use windows_sys::Win32::Networking::WinSock::{AF_INET6, SOCKADDR_IN6};
 
 /// Payload sent with each echo. Content is irrelevant to the result; a
 /// recognisable string just makes the packets readable in a capture.
@@ -85,5 +87,77 @@ pub fn send_echo(target: IpAddr, timeout_ms: u64) -> anyhow::Result<u64> {
         // not answer, which is all the caller needs; the code identifies
         // which flavour for anyone reading the error.
         status => anyhow::bail!("ICMP status {status}"),
+    }
+}
+
+/// Send an ICMPv6 echo and wait for the reply.
+///
+/// IPv6 had no ICMP path at all before this: it fell through to the TCP
+/// probe, so `ping ::1` reported total loss for the same reason IPv4 loopback
+/// did. `Icmp6SendEcho2` differs from its v4 counterpart in wanting both
+/// endpoints as socket addresses, and the source is not optional -- passing a
+/// zeroed `SOCKADDR_IN6` is how you say "any", which lets the stack pick.
+pub fn send_echo6(target: Ipv6Addr, timeout_ms: u64) -> anyhow::Result<u64> {
+    let handle = unsafe { Icmp6CreateFile() };
+    if handle == INVALID_HANDLE_VALUE || handle.is_null() {
+        anyhow::bail!(
+            "Icmp6CreateFile failed: {}",
+            std::io::Error::last_os_error()
+        );
+    }
+    let handle = IcmpHandle(handle);
+
+    let source = SOCKADDR_IN6 {
+        sin6_family: AF_INET6,
+        ..Default::default()
+    };
+    let mut destination = SOCKADDR_IN6 {
+        sin6_family: AF_INET6,
+        ..Default::default()
+    };
+    destination.sin6_addr.u.Byte = target.octets();
+
+    // Same shape as the v4 buffer, around the v6 reply struct.
+    let mut reply = vec![0u8; std::mem::size_of::<ICMPV6_ECHO_REPLY_LH>() + PAYLOAD.len() + 8];
+    let timeout = u32::try_from(timeout_ms).unwrap_or(u32::MAX);
+
+    // A null event and APC routine is what makes this synchronous; the return
+    // value is then the reply count rather than a completion signal.
+    let replies = unsafe {
+        Icmp6SendEcho2(
+            handle.0,
+            std::ptr::null_mut(),
+            None,
+            std::ptr::null(),
+            &source,
+            &destination,
+            PAYLOAD.as_ptr().cast(),
+            PAYLOAD.len() as u16,
+            std::ptr::null(),
+            reply.as_mut_ptr().cast(),
+            reply.len() as u32,
+            timeout,
+        )
+    };
+
+    if replies == 0 {
+        let error = std::io::Error::last_os_error();
+        if error.raw_os_error() == Some(IP_REQ_TIMED_OUT as i32) {
+            anyhow::bail!("Timeout");
+        }
+        anyhow::bail!("Icmp6SendEcho2 failed: {error}");
+    }
+
+    let echo = unsafe {
+        reply
+            .as_ptr()
+            .cast::<ICMPV6_ECHO_REPLY_LH>()
+            .read_unaligned()
+    };
+
+    match echo.Status {
+        IP_SUCCESS => Ok(u64::from(echo.RoundTripTime)),
+        IP_REQ_TIMED_OUT => anyhow::bail!("Timeout"),
+        status => anyhow::bail!("ICMPv6 status {status}"),
     }
 }

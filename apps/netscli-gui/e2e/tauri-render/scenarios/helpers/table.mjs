@@ -2,20 +2,28 @@ import assert from 'node:assert/strict';
 import { By, Key } from '../../driver.mjs';
 import { waitForText } from '../../ui.mjs';
 
+// Keyboard events go to the grid, not to the scroll container that carries
+// the test id. `tabIndex` and the key handler live on the inner
+// `<table role="grid">` -- deliberately, so `aria-activedescendant` sits on
+// the focused element -- and keydown bubbles up, so an event dispatched on
+// the container never reaches the handler. A real user focuses the table by
+// tabbing to it or clicking a row; targeting the container tested nothing.
+const GRID = '[data-testid="result-table"] table[role="grid"]';
+
 async function assertKeyboardSelection(driver) {
   const rowCount = await driver.executeScript(`
     const rows = document.querySelectorAll('[data-testid="result-table"] tbody tr');
     return rows.length;
   `);
   assert.ok(rowCount > 1, 'Keyboard selection test needs multiple rows');
-  const table = await driver.findElement(By.css('[data-testid="result-table"]'));
-  await driver.executeScript("document.querySelector('[data-testid=\"result-table\"]')?.focus();");
+  const table = await driver.findElement(By.css(GRID));
+  await driver.executeScript(`document.querySelector('${GRID}')?.focus();`);
   const tableUserSelect = await driver.executeScript(`
     return getComputedStyle(document.querySelector('[data-testid="result-table"]')).userSelect;
   `);
   assert.equal(tableUserSelect, 'none', 'Result table should not select text during keyboard row selection');
   await driver.executeScript(`
-    const table = document.querySelector('[data-testid="result-table"]');
+    const table = document.querySelector('${GRID}');
     window.getSelection()?.removeAllRanges();
     table?.dispatchEvent(new KeyboardEvent('keydown', {
       key: 'a',
@@ -48,7 +56,7 @@ async function assertKeyboardSelection(driver) {
   `);
   assert.equal(afterEnd, rowCount - 1, 'End should select the last row');
   await driver.executeScript(`
-    const table = document.querySelector('[data-testid="result-table"]');
+    const table = document.querySelector('${GRID}');
     table?.dispatchEvent(new KeyboardEvent('keydown', {
       key: 'ArrowUp',
       shiftKey: true,
