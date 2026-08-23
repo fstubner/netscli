@@ -1,14 +1,19 @@
-use pnet_packet::icmp::{echo_reply, echo_request, IcmpTypes};
-use pnet_packet::ip::IpNextHeaderProtocols;
-use pnet_packet::util::checksum;
-use pnet_packet::Packet;
-use pnet_transport::{transport_channel, TransportChannelType, TransportReceiver};
 use serde::Serialize;
 use std::net::IpAddr;
 use std::sync::atomic::{AtomicU16, Ordering};
 use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 use tokio::sync::Semaphore;
+
+/// One ICMP backend per platform. They are not interchangeable: see the note
+/// on `send_icmp_echo_v4` below for why Windows cannot use the raw socket.
+#[cfg(not(windows))]
+mod raw_icmp;
+#[cfg(windows)]
+mod windows_icmp;
+
+#[cfg(not(windows))]
+use raw_icmp::send_icmp_echo_v4;
 
 /// Process-wide monotonic counter for ICMP echo sequence numbers.
 ///
@@ -97,14 +102,15 @@ impl PingScanner {
     }
 }
 
+#[cfg(windows)]
 fn can_use_raw_icmpv4() -> bool {
-    // Best-effort capability check: if we can open an ICMPv4 layer3 channel, raw ping is usable.
-    // This avoids making discovery completely useless when running unprivileged.
-    // Called once via `RAW_ICMP_OK` OnceLock — construction of the transport
-    // channel is non-trivial on Windows so we don't repeat it per scanner.
-    let protocol = TransportChannelType::Layer3(IpNextHeaderProtocols::Icmp);
-    transport_channel(4096, protocol).is_ok()
+    // Windows pings through the IP Helper API rather than a raw socket, and
+    // `IcmpCreateFile` needs no privileges, so ICMP is always available.
+    true
 }
+
+#[cfg(not(windows))]
+use raw_icmp::can_use_raw_icmpv4;
 
 async fn ping_icmpv4(target: IpAddr, timeout_ms: u64, seq: u16) -> PingResult {
     // Use tokio::spawn_blocking for pnet operations since they are synchronous.
@@ -198,92 +204,27 @@ async fn ping_tcp_probe(target: IpAddr, timeout_ms: u64, seq: u16) -> PingResult
 
 /// Send a single ICMPv4 Echo Request and await a matching Echo Reply.
 ///
-/// Filters replies by (address, identifier, sequence) so overlapping pings
-/// from other tasks on the same host don't steal each other's replies.
+/// Windows and Unix take different routes here, and the reason is a measured
+/// bug rather than portability pedantry. Pinging `127.0.0.1` on Windows --
+/// or the machine's own LAN address -- reported 100% loss while the system
+/// `ping` reported none.
+///
+/// Two things stacked up. Opening a raw ICMP socket needs administrator
+/// rights, so an ordinary run never reached the ICMP path at all: it fell
+/// back to the TCP probe below, which asks ports 80/443/22 and concludes a
+/// host is down when nothing answers -- true of most machines asked about
+/// themselves. Elevated runs have the separate, documented problem that a
+/// Windows raw socket does not observe traffic to an address the host owns.
+///
+/// The IP Helper API sidesteps both: it needs no privileges and it reaches
+/// local addresses. Unix keeps the raw socket, where loopback ICMP is
+/// observable and this dependency would buy nothing.
+#[cfg(windows)]
 fn send_icmp_echo_v4(target: IpAddr, timeout_ms: u64, seq: u16) -> anyhow::Result<u64> {
-    let protocol = TransportChannelType::Layer3(IpNextHeaderProtocols::Icmp);
-    let (mut tx, mut rx) = transport_channel(4096, protocol)?;
-    configure_read_timeout(&rx, Duration::from_millis(10))?;
-
-    let identifier = std::process::id() as u16;
-
-    let mut buffer = [0u8; 64];
-    let mut echo_packet = echo_request::MutableEchoRequestPacket::new(&mut buffer)
-        .ok_or_else(|| anyhow::anyhow!("failed to build ICMP echo request packet"))?;
-
-    echo_packet.set_icmp_type(IcmpTypes::EchoRequest);
-    echo_packet.set_identifier(identifier);
-    echo_packet.set_sequence_number(seq);
-
-    let checksum = checksum(echo_packet.packet(), 1);
-    echo_packet.set_checksum(checksum);
-
-    let start = std::time::Instant::now();
-    tx.send_to(echo_packet, target)?;
-
-    let mut iter = pnet_transport::icmp_packet_iter(&mut rx);
-    let end_time = start + Duration::from_millis(timeout_ms);
-
-    while std::time::Instant::now() < end_time {
-        match iter.next() {
-            Ok((packet, addr)) => {
-                if addr != target || packet.get_icmp_type() != IcmpTypes::EchoReply {
-                    continue;
-                }
-                // Parse the echo-reply body so we can confirm identifier
-                // and sequence match OUR request rather than another
-                // concurrent ping's. `EchoReplyPacket::new` accepts the
-                // full ICMP packet bytes (the type/code/checksum header
-                // plus identifier/seq fields) — use `packet.packet()`
-                // here, not `.payload()`.
-                if let Some(reply) = echo_reply::EchoReplyPacket::new(packet.packet()) {
-                    if reply.get_identifier() == identifier && reply.get_sequence_number() == seq {
-                        return Ok(start.elapsed().as_millis() as u64);
-                    }
-                    // Not ours — keep reading until the timeout.
-                }
-            }
-            Err(_) => {
-                // Read error — usually just the read-timeout firing. Yield
-                // briefly so we don't spin the CPU when there's no traffic.
-                std::thread::sleep(Duration::from_millis(1));
-            }
-        }
-    }
-
-    Err(anyhow::anyhow!("Timeout"))
-}
-
-fn configure_read_timeout(rx: &TransportReceiver, timeout: Duration) -> anyhow::Result<()> {
-    #[cfg(unix)]
-    {
-        pnet_sys::set_socket_receive_timeout(rx.socket.fd, timeout)
-            .map_err(|e| anyhow::anyhow!("failed to set read timeout: {e}"))?;
-    }
-
-    #[cfg(windows)]
-    {
-        use windows_sys::Win32::Networking::WinSock::{
-            setsockopt, SOCKET_ERROR, SOL_SOCKET, SO_RCVTIMEO,
-        };
-
-        let timeout_ms = timeout.as_millis().min(i32::MAX as u128) as i32;
-        let result = unsafe {
-            setsockopt(
-                rx.socket.fd,
-                SOL_SOCKET,
-                SO_RCVTIMEO,
-                (&timeout_ms as *const i32).cast(),
-                std::mem::size_of::<i32>() as i32,
-            )
-        };
-        if result == SOCKET_ERROR {
-            return Err(anyhow::anyhow!(
-                "failed to set read timeout: {}",
-                std::io::Error::last_os_error()
-            ));
-        }
-    }
-
-    Ok(())
+    // `seq` is unused here: IcmpSendEcho owns its own request/reply matching
+    // per handle, which is the job the identifier and sequence do on the raw
+    // path. `PingResult` still reports the process-wide counter so the field
+    // means the same thing on both platforms.
+    let _ = seq;
+    windows_icmp::send_echo(target, timeout_ms)
 }
