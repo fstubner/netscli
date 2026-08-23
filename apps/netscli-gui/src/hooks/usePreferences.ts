@@ -40,6 +40,37 @@ function storedNumber(key: string): number | null {
   return Number.isFinite(value) ? value : null;
 }
 
+/**
+ * Undo the values the zero-default bug wrote, once.
+ *
+ * Fixing `storedNumber` only helps an install that never ran the broken
+ * build. Everyone else already has the bad value persisted -- the hook
+ * writes every preference back on mount, so the very first launch saved
+ * `1` probes and `0` precision as though they had been chosen. Reading
+ * them correctly now just reads a wrong number correctly, and the install
+ * stays serialised forever.
+ *
+ * Only concurrency is repaired. 1 probe is never a sensible choice -- it
+ * serialises every scan, discover and sweep -- so a stored 1 at this moment
+ * is the bug's fingerprint rather than a preference. Traffic precision is
+ * deliberately left alone: 0 decimals is a reasonable thing to want, the
+ * cost of being wrong is cosmetic, and overriding a real choice to fix a
+ * rounding display is the worse trade. Anyone bitten by that half can change
+ * it in Settings.
+ *
+ * The marker makes this run exactly once, so a genuine later choice of 1 is
+ * never second-guessed.
+ */
+function repairZeroDefaults(): void {
+  const REPAIRED = 'netscli-prefs-repaired-zero-defaults';
+  if (window.localStorage.getItem(REPAIRED) === 'done') return;
+  window.localStorage.setItem(REPAIRED, 'done');
+
+  if (window.localStorage.getItem('netscli-max-concurrent-probes') === '1') {
+    window.localStorage.setItem('netscli-max-concurrent-probes', '256');
+  }
+}
+
 function initialTrafficPrecision(): TrafficPrecision {
   if (typeof window === 'undefined') return 2;
   const value = storedNumber('netscli-traffic-precision');
@@ -54,6 +85,7 @@ function initialAddressPreference(): AddressPreference {
 
 function initialMaxConcurrentProbes(): MaxConcurrentProbes {
   if (typeof window === 'undefined') return 256;
+  repairZeroDefaults();
   const value = storedNumber('netscli-max-concurrent-probes');
   return value === null ? 256 : clampMaxConcurrentProbes(value);
 }

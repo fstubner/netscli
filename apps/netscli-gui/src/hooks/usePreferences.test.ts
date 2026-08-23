@@ -53,3 +53,46 @@ describe('preferences on a fresh install', () => {
     expect(result.current.trafficPrecision).toBe(2);
   });
 });
+
+// Fixing the default alone was not enough: the hook writes every preference
+// back on mount, so the broken build had already saved its wrong values as
+// though they were chosen. An install that ran it stayed serialised.
+describe('recovering an install that ran the broken build', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
+  it('restores concurrency on a profile the bug left at 1', () => {
+    window.localStorage.setItem('netscli-max-concurrent-probes', '1');
+    window.localStorage.setItem('netscli-traffic-precision', '0');
+
+    const { result } = renderHook(() => usePreferences());
+
+    expect(result.current.maxConcurrentProbes).toBe(256);
+    // Precision is deliberately NOT repaired: 0 decimals is a reasonable
+    // thing to want, so overriding it to undo a cosmetic bug would cost
+    // more than it fixes.
+    expect(result.current.trafficPrecision).toBe(0);
+  });
+
+  it('runs once, so a later deliberate choice of 1 survives', () => {
+    window.localStorage.setItem('netscli-max-concurrent-probes', '1');
+    renderHook(() => usePreferences());
+
+    // The repair has run. Someone now genuinely picks one probe at a time.
+    window.localStorage.setItem('netscli-max-concurrent-probes', '1');
+    const { result } = renderHook(() => usePreferences());
+
+    expect(result.current.maxConcurrentProbes).toBe(1);
+  });
+
+  it('leaves any other stored value alone', () => {
+    window.localStorage.setItem('netscli-max-concurrent-probes', '32');
+    window.localStorage.setItem('netscli-traffic-precision', '1');
+
+    const { result } = renderHook(() => usePreferences());
+
+    expect(result.current.maxConcurrentProbes).toBe(32);
+    expect(result.current.trafficPrecision).toBe(1);
+  });
+});
