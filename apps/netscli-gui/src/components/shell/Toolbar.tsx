@@ -1,4 +1,4 @@
-import { ChevronDown, Download, FileSpreadsheet, Filter, Play, Square, X } from 'lucide-react';
+import { ChevronDown, Download, FileSpreadsheet, Filter, Square, X } from 'lucide-react';
 import { useRef, type RefObject } from 'react';
 
 import { TOOL_CONFIG } from '../../tools/registry';
@@ -6,6 +6,7 @@ import { filterHintsFor } from '../../tools/presentation';
 import type { ToolKind, WorkspaceTab } from '../../tools/types';
 import { useRovingFocus } from '../primitives/focus';
 import { useAnchoredPopoverPosition, useOverlayDismiss } from '../primitives/overlay';
+import { RunSplitButton } from './RunSplitButton';
 
 interface ToolbarProps {
   activeTab: WorkspaceTab | undefined;
@@ -18,6 +19,7 @@ interface ToolbarProps {
   onExportJson: () => void;
   onExportCsv: () => void;
   onRunActive: () => void;
+  onRunActiveWithArpClear: () => void;
   runDisabledReason?: string;
 }
 
@@ -32,6 +34,7 @@ export function Toolbar({
   onExportCsv,
   onExportJson,
   onRunActive,
+  onRunActiveWithArpClear,
   runDisabledReason,
 }: ToolbarProps) {
   const filterMenuOpen = openMenu === 'advanced-filter';
@@ -68,18 +71,15 @@ export function Toolbar({
 
   return (
     <div className="toolbar">
-      <button
-        className="icon-button strong toolbar-run"
-        data-testid="run-active-tab"
-        disabled={!activeTab || activeTab.busy || Boolean(runDisabledReason)}
-        aria-label={runLabel}
-        data-tooltip={runDisabledReason ?? runLabel}
-        data-tooltip-placement="bottom"
-        onClick={onRunActive}
-      >
-        <Play size={16} />
-        <span>{runLabel}</span>
-      </button>
+      <RunSplitButton
+        activeTab={activeTab}
+        openMenu={openMenu}
+        runLabel={runLabel}
+        runDisabledReason={runDisabledReason}
+        setOpenMenu={setOpenMenu}
+        onRunActive={onRunActive}
+        onRunActiveWithArpClear={onRunActiveWithArpClear}
+      />
       <button
         className={`icon-button stop-button ${activeTab?.busy ? 'armed' : ''}`}
         disabled={!activeTab?.busy}

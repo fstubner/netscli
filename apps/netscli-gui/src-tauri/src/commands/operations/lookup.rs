@@ -106,6 +106,23 @@ pub(crate) async fn list_interfaces(
     .await
 }
 
+/// Flush the OS neighbour cache.
+///
+/// Discover merges probe replies with whatever the OS already believes, so a
+/// stale entry shows up as a live host. Clearing first is the only way to see
+/// what is actually there right now.
+///
+/// Needs administrator rights on every platform, and the error says so --
+/// this is deliberately a command that can fail rather than one the GUI hides,
+/// because silently not clearing would make the discover that follows a lie.
+#[tauri::command]
+pub(crate) async fn clear_arp_table() -> Result<(), String> {
+    tokio::task::spawn_blocking(netscli_core::NetworkManager::clear_table)
+        .await
+        .map_err(|e| format!("clear task failed: {e}"))?
+        .map_err(|e| e.to_string())
+}
+
 #[tauri::command]
 pub(crate) async fn get_arp_table(
     op_id: Option<String>,

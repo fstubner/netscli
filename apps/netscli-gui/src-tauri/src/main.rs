@@ -7,7 +7,7 @@ mod state;
 use std::sync::Mutex;
 
 use commands::{
-    cancel_operation, capture_pcap, choose_file_save_default_directory,
+    cancel_operation, capture_pcap, choose_file_save_default_directory, clear_arp_table,
     clear_file_save_default_directory, discover_mdns, discover_network, dns_lookup,
     export_text_file, get_arp_table, get_default_interface, get_file_save_preferences,
     get_network_stats, inspect_host_cmd, list_interfaces, list_monitorable_interfaces,
@@ -60,6 +60,7 @@ fn main() {
             sweep_network,
             dns_lookup,
             list_interfaces,
+            clear_arp_table,
             get_arp_table,
             mdns_capability,
             pcap_capability,

@@ -59,11 +59,31 @@ pub(super) fn delete_entry(ip: IpAddr) -> Result<()> {
 pub(super) fn clear_table() -> Result<()> {
     #[cfg(target_os = "windows")]
     {
-        let status = command::arp_command().args(["-d", "*"]).status()?;
-        if !status.success() {
-            return Err(Error::Other(
-                "Failed to clear ARP table (run as admin?)".into(),
-            ));
+        // `arp -d *` reports "The requested operation requires elevation."
+        // and then exits 0, so the exit status alone says the table was
+        // cleared when nothing was touched. That made the CLI print "ARP
+        // table cleared" after doing nothing, and would make a discover run
+        // straight afterwards report the very neighbours the user asked to
+        // be rid of -- a silent wrong answer, which is the worst kind.
+        //
+        // On success the command prints nothing, so any output at all is a
+        // failure. That test is locale-independent, unlike matching the
+        // message text, and it fails loudly rather than quietly if a future
+        // Windows build becomes chattier on success.
+        let output = command::arp_command().args(["-d", "*"]).output()?;
+        let mut reported = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        if reported.is_empty() {
+            reported = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        }
+        if !output.status.success() || !reported.is_empty() {
+            return Err(Error::Other(format!(
+                "Failed to clear ARP table: {}",
+                if reported.is_empty() {
+                    "arp -d * failed (run as administrator?)".to_string()
+                } else {
+                    reported
+                }
+            )));
         }
     }
     #[cfg(any(target_os = "linux", target_os = "macos"))]

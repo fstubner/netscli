@@ -1,0 +1,47 @@
+/* Run split-button: the chevron sits flush against the run button so the two
+   read as one control, with a hairline seam rather than a gap. */
+.toolbar-run-options {
+  display: flex;
+}
+
+.toolbar-run-chevron {
+  width: 22px;
+  min-width: 22px;
+  padding: 0;
+  margin-left: -1px;
+  border-left: 1px solid color-mix(in srgb, var(--bg-body), transparent 60%);
+}
+
+.run-options-popover {
+  position: fixed;
+  z-index: var(--z-dropdown);
+  width: min(300px, calc(100vw - 24px));
+  padding: 6px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated);
+  box-shadow: 0 14px 30px var(--shadow);
+}
+
+.run-options-item {
+  width: 100%;
+  display: grid;
+  gap: 3px;
+  padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.run-options-item:hover,
+.run-options-item:focus-visible {
+  background: var(--bg-input);
+}
+
+.run-options-item small {
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.35;
+}

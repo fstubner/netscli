@@ -9,7 +9,7 @@ pub(crate) use files::{
 };
 pub(crate) use monitor::{get_default_interface, get_network_stats, list_monitorable_interfaces};
 pub(crate) use operations::{
-    cancel_operation, capture_pcap, discover_mdns, discover_network, dns_lookup, get_arp_table,
-    inspect_host_cmd, list_interfaces, mdns_capability, open_pcap_file, pcap_capability, ping_host,
-    reverse_dns_lookup, scan_ports, sweep_network, trace_route_cmd,
+    cancel_operation, capture_pcap, clear_arp_table, discover_mdns, discover_network, dns_lookup,
+    get_arp_table, inspect_host_cmd, list_interfaces, mdns_capability, open_pcap_file,
+    pcap_capability, ping_host, reverse_dns_lookup, scan_ports, sweep_network, trace_route_cmd,
 };

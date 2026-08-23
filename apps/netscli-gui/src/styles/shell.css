@@ -1,6 +1,7 @@
 @import './shell/app-frame.css';
 @import './shell/menu.css';
 @import './shell/toolbar.css';
+@import './shell/run-options.css';
 @import './shell/tabs.css';
 @import './shell/command-status.css';
 @import './shell/context-menu.css';

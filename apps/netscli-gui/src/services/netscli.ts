@@ -111,6 +111,11 @@ export async function listInterfaces(op_id?: string): Promise<InterfaceInfo[]> {
   return invoke<InterfaceInfo[]>('list_interfaces', { op_id });
 }
 
+/** Flush the OS neighbour cache. Requires administrator rights. */
+export async function clearArpTable(): Promise<void> {
+  return invoke<void>('clear_arp_table');
+}
+
 export async function getArpTable(op_id?: string): Promise<ArpEntry[]> {
   return invoke<ArpEntry[]>('get_arp_table', { op_id });
 }
