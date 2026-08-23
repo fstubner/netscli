@@ -93,3 +93,69 @@ async fn results_serialize_with_the_fields_downstream_reads() {
         assert!(value.get(key).is_some(), "missing {key}: {value}");
     }
 }
+
+/// Regression: pinging this host used to always report 100% loss on Windows.
+///
+/// Raw ICMP needs administrator rights on Windows, so an ordinary run fell
+/// back to TCP connect probes on ports 80/443/22 -- which nothing answers on
+/// a machine asked about itself, so `netscli ping 127.0.0.1` reported total
+/// loss while the system `ping` answered immediately. (Elevated runs have a
+/// second problem: a Windows raw socket does not see traffic to an address
+/// the host owns.) It took discover and sweep down too, since both start
+/// from a ping sweep: `discover 127.0.0.0/30` came back empty.
+///
+/// Windows-only on purpose. Everywhere else this is a claim about the
+/// environment rather than about netscli: whether an unprivileged process may
+/// send ICMP depends on the runner, and the surrounding tests avoid asserting
+/// success for exactly that reason. On Windows the IP Helper API needs no
+/// privileges, so a failure here is a real defect and not a permission.
+#[cfg(windows)]
+#[tokio::test]
+async fn pinging_this_host_succeeds_on_windows() {
+    let scanner = PingScanner::new(1);
+    let target = IpAddr::V4(Ipv4Addr::LOCALHOST);
+
+    let result = scanner.ping(target, 2_000).await;
+
+    assert!(
+        result.alive,
+        "loopback must answer its own ping: {result:?}"
+    );
+    assert!(result.rtt_ms.is_some(), "a live host must carry an RTT");
+    // Pin the mechanism too. Without this the test would also pass if ICMP
+    // silently degraded to the TCP fallback and something happened to be
+    // listening on port 80 -- which is the original bug wearing a disguise.
+    assert_eq!(
+        result.method.as_deref(),
+        Some("icmpv4"),
+        "loopback should be reached over ICMP, not the TCP fallback: {result:?}"
+    );
+}
+
+/// The same defect reached past loopback: an address the *host itself* owns
+/// is short-circuited the same way, so `ping <my own LAN IP>` also reported
+/// total loss. That is why the fix is not an `is_loopback()` special case.
+#[cfg(windows)]
+#[tokio::test]
+async fn pinging_an_address_this_host_owns_succeeds_on_windows() {
+    let Some(local) = netscli_core::NetworkManager::get_interfaces()
+        .into_iter()
+        .filter(|iface| !iface.is_loopback && iface.is_up)
+        .find_map(|iface| {
+            iface.ips.into_iter().find_map(|net| match net.addr() {
+                IpAddr::V4(v4) if !v4.is_link_local() && !v4.is_loopback() => Some(IpAddr::V4(v4)),
+                _ => None,
+            })
+        })
+    else {
+        // No non-loopback IPv4 address: nothing to assert about.
+        return;
+    };
+
+    let result = PingScanner::new(1).ping(local, 2_000).await;
+
+    assert!(
+        result.alive,
+        "this host must answer a ping to its own address {local}: {result:?}"
+    );
+}
