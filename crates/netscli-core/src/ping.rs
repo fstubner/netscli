@@ -94,9 +94,14 @@ impl PingScanner {
             }
         };
 
-        // Prefer raw ICMPv4 when available and target is IPv4. Otherwise fall back to TCP probe.
+        // Prefer ICMP when the platform offers it for this address family.
+        // Otherwise fall back to the TCP probe, which is a weaker signal: it
+        // can only prove a host is up by getting something back from a port.
         match (self.backend, target) {
             (PingBackend::RawIcmpV4, IpAddr::V4(_)) => ping_icmpv4(target, timeout_ms, seq).await,
+            // Unix has no ICMPv6 path here, so v6 keeps falling back there.
+            #[cfg(windows)]
+            (_, IpAddr::V6(v6)) => ping_icmpv6(v6, timeout_ms, seq).await,
             _ => ping_tcp_probe(target, timeout_ms, seq).await,
         }
     }
@@ -140,6 +145,25 @@ async fn ping_icmpv4(target: IpAddr, timeout_ms: u64, seq: u16) -> PingResult {
             error: Some(format!("ping task failed: {e}")),
             method: Some("icmpv4".to_string()),
         },
+    }
+}
+
+#[cfg(windows)]
+async fn ping_icmpv6(target: std::net::Ipv6Addr, timeout_ms: u64, seq: u16) -> PingResult {
+    let outcome =
+        tokio::task::spawn_blocking(move || windows_icmp::send_echo6(target, timeout_ms)).await;
+    let (rtt_ms, error) = match outcome {
+        Ok(Ok(rtt)) => (Some(rtt), None),
+        Ok(Err(e)) => (None, Some(e.to_string())),
+        Err(e) => (None, Some(format!("ping task failed: {e}"))),
+    };
+    PingResult {
+        ip: IpAddr::V6(target),
+        alive: rtt_ms.is_some(),
+        rtt_ms,
+        seq,
+        error,
+        method: Some("icmpv6".to_string()),
     }
 }
 

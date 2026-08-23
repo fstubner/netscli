@@ -159,3 +159,42 @@ async fn pinging_an_address_this_host_owns_succeeds_on_windows() {
         "this host must answer a ping to its own address {local}: {result:?}"
     );
 }
+
+/// Regression: `ping ::1` reported total loss because IPv6 had no ICMP path.
+///
+/// It fell through to the TCP probe, which asks ports 80/443/22 and concludes
+/// a host is down when nothing answers -- the same shape of failure IPv4
+/// loopback had, from a different cause. Windows-gated because Unix still
+/// falls back for v6; the assertion here is about netscli having an ICMPv6
+/// path at all, not about the runner's permissions.
+#[cfg(windows)]
+#[tokio::test]
+async fn pinging_ipv6_loopback_succeeds_on_windows() {
+    let scanner = PingScanner::new(1);
+    let target = IpAddr::V6(Ipv6Addr::LOCALHOST);
+
+    let result = scanner.ping(target, 2_000).await;
+
+    assert!(result.alive, "::1 must answer its own ping: {result:?}");
+    assert_eq!(
+        result.method.as_deref(),
+        Some("icmpv6"),
+        "v6 should go over ICMPv6, not the TCP fallback: {result:?}"
+    );
+}
+
+/// The v6 path must still be able to say "no". A probe that reported every
+/// address alive would pass the test above and be worse than no probe.
+#[cfg(windows)]
+#[tokio::test]
+async fn an_unreachable_ipv6_target_is_reported_dead() {
+    // 2001:db8::/32 is RFC 3849 documentation space: never routed.
+    let target = IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0, 0, 0, 1));
+
+    let result = PingScanner::new(1).ping(target, 1_000).await;
+
+    assert!(
+        !result.alive,
+        "documentation space must not answer: {result:?}"
+    );
+}
