@@ -110,13 +110,7 @@ fn can_use_raw_icmpv4() -> bool {
 }
 
 #[cfg(not(windows))]
-fn can_use_raw_icmpv4() -> bool {
-    // Best-effort capability check: if we can open an ICMPv4 layer3 channel, raw ping is usable.
-    // This avoids making discovery completely useless when running unprivileged.
-    // Called once via `RAW_ICMP_OK` OnceLock.
-    let protocol = TransportChannelType::Layer3(IpNextHeaderProtocols::Icmp);
-    transport_channel(4096, protocol).is_ok()
-}
+use raw_icmp::can_use_raw_icmpv4;
 
 async fn ping_icmpv4(target: IpAddr, timeout_ms: u64, seq: u16) -> PingResult {
     // Use tokio::spawn_blocking for pnet operations since they are synchronous.

@@ -11,6 +11,14 @@ use pnet_transport::{transport_channel, TransportChannelType, TransportReceiver}
 use std::net::IpAddr;
 use std::time::Duration;
 
+/// Best-effort capability check: if we can open an ICMPv4 layer3 channel, raw
+/// ping is usable. This avoids making discovery useless when unprivileged.
+/// Called once via the parent's `RAW_ICMP_OK` OnceLock.
+pub(super) fn can_use_raw_icmpv4() -> bool {
+    let protocol = TransportChannelType::Layer3(IpNextHeaderProtocols::Icmp);
+    transport_channel(4096, protocol).is_ok()
+}
+
 /// Send a single ICMPv4 Echo Request and await a matching Echo Reply.
 ///
 /// Filters replies by (address, identifier, sequence) so overlapping pings
