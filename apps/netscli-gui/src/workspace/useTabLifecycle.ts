@@ -33,6 +33,11 @@ export function useTabLifecycle({
   interfaces,
 }: UseTabLifecycleArgs) {
   const activeOps = useRef<Record<string, string>>({});
+  // Read at operation completion, not when the run started: a caller's
+  // closure captures `activeTabId` as it was minutes earlier, and the
+  // question "is the user looking at this tab" is only meaningful now.
+  const activeTabIdRef = useRef(activeTabId);
+  activeTabIdRef.current = activeTabId;
   const autoRunTabIds = useRef<Set<string>>(new Set());
 
   function addTab(kind: ToolKind) {
@@ -96,6 +101,10 @@ export function useTabLifecycle({
     setActiveTabId(activeTab.id);
   }
 
+  function isTabActive(tabId: string): boolean {
+    return activeTabIdRef.current === tabId;
+  }
+
   function needsAutoRun(tabId: string): boolean {
     return autoRunTabIds.current.has(tabId);
   }
@@ -112,6 +121,7 @@ export function useTabLifecycle({
     closeTab,
     closeAllTabs,
     closeOtherTabs,
+    isTabActive,
     needsAutoRun,
     clearAutoRun,
   };

@@ -39,6 +39,7 @@ describe('runWorkspaceTab op-id race guard', () => {
 
     const firstRun = runWorkspaceTab({
       activeOps,
+      isTabActive: () => true,
       maxConcurrentProbes: 256,
       patchTab,
       persistentHistory: false,
@@ -52,6 +53,7 @@ describe('runWorkspaceTab op-id race guard', () => {
     // racing a manual run). This overwrites activeOps.current[tab.id].
     const secondRun = runWorkspaceTab({
       activeOps,
+      isTabActive: () => true,
       maxConcurrentProbes: 256,
       patchTab,
       persistentHistory: false,
@@ -86,6 +88,7 @@ describe('runWorkspaceTab op-id race guard', () => {
 
     await runWorkspaceTab({
       activeOps,
+      isTabActive: () => true,
       maxConcurrentProbes: 256,
       patchTab,
       persistentHistory: false,
@@ -111,6 +114,7 @@ describe('runWorkspaceTab op-id race guard', () => {
 
     await runWorkspaceTab({
       activeOps,
+      isTabActive: () => true,
       maxConcurrentProbes: 256,
       patchTab,
       persistentHistory: false,
@@ -126,5 +130,75 @@ describe('runWorkspaceTab op-id race guard', () => {
     expect(showToast).toHaveBeenCalledWith(
       expect.objectContaining({ message: expect.stringContaining('failed: boom') }),
     );
+  });
+});
+
+// Completion toasts are scoped to tabs the user is not looking at.
+//
+// The rule: on the visible tab the result landing in the table already says
+// the run finished, so a toast repeats what is on screen. On a background
+// tab nothing else says so, and a long scan finishing unannounced is the
+// case worth reporting. Failure is not subject to this -- covered above,
+// where the table stays empty and the reason has to surface either way.
+describe('completion toasts', () => {
+  async function runScan(isTabActive: (tabId: string) => boolean) {
+    const tab = createTab('scan');
+    tab.form.host = '127.0.0.1';
+    const showToast = vi.fn();
+
+    await runWorkspaceTab({
+      activeOps: { current: {} as Record<string, string> },
+      isTabActive,
+      maxConcurrentProbes: 256,
+      patchTab: vi.fn(),
+      persistentHistory: false,
+      setHistory: vi.fn(),
+      showToast,
+      tab,
+    });
+
+    return { showToast, tabId: tab.id };
+  }
+
+  it('stays quiet when the finished tab is the one on screen', async () => {
+    const { executeTool } = await import('./toolExecution');
+    vi.mocked(executeTool).mockResolvedValue(scanResult());
+
+    const { showToast } = await runScan(() => true);
+
+    expect(showToast).not.toHaveBeenCalled();
+  });
+
+  it('announces a run that finished on a tab the user had switched away from', async () => {
+    const { executeTool } = await import('./toolExecution');
+    vi.mocked(executeTool).mockResolvedValue(scanResult());
+
+    const { showToast, tabId } = await runScan(() => false);
+
+    // `tabId` is what gives the toast its "Open tab" action in ToastHost.
+    // Without it the toast names a tab the user cannot reach from it.
+    expect(showToast).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringContaining('complete'),
+        kind: 'operation',
+        tabId,
+      }),
+    );
+  });
+
+  it('reads the active tab at completion, not when the run started', async () => {
+    // The case the ref in useWorkspace exists for: the user starts a scan
+    // and switches away while it runs. A value captured when the run began
+    // would still see the tab as active and say nothing.
+    const { executeTool } = await import('./toolExecution');
+    let active = true;
+    vi.mocked(executeTool).mockImplementation(async () => {
+      active = false;
+      return scanResult();
+    });
+
+    const { showToast } = await runScan(() => active);
+
+    expect(showToast).toHaveBeenCalledTimes(1);
   });
 });

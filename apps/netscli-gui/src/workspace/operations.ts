@@ -11,6 +11,10 @@ import type { WorkspaceToast } from './types';
 
 interface RunWorkspaceTabArgs {
   activeOps: RefObject<Record<string, string>>;
+  /** Whether the user is looking at this tab *right now*. Must be read at
+   *  completion, not when the run started: the point of the check is that
+   *  they may have switched away during a long scan. */
+  isTabActive: (tabId: string) => boolean;
   maxConcurrentProbes: number;
   patchTab: (id: string, patch: Partial<WorkspaceTab>) => void;
   persistentHistory: boolean;
@@ -21,6 +25,7 @@ interface RunWorkspaceTabArgs {
 
 export async function runWorkspaceTab({
   activeOps,
+  isTabActive,
   maxConcurrentProbes,
   patchTab,
   persistentHistory,
@@ -66,11 +71,21 @@ export async function runWorkspaceTab({
       selectionAnchor: 0,
       detailTab: defaultDetailTab(tab.kind),
     });
-    // No toast for success. The result arriving in the table is the
-    // completion signal, and announcing it again told the user something
-    // they were already looking at -- on a tab that auto-runs, before they
-    // had done anything at all. Failure still toasts below, because there
-    // the table stays empty and the reason would otherwise be invisible.
+    // Success toasts only for a tab the user is not looking at. On the
+    // visible tab the result arriving in the table is itself the completion
+    // signal, and announcing it again said something they could already see
+    // -- on a tab that auto-runs, before they had done anything at all. On
+    // a background tab there is no such signal, so the toast is the only
+    // way to learn a long scan finished; `tabId` gives it an "Open tab"
+    // action. Failure toasts unconditionally below: there the table stays
+    // empty and the reason would otherwise be invisible either way.
+    if (!isTabActive(tab.id)) {
+      showToast({
+        message: `${TOOL_CONFIG[tab.kind].label} complete`,
+        kind: 'operation',
+        tabId: tab.id,
+      });
+    }
     if (persistentHistory) {
       setHistory((prev) =>
         compactHistory([

@@ -64,6 +64,7 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
     closeTab,
     closeAllTabs,
     closeOtherTabs: closeOtherTabsFor,
+    isTabActive,
     needsAutoRun,
     clearAutoRun,
   } = useTabLifecycle({
@@ -232,6 +233,7 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
     }
     await runWorkspaceTab({
       activeOps,
+      isTabActive,
       maxConcurrentProbes: options.maxConcurrentProbes,
       patchTab,
       persistentHistory: options.persistentHistory,
