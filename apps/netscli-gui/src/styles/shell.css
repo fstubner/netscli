@@ -5,6 +5,7 @@
 @import './shell/command-status.css';
 @import './shell/context-menu.css';
 @import './shell/settings-controls.css';
+@import './shell/settings-number-field.css';
 @import './shell/settings.css';
 @import './shell/window-controls.css';
 @import './shell/about-dialog.css';

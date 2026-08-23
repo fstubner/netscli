@@ -27,6 +27,8 @@ async function assertSettingsDialog(driver) {
   await waitForText(driver, '[data-testid="settings-dialog"]', /Network Interface/i);
   const text = await driver.findElement(By.css('[data-testid="settings-dialog"]')).getText();
   assert.doesNotMatch(text, /\bNIC\b/i, 'Settings should use Network Interface, not NIC');
+  // While it is still open -- this helper closes it at the end.
+  await assertSettingsDialogCentring(driver);
   const themeControl = await driver.executeScript(`
     const control = document.querySelector('[data-testid="settings-theme-toggle"]');
     const dialog = document.querySelector('[data-testid="settings-dialog"]');
@@ -101,4 +103,60 @@ async function closeSettingsDialog(driver) {
   await waitForNoElement(driver, '[data-testid="settings-dialog"]');
 }
 
-export { assertSettingsDialog, closeSettingsDialog, openSettingsDialog };
+/**
+ * The dialog should sit at the optical centre of the workspace, not of the
+ * window.
+ *
+ * `.settings-overlay` pads itself by the chrome above and below the content
+ * region so the centring box lands on that region. Those paddings are
+ * measured constants, so this re-measures them: change the toolbar height
+ * and the dialog silently drifts off centre, which is not something anyone
+ * notices for months. Comparing against the live chrome rather than against
+ * a stored number is what makes this a check rather than a second copy of
+ * the same assumption.
+ */
+async function assertSettingsDialogCentring(driver) {
+  const geometry = await driver.executeScript(`
+    const rect = (selector) => {
+      const el = document.querySelector(selector);
+      if (!el) return null;
+      const b = el.getBoundingClientRect();
+      return { top: b.top, bottom: b.bottom, height: b.height };
+    };
+    const dialog = rect('[data-testid="settings-dialog"]');
+    const workspace = rect('.workspace') || rect('.main-frame');
+    const statusbar = rect('[data-testid="statusbar"]');
+    const tabStrip = rect('[data-testid="tab-strip"]');
+    return { dialog, workspace, statusbar, tabStrip, viewportHeight: window.innerHeight };
+  `);
+
+  assert.ok(geometry.dialog, 'settings dialog should be on screen to measure');
+  assert.ok(geometry.tabStrip && geometry.statusbar, 'need the chrome to locate the content region');
+
+  // The content region is whatever sits between the last chrome above it and
+  // the status bar below, read from the running app rather than assumed.
+  const contentTop = geometry.tabStrip.bottom;
+  const contentBottom = geometry.statusbar.top;
+  const contentCentre = (contentTop + contentBottom) / 2;
+  const dialogCentre = (geometry.dialog.top + geometry.dialog.bottom) / 2;
+  const drift = Math.abs(dialogCentre - contentCentre);
+
+  // A few pixels of rounding is fine; the bug this pins was 45px.
+  assert.ok(
+    drift <= 6,
+    `settings dialog is ${drift.toFixed(0)}px off the centre of the content region `
+      + `(content ${contentTop.toFixed(0)}..${contentBottom.toFixed(0)}, `
+      + `dialog centre ${dialogCentre.toFixed(0)}). The chrome paddings in settings.css `
+      + 'are stale -- re-measure them against the current layout.',
+  );
+
+  // And it must still fit: a dialog taller than the region it centres on
+  // would be clipped at both ends by the chrome.
+  assert.ok(
+    geometry.dialog.height <= contentBottom - contentTop,
+    `settings dialog (${geometry.dialog.height.toFixed(0)}px) is taller than the content region `
+      + `(${(contentBottom - contentTop).toFixed(0)}px)`,
+  );
+}
+
+export { assertSettingsDialog, assertSettingsDialogCentring, closeSettingsDialog, openSettingsDialog };
