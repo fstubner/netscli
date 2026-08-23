@@ -1,0 +1,76 @@
+/* Max Concurrent Probes.
+   These three classes were emitted by SettingsControls with no stylesheet
+   defining any of them, so the row rendered in the WebView's defaults: 3D
+   outset bevels on the two steppers, an inset light-grey field, and -- since
+   nothing set `appearance` -- the native spin arrows on top of the custom
+   +/- buttons. Two sets of controls for one value, in a dialog that is
+   otherwise fully themed. */
+.settings-number-field {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.settings-number-stepper {
+  width: 28px;
+  min-width: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.settings-number-stepper:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  background: var(--bg-elevated);
+}
+
+.settings-number-stepper:disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.settings-number-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-input);
+  padding: 0 8px;
+}
+
+.settings-number-input-wrap:focus-within {
+  border-color: var(--border-strong);
+}
+
+.settings-number-input-wrap input[type="number"] {
+  width: 52px;
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  padding: 6px 0;
+  text-align: right;
+  /* The +/- buttons are the stepper. Without this the WebView draws its own
+     spin arrows inside the field as well. */
+  appearance: textfield;
+}
+
+.settings-number-input-wrap input[type="number"]::-webkit-outer-spin-button,
+.settings-number-input-wrap input[type="number"]::-webkit-inner-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+.settings-number-input-wrap input[type="number"]:focus {
+  outline: none;
+}
+
+.settings-number-input-wrap span {
+  color: var(--text-secondary);
+  font-size: 12px;
+}

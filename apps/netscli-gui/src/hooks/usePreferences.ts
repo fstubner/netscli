@@ -24,9 +24,25 @@ function initialTrafficDisplayUnit(): TrafficDisplayUnit {
   return value === 'Gbps' || value === 'Mbps' || value === 'Kbps' ? value : 'Mbps';
 }
 
+/**
+ * Read a persisted number, distinguishing "never set" from a stored value.
+ *
+ * `Number(null)` is `0`, and `Number.isFinite(0)` is `true`, so the obvious
+ * spelling treats a missing key as a stored zero and the default branch never
+ * runs. That gave a fresh install 1 concurrent probe instead of 256 -- every
+ * scan, discover and sweep serialised -- and traffic precision 0 instead of
+ * 2. Both read as deliberate settings, which is why neither was noticed.
+ */
+function storedNumber(key: string): number | null {
+  const raw = window.localStorage.getItem(key);
+  if (raw === null || raw.trim() === '') return null;
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : null;
+}
+
 function initialTrafficPrecision(): TrafficPrecision {
   if (typeof window === 'undefined') return 2;
-  const value = Number(window.localStorage.getItem('netscli-traffic-precision'));
+  const value = storedNumber('netscli-traffic-precision');
   return value === 0 || value === 1 || value === 2 ? value : 2;
 }
 
@@ -38,8 +54,8 @@ function initialAddressPreference(): AddressPreference {
 
 function initialMaxConcurrentProbes(): MaxConcurrentProbes {
   if (typeof window === 'undefined') return 256;
-  const value = Number(window.localStorage.getItem('netscli-max-concurrent-probes'));
-  return Number.isFinite(value) ? clampMaxConcurrentProbes(value) : 256;
+  const value = storedNumber('netscli-max-concurrent-probes');
+  return value === null ? 256 : clampMaxConcurrentProbes(value);
 }
 
 export function clampMaxConcurrentProbes(value: number): MaxConcurrentProbes {
