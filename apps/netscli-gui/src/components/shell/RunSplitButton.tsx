@@ -75,7 +75,7 @@ export function RunSplitButton({
         <span>{runLabel}</span>
       </button>
       {supportsArpClear && (
-        <div className="toolbar-run-options">
+        <div className="toolbar-run-options" data-popover="run-options">
           <button
             className="icon-button strong toolbar-run-chevron"
             data-testid="run-options-button"
@@ -93,6 +93,7 @@ export function RunSplitButton({
           {menuOpen && (
             <div
               className="run-options-popover"
+              data-popover="run-options"
               data-testid="run-options-menu"
               ref={panelRef}
               role="menu"

@@ -45,7 +45,20 @@ export function usePopoverDismissal({
 
     function isProtectedPopoverTarget(target: EventTarget | null): boolean {
       if (!(target instanceof Element)) return false;
-      const protectedSelectors = ['.menu-root', '.menu-popover'];
+      // Anything marked as belonging to the open popover protects itself.
+      // The per-menu lists below predate this and still work, but a new
+      // popover that forgets to register here is not merely unprotected --
+      // these listeners run in the capture phase on pointerdown, mousedown
+      // AND click, so the menu is torn down before its own item's onClick
+      // can fire, and the item silently does nothing. That failure looks
+      // like a dead button with no error anywhere, which cost hours to
+      // track down for the run-options menu. `data-popover` lets a popover
+      // opt in where it is declared, instead of in a list it cannot see.
+      const protectedSelectors = [
+        `[data-popover="${openMenu}"]`,
+        '.menu-root',
+        '.menu-popover',
+      ];
       if (openMenu === 'new-tab') {
         protectedSelectors.push('.add-tab-group', '.tab-tool-popover');
       }
