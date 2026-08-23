@@ -66,11 +66,11 @@ export async function runWorkspaceTab({
       selectionAnchor: 0,
       detailTab: defaultDetailTab(tab.kind),
     });
-    showToast({
-      message: `${TOOL_CONFIG[tab.kind].label} complete`,
-      kind: 'operation',
-      tabId: tab.id,
-    });
+    // No toast for success. The result arriving in the table is the
+    // completion signal, and announcing it again told the user something
+    // they were already looking at -- on a tab that auto-runs, before they
+    // had done anything at all. Failure still toasts below, because there
+    // the table stays empty and the reason would otherwise be invisible.
     if (persistentHistory) {
       setHistory((prev) =>
         compactHistory([
