@@ -96,11 +96,6 @@ site-search dialog .dialog-frame {
 }
 
 .sl-markdown-content .expressive-code .frame {
-
-
-  box-shadow:
-    0 16px 36px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.035);
 }
 
 .sl-markdown-content .expressive-code .frame.is-terminal .header {
@@ -113,11 +108,6 @@ site-search dialog .dialog-frame {
   border-top-left-radius: calc(var(--ec-brdRad) + var(--ec-brdWd)) !important;
   border-top-right-radius: calc(var(--ec-brdRad) + var(--ec-brdWd)) !important;
 }.sl-markdown-content .expressive-code .copy button {
-
-
-  background: #202631;
-  border-radius: 4px;
-  opacity: 0.92;
 }
 
 .sl-markdown-content .expressive-code .copy button::before {

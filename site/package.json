@@ -8,7 +8,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
-    "check:css": "node ./scripts/css-shadowing.mjs --max 126",
+    "check:css": "node ./scripts/css-shadowing.mjs --max 59",
     "test:a11y": "npm run build && node ./scripts/a11y.mjs"
   },
   "dependencies": {

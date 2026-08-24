@@ -29,9 +29,6 @@
 }
 
 #starlight__search .pagefind-ui__button {
-
-
-  text-align: center !important;
 }
 
 .sl-markdown-content .expressive-code {
@@ -44,7 +41,4 @@
 }
 
 html[data-theme='light'] .sl-markdown-content .expressive-code .copy button[data-copied] {
-
-
-  color: #0b4a1f !important;
 }

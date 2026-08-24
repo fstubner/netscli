@@ -7,8 +7,6 @@
 .sidebar-content :where(details > ul a) {
 
   width: calc(100% + 1px) !important;
-  padding-inline-start: 0.75rem !important;
-  border-inline-start: 2px solid transparent !important;
 }
 
 .sidebar-content :where(details > ul a[aria-current='page']) {
@@ -34,9 +32,6 @@
     margin-left: auto !important;
     margin-right: 3rem !important;
     flex: 0 0 2.75rem !important;
-
-
-    min-width: 2.75rem !important;
   }
 
   starlight-menu-button {
@@ -55,11 +50,6 @@
   }
 
   site-search dialog .dialog-frame {
-
-
-    gap: 0.85rem !important;
-    padding: 1rem !important;
-    align-items: start !important;
   }
 
   site-search button[data-close-modal] {

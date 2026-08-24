@@ -30,9 +30,6 @@
     margin-inline-end: .35rem !important;
   }.content-panel table,
   .sl-markdown-content table {
-
-
-    min-width: 100% !important;
   }.content-panel thead th,
   .sl-markdown-content thead th {
     font-weight: 700 !important;
@@ -46,21 +43,9 @@
   }
 
   site-search dialog {
-
-
-    min-height: auto !important;
-    overflow: auto !important;
   }
 
   site-search dialog .dialog-frame {
-
-
-    grid-template-areas:
-      "search close"
-      "drawer drawer" !important;
-    align-items: start !important;
-    gap: .85rem !important;
-    padding: 1rem !important;
   }
 
   site-search dialog .search-container,
@@ -83,8 +68,4 @@
   }
 
   site-search dialog .pagefind-ui__drawer {
-
-
-    max-width: none !important;
-    min-height: 9rem !important;
   }}

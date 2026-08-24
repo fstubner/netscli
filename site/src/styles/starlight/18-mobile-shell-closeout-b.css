@@ -140,9 +140,6 @@
 
 @media (max-width: 49.99rem) {
   .docs-mobile-section-nav {
-
-
-    top: var(--sl-nav-height) !important;
   }mobile-starlight-toc nav {
     position: fixed !important;
     inset-inline: 0 !important;
