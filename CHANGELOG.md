@@ -12,6 +12,68 @@ further copies in `package.json` and `tauri.conf.json`. See
 
 ## [Unreleased]
 
+## [0.3.1] — 2026-08-24
+
+A bug-fix release. Everything here was found by using the desktop app on a
+real network rather than by reading the code, and three of the fixes are for
+faults that reported success while doing nothing.
+
+### Fixed
+
+- **Pinging your own machine no longer reports 100% loss.** On Windows,
+  `ping 127.0.0.1` — and the machine's own LAN address — timed out while the
+  system `ping` answered immediately. Two causes stacked up: raw ICMP sockets
+  need administrator rights, so an ordinary run fell back to TCP probes on
+  ports 80/443/22 and concluded a host was down when nothing answered; and a
+  Windows raw socket does not observe traffic to an address the host owns.
+  Windows now sends echoes through the IP Helper API, which needs no
+  privileges and reaches local addresses. Discover and sweep both start from
+  a ping sweep, so both returned nothing for any range covering this host.
+- **IPv6 hosts can be pinged.** `ping ::1` reported total loss because IPv6
+  had no ICMP path at all and fell through to the same TCP probe. Windows now
+  uses `Icmp6SendEcho2`.
+- **A fresh install no longer runs one probe at a time.** `Number(null)` is
+  `0` and passes an `isFinite` check, so reading an unset preference produced
+  a stored zero rather than the default: max concurrent probes came out as 1
+  instead of 256, serialising every scan, discover and sweep. Traffic
+  precision had the same fault, showing no decimals. Profiles already left at
+  1 by the broken build are repaired once on upgrade.
+- **Discover reports devices the OS already knows about.** Results now merge
+  probe replies with the neighbour table, so a device that answers ARP but
+  not ICMP is no longer missing. Each host records whether it was found by
+  probe or by neighbour, since a stale neighbour entry can outlive the device.
+- **`netscli arp --clear` no longer claims to have cleared the table when it
+  has not.** `arp -d *` on Windows prints "The requested operation requires
+  elevation" and then exits 0, so checking the exit status alone reported
+  success while nothing was touched. It now fails, with the reason, and a
+  non-zero exit.
+- **The settings dialog is centred on the window**, and its Max Concurrent
+  Probes control is themed rather than rendering in the WebView's default
+  3D-bevelled controls with duplicate spin arrows.
+- **Menu items in the run options popover respond to clicks.** An
+  unrecognised popover was torn down by the global dismissal handler before
+  its own item could fire, so the item did nothing, threw nothing and logged
+  nothing.
+
+### Added
+
+- **Clear ARP table, then discover.** A chevron beside Run offers a
+  cache-flushing variant on discover, sweep and the ARP tab — the tools where
+  a stale neighbour entry changes the answer. Clearing needs administrator
+  rights; when it fails the run is suppressed rather than quietly returning
+  the stale entries it was meant to drop.
+
+### Changed
+
+- **The app opens on Discover** rather than Scan. The first useful question
+  on an unfamiliar network is what is on it, and a scan needs a host you do
+  not have yet.
+- **Completion notifications only appear for tabs you are not looking at.**
+  On the visible tab the result arriving in the table already says the run
+  finished. Failures still report unconditionally.
+- Dependency updates: `pcap` 2.4 → 2.5, `astro`, `lucide-react`, `vitest`,
+  `@axe-core/cli`, and the vite/rollup group.
+
 ## [0.3.0] — 2026-08-20
 
 ### Added
@@ -587,7 +649,8 @@ backed by the same core library.
 - Desktop app needs the WebView2 runtime on Windows. Most Windows
   10/11 systems have it preinstalled.
 
-[Unreleased]: https://github.com/fstubner/netscli/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/fstubner/netscli/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/fstubner/netscli/releases/tag/v0.3.1
 [0.3.0]: https://github.com/fstubner/netscli/releases/tag/v0.3.0
 [0.2.6]: https://github.com/fstubner/netscli/releases/tag/v0.2.6
 [0.2.5]: https://github.com/fstubner/netscli/releases/tag/v0.2.5
