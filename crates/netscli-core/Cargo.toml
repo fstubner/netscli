@@ -1,6 +1,6 @@
 [package]
 name = "netscli-core"
-version = "0.3.0"
+version = "0.3.1"
 description = "Core networking library: discovery, scanning, DNS, ARP, PCAP, and OUI resolution"
 authors.workspace = true
 license.workspace = true

@@ -1,6 +1,6 @@
 {
   "name": "netscli-gui",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "NetsCLI GUI - Modern network scanner with beautiful desktop interface",
   "private": true,
   "type": "module",

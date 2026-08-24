@@ -1,6 +1,6 @@
 [package]
 name = "netscli-gui"
-version = "0.3.0"
+version = "0.3.1"
 description = "Tauri 2.0 desktop GUI for network discovery, scanning, and diagnostics"
 authors.workspace = true
 license.workspace = true
