@@ -17,7 +17,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
-    "@axe-core/cli": "^4.12.1",
+    "@axe-core/cli": "^4.13.0",
     "typescript": "^5.5.0"
   }
 }
