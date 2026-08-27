@@ -20,6 +20,7 @@ import { useReleaseNotifications } from './hooks/useReleaseNotifications';
 import { useTauriRuntimeState } from './hooks/useTauriRuntimeState';
 import { appWindowAction, type AppWindowAction } from './services/appWindow';
 import type { ResultCellContext } from './tools/types';
+import { packetCaptureUnavailableMessage } from './workspace/packetCapture';
 import { guardForOperation, type OperationGuard } from './workspace/operationGuards';
 import { useWorkspace } from './workspace/useWorkspace';
 
@@ -155,10 +156,15 @@ function App() {
     });
   }
 
-  const pcapUnavailableReason =
-    activeTab?.kind === 'pcap' && !pcapCapability.available
-      ? packetCaptureUnavailableMessage(pcapCapability.message)
-      : null;
+  // Two different questions. The menu asks "can packet capture run at all",
+  // which is true or false regardless of which tab is open; Run asks "can
+  // THIS tab run", which is only about pcap when a pcap tab is active.
+  // Conflating them greyed the menu entry only once you had already opened
+  // the thing the entry is for.
+  const packetCaptureUnavailable = !pcapCapability.available
+    ? packetCaptureUnavailableMessage(pcapCapability.message)
+    : null;
+  const pcapUnavailableReason = activeTab?.kind === 'pcap' ? packetCaptureUnavailable : null;
 
   return (
     <div className={`container ${darkMode ? 'theme-dark' : 'theme-light'}`} data-testid="app-shell">
@@ -170,6 +176,7 @@ function App() {
           setOpenMenu={setOpenMenu}
           tabCount={workspace.tabs.length}
           toolCapabilities={toolCapabilities}
+          toolDisabledReasons={packetCaptureUnavailable ? { pcap: packetCaptureUnavailable } : undefined}
           onAddTab={workspace.addTab}
           onAbout={() => setAboutOpen(true)}
           onOpenSettings={() => setSettingsOpen(true)}
@@ -308,11 +315,5 @@ function App() {
   );
 }
 
-function packetCaptureUnavailableMessage(message?: string | null): string {
-  if (message?.includes("built without feature 'pcap'")) {
-    return 'Packet Capture is not included in this build.';
-  }
-  return 'Packet Capture needs Npcap/libpcap before it can run.';
-}
 
 export default App;
