@@ -8,7 +8,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
-    "check:css": "node ./scripts/css-shadowing.mjs --max 126",
+    "check:css": "node ./scripts/css-shadowing.mjs --max 59",
     "test:a11y": "npm run build && node ./scripts/a11y.mjs"
   },
   "dependencies": {
@@ -18,6 +18,7 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
     "@axe-core/cli": "^4.13.0",
+    "linkedom": "^0.18.13",
     "typescript": "^5.5.0"
   }
 }

@@ -23,7 +23,7 @@ function mergeRelease(
   };
 }
 
-function setupReleaseDisclosure(item: HTMLElement, body: HTMLElement, index: number): void {
+export function setupReleaseDisclosure(item: HTMLElement, body: HTMLElement, index: number): void {
   const collapsedHeight = window.matchMedia('(max-width: 42rem)').matches ? 260 : 300;
   const minimumOverflow = 80;
   const bodyId = `release-body-${index}`;
@@ -63,8 +63,20 @@ export function renderReleaseList(
   releases: ChangelogRelease[],
   repo: string,
   fallbackByTag: Map<string, ChangelogRelease>,
-  releaseSummaries: Record<string, string>
+  releaseSummaries: Record<string, string>,
+  /**
+   * Skip the parts that need a laid-out page.
+   *
+   * This same function runs at build time against a DOM with no layout, so
+   * that the release notes are in the HTML instead of being painted in by
+   * script. `scrollHeight` is 0 there, which would collapse every card to
+   * the wrong height; the client re-applies the disclosure once it has a
+   * real page. Rendering one renderer twice is the point -- the card markup
+   * and the 400-odd lines of markdown conversion behind it exist once.
+   */
+  options: { interactive?: boolean } = {}
 ): boolean {
+  const interactive = options.interactive !== false;
   const list = document.getElementById('release-list');
   if (!list || !Array.isArray(releases) || releases.length === 0) return false;
   list.textContent = '';
@@ -113,8 +125,24 @@ export function renderReleaseList(
     const body = renderMarkdown(release.body || '', release, repo, releaseSummaries);
     item.append(header, body);
     list.appendChild(item);
-    setupReleaseDisclosure(item, body, index);
+    if (interactive) setupReleaseDisclosure(item, body, index);
   }
   updateReleaseTimeline(releases.map((release) => mergeRelease(release, fallbackByTag, releaseSummaries)));
   return true;
+}
+
+/**
+ * Attach the collapse affordance to cards that were rendered at build time.
+ *
+ * The server render skips it because it measures `scrollHeight`, which is 0
+ * without layout. This runs once on load, against the markup already on the
+ * page, so the notes are readable before any script runs and gain the
+ * collapse once one does.
+ */
+export function hydrateReleaseDisclosures(): void {
+  const items = document.querySelectorAll<HTMLElement>('#release-list .release-item');
+  items.forEach((item, index) => {
+    const body = item.querySelector<HTMLElement>('.release-body');
+    if (body) setupReleaseDisclosure(item, body, index);
+  });
 }

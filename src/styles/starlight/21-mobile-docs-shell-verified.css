@@ -11,10 +11,6 @@
 }
 
 .sidebar-content :where(details > ul a) {
-
-
-  padding-inline-start: 0.75rem !important;
-  border-inline-start: 2px solid transparent !important;
 }
 
 .sidebar-content :where(details > ul a:hover),

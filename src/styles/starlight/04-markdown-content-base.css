@@ -144,11 +144,7 @@
 
 @media (max-width: 42rem) {
   .sl-markdown-content table {
-
-
-    background: transparent;
     overflow: visible;
-    max-width: 100%;
   }.sl-markdown-content table tbody {
 
     gap: 0.55rem;
@@ -157,21 +153,11 @@
   .sl-markdown-content table tr {
 
     gap: 0.28rem;
-
-    border: 1px solid rgba(140, 149, 166, 0.18);
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.03);
   }
 
   .sl-markdown-content table td,
   .sl-markdown-content table th {
-
-
-    min-width: 0;
-    padding: 0;
     border: 0;
-    white-space: normal;
-    overflow-wrap: anywhere;
   }.sl-markdown-content table td:first-child {
     width: auto;
     padding: 0;
