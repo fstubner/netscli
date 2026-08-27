@@ -131,15 +131,9 @@
 
   }site-search dialog .search-container,
   #starlight__search {
-
-
-    min-width: 0 !important;
   }
 
   site-search button[data-close-modal] {
-
-
-    align-self: center !important;
   }}
 
 site-search button[data-open-modal]:hover,

@@ -4,6 +4,7 @@ import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 import { site } from '../data/site';
 import changelogText from '../../../CHANGELOG.md?raw';
+import { renderReleaseListHtml } from '../scripts/changelog/render-static';
 
 const { hero, social } = site;
 const title = 'NetsCLI release notes';
@@ -53,11 +54,21 @@ const parseLocalChangelog = (text: string) => {
         summary: releaseSummaries[tag],
       };
     })
-    .filter(Boolean)
+    // A type guard rather than `.filter(Boolean)`: the latter does not
+    // narrow the null out, which only surfaced once the result was passed to
+    // a typed function instead of into an untyped `define:vars`.
+    .filter((release): release is NonNullable<typeof release> => release !== null)
     .slice(0, 8);
 };
 
 const fallbackReleases = parseLocalChangelog(changelogText);
+
+// Rendered here, not painted in by script: the entries come from this
+// repository's own CHANGELOG.md, so they are known at build time, and a page
+// whose whole purpose is release notes should not be empty without
+// JavaScript. The client still upgrades this once GitHub confirms which
+// tags are actually released.
+const staticRelease = renderReleaseListHtml(fallbackReleases, hero.sourceUrl.split('/').slice(-2).join('/'), releaseSummaries);
 ---
 
 <Page
@@ -83,15 +94,11 @@ const fallbackReleases = parseLocalChangelog(changelogText);
     </header>
 
     <div class="changelog-content">
-      <section id="release-list" class="release-list" aria-live="polite">
-        <div class="release-empty">Loading release notes...</div>
-      </section>
+      <section id="release-list" class="release-list" aria-live="polite" set:html={staticRelease.list} />
 
       <aside class="release-timeline" aria-label="Release timeline">
         <p>Timeline</p>
-        <nav id="release-timeline" class="release-timeline-nav">
-          <span class="release-timeline-empty">Loading</span>
-        </nav>
+        <nav id="release-timeline" class="release-timeline-nav" set:html={staticRelease.timeline} />
       </aside>
     </div>
   </main>

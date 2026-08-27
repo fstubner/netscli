@@ -64,7 +64,7 @@ button {
   --border-strong: #343b49;
   --text-primary: #e4e7ef;
   --text-secondary: #9aa2b3;
-  --text-muted: #667085;
+  --text-muted: #7a8499;
   --mint: #3eddb0;
   --mint-deep: #0aae7a;
   --focus-ring: color-mix(in srgb, var(--mint), transparent 35%);
@@ -145,7 +145,7 @@ button {
   --border-strong: #c2cad6;
   --text-primary: #17202b;
   --text-secondary: #4d5a6b;
-  --text-muted: #7b8797;
+  --text-muted: #687484;
   --mint: #008a63;
   --mint-deep: #007052;
   --focus-ring: color-mix(in srgb, var(--mint), transparent 24%);

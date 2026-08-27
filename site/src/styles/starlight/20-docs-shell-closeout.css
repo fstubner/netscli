@@ -188,12 +188,6 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
 
 @media (max-width: 49.99rem) {
   .right-sidebar-container {
-
-
-    margin: 0 !important;
-    padding: 0 !important;
-    border: 0 !important;
-    overflow: visible !important;
   }
 
   .docs-mark {
@@ -237,28 +231,16 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
   }
 
   site-search dialog {
-
-
-    min-height: min(100dvh - 1rem, 44rem) !important;
-    margin: 0.5rem auto !important;
     border-radius: 8px !important;
   }
 
   site-search dialog .dialog-frame {
-
-
-    align-items: center !important;
     align-content: start !important;
-    gap: 0.75rem !important;
-    padding: 1rem !important;
   }
 
   site-search dialog .dialog-frame > * {
     align-self: start !important;
   }site-search button[data-close-modal] {
-
-
-    align-self: start !important;
   }
 }
 

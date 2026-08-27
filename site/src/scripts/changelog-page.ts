@@ -1,5 +1,5 @@
 import { normalizeTag } from './changelog/summarize';
-import { renderReleaseList } from './changelog/release-list';
+import { hydrateReleaseDisclosures, renderReleaseList } from './changelog/release-list';
 import type { ChangelogRelease } from './changelog/types';
 
 export type { ChangelogRelease };
@@ -16,13 +16,15 @@ export function initChangelogPage(
     fallbackReleases.map((release) => [normalizeTag(release.tag_name || release.name), release])
   );
 
-  // Nothing is linked to a tag until GitHub confirms that tag exists. The
-  // first paint happens before the fetch resolves, and if the fetch fails it
-  // is the only paint -- linking optimistically is how the v0.3.0 card ended
-  // up pointing at a 404 for weeks. Same rule as the version in the hero:
-  // assert it once it is confirmed, not before.
-  const asUnreleased = fallbackReleases.map((release) => ({ ...release, unreleased: true }));
-  const renderedFallback = renderReleaseList(asUnreleased, repo, fallbackByTag, releaseSummaries);
+  // The list is already in the HTML, rendered at build time from this repo's
+  // CHANGELOG.md by this same renderer, so there is nothing to paint here --
+  // only the collapse to attach, which needs a laid-out page.
+  //
+  // Nothing in that markup links a tag, for the same reason the fetch below
+  // is careful: linking optimistically is how the v0.3.0 card ended up
+  // pointing at a GitHub 404 for weeks. A tag is asserted once confirmed,
+  // not before.
+  hydrateReleaseDisclosures();
 
   fetch(`https://api.github.com/repos/${repo}/releases?per_page=8`)
     .then((response) => {
@@ -38,10 +40,9 @@ export function initChangelogPage(
       renderReleaseList([...localOnlyReleases, ...releases], repo, fallbackByTag, releaseSummaries);
     })
     .catch(() => {
-      const list = document.getElementById('release-list');
-      if (list && !renderedFallback) {
-        list.innerHTML =
-          '<div class="release-empty">Could not load releases from GitHub right now. Use the releases link above.</div>';
-      }
+      // Deliberately nothing. The build-time render is already on screen and
+      // is accurate -- it just has not been told which tags are published.
+      // Replacing it with an error would throw away the notes the reader
+      // came for because a metadata request failed.
     });
 }

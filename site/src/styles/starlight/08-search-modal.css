@@ -36,16 +36,9 @@ site-search dialog .search-container {
   inset-block-start: 0;
 
   flex: 0 0 auto;
-  padding-block-end: 0.8rem;
-  background: #252b36;
 }#starlight__search .pagefind-ui__drawer {
   min-height: 0;
-
-
-  overscroll-behavior: contain;
   padding-inline-end: 0.2rem;
-  position: relative;
-  scrollbar-gutter: stable;
 }
 
 #starlight__search .pagefind-ui__drawer:has(.pagefind-ui__result)::before,
