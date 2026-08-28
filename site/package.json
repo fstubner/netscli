@@ -4,9 +4,9 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "astro dev",
+    "dev": "astro dev --host 127.0.0.1",
     "build": "astro build",
-    "preview": "astro preview",
+    "preview": "astro preview --host 127.0.0.1",
     "check": "astro check",
     "check:changelog": "node ./scripts/changelog-dates.mjs",
     "check:css": "node ./scripts/css-shadowing.mjs --max 24",
