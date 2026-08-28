@@ -230,6 +230,9 @@ function App() {
         onAddScanTab={() => workspace.addTab('scan')}
         onAddToolTab={workspace.addTab}
         onCloseTab={workspace.closeTab}
+        onCloseAllTabs={workspace.closeAllTabs}
+        onCloseOtherTabs={workspace.closeOtherTabs}
+        onCloseTabsBeside={workspace.closeTabsBeside}
         onSelectTab={workspace.setActiveTabId}
         setOpenMenu={setOpenMenu}
       />
