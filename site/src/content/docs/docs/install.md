@@ -117,6 +117,61 @@ brew upgrade netscli
 
 For direct release artifacts, download the [latest GitHub release](https://github.com/fstubner/netscli/releases/latest) and replace the previous install with the matching package for your platform.
 
+## Verifying a download
+
+Every CLI and desktop release asset is checksummed and signed, and both can be
+checked before you run anything.
+
+### Checksums
+
+Each asset ships a `.sha256` sidecar next to it on the release page. The
+install scripts fetch and check it for you, and refuse to install if it is
+missing — a failed checksum request is not treated as permission to skip
+verification. To check a manual download yourself:
+
+```bash
+# Linux / macOS
+curl -fsSLO https://github.com/fstubner/netscli/releases/latest/download/netscli-linux-x86_64
+curl -fsSLO https://github.com/fstubner/netscli/releases/latest/download/netscli-linux-x86_64.sha256
+sha256sum -c netscli-linux-x86_64.sha256
+```
+
+```powershell
+# Windows
+(Get-FileHash -Algorithm SHA256 .\netscli-windows-x86_64.exe).Hash.ToLower()
+# compare against the contents of netscli-windows-x86_64.exe.sha256
+```
+
+### Signatures
+
+A checksum only proves the file matches its own sidecar, and both come from
+the same place. The signature is what ties the asset to the workflow run that
+built it.
+
+Every asset is signed keylessly with [Sigstore
+cosign](https://docs.sigstore.dev/cosign/overview/) in CI, using the GitHub
+Actions OIDC identity — no key management, and the signature is bound to the
+exact run. Each asset ships a `.sig` and a `.pem` beside it:
+
+```bash
+cosign verify-blob \
+  --signature netscli-linux-x86_64.sig \
+  --certificate netscli-linux-x86_64.pem \
+  --certificate-identity-regexp 'https://github.com/fstubner/netscli/.github/workflows/release\.yml@.*' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  netscli-linux-x86_64
+```
+
+Substitute the asset name you downloaded — the same command works for the
+desktop `.msi`, `.dmg`, `.deb` and `.AppImage`. It needs the [cosign
+CLI](https://docs.sigstore.dev/cosign/system_config/installation/). A pass
+confirms the asset was built and signed by this repository's release workflow
+and has not been altered since.
+
+This is separate from platform code signing, which the installers do not yet
+have — see the Windows and macOS sections above for what your OS will say on
+first run.
+
 ## Packet capture
 
 **No install on this page includes packet capture.** It is a compile-time feature, and every published build — the desktop installers, the standard CLI release assets, and `cargo install netscli` — is built without it. That keeps the default install free of any libpcap/Npcap dependency and avoids redistributing Npcap.

@@ -33,10 +33,21 @@ export function initChangelogPage(
     })
     .then((releases: ChangelogRelease[]) => {
       const remoteTags = new Set(releases.map((release) => normalizeTag(release.tag_name || release.name)));
-      // A changelog entry with no release behind it stays unlinked.
+      // A changelog entry with no release behind it stays unlinked, and
+      // loses its date. `published_at` is built from the date on the
+      // CHANGELOG.md heading, which is written when the entry is drafted --
+      // so an entry GitHub has just told us was never released still carried
+      // a publication date, and the card read "v0.3.1 · Not yet released ·
+      // 24 Aug 2026". The label and the date contradicted each other, and
+      // the date was the half that looked like a fact.
       const localOnlyReleases = fallbackReleases
         .filter((release) => !remoteTags.has(normalizeTag(release.tag_name || release.name)))
-        .map((release) => ({ ...release, unreleased: true, confirmedUnreleased: true }));
+        .map((release) => ({
+          ...release,
+          published_at: undefined,
+          unreleased: true,
+          confirmedUnreleased: true,
+        }));
       renderReleaseList([...localOnlyReleases, ...releases], repo, fallbackByTag, releaseSummaries);
     })
     .catch(() => {
