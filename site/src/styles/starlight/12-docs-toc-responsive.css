@@ -6,7 +6,7 @@
   }.right-sidebar {
 
 
-    height: auto !important;
+
     padding: 0 !important;
     overflow: visible !important;
     border: 0 !important;
@@ -26,7 +26,7 @@
   mobile-starlight-toc summary {
 
 
-    padding-inline: clamp(1rem, 4vw, 1.5rem) !important;
+
     border-bottom: 0 !important;
     gap: 0.75rem !important;
   }
@@ -35,7 +35,7 @@
 
     gap: 0.65rem !important;
 
-    border-radius: 6px !important;
+
     background: rgba(255, 255, 255, 0.035) !important;
     color: var(--sl-color-gray-1) !important;
     font-weight: 720 !important;
@@ -53,7 +53,7 @@
 
     border-color: var(--sl-color-hairline-light) !important;
 
-    background: #171b22 !important;
+
     box-shadow: 0 18px 46px rgba(0, 0, 0, 0.34) !important;
   }mobile-starlight-toc .dropdown a:hover,
   mobile-starlight-toc .dropdown a[aria-current='true'] {

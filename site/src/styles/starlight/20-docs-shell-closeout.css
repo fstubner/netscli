@@ -49,7 +49,7 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
    same place, and the matching padding increase keeps the text still. */
 .sidebar-content :where(details > ul a) {
 
-  width: calc(100% + 0.5rem + 1px) !important;
+
   padding-inline-start: calc(.85rem + 0.5rem + 1px) !important;
   border-inline-start: 1px solid transparent !important;
   background-clip: border-box !important;
@@ -186,11 +186,7 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
   }
 }
 
-@media (max-width: 49.99rem) {
-  .right-sidebar-container {
-  }
-
-  .docs-mark {
+@media (max-width: 49.99rem) {.docs-mark {
     transform: translateX(-24px) !important;
   }
 
@@ -240,9 +236,7 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
 
   site-search dialog .dialog-frame > * {
     align-self: start !important;
-  }site-search button[data-close-modal] {
-  }
-}
+  }}
 
 #starlight__search .pagefind-ui__drawer {
   position: relative !important;

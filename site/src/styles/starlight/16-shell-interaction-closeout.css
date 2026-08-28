@@ -1,10 +1,4 @@
-/* Unified shell and interaction close-out. These final rules intentionally
-   sit last because Starlight and earlier feedback passes both style these
-   same surfaces. */
-.sidebar-content :where(details > ul) {
-
-  border-inline-start: 1px solid var(--sl-color-hairline) !important;
-}/* This selector outranks every `:where(details > ul a)` rule in the later
+/* This selector outranks every `:where(details > ul a)` rule in the later
    files -- `:where()` contributes no specificity, so those lose to a plain
    `.sidebar-content a[aria-current='page']` even when they load afterwards.
    The alignment therefore has to be set here, or it silently does nothing.
