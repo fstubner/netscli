@@ -225,6 +225,7 @@ function App() {
         onCloseAllTabs={workspace.closeAllTabs}
         onCloseOtherTabs={workspace.closeOtherTabs}
         onCloseTabsBeside={workspace.closeTabsBeside}
+        onMoveTab={workspace.moveTab}
         onSelectTab={workspace.setActiveTabId}
         setOpenMenu={setOpenMenu}
       />

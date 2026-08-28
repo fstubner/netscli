@@ -19,6 +19,12 @@ import type { WorkspaceTab } from '../../tools/types';
  * Home/End jump to the ends, Delete closes, Enter/Space activate. The last
  * is needed because the tabs are divs, which — unlike buttons — do not fire
  * a click on Enter or Space.
+ *
+ * Ctrl+Shift+Arrow moves the tab itself. Reordering is otherwise a
+ * pointer-only gesture, and this strip has been keyboard-inoperable once
+ * already (H-3, above) — a feature reachable only by dragging repeats that
+ * in miniature. Ctrl+Shift+Arrow is what editors use for the same action,
+ * and no other binding here takes a modifier.
  */
 export function handleTabStripKeyDown(
   event: KeyboardEvent<HTMLDivElement>,
@@ -26,10 +32,27 @@ export function handleTabStripKeyDown(
   tabs: WorkspaceTab[],
   onSelectTab: (tabId: string) => void,
   onCloseTab: (tabId: string) => void,
+  onMoveTab?: (tabId: string, toIndex: number) => void,
 ) {
   const tab = tabs[index];
   if (!tab) return;
   const last = tabs.length - 1;
+
+  // Move the tab, before the plain-arrow handling below claims the key.
+  if (onMoveTab && event.ctrlKey && event.shiftKey) {
+    let to: number | null = null;
+    if (event.key === 'ArrowRight' && index < last) to = index + 1;
+    else if (event.key === 'ArrowLeft' && index > 0) to = index - 1;
+    if (to === null) return;
+
+    event.preventDefault();
+    onMoveTab(tab.id, to);
+    // Follow the tab to its new slot, so a repeated press keeps moving the
+    // same one rather than whatever landed under the focus.
+    const sibling = event.currentTarget.parentElement?.children[to];
+    if (sibling instanceof HTMLElement) sibling.focus();
+    return;
+  }
 
   if (event.key === 'Delete') {
     event.preventDefault();

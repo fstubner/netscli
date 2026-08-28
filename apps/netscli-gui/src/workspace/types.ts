@@ -37,6 +37,8 @@ export interface WorkspaceModel {
   closeOtherTabs: (tabId?: string) => void;
   /** Close every tab to one side of `tabId`, keeping `tabId`. */
   closeTabsBeside: (tabId: string, side: 'left' | 'right') => void;
+  /** Move a tab to a new position. Does not change which tab is active. */
+  moveTab: (tabId: string, toIndex: number) => void;
   /** Whether this tab was auto-created (e.g. interfaces/arp) and still
    *  needs its first run triggered. App.tsx's own requestRun (which applies
    *  operation guards and capability checks) watches this and calls
