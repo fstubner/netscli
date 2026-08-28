@@ -103,8 +103,8 @@ const { hero, social } = site;
       </div>
     </div>
     <div class="hero-cta-sub">
-      <div class="hero-command has-copy hero-copy" id="hero-package-install" data-copy="winget install fstubner.netscli">
-        <code>winget install fstubner.netscli</code>
+      <div class="hero-command has-copy hero-copy" id="hero-package-install" data-copy={hero.quickInstallAlt}>
+        <code>{hero.quickInstallAlt}</code>
       </div>
       <a class="hero-install-link" href="#install">{hero.installLinkLabel}</a>
     </div>

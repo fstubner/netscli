@@ -41,7 +41,12 @@ export interface Hero {
   heading: string;
   subhead: string;
   /** Shell command shown in the hero's highlighted install block. */
+  /** The prominent hero command. Swapped per-OS at runtime by os-tabs.ts;
+   *  this is what a visitor sees before that runs, and what a crawler sees. */
   quickInstall: string;
+  /** The smaller command under it — a genuinely different route, never a
+   *  restatement of the one above. */
+  quickInstallAlt: string;
   /** Jump-to-install link label. */
   installLinkLabel: string;
   /** Path to the hero screenshot. */

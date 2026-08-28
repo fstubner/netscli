@@ -22,21 +22,27 @@ const MACOS_UNSIGNED_HINT = 'Unsigned — right-click → Open on first launch';
  * straight from GitHub Releases with nothing checking it, and was being told
  * otherwise at the moment they did it. The checksums are real and published;
  * this now points at them. */
-const WINDOWS_UNSIGNED_HINT =
-  'Unsigned — SmartScreen may warn; checksums are published with the release';
+const WINDOWS_UNSIGNED_HINT = 'Unsigned — SmartScreen may warn; checksums published';
 
 /* Both of these check the download against a SHA256 in their own manifest
  * and abort on a mismatch, which is the thing the direct-download row cannot
  * do for you. Stated on both rather than only on winget: scoop does it too,
- * and naming one would have implied the other does not. */
-const WINDOWS_MANAGER_HASH_HINT = 'Verifies the download against the hash in its manifest';
+ * and naming one would have implied the other does not.
+ *
+ * Two words, not a sentence. It appears on four rows in a single Windows
+ * panel -- winget and scoop, under both Desktop app and CLI -- and four
+ * copies of "Verifies the download against the hash in its manifest" is most
+ * of what made that panel read as a wall. The full explanation is in the
+ * install guide; here it only has to distinguish these rows from the
+ * download below them. */
+const WINDOWS_MANAGER_HASH_HINT = 'Hash-verified';
 
 export const installByPlatform: Record<Platform, PlatformInstall> = {
   windows: {
     cli: [
       {
         label: 'Winget',
-        command: 'winget install fstubner.netscli',
+        command: 'winget install netscli',
         hint: WINDOWS_MANAGER_HASH_HINT,
       },
       {
@@ -50,15 +56,11 @@ export const installByPlatform: Record<Platform, PlatformInstall> = {
         command:
           'iwr -useb https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.ps1 | iex',
       },
-      {
-        label: 'Cargo',
-        command: 'cargo install netscli',
-      },
     ],
     desktop: [
       {
         label: 'Winget',
-        command: 'winget install fstubner.netscli.gui',
+        command: 'winget install netscli-gui',
         hint: WINDOWS_MANAGER_HASH_HINT,
       },
       {
@@ -84,10 +86,6 @@ export const installByPlatform: Record<Platform, PlatformInstall> = {
         label: 'Install script',
         command:
           'curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash',
-      },
-      {
-        label: 'Cargo',
-        command: 'cargo install netscli',
       },
     ],
     desktop: [
@@ -126,10 +124,6 @@ export const installByPlatform: Record<Platform, PlatformInstall> = {
         label: 'Homebrew',
         command: 'brew tap fstubner/tap && brew install netscli',
       },
-      {
-        label: 'Cargo',
-        command: 'cargo install netscli',
-      },
     ],
     desktop: [
       {
@@ -163,10 +157,6 @@ export const tryCommands: TryCommand[] = [
     command: 'netscli scan router.local -p 22,80,443',
   },
   {
-    comment: 'Resolve DNS records with structured output available',
-    command: 'netscli dns google.com',
-  },
-  {
     comment: 'Expose NetsCLI tools to Claude, Cursor, and other MCP clients',
     command: 'netscli serve',
   },
@@ -180,5 +170,10 @@ export const tryCommands: TryCommand[] = [
 // to point at the top of the install guide, which had no verification steps
 // anywhere on it -- the promise was real (assets are signed) but nobody
 // following it could act on it.
+/* One line, three jobs: the routes this panel no longer lists, the
+ * verification steps, and the packet-capture builds. The panel used to carry
+ * a Cargo row per platform -- the same command three times -- and every
+ * alternative route for every platform, which is what made it read as a wall
+ * rather than a choice. */
 export const installBinariesNote =
-  'Every asset is checksummed and signed with <a href="https://docs.sigstore.dev/cosign/overview/">Sigstore cosign</a> — see <a href="/docs/install/#verifying-a-download">how to verify a download</a>, plus standalone CLI binaries and packet-capture builds.';
+  'Rust users can <code>cargo install netscli</code>. Every asset is checksummed and signed with <a href="https://docs.sigstore.dev/cosign/overview/">Sigstore cosign</a> — see <a href="/docs/install/#verifying-a-download">how to verify a download</a>, plus standalone binaries and packet-capture builds.';
