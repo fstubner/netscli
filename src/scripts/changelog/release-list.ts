@@ -17,7 +17,16 @@ function mergeRelease(
     tag_name: release.tag_name || fallback?.tag_name || tag,
     name: release.name || fallback?.name || tag,
     html_url: release.html_url || fallback?.html_url,
-    published_at: release.published_at || fallback?.published_at,
+    // An unreleased entry has no publication date, and must not borrow the
+    // fallback's. `published_at` there is built from the date on the
+    // CHANGELOG.md heading -- written when the entry is drafted, not when a
+    // tag is pushed -- so this line used to resurrect a date for the very
+    // entry GitHub had just confirmed was never released. The card read
+    // "Not yet released" beside "24 Aug 2026", and the date is the half that
+    // reads as a fact.
+    published_at: release.unreleased
+      ? undefined
+      : release.published_at || fallback?.published_at,
     body: fallback?.body || release.body || '',
     summary: releaseSummaries[tag] || fallback?.summary || release.summary,
   };
