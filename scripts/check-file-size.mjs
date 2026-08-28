@@ -6,15 +6,6 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 const maxLines = 300;
 const transitionExceptions = new Map([
   [
-    'apps/netscli-gui/src/tools/presentation.test.ts',
-    {
-      maxLines: 500,
-      reason:
-        'broad presentation-helper fixture coverage. The value/CSV helpers split out to ' +
-        'presentation.values.test.ts; row and column building are the next families out.',
-    },
-  ],
-  [
     'apps/netscli-gui/src/styles/results.css',
     {
       maxLines: 435,
@@ -68,8 +59,10 @@ const transitionExceptions = new Map([
   [
     'site/src/scripts/docs-header.ts',
     {
-      maxLines: 360,
-      reason: 'docs header/search/toc behaviors; split search vs toc vs tables next',
+      maxLines: 280,
+      reason:
+        'docs header/search/toc behaviors. Tables split out to docs-tables.ts; ' +
+        'search vs toc are the remaining two families.',
     },
   ],
   [

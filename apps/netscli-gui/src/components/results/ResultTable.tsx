@@ -188,28 +188,22 @@ export function ResultTable({
                 onClick={(event) => onSelectRow(index, selectionModeForPointer(event))}
               >
                 {effectiveColumns.map((column) => {
+                  // One `<td>`, not two near-identical ones. The branches
+                  // differed only in the class and what went inside, but each
+                  // carried its own copy of the seven-argument context-menu
+                  // handler -- so a change to how a cell opens its menu had
+                  // two places to remember.
+                  const isStatus = column.key === 'status' || column.key === 'state';
                   const value = row.data[column.key];
-                  if (column.key === 'status' || column.key === 'state') {
-                    return (
-                      <td
-                        key={column.key}
-                        onContextMenu={(event) =>
-                          openCellContextMenu(event, row, index, column, selected, onSelectRow, onContentContextMenu)
-                        }
-                      >
-                        <StatusPill value={value} />
-                      </td>
-                    );
-                  }
                   return (
                     <td
-                      className={column.mono ? 'mono' : ''}
+                      className={!isStatus && column.mono ? 'mono' : ''}
                       key={column.key}
                       onContextMenu={(event) =>
                         openCellContextMenu(event, row, index, column, selected, onSelectRow, onContentContextMenu)
                       }
                     >
-                      {renderValue(value)}
+                      {isStatus ? <StatusPill value={value} /> : renderValue(value)}
                     </td>
                   );
                 })}
