@@ -50,19 +50,6 @@ const transitionExceptions = new Map([
     },
   ],
   [
-    'apps/netscli-gui/src/App.tsx',
-    {
-      maxLines: 325,
-      reason:
-        'top-level GUI composition; workspace view extracted. The dialog/preference ' +
-        'wiring split is now overdue -- the file sat at 319 against a 320 cap, so any ' +
-        'change to it failed this guard, and adding three props for the tab context ' +
-        'menu is what surfaced that. `usePreferences()` returns one object that App ' +
-        'destructures into 22 locals and re-passes to AppDialogs one prop at a time; ' +
-        'passing it whole is ~40 lines back and the next thing to do here.',
-    },
-  ],
-  [
     'site/src/scripts/docs-header.ts',
     {
       maxLines: 280,

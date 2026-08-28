@@ -7,11 +7,7 @@ import type { ResultCellContext } from '../../tools/types';
 import type { OperationGuard } from '../../workspace/operationGuards';
 import type { FileSavePreferences } from '../../types/netscli';
 import type { WorkspaceModel } from '../../workspace/types';
-import type {
-  AddressPreference,
-  TrafficDisplayUnit,
-  TrafficPrecision,
-} from '../../hooks/usePreferences';
+import type { Preferences } from '../../hooks/usePreferences';
 
 type ContentContextMenuState = {
   cell?: ResultCellContext;
@@ -20,97 +16,59 @@ type ContentContextMenuState = {
 } | null;
 
 type AppDialogsProps = {
+  /** The whole preferences hook value, passed down rather than unpacked:
+   *  every member below the App is either read or set by the settings
+   *  dialog, and naming them one at a time here and again in the call was
+   *  60-odd lines of plumbing across three files. */
+  preferences: Preferences;
   aboutOpen: boolean;
   activeTab: WorkspaceModel['activeTab'];
-  addressPreference: AddressPreference;
-  animateTrafficArrows: boolean;
   appVersion: string;
   chooseSaveFolder: () => Promise<void>;
   clearSaveFolder: () => Promise<void>;
-  commandBarVisible: boolean;
   contentContextMenu: ContentContextMenuState;
-  darkMode: boolean;
   defaultInterface: WorkspaceModel['defaultInterface'];
   fileSavePreferences: FileSavePreferences;
-  interactionToasts: boolean;
   interfaces: WorkspaceModel['interfaces'];
-  maxConcurrentProbes: number;
   onCloseAbout: () => void;
   onCloseContentContextMenu: () => void;
   onCloseSettings: () => void;
   onCloseWorkspaceSearch: () => void;
   onConfirmHistoryDisable: () => void;
   onConfirmPendingRun: (tabId: string) => void;
-  onSetAddressPreference: (value: AddressPreference) => void;
-  onSetDarkMode: (value: boolean) => void;
-  onSetMaxConcurrentProbes: (value: number) => void;
-  onSetTrafficDisplayUnit: (value: TrafficDisplayUnit) => void;
-  onSetTrafficPrecision: (value: TrafficPrecision) => void;
-  onToggleCommandBar: () => void;
   onToggleFileSaveAskEachTime: () => void;
-  onToggleInteractionToasts: () => void;
-  onToggleOperationToasts: () => void;
-  onToggleReleaseNotifications: () => void;
-  onToggleTrafficArrowAnimation: () => void;
-  operationToasts: boolean;
   pendingHistoryDisable: boolean;
   pendingRun: { tabId: string; guard: OperationGuard } | null;
-  persistentHistory: boolean;
-  releaseNotifications: boolean;
   setPendingHistoryDisable: (value: boolean) => void;
   setPendingRun: (value: { tabId: string; guard: OperationGuard } | null) => void;
-  setPersistentHistory: (value: boolean) => void;
   settingsOpen: boolean;
-  trafficDisplayUnit: TrafficDisplayUnit;
-  trafficPrecision: TrafficPrecision;
   workspace: WorkspaceModel;
   workspaceSearchOpen: boolean;
 };
 
 export function AppDialogs({
+  preferences,
   aboutOpen,
   activeTab,
-  addressPreference,
-  animateTrafficArrows,
   appVersion,
   chooseSaveFolder,
   clearSaveFolder,
-  commandBarVisible,
   contentContextMenu,
-  darkMode,
   defaultInterface,
   fileSavePreferences,
-  interactionToasts,
   interfaces,
-  maxConcurrentProbes,
   onCloseAbout,
   onCloseContentContextMenu,
   onCloseSettings,
   onCloseWorkspaceSearch,
   onConfirmHistoryDisable,
   onConfirmPendingRun,
-  onSetAddressPreference,
-  onSetDarkMode,
-  onSetMaxConcurrentProbes,
-  onSetTrafficDisplayUnit,
-  onSetTrafficPrecision,
-  onToggleCommandBar,
   onToggleFileSaveAskEachTime,
-  onToggleInteractionToasts,
-  onToggleOperationToasts,
-  onToggleReleaseNotifications,
-  onToggleTrafficArrowAnimation,
-  operationToasts,
   pendingHistoryDisable,
   pendingRun,
-  persistentHistory,
-  releaseNotifications,
   setPendingHistoryDisable,
   setPendingRun,
-  setPersistentHistory,
   settingsOpen,
-  trafficDisplayUnit,
-  trafficPrecision,
   workspace,
   workspaceSearchOpen,
 }: AppDialogsProps) {
@@ -139,43 +97,23 @@ export function AppDialogs({
       )}
       {settingsOpen && (
         <SettingsDialog
-          animateTrafficArrows={animateTrafficArrows}
-          addressPreference={addressPreference}
-          commandBarVisible={commandBarVisible}
-          darkMode={darkMode}
+          preferences={preferences}
           defaultInterface={defaultInterface}
-          interactionToasts={interactionToasts}
           interfaces={interfaces}
-          maxConcurrentProbes={maxConcurrentProbes}
-          operationToasts={operationToasts}
-          persistentHistory={persistentHistory}
-          releaseNotifications={releaseNotifications}
-          trafficDisplayUnit={trafficDisplayUnit}
           fileSavePreferences={fileSavePreferences}
-          trafficPrecision={trafficPrecision}
           trafficInterfaceName={workspace.trafficInterfaceName}
           onClose={onCloseSettings}
           onChooseSaveFolder={() => void chooseSaveFolder()}
           onClearSaveFolder={() => void clearSaveFolder()}
           onSelectTrafficInterface={workspace.setTrafficInterfaceName}
-          onSetAddressPreference={onSetAddressPreference}
-          onSetDarkMode={onSetDarkMode}
-          onSetMaxConcurrentProbes={onSetMaxConcurrentProbes}
-          onSetTrafficDisplayUnit={onSetTrafficDisplayUnit}
-          onSetTrafficPrecision={onSetTrafficPrecision}
           onToggleFileSaveAskEachTime={onToggleFileSaveAskEachTime}
-          onToggleInteractionToasts={onToggleInteractionToasts}
-          onToggleOperationToasts={onToggleOperationToasts}
           onTogglePersistentHistory={() => {
-            if (persistentHistory) {
+            if (preferences.persistentHistory) {
               setPendingHistoryDisable(true);
               return;
             }
-            setPersistentHistory(true);
+            preferences.setPersistentHistory(true);
           }}
-          onToggleReleaseNotifications={onToggleReleaseNotifications}
-          onToggleCommandBar={onToggleCommandBar}
-          onToggleTrafficArrowAnimation={onToggleTrafficArrowAnimation}
         />
       )}
       {workspaceSearchOpen && (
