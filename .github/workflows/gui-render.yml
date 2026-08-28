@@ -65,7 +65,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install Rust
         # See ci.yml's lint job for why this pin keeps a `# stable` comment
@@ -78,7 +78,7 @@ jobs:
         with:
           shared-key: gui-render-windows
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           # 22, matching ci.yml and the release build. See ci.yml's note.
           node-version: 22
