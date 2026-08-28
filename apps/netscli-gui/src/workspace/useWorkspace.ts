@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { isTauri } from '../services/env';
-import * as netscli from '../services/netscli';
 import { createTab, defaultDetailTab } from '../tools/registry';
 import { buildCommand, buildRows, columnsFor, filterAndSortRows } from '../tools/presentation';
 import type { HistoryEntry, ResultColumn, WorkspaceTab } from '../tools/types';
@@ -11,8 +9,8 @@ import { cancelWorkspaceTab, runWorkspaceTab } from './operations';
 import { clampIndex, normalizeSelection } from './selection';
 import { loadHistory, saveHistory } from './historyStorage';
 import { enrichInterfaceRows } from './interfaceRows';
-import { applyProgressUpdate } from './traceProgress';
 import { useResultActions } from './useResultActions';
+import { useOperationProgress } from './useOperationProgress';
 import { useSelection } from './useSelection';
 import { useTabLifecycle } from './useTabLifecycle';
 import type { WorkspaceModel, WorkspaceOptions } from './types';
@@ -64,6 +62,7 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
     closeTab,
     closeAllTabs,
     closeOtherTabs: closeOtherTabsFor,
+    closeTabsBeside,
     isTabActive,
     needsAutoRun,
     clearAutoRun,
@@ -161,44 +160,7 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab?.id, activeTab?.sortDir, activeTab?.sortKey, filterText]);
 
-  useEffect(() => {
-    if (!isTauri()) return;
-    let cancelled = false;
-    let unlisten: (() => void) | undefined;
-    void netscli
-      .listenOperationProgress((progress) => {
-        const tabId = Object.entries(activeOps.current).find(([, opId]) => opId === progress.op_id)?.[0];
-        if (!tabId) return;
-        setTabs((prev) => prev.map((tab) => (tab.id === tabId ? applyProgressUpdate(tab, progress) : tab)));
-      })
-      .then((dispose) => {
-        if (cancelled) {
-          dispose();
-        } else {
-          unlisten = dispose;
-        }
-      })
-      // Without this, a rejected `listen()` left every later operation
-      // silently reporting no progress, with nothing surfaced to the user
-      // (B-15). Every other Tauri call in the codebase is already guarded.
-      .catch((error: unknown) => {
-        showToast({
-          kind: 'interaction',
-          message: `Progress updates unavailable: ${error instanceof Error ? error.message : String(error)}`,
-        });
-      });
-    return () => {
-      cancelled = true;
-      unlisten?.();
-    };
-    // Must run exactly once. `showToast` is rebuilt every render, so
-    // depending on it would tear down and re-register the Tauri listener
-    // continuously; `activeOps` is a `useRef` from `useTabLifecycle`, stable
-    // for the component's life, but the rule cannot see that across the hook
-    // boundary. Reading `activeOps.current` inside the callback is what makes
-    // the empty dep list correct rather than merely convenient.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  useOperationProgress({ activeOps, setTabs, showToast });
 
   function patchTab(id: string, patch: Partial<WorkspaceTab>) {
     setTabs((prev) => prev.map((tab) => (tab.id === id ? { ...tab, ...patch } : tab)));
@@ -222,8 +184,10 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
     );
   }
 
-  function closeOtherTabs() {
-    closeOtherTabsFor(activeTab);
+  // The menu bar acts on the active tab; the tab context menu passes the id
+  // of the tab that was right-clicked, which is often not the active one.
+  function closeOtherTabs(tabId?: string) {
+    closeOtherTabsFor(tabId ? tabs.find((tab) => tab.id === tabId) : activeTab);
   }
 
   async function runTab(tabId: string) {
@@ -310,6 +274,7 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
     closeTab,
     closeAllTabs,
     closeOtherTabs,
+    closeTabsBeside,
     needsAutoRun,
     clearAutoRun,
     runTab,

@@ -8,6 +8,7 @@ import { computePopoverPosition } from '../primitives/overlay';
 import { handleTabStripKeyDown } from './tabStripKeyboard';
 import { useTabStripDrag } from './useTabStripDrag';
 import { tabDisplayFor } from './tabDisplay';
+import { TabContextMenu, type TabContextTarget } from './TabContextMenu';
 import { TabToolMenu } from './TabToolMenu';
 
 interface TabStripProps {
@@ -18,6 +19,9 @@ interface TabStripProps {
   onAddScanTab: () => void;
   onAddToolTab: (kind: ToolKind) => void;
   onCloseTab: (tabId: string) => void;
+  onCloseAllTabs: () => void;
+  onCloseOtherTabs: (tabId: string) => void;
+  onCloseTabsBeside: (tabId: string, side: 'left' | 'right') => void;
   onSelectTab: (tabId: string) => void;
   setOpenMenu: (menu: string | null) => void;
 }
@@ -30,6 +34,9 @@ export function TabStrip({
   onAddScanTab,
   onAddToolTab,
   onCloseTab,
+  onCloseAllTabs,
+  onCloseOtherTabs,
+  onCloseTabsBeside,
   onSelectTab,
   setOpenMenu,
 }: TabStripProps) {
@@ -42,6 +49,7 @@ export function TabStrip({
     updateToolMenuPosition();
   });
   const [toolMenuPosition, setToolMenuPosition] = useState({ left: 0, maxHeight: 360, top: 0 });
+  const [contextTarget, setContextTarget] = useState<TabContextTarget | null>(null);
   const [overflowState, setOverflowState] = useState({
     overflow: false,
     left: false,
@@ -151,6 +159,19 @@ export function TabStrip({
                   }
                   onSelectTab(tab.id);
                 }}
+                onContextMenu={(event) => {
+                  event.preventDefault();
+                  // Select first: every item acts on this tab, and seeing it
+                  // come forward as the menu opens is what makes that obvious.
+                  onSelectTab(tab.id);
+                  setContextTarget({
+                    tabId: tab.id,
+                    index,
+                    total: tabs.length,
+                    x: event.clientX,
+                    y: event.clientY,
+                  });
+                }}
                 onKeyDown={(event) => handleTabStripKeyDown(event, index, tabs, onSelectTab, onCloseTab)}
               >
                 <Icon size={14} />
@@ -210,6 +231,16 @@ export function TabStrip({
           setOpenMenu={setOpenMenu}
           toolCapabilities={toolCapabilities}
           triggerRef={chevronRef}
+        />
+      )}
+      {contextTarget && (
+        <TabContextMenu
+          target={contextTarget}
+          onClose={() => setContextTarget(null)}
+          onCloseAll={onCloseAllTabs}
+          onCloseBeside={onCloseTabsBeside}
+          onCloseOthers={onCloseOtherTabs}
+          onCloseTab={onCloseTab}
         />
       )}
     </nav>

@@ -22,7 +22,10 @@ function renderStrip(activeIndex = 0) {
       toolCapabilities={{} as never}
       onAddScanTab={vi.fn()}
       onAddToolTab={vi.fn()}
+      onCloseAllTabs={vi.fn()}
+      onCloseOtherTabs={vi.fn()}
       onCloseTab={onCloseTab}
+      onCloseTabsBeside={vi.fn()}
       onSelectTab={onSelectTab}
       setOpenMenu={vi.fn()}
     />,

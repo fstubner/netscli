@@ -94,11 +94,32 @@ export function useTabLifecycle({
     setFilterText('');
   }
 
-  function closeOtherTabs(activeTab: WorkspaceTab | undefined) {
-    if (!activeTab) return;
-    cancelOperationIds(tabs.filter((tab) => tab.id !== activeTab.id).map((tab) => tab.id));
-    setTabs([activeTab]);
-    setActiveTabId(activeTab.id);
+  function closeOtherTabs(keep: WorkspaceTab | undefined) {
+    if (!keep) return;
+    cancelOperationIds(tabs.filter((tab) => tab.id !== keep.id).map((tab) => tab.id));
+    setTabs([keep]);
+    setActiveTabId(keep.id);
+  }
+
+  /**
+   * Close every tab on one side of `id`, keeping `id` itself.
+   *
+   * Separate from `closeOtherTabs` because the tab a context menu acts on is
+   * the one that was right-clicked, which is not necessarily the active one.
+   * The kept tab becomes active when the active tab was among those closed --
+   * the same rule `closeTab` follows, and what an editor does.
+   */
+  function closeTabsBeside(id: string, side: 'left' | 'right') {
+    const index = tabs.findIndex((tab) => tab.id === id);
+    if (index < 0) return;
+    const doomed = side === 'left' ? tabs.slice(0, index) : tabs.slice(index + 1);
+    if (doomed.length === 0) return;
+
+    cancelOperationIds(doomed.map((tab) => tab.id));
+    const doomedIds = new Set(doomed.map((tab) => tab.id));
+    const remaining = tabs.filter((tab) => !doomedIds.has(tab.id));
+    if (doomedIds.has(activeTabId)) setActiveTabId(id);
+    setTabs(remaining);
   }
 
   function isTabActive(tabId: string): boolean {
@@ -121,6 +142,7 @@ export function useTabLifecycle({
     closeTab,
     closeAllTabs,
     closeOtherTabs,
+    closeTabsBeside,
     isTabActive,
     needsAutoRun,
     clearAutoRun,

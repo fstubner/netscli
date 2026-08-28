@@ -33,7 +33,10 @@ export interface WorkspaceModel {
   openHostTool: (kind: 'scan' | 'inspect', host: string) => void;
   closeTab: (id: string) => void;
   closeAllTabs: () => void;
-  closeOtherTabs: () => void;
+  /** Omit the id to act on the active tab, as the menu bar does. */
+  closeOtherTabs: (tabId?: string) => void;
+  /** Close every tab to one side of `tabId`, keeping `tabId`. */
+  closeTabsBeside: (tabId: string, side: 'left' | 'right') => void;
   /** Whether this tab was auto-created (e.g. interfaces/arp) and still
    *  needs its first run triggered. App.tsx's own requestRun (which applies
    *  operation guards and capability checks) watches this and calls
