@@ -1,84 +1,11 @@
-/* Contents list under the hero, instead of in the right-hand rail.
+/* Leftovers from the contents-list experiment that moved the ToC out of
+ * the right-hand rail and under the hero. That is reverted: Starlight puts
+ * the ToC in the rail on desktop and collapses it to a dropdown below,
+ * which is what was wanted -- the original complaint was that the MOBILE
+ * list was not collapsing, and moving the desktop one was not the fix.
  *
- * The list is rendered by src/components/starlight/MarkdownContent.astro; see
- * that file for why it keeps the `.right-sidebar-panel` class. These rules
- * undo the parts of that class that only made sense in a fixed 208px rail.
+ * Only this one unrelated rule is still needed here.
  */
-
-/* Which of the two contents lists shows, and where the switch happens.
- *
- * 50rem, the width at which the left sidebar stops being a drawer and becomes
- * a permanent column. Starlight's own switch for the ToC is 72rem, so the
- * 50-72rem band showed the collapsed dropdown beside a fully expanded
- * sidebar, with a strip of empty hero above it -- one of the two navigation
- * panes collapsed and the other not, at a width with room for both. */
-@media (max-width: 49.99rem) {
-  .docs-toc-under-hero {
-    display: none !important;
-  }
-}
-
-@media (min-width: 50rem) {
-  .docs-toc-under-hero {
-    display: block !important;
-  }
-
-  mobile-starlight-toc {
-    display: none !important;
-  }
-}
-
-/* The column Starlight reserves for the rail has to collapse, or the article
-   keeps a dead gutter roughly a sidebar wide. TwoColumnContent.astro sizes
-   .main-pane by subtracting that width, so both change together. */
-@media (min-width: 72rem) {
-  .right-sidebar-container {
-    display: none !important;
-  }
-
-  [data-has-sidebar][data-has-toc] .main-pane,
-  .main-pane {
-    width: 100% !important;
-  }
-}
-
-/* Full content width, not the rail's 208px -- otherwise the multi-column
-   rule below can only ever produce one column. */
-.docs-toc-under-hero.right-sidebar-panel {
-  width: 100% !important;
-  max-width: none !important;
-  padding: 0 !important;
-}
-
-.docs-toc-under-hero .sl-container {
-  width: auto !important;
-  max-width: none !important;
-}
-
-/* The rail moves from the list onto each link. In the rail layout a single
-   border on the <ul> was the rail; laid out in columns it would mark only the
-   first column and leave the other two floating. A border per link gives each
-   column its own continuous rail, and the active link still lights it green. */
-/* These compete with `.right-sidebar-panel ...` rules in
-   20-docs-shell-closeout.css. An earlier version of this comment claimed the
-   doubled class was needed because the bundler does not emit these files in
-   filename order; that was measured and is wrong for this pair -- 30 is
-   emitted after 20, and the rule it competes with carries no !important, so
-   these win on either count. (Emission order is not always filename order --
-   24 is emitted before 23 -- but that is not what was happening here; the
-   symptom that prompted it was a stale deployed stylesheet.) */
-.docs-toc-under-hero :where(nav ul) {
-  border-inline-start: 0 !important;
-}
-
-.docs-toc-under-hero :where(a) {
-  margin-inline: 0 !important;
-  border-inline-start: 2px solid var(--sl-color-hairline) !important;
-}
-
-.docs-toc-under-hero :where(a[aria-current='true']) {
-  border-inline-start-color: var(--netscli-accent) !important;
-}
 
 /* The search dialog's own failure message, injected by
    scripts/docs-search-keys.ts when Pagefind neither answers nor errors.

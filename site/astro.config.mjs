@@ -46,7 +46,6 @@ export default defineConfig({
         Footer: './src/components/starlight/Footer.astro',
         MobileMenuFooter: './src/components/starlight/MobileMenuFooter.astro',
         PageSidebar: './src/components/starlight/PageSidebar.astro',
-        MarkdownContent: './src/components/starlight/MarkdownContent.astro',
       },
       // Split from a single 4,965-line starlight.css into ordered per-pass
       // files (see docs/ARCHITECTURE.md). Order matters: several later
