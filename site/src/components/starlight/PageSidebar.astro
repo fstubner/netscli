@@ -1,5 +1,6 @@
 ---
 import MobileTableOfContents from 'virtual:starlight/components/MobileTableOfContents';
+import TableOfContents from 'virtual:starlight/components/TableOfContents';
 
 const { sidebar: routeSidebar, toc } = Astro.locals.starlightRoute;
 const sidebar = routeSidebar as SidebarEntry[];
@@ -104,9 +105,17 @@ const currentGroupLabel = formatCrumb(currentGroup?.label) || 'Start';
 {
   toc && (
     <>
-      {/* Narrow screens keep the collapsed dropdown. The wide-screen list
-          moved to PageTitle.astro so it sits under the hero rather than in
-          the right-hand rail. */}
+      {/* Wide screens: the contents list in the right-hand rail, which is
+          where Starlight puts it and where a reader looks for it. It was
+          briefly moved under the hero; that came from feedback about the
+          NARROW list not collapsing, and moving the wide one was not the
+          fix for it. */}
+      <div class="right-sidebar-panel sl-hidden lg:sl-block">
+        <div class="sl-container">
+          <TableOfContents />
+        </div>
+      </div>
+      {/* Narrow screens keep the collapsed dropdown. */}
       <div class="netscli-mobile-toc-wrapper lg:sl-hidden">
         <MobileTableOfContents />
       </div>
