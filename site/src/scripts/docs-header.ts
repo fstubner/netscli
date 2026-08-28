@@ -1,4 +1,5 @@
 import { disposeDocsHeader, onDispose, registerDisposal } from './docs-header-disposal';
+import { applyDocsTableBehaviour } from './docs-tables';
 
 export function initDocsHeader(): void {
   // Re-entrant under view transitions: drop the previous run's observers
@@ -264,82 +265,5 @@ export function initDocsHeader(): void {
   window.setTimeout(scheduleMobileTocCurrent, 250);
   window.setTimeout(scheduleMobileTocCurrent, 1000);
 
-  const tableOptionClasses = new Map([
-    ['netscli-table: row-headers', 'table-row-headers'],
-    ['netscli-table: plain-first-column', 'table-plain-first-column'],
-  ]);
-
-  const applyTableOptions = () => {
-    const content = document.querySelector('.sl-markdown-content');
-    if (!content) return;
-
-    content.querySelectorAll('[data-netscli-table]').forEach((marker) => {
-      const markerValue = marker.getAttribute('data-netscli-table')?.trim().toLowerCase();
-      const option = tableOptionClasses.get(`netscli-table: ${markerValue}`);
-      if (!option) return;
-
-      let sibling = marker.nextElementSibling;
-      while (sibling) {
-        if (sibling instanceof HTMLTableElement) {
-          sibling.classList.add(option);
-          break;
-        }
-        sibling = sibling.nextElementSibling;
-      }
-    });
-
-    const walker = document.createTreeWalker(content, NodeFilter.SHOW_COMMENT);
-    let comment = walker.nextNode();
-    while (comment) {
-      const option = tableOptionClasses.get(comment.nodeValue?.trim().toLowerCase() ?? '');
-      if (option) {
-        let sibling = comment.nextSibling;
-        while (sibling) {
-          if (sibling.nodeType === Node.ELEMENT_NODE) {
-            if (sibling instanceof HTMLTableElement) sibling.classList.add(option);
-            break;
-          }
-          sibling = sibling.nextSibling;
-        }
-      }
-      comment = walker.nextNode();
-    }
-
-    content.querySelectorAll('table').forEach((table) => {
-      const labels = [...table.querySelectorAll('thead th')].map(
-        (cell) => cell.textContent?.trim().replace(/\s+/g, ' ') ?? ''
-      );
-
-      table.querySelectorAll('tbody tr').forEach((row) => {
-        [...row.children].forEach((cell, index) => {
-          if (cell instanceof HTMLElement && labels[index]) {
-            cell.dataset.label = labels[index];
-          }
-        });
-      });
-
-      if (table.parentElement?.classList.contains('netscli-table-scroll')) return;
-
-      const wrapper = document.createElement('div');
-      wrapper.className = 'netscli-table-scroll';
-      // The wrapper is the horizontally-scrollable region; make it reachable
-      // by keyboard (axe scrollable-region-focusable) since the table inside
-      // it isn't otherwise a focusable element.
-      wrapper.tabIndex = 0;
-      wrapper.setAttribute('role', 'region');
-      wrapper.setAttribute('aria-label', 'Scrollable table');
-      table.before(wrapper);
-      wrapper.append(table);
-    });
-  };
-
-  const scheduleTableOptions = () => {
-    window.requestAnimationFrame(applyTableOptions);
-  };
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', scheduleTableOptions, { once: true });
-  } else {
-    scheduleTableOptions();
-  }
+  applyDocsTableBehaviour();
 }

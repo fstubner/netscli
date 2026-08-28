@@ -6,6 +6,7 @@ import { useAnchoredPopoverPosition, useOverlayDismiss } from '../primitives/ove
 import { TOOL_CONFIG } from '../../tools/registry';
 import type { WorkspaceTab } from '../../tools/types';
 import type { InterfaceInfo } from '../../types/netscli';
+import { FieldSelectOptions } from './FieldSelectOptions';
 import { NumberField } from './NumberField';
 import { fieldsForTab, selectOptionsForField } from './toolFormFields';
 
@@ -109,24 +110,14 @@ export function ToolForm({ tab, interfaces = [], onPatchForm, onRun }: ToolFormP
                   tabIndex={-1}
                   onKeyDown={onSelectKeyDown}
                 >
-                  {options.map((option) => (
-                    <button
-                      className={option.value === tab.form[field.key] ? 'selected' : ''}
-                      key={option.value}
-                      role="option"
-                      aria-selected={option.value === tab.form[field.key]}
-                      type="button"
-                      onClick={() => {
-                        onPatchForm(tab.id, field.key, option.value);
-                        setOpenField(null);
-                      }}
-                    >
-                      <span className="field-select-option-label">{option.label}</span>
-                      {option.description ? (
-                        <span className="field-select-option-meta">{option.description}</span>
-                      ) : null}
-                    </button>
-                  ))}
+                  <FieldSelectOptions
+                    options={options}
+                    selected={tab.form[field.key]}
+                    onSelect={(value) => {
+                      onPatchForm(tab.id, field.key, value);
+                      setOpenField(null);
+                    }}
+                  />
                 </div>
               )}
               </div>
