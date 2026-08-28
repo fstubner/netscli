@@ -16,7 +16,22 @@
 
 #starlight__search .pagefind-ui__drawer {
   margin-block-start: 1rem !important;
-  max-height: calc(100vh - 15rem) !important;
+  /* Take the space the form leaves, and scroll inside it.
+   *
+   * This was `calc(100vh - 15rem)` -- 240px reserved for chrome that does not
+   * exist at phone sizes, which left the results ending 151px above the
+   * bottom of the screen inside a dialog running nearly the full height.
+   *
+   * `max-height: 100%` is not the fix either: the ancestors have no definite
+   * height for a percentage to resolve against, so the drawer fell back to
+   * its content height and pushed 1253px past the viewport, scrolling the
+   * page instead of itself. `#starlight__search` is already a flex column, so
+   * growing into the leftover space is what actually bounds it -- with
+   * `min-height: 0`, without which a flex item refuses to shrink below its
+   * content and the overflow comes straight back. */
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
   overflow-y: auto !important;
   overscroll-behavior: contain !important;
   scrollbar-gutter: stable !important;

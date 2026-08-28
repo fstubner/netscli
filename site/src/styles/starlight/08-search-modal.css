@@ -31,13 +31,30 @@ site-search dialog .search-container {
   max-height: calc(100vh - 9.5rem);
 }
 
+/* The whole chain from the dialog down to the drawer has to be able to
+ * shrink, or none of it does.
+ *
+ * `#starlight__search` was already a flex column, but the drawer is two
+ * levels below it -- `.pagefind-ui` and then `.pagefind-ui__form` sit in
+ * between, both `display: block` with `min-height: auto`. A flex item will
+ * not shrink below its content without `min-height: 0`, so those two took
+ * their full content height (1936px inside a 646px parent) and the drawer
+ * grew with them, scrolling the page rather than itself.
+ *
+ * The form was `flex: 0 0 auto`, which was right when it held only the
+ * input. It holds the drawer too, so it has to be the part that grows. */
+#starlight__search .pagefind-ui,
 #starlight__search .pagefind-ui__form {
-
-  inset-block-start: 0;
-
-  flex: 0 0 auto;
-}#starlight__search .pagefind-ui__drawer {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
   min-height: 0;
+}
+
+#starlight__search .pagefind-ui__form {
+  inset-block-start: 0;
+}#starlight__search .pagefind-ui__drawer {
+
   padding-inline-end: 0.2rem;
 }
 
@@ -54,12 +71,10 @@ site-search dialog .search-container {
 #starlight__search .pagefind-ui__drawer:has(.pagefind-ui__result)::before {
   top: 0;
 
-
 }
 
 #starlight__search .pagefind-ui__drawer:has(.pagefind-ui__result)::after {
   bottom: 0;
-
 
 }
 
@@ -177,4 +192,56 @@ html[data-theme='light'] #starlight__search .pagefind-ui__drawer:has(.pagefind-u
   background: #ffffff;
   border-color: rgba(17, 24, 39, 0.18);
   color: #44516a;
+}
+
+/* ─── Narrow-screen search dialog ───────────────────────────────────────
+ *
+ * Three faults, all measured at 500x708 with results on screen.
+ *
+ * 1. The results stopped 151px above the bottom of the screen. The cause is
+ *    exact: `#starlight__search` carried `max-height: calc(100vh - 9.5rem)`,
+ *    and 9.5rem is 152px -- a fixed reservation for dialog chrome that does
+ *    not exist at this size, where the dialog is inset 9px and nearly
+ *    full-height. The drawer's bottom landed at 557 in a 708 viewport.
+ *
+ * 2. Cancel sat beside the *results* rather than the search field. Starlight
+ *    lays the frame out as `"search close" / "drawer drawer"` and centres the
+ *    close button in the search row. That is right when the row is just the
+ *    input -- but the row holds the whole Pagefind UI, so it was 532px tall
+ *    and the button centred at y=287, halfway down the results.
+ *
+ * 3. The clear control floated 83px short of the field's trailing edge
+ *    instead of sitting at it.
+ *
+ * The `align-content` half of the fix is in 20-docs-shell-closeout.css, at
+ * the declaration that caused it: `!important` against `!important` at equal
+ * specificity is settled by file order, and 20 loads after this file.
+ */
+@media (max-width: 49.99rem) {
+  site-search dialog .search-container,
+  #starlight__search {
+    /* Fill the row the frame now stretches, rather than a guess at what the
+       chrome around it costs. */
+    max-height: 100% !important;
+    height: 100% !important;
+  }
+
+  /* Level with the input, not centred against the whole results column.
+     The margin reset matters: without it an inherited block margin pushed
+     the button 18px below the field it sits beside. */
+  site-search dialog .dialog-frame > button {
+    align-self: start !important;
+    margin-block: 2px 0 !important;
+  }
+
+  /* At the field's trailing edge, inside it. */
+  #starlight__search .pagefind-ui__search-clear {
+    position: absolute !important;
+    inset-inline-end: 0.35rem !important;
+    inset-block-start: 0.25rem !important;
+  }
+
+  #starlight__search .pagefind-ui__form {
+    position: relative !important;
+  }
 }
