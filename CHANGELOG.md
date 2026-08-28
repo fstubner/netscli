@@ -88,12 +88,18 @@ nothing.
   the neighbour table is no longer labelled as having responded to a probe,
   and the table carries a column for it rather than burying it in the detail
   pane.
-- **The winget submission would have published the wrong version.** Both
-  package manifests were passed the tag including its `v`, which the action
-  only strips when the input is left empty — `v0.3.1` would have landed in
-  the public catalog beside `0.3.0` and not compared as an upgrade. The same
-  two jobs would also have failed on the documented re-run path, looking for a
-  release tagged `main`.
+- **winget publishes the version number, not the tag.** Both package
+  manifests were passed the tag including its `v`, which the action only
+  strips when the input is left empty. This is not hypothetical: `v0.2.2`
+  through `v0.2.6` are already in the public catalog that way, so
+  `winget show netscli` reports a version this project never issued, and the
+  CLI reads inconsistently beside the desktop package's `0.2.6`. Upgrades
+  still work — winget normalises a leading `v` when comparing — and the next
+  correctly-numbered release fixes what is displayed. The publish job now
+  asserts `MAJOR.MINOR.PATCH` rather than trusting the strip, because
+  winget-pkgs accepted all five without complaint and a merged manifest is
+  permanent. The same two jobs would also have failed on the documented
+  re-run path, looking for a release tagged `main`.
 
 ### Added
 
@@ -102,6 +108,12 @@ nothing.
   a stale neighbour entry changes the answer. Clearing needs administrator
   rights; when it fails the run is suppressed rather than quietly returning
   the stale entries it was meant to drop.
+- **Right-click a tab to close it, its neighbours, or all of them.** Close,
+  close others, close to the right, close to the left, close all. Every item
+  acts on the tab you clicked rather than the active one — those are often
+  different — and anything that would do nothing is greyed rather than
+  hidden, so the menu keeps its shape wherever you open it. Closing cancels
+  whatever those tabs were running.
 
 ### Changed
 
@@ -129,6 +141,43 @@ nothing.
   changelog reads with JavaScript disabled and does not flash "Loading".
 - The website's colours are now covered by the contrast gate, which had been
   measuring the desktop app's palette and reporting a pass for both.
+- **Docs pages are evenly padded.** The page frame was always centred, but
+  the two rails inset their text differently — the section list started 84px
+  from the edge while the contents list ended 40px from it. Both use the same
+  inset now, and the contents rail is wider so it did not lose its text to the
+  change.
+- **Headings are sized for reading rather than for a poster.** They were
+  42px and 35px against 16px body text; they are 34, 26 and 21 now.
+- **Anchor links move to the heading instead of jumping past it.** Following
+  a contents link or a shared deep link landed the heading behind the sticky
+  header, because the docs never loaded the rule that prevents it.
+- **The left nav's hover highlight lines up with the current page's.** Only
+  the current item sat on the rail, so hovering anything else drew a
+  highlight inset from it by 9px.
+- **The theme selector shows keyboard focus, and its dropdown is legible.**
+  Focus produced the hover treatment and removed the background rather than
+  drawing a ring, and the list itself was set in a translucent colour the
+  platform will not use, so it fell back to the browser default.
+- **The search button and the menu button match**, and the breadcrumb
+  separators sit level with their text.
+- **Search fills the screen on a phone.** The results stopped 151px above the
+  bottom, Cancel sat level with the middle of the results rather than with
+  the field, and the clear control floated short of the field's edge.
+- **The install section leads with `winget install netscli`.** The prominent
+  command was a `curl … | bash` pipeline until JavaScript ran, and stayed one
+  for anyone without it. The panel also lost a Cargo row repeated on all
+  three platforms and a hash note repeated four times in one panel, and the
+  direct-download button is no longer the loudest control in a section where
+  it is the least verified route.
+- **The interface coverage table says what it means.** Yes/No became ticks
+  and dashes with a legend, and the page now says that the CLI, terminal UI
+  and MCP server are one binary rather than three programs — a dash in the
+  MCP column never meant a second install. Rows that conflated two things
+  (setup with doctor, reading the ARP table with changing it) are split, and
+  dashes that meant "not applicable" say which.
+- **The FAQ answers two questions people actually search for**, from the
+  Search Console data rather than guesswork: whether there is a `netscan`
+  command, and whether this replaces nmap and has a terminal UI.
 
 ## [0.3.0] — 2026-08-20
 
