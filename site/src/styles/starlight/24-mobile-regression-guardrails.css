@@ -28,8 +28,6 @@
 
   .docs-header-search {
     margin-inline-end: .35rem !important;
-  }.content-panel table,
-  .sl-markdown-content table {
   }.content-panel thead th,
   .sl-markdown-content thead th {
     font-weight: 700 !important;
@@ -40,15 +38,7 @@
   .sl-markdown-content tbody th,
   .sl-markdown-content tbody td:first-child {
     font-weight: 400 !important;
-  }
-
-  site-search dialog {
-  }
-
-  site-search dialog .dialog-frame {
-  }
-
-  site-search dialog .search-container,
+  }site-search dialog .search-container,
   site-search dialog #starlight__search,
   site-search dialog .pagefind-ui,
   site-search dialog .pagefind-ui__form {
@@ -65,7 +55,4 @@
     justify-self: end !important;
     margin: 0 !important;
     min-height: 2.75rem !important;
-  }
-
-  site-search dialog .pagefind-ui__drawer {
   }}

@@ -32,7 +32,7 @@
   .sl-markdown-content {
 
 
-    min-width: 0 !important;
+
     box-sizing: border-box !important;
     overflow-wrap: anywhere;
   }
@@ -56,12 +56,12 @@
   .content-panel > .sl-container {
 
 
-    margin-inline: 0 !important;
+
     padding-inline: clamp(1rem, 5vw, 1.5rem) !important;
   }starlight-menu-button {
 
 
-    inset-block-start: .625rem !important;
+
     inset-inline-end: .75rem !important;
     z-index: calc(var(--sl-z-index-navbar) + 2) !important;
   }
@@ -69,14 +69,14 @@
   starlight-menu-button button {
 
 
-    width: 2.5rem !important;
+
     height: 2.5rem !important;
   }
 
   .docs-header-search {
 
 
-    inset-inline-end: 3.75rem !important;
+
     z-index: calc(var(--sl-z-index-navbar) + 2) !important;
     width: 2.5rem !important;
     max-width: 2.5rem !important;
@@ -87,7 +87,7 @@
   .content-panel .netscli-table-scroll {
 
 
-    max-width: 100% !important;
+
     overflow-x: auto !important;
     overflow-y: hidden !important;
     -webkit-overflow-scrolling: touch !important;
@@ -98,7 +98,7 @@
     display: table !important;
 
 
-    max-width: none !important;
+
     table-layout: fixed !important;
   }
 
