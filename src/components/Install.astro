@@ -191,6 +191,14 @@ const groups = [
    tint with no padding, on text set in the same face as the code above it.
    It read as a command and hovered like a bar. It is a button now: its own
    box, sized to its label, in the body face. */
+/* Neutral, like the command bars beside it.
+ *
+ * This was accent text on an accent tint inside an accent border -- the
+ * loudest thing in the section, on the row that is the *least* recommended
+ * route: a direct download is unsigned, unverified and unmanaged, while the
+ * package-manager rows above it check a hash. The green was pointing at the
+ * wrong option. It reads as one route among several now, and keeps the
+ * accent for hover and focus so it is still obviously a control. */
 a.install-download{
   display:inline-flex;
   align-items:center;
@@ -201,19 +209,19 @@ a.install-download{
   font-size:.8125rem;
   font-weight:500;
   line-height:1;
-  color:var(--netscli-accent);
+  color:#ccc;
   text-decoration:none;
   padding:8px 14px;
-  border:1px solid rgba(var(--netscli-accent-rgb),.32);
+  border:1px solid rgba(255,255,255,.08);
   border-radius:7px;
-  background:rgba(var(--netscli-accent-rgb),.06);
+  background:rgba(255,255,255,.04);
   transition:background 140ms ease,border-color 140ms ease,color 140ms ease;
 }
 a.install-download:hover,
 a.install-download:focus-visible{
   color:var(--netscli-accent-bright);
-  border-color:rgba(var(--netscli-accent-rgb),.62);
-  background:rgba(var(--netscli-accent-rgb),.14);
+  border-color:rgba(var(--netscli-accent-rgb),.48);
+  background:rgba(var(--netscli-accent-rgb),.10);
 }
 .footer-note{margin-top:14px;font-size:.8125rem;color:#808080}
 .footer-note a{color:var(--netscli-accent);text-decoration:underline;text-underline-offset:3px}

@@ -22,7 +22,19 @@ export const hero: Hero = {
     // the feature stays on the page; it just no longer implies the download
     // above it includes it.
     'Discover LAN devices, scan TCP ports, query DNS, trace routes, and inspect hosts from the desktop app, terminal UI, CLI, or MCP server — with packet capture in capture-enabled CLI builds. Each interface calls the same Rust core, so results stay consistent.',
-  quickInstall:
+  // `winget install netscli` leads, and the shell script follows.
+  //
+  // os-tabs.ts already swapped these per-OS at runtime -- Windows visitors
+  // got the winget line and the script moved down. But the SERVER-rendered
+  // default was the `curl … | bash` pipeline, so the most prominent command
+  // on the page was a bash pipeline until JavaScript ran, and stayed one for
+  // anyone without it and for every crawler reading the HTML.
+  //
+  // `netscli`, not `fstubner.netscli`: `Moniker: netscli` is published in the
+  // winget catalog, so the short form resolves. The canonical identifier
+  // stays in the install guide for anyone who wants to be unambiguous.
+  quickInstall: 'winget install netscli',
+  quickInstallAlt:
     'curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash',
   installLinkLabel: 'More install options ↓',
   heroImage: '/assets/tui-discover.png',

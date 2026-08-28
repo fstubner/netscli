@@ -116,7 +116,10 @@ export function initOsTabs(): void {
     // genuinely different route.
     const heroCommands: Record<OperatingSystem, { primary: string; secondary: string }> = {
       windows: {
-        primary: "winget install fstubner.netscli",
+        // Moniker, matching the hero's server-rendered default. `Moniker:
+        // netscli` is published in the winget catalog alongside the
+        // canonical `fstubner.netscli`, so both resolve.
+        primary: "winget install netscli",
         secondary:
           "iwr -useb https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.ps1 | iex",
       },
