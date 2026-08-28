@@ -1,10 +1,3 @@
-/* Verified mobile/docs shell close-out. These overrides intentionally sit last
-   because Starlight and earlier compatibility passes both touch these controls. */
-.sidebar-content :where(details > ul) {
-
-  border-inline-start: 1px solid var(--sl-color-hairline) !important;
-}
-
 .sidebar-content :where(details > ul > li) {
 
   border-inline-start: 0 !important;

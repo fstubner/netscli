@@ -50,7 +50,7 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
 .sidebar-content :where(details > ul a) {
 
 
-  padding-inline-start: calc(.85rem + 0.5rem + 1px) !important;
+
   border-inline-start: 1px solid transparent !important;
   background-clip: border-box !important;
 }
@@ -118,6 +118,13 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
   .docs-mobile-section-separator,
   .docs-mobile-section-caret {
     color: var(--netscli-accent) !important;
+    /* `›` is drawn around the middle of the em box while the words beside it
+       sit on the baseline, so line-box centring -- which is correct, and
+       measured identical: label, separator and current page all centre at
+       81px -- still leaves the glyph reading low. A 1px lift is an optical
+       correction, not a layout one. */
+    position: relative;
+    top: -1px;
   }
 
   .docs-mobile-section-caret {

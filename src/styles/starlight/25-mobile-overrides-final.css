@@ -33,7 +33,7 @@
 
 
 
-    box-sizing: border-box !important;
+
     overflow-wrap: anywhere;
   }
 
@@ -51,33 +51,17 @@
     width: 100% !important;
 
     min-width: 0 !important;
-  }
-
-  .content-panel > .sl-container {
-
-
-
-    padding-inline: clamp(1rem, 5vw, 1.5rem) !important;
   }starlight-menu-button {
 
 
 
-    inset-inline-end: .75rem !important;
-    z-index: calc(var(--sl-z-index-navbar) + 2) !important;
-  }
-
-  starlight-menu-button button {
-
-
-
-    height: 2.5rem !important;
-  }
-
-  .docs-header-search {
-
-
 
     z-index: calc(var(--sl-z-index-navbar) + 2) !important;
+  }.docs-header-search {
+
+
+
+
     width: 2.5rem !important;
     max-width: 2.5rem !important;
     min-width: 2.5rem !important;
@@ -88,7 +72,7 @@
 
 
 
-    overflow-x: auto !important;
+
     overflow-y: hidden !important;
     -webkit-overflow-scrolling: touch !important;
   }

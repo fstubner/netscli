@@ -1,7 +1,6 @@
 /* Final docs navigation/table pass. Keep rail indicators aligned, make the
    mobile ToC behave like the desktop ToC, and preserve table headers on phones. */
 .sidebar-content {
-  --netscli-sidebar-rail-inset: clamp(2.2rem, 3vw, 3.15rem);
   padding-inline-start: var(--netscli-sidebar-rail-inset) !important;
 }.sidebar-content :where(a[aria-current='page']) {
   position: relative;
@@ -15,9 +14,6 @@
 @media (max-width: 71.99rem) {
   .right-sidebar-container {
 
-
-
-    order: -1;
     background: var(--sl-color-bg);
     border-bottom: 1px solid var(--sl-color-hairline) !important;
   }
@@ -31,9 +27,6 @@
 
   .right-sidebar {
 
-
-
-    padding: 0 !important;
     overflow: visible !important;
     border: 0 !important;
   }
@@ -109,7 +102,6 @@
 
   mobile-starlight-toc .dropdown a:hover,
   mobile-starlight-toc .dropdown a:focus-visible {
-
 
     outline: 0 !important;
   }
