@@ -122,6 +122,26 @@ export function useTabLifecycle({
     setTabs(remaining);
   }
 
+  /**
+   * Move a tab to a new position in the strip.
+   *
+   * Order is the array order -- nothing else stores it -- so this is a
+   * splice. The active tab is unchanged: reordering moves where a tab sits,
+   * not which one you are looking at, and a strip that switched tabs as you
+   * dragged would fight the drag.
+   */
+  function moveTab(tabId: string, toIndex: number) {
+    const from = tabs.findIndex((tab) => tab.id === tabId);
+    if (from < 0) return;
+    const to = Math.max(0, Math.min(tabs.length - 1, toIndex));
+    if (from === to) return;
+
+    const next = [...tabs];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    setTabs(next);
+  }
+
   function isTabActive(tabId: string): boolean {
     return activeTabIdRef.current === tabId;
   }
@@ -143,6 +163,7 @@ export function useTabLifecycle({
     closeAllTabs,
     closeOtherTabs,
     closeTabsBeside,
+    moveTab,
     isTabActive,
     needsAutoRun,
     clearAutoRun,

@@ -102,6 +102,33 @@
   padding-right: 54px;
 }
 
+/* Reordering feedback.
+ *
+ * The dragged tab fades rather than moving with the cursor: the strip
+ * commits the new order on release, so animating the tab itself would
+ * promise a live reshuffle that is not happening. The drop target gets a
+ * leading edge marking the slot it would land in. */
+.work-tab.dragging {
+  opacity: 0.45;
+  cursor: grabbing;
+}
+
+.work-tab.drop-target::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: -1px;
+  width: 2px;
+  background: var(--accent);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .work-tab.dragging {
+    opacity: 0.6;
+  }
+}
+
 .work-tab.no-identifier {
   min-width: 122px;
   max-width: 160px;

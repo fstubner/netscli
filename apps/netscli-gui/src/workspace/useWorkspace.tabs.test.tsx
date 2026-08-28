@@ -137,3 +137,81 @@ describe('closing a set of tabs', () => {
     expect(result.current.tabs.map((tab) => tab.id)).toEqual(ids);
   });
 });
+
+// Reordering is array order -- nothing else records where a tab sits -- and
+// the thing worth pinning is that it does not disturb which tab is active.
+// A strip that changed selection as you dragged would fight the drag.
+describe('reordering tabs', () => {
+  function fourTabs() {
+    const { result } = renderWorkspace();
+    act(() => {
+      result.current.closeAllTabs();
+    });
+    for (const kind of ['scan', 'ping', 'dns', 'trace'] as const) {
+      act(() => {
+        result.current.addTab(kind);
+      });
+    }
+    return result;
+  }
+
+  it('moves a tab to the requested slot', () => {
+    const result = fourTabs();
+    const [a, b, c, d] = result.current.tabs.map((tab) => tab.id);
+
+    act(() => {
+      result.current.moveTab(a, 2);
+    });
+
+    expect(result.current.tabs.map((tab) => tab.id)).toEqual([b, c, a, d]);
+  });
+
+  it('moves a tab backwards too', () => {
+    const result = fourTabs();
+    const [a, b, c, d] = result.current.tabs.map((tab) => tab.id);
+
+    act(() => {
+      result.current.moveTab(d, 0);
+    });
+
+    expect(result.current.tabs.map((tab) => tab.id)).toEqual([d, a, b, c]);
+  });
+
+  it('leaves the active tab active, whichever one moved', () => {
+    const result = fourTabs();
+    const ids = result.current.tabs.map((tab) => tab.id);
+    act(() => {
+      result.current.setActiveTabId(ids[1]);
+    });
+
+    act(() => {
+      result.current.moveTab(ids[3], 0);
+    });
+
+    expect(result.current.activeTabId).toBe(ids[1]);
+  });
+
+  it('clamps an index past the end instead of losing the tab', () => {
+    const result = fourTabs();
+    const ids = result.current.tabs.map((tab) => tab.id);
+
+    act(() => {
+      result.current.moveTab(ids[0], 99);
+    });
+
+    expect(result.current.tabs).toHaveLength(4);
+    expect(result.current.tabs[result.current.tabs.length - 1].id).toBe(ids[0]);
+  });
+
+  it('does nothing for an unknown tab or a move to its own slot', () => {
+    const result = fourTabs();
+    const ids = result.current.tabs.map((tab) => tab.id);
+
+    act(() => {
+      result.current.moveTab('no-such-tab', 0);
+      result.current.moveTab(ids[2], 2);
+    });
+
+    expect(result.current.tabs.map((tab) => tab.id)).toEqual(ids);
+  });
+});

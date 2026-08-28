@@ -14,6 +14,7 @@ function renderStrip(activeIndex = 0) {
   const tabs = [createTab('scan'), createTab('arp'), createTab('dns')];
   const onSelectTab = vi.fn();
   const onCloseTab = vi.fn();
+  const onMoveTab = vi.fn();
   render(
     <TabStrip
       tabs={tabs}
@@ -26,11 +27,12 @@ function renderStrip(activeIndex = 0) {
       onCloseOtherTabs={vi.fn()}
       onCloseTab={onCloseTab}
       onCloseTabsBeside={vi.fn()}
+      onMoveTab={onMoveTab}
       onSelectTab={onSelectTab}
       setOpenMenu={vi.fn()}
     />,
   );
-  return { tabs, onSelectTab, onCloseTab };
+  return { tabs, onSelectTab, onCloseTab, onMoveTab };
 }
 
 describe('tab strip keyboard access', () => {
@@ -90,5 +92,40 @@ describe('tab strip keyboard access', () => {
     first.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
     expect(onSelectTab).toHaveBeenCalledTimes(2);
     expect(onSelectTab).toHaveBeenCalledWith(tabs[0].id);
+  });
+
+  // Reordering is otherwise a pointer-only gesture, and this strip has been
+  // keyboard-inoperable once already. Ctrl+Shift+Arrow is the same binding
+  // editors use for it.
+  it('moves the focused tab with Ctrl+Shift+Arrow', () => {
+    const { tabs, onMoveTab } = renderStrip(1);
+    const focused = screen.getAllByRole('tab')[1];
+
+    focused.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowRight', ctrlKey: true, shiftKey: true, bubbles: true }),
+    );
+    expect(onMoveTab).toHaveBeenCalledWith(tabs[1].id, 2);
+
+    focused.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowLeft', ctrlKey: true, shiftKey: true, bubbles: true }),
+    );
+    expect(onMoveTab).toHaveBeenCalledWith(tabs[1].id, 0);
+  });
+
+  it('does not move a tab off either end', () => {
+    const { onMoveTab } = renderStrip(0);
+    screen.getAllByRole('tab')[0].dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowLeft', ctrlKey: true, shiftKey: true, bubbles: true }),
+    );
+    expect(onMoveTab).not.toHaveBeenCalled();
+  });
+
+  // Plain arrows still change selection; the modifier is what distinguishes
+  // "move between tabs" from "move the tab".
+  it('leaves plain-arrow selection alone', () => {
+    const { tabs, onSelectTab, onMoveTab } = renderStrip(0);
+    screen.getAllByRole('tab')[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    expect(onSelectTab).toHaveBeenCalledWith(tabs[1].id);
+    expect(onMoveTab).not.toHaveBeenCalled();
   });
 });

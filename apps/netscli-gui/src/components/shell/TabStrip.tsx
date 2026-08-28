@@ -6,6 +6,7 @@ import { tabIdentity } from '../../tools/presentation';
 import type { ToolCapabilityMap, ToolKind, WorkspaceTab } from '../../tools/types';
 import { computePopoverPosition } from '../primitives/overlay';
 import { handleTabStripKeyDown } from './tabStripKeyboard';
+import { useTabReorder } from './useTabReorder';
 import { useTabStripDrag } from './useTabStripDrag';
 import { tabDisplayFor } from './tabDisplay';
 import { TabContextMenu, type TabContextTarget } from './TabContextMenu';
@@ -22,6 +23,7 @@ interface TabStripProps {
   onCloseAllTabs: () => void;
   onCloseOtherTabs: (tabId: string) => void;
   onCloseTabsBeside: (tabId: string, side: 'left' | 'right') => void;
+  onMoveTab: (tabId: string, toIndex: number) => void;
   onSelectTab: (tabId: string) => void;
   setOpenMenu: (menu: string | null) => void;
 }
@@ -37,6 +39,7 @@ export function TabStrip({
   onCloseAllTabs,
   onCloseOtherTabs,
   onCloseTabsBeside,
+  onMoveTab,
   onSelectTab,
   setOpenMenu,
 }: TabStripProps) {
@@ -50,6 +53,7 @@ export function TabStrip({
   });
   const [toolMenuPosition, setToolMenuPosition] = useState({ left: 0, maxHeight: 360, top: 0 });
   const [contextTarget, setContextTarget] = useState<TabContextTarget | null>(null);
+  const reorder = useTabReorder(scrollRef, onMoveTab);
   const [overflowState, setOverflowState] = useState({
     overflow: false,
     left: false,
@@ -141,6 +145,10 @@ export function TabStrip({
                   'work-tab',
                   tab.id === activeTabId ? 'active' : '',
                   tab.busy ? 'busy' : '',
+                  reorder.dragging?.tabId === tab.id ? 'dragging' : '',
+                  reorder.dragging && reorder.dragging.tabId !== tab.id && reorder.dragging.overIndex === index
+                    ? 'drop-target'
+                    : '',
                   !identifier ? 'no-identifier' : '',
                 ].filter(Boolean).join(' ')}
                 key={tab.id}
@@ -159,6 +167,15 @@ export function TabStrip({
                   }
                   onSelectTab(tab.id);
                 }}
+                onPointerDown={(event) => reorder.onPointerDown(event, tab.id, index)}
+                onPointerMove={reorder.onPointerMove}
+                onPointerCancel={reorder.onPointerCancel}
+                onPointerUp={(event) => {
+                  // A drag ends with a click on whatever is under the cursor.
+                  // Reuse the strip's existing suppression so finishing a
+                  // reorder does not also switch tabs.
+                  if (reorder.onPointerUp(event)) suppressNextClick.current = true;
+                }}
                 onContextMenu={(event) => {
                   event.preventDefault();
                   // Select first: every item acts on this tab, and seeing it
@@ -172,7 +189,9 @@ export function TabStrip({
                     y: event.clientY,
                   });
                 }}
-                onKeyDown={(event) => handleTabStripKeyDown(event, index, tabs, onSelectTab, onCloseTab)}
+                onKeyDown={(event) =>
+                  handleTabStripKeyDown(event, index, tabs, onSelectTab, onCloseTab, onMoveTab)
+                }
               >
                 <Icon size={14} />
                 <span className="tab-identity">
