@@ -339,6 +339,57 @@ on the directory name, and a mismatch files a conflicting duplicate.
 
 Needs `WINGET_TOKEN` (classic PAT, `public_repo`).
 
+### PackageVersion carries no `v`, and five published versions do
+
+The catalog currently holds, for `fstubner.netscli`:
+
+```
+0.2.0  v0.2.2  v0.2.3  v0.2.4  v0.2.5  v0.2.6
+```
+
+Only `0.2.0` is right. It was submitted by hand; the other five came from the
+`winget` job, which passed the git tag straight through as `PackageVersion`
+before that was fixed. `fstubner.netscli.gui` is unaffected — its single
+`0.2.6` was also hand-submitted.
+
+**This does not break upgrades.** winget normalises a leading `v` when
+comparing, checked against the client rather than assumed:
+
+```
+> winget list --id fstubner.netscli
+netscli  fstubner.netscli  0.2.0  v0.2.6  winget      # offers the upgrade
+
+> winget show fstubner.netscli --version 0.2.6        # resolves v0.2.6
+> winget show fstubner.netscli --version 0.2.9        # finds nothing
+```
+
+What it does do is display a version the project never issued, and put the
+two packages side by side inconsistently in `winget search`:
+
+```
+netscli          fstubner.netscli      v0.2.6
+NetsCLI Desktop  fstubner.netscli.gui  0.2.6
+```
+
+The next correctly-versioned release fixes the display, since `winget search`
+and `winget install` use the latest version. The old directories stay in the
+catalog unless someone removes them.
+
+**Removing them is optional and not automated.** It means a PR to
+`microsoft/winget-pkgs` deleting `manifests/f/fstubner/netscli/v0.2.*/`, which
+breaks anyone pinned to one of those versions with
+`winget install --version`. Weigh that against a tidy version list; doing
+nothing is a defensible answer.
+
+Do **not** set the action's `max-versions-to-keep` to prune them. That deletes
+versions from the public catalog as a side effect of an ordinary release,
+which is not something a release should do quietly.
+
+The `Resolve PackageVersion` step now asserts `MAJOR.MINOR.PATCH` and fails
+the job otherwise. Stripping the `v` was already enough to produce the right
+answer; the assertion exists because winget-pkgs accepted all five bad ones
+without complaint, so nothing downstream will catch a recurrence.
+
 ## AUR
 
 Two packages pushed over SSH by `KSXGitHub/github-actions-deploy-aur`, which

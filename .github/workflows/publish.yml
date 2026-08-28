@@ -195,7 +195,28 @@ jobs:
         shell: bash
         env:
           TAG: ${{ env.TAG }}
-        run: echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+        run: |
+          set -euo pipefail
+          version="${TAG#v}"
+          # Assert, do not just strip.
+          #
+          # `${TAG#v}` alone already produced the right answer, and the
+          # catalog still ended up with `v0.2.2` through `v0.2.6` published,
+          # because before that expression existed the tag went through
+          # untouched and nothing downstream objected: winget-pkgs accepted
+          # every one of them. Microsoft's validation does not enforce this,
+          # so it has to be enforced here or not at all.
+          #
+          # Nothing else in the release is shaped like this -- crates.io and
+          # the AUR both take `${TAG#v}` too -- so a tag that fails this
+          # check means the tag itself is wrong, not just this job.
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::PackageVersion '${version}' (from tag '${TAG}') is not MAJOR.MINOR.PATCH." >&2
+            echo "winget-pkgs will accept it anyway and it is permanent once merged." >&2
+            exit 1
+          fi
+          echo "→ PackageVersion ${version}"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
 
       - name: Submit netscli to microsoft/winget-pkgs
         uses: vedantmgoyal9/winget-releaser@4ffc7888bffd451b357355dc214d43bb9f23917e # v2
@@ -400,7 +421,28 @@ jobs:
         shell: bash
         env:
           TAG: ${{ env.TAG }}
-        run: echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+        run: |
+          set -euo pipefail
+          version="${TAG#v}"
+          # Assert, do not just strip.
+          #
+          # `${TAG#v}` alone already produced the right answer, and the
+          # catalog still ended up with `v0.2.2` through `v0.2.6` published,
+          # because before that expression existed the tag went through
+          # untouched and nothing downstream objected: winget-pkgs accepted
+          # every one of them. Microsoft's validation does not enforce this,
+          # so it has to be enforced here or not at all.
+          #
+          # Nothing else in the release is shaped like this -- crates.io and
+          # the AUR both take `${TAG#v}` too -- so a tag that fails this
+          # check means the tag itself is wrong, not just this job.
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::PackageVersion '${version}' (from tag '${TAG}') is not MAJOR.MINOR.PATCH." >&2
+            echo "winget-pkgs will accept it anyway and it is permanent once merged." >&2
+            exit 1
+          fi
+          echo "→ PackageVersion ${version}"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
 
       - name: Submit netscli-gui to microsoft/winget-pkgs
         uses: vedantmgoyal9/winget-releaser@4ffc7888bffd451b357355dc214d43bb9f23917e # v2
