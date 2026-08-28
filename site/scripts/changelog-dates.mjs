@@ -61,14 +61,18 @@ const cards = html
     };
   });
 
-const monthNames = 'Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' ');
-const asIso = (rendered) => {
-  const m = rendered.match(/^(\d{1,2}) (\w{3}) (\d{4})$/);
-  if (!m) return null;
-  const month = monthNames.indexOf(m[2]) + 1;
-  if (month === 0) return null;
-  return `${m[3]}-${String(month).padStart(2, '0')}-${String(m[1]).padStart(2, '0')}`;
-};
+// Format the expected date exactly as the page does, rather than parsing what
+// the page produced. `release-list.ts` formats with the *ambient* locale, so
+// the same build renders "20 Aug 2026" on an en-GB machine and "Aug 20, 2026"
+// on a CI runner -- a reader that assumed either one failed on the other. The
+// date is built from the CHANGELOG heading the same way `changelog.astro`
+// does it, so this compares like with like wherever it runs.
+const dateFormat = new Intl.DateTimeFormat(undefined, {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+});
+const asRendered = (iso) => dateFormat.format(new Date(`${iso}T00:00:00.000Z`));
 
 const failures = [];
 for (const { version, date } of declared) {
@@ -82,8 +86,11 @@ for (const { version, date } of declared) {
       `${version}: CHANGELOG.md dates it ${date}, the page shows no date. ` +
         `A shipped release lost its date.`
     );
-  } else if (date && asIso(card.date) !== date) {
-    failures.push(`${version}: CHANGELOG.md says ${date}, the page shows "${card.date}"`);
+  } else if (date && card.date !== asRendered(date)) {
+    failures.push(
+      `${version}: CHANGELOG.md says ${date} (renders as "${asRendered(date)}"), ` +
+        `the page shows "${card.date}"`
+    );
   } else if (!date && card.date) {
     failures.push(
       `${version}: CHANGELOG.md gives it no date, the page shows "${card.date}". ` +
