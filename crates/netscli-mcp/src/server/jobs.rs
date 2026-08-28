@@ -211,13 +211,26 @@ pub(super) fn pcap_job_status(state: &ServerState, params: Value) -> Result<Valu
     pcap_status_value(p.job_id, &job)
 }
 
+/// Fetch a finished capture's packets.
+///
+/// Capped here rather than relying on the choke point in `dispatch_tool`.
+/// This is the one tool result that never passes through it: both
+/// `handle_tools_call` and the legacy direct method route the pcap job tools
+/// before `dispatch_tool` is reached, so the packets -- every byte of them
+/// chosen by whatever is on the wire -- reached the model whole, while the
+/// blocking `capture_pcap` tool beside it was capped. `start_pcap_capture`'s
+/// own description steers callers to this path for long captures, and
+/// `maxPackets` has no default, so "the recommended way to capture" was also
+/// the only way to get unbounded remote text into a context window.
 pub(super) fn pcap_job_result(state: &ServerState, params: Value) -> Result<Value, RpcError> {
     let p: PcapJobParams = parse_params(params)?;
     let job = state.pcap_job(&p.job_id)?;
     let guard = job
         .lock()
         .map_err(|_| RpcError::Internal("pcap job state lock poisoned".to_string()))?;
-    serde_json::to_value(guard.result(p.job_id)).map_err(|e| RpcError::Internal(e.to_string()))
+    let value = serde_json::to_value(guard.result(p.job_id))
+        .map_err(|e| RpcError::Internal(e.to_string()))?;
+    Ok(super::limits::cap_tool_result(value))
 }
 
 fn pcap_status_value(job_id: String, job: &PcapJobHandle) -> Result<Value, RpcError> {
@@ -226,3 +239,6 @@ fn pcap_status_value(job_id: String, job: &PcapJobHandle) -> Result<Value, RpcEr
         .map_err(|_| RpcError::Internal("pcap job state lock poisoned".to_string()))?;
     serde_json::to_value(guard.status(job_id)).map_err(|e| RpcError::Internal(e.to_string()))
 }
+
+#[cfg(test)]
+mod tests;

@@ -180,12 +180,15 @@ async fn handle_request_inner(
 /// shape it (legacy methods return it as-is; `tools/call` wraps it via
 /// `mcp_tool_result_text`).
 async fn dispatch_tool(name: &str, params: Value) -> Result<Value, RpcError> {
-    let mut result = dispatch_tool_inner(name, params).await?;
+    let result = dispatch_tool_inner(name, params).await?;
     // One choke point for both callers. Applying this per-arm would mean
     // every tool added later had to remember, and the tool most likely to
     // carry remote bytes is whichever one is written next.
-    super::limits::cap_remote_text(&mut result);
-    Ok(super::limits::cap_result_size(result))
+    //
+    // The pcap job tools are the exception, and they were the tool that
+    // forgot: they are routed above this function because they need the
+    // server's job map, so `pcap_job_result` calls `cap_tool_result` itself.
+    Ok(super::limits::cap_tool_result(result))
 }
 
 async fn dispatch_tool_inner(name: &str, params: Value) -> Result<Value, RpcError> {

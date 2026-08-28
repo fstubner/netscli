@@ -34,6 +34,17 @@ const MAX_RESULT_BYTES: usize = 1024 * 1024;
 /// Keys whose values are remote bytes rather than netscli's own findings.
 const REMOTE_TEXT_KEYS: &[&str] = &["banner", "hex_preview", "info"];
 
+/// Both caps, in the order they have to run: strip and truncate the remote
+/// text first, then bound what is left.
+///
+/// `dispatch_tool` is the choke point for every stateless tool. The pcap job
+/// tools are routed before it — they need the server's job map — so they call
+/// this directly.
+pub(super) fn cap_tool_result(mut value: Value) -> Value {
+    cap_remote_text(&mut value);
+    cap_result_size(value)
+}
+
 /// Strip and truncate remote-supplied text throughout a result.
 pub(super) fn cap_remote_text(value: &mut Value) {
     match value {
@@ -97,10 +108,15 @@ pub(super) fn cap_result_size(value: Value) -> Value {
         used += size;
         kept.push(item);
     }
+    // `kept.len()`, not the byte counter. `returned` was `used.min(total)`,
+    // and `used` counts bytes -- so a 40,000-item result that kept 11,518
+    // reported `returned: 40000, total: 40000` beside `truncated: true`,
+    // telling the model it had everything while three quarters was cut.
+    let returned = kept.len();
     serde_json::json!({
         "results": kept,
         "truncated": true,
-        "returned": used.min(total),
+        "returned": returned,
         "total": total,
         "note": format!(
             "Result exceeded {MAX_RESULT_BYTES} bytes. Narrow the port or address range to see the rest."
@@ -163,11 +179,61 @@ mod tests {
         assert_eq!(capped["truncated"], true);
         assert_eq!(capped["total"], 40_000);
         assert!(serde_json::to_string(&capped).unwrap().len() <= MAX_RESULT_BYTES * 2);
+
+        // The count the client reads has to be the count it received. This
+        // assertion is the whole reason the bug survived: everything else
+        // here was already checked.
+        let actually_returned = capped["results"].as_array().unwrap().len();
+        assert_eq!(capped["returned"], actually_returned);
+        assert!(
+            actually_returned < 40_000,
+            "the fixture must actually truncate for this to mean anything"
+        );
     }
 
     #[test]
     fn a_small_result_passes_through_untouched() {
         let value = json!([{ "port": 22, "open": true }]);
         assert_eq!(cap_result_size(value.clone()), value);
+    }
+
+    #[test]
+    fn a_pcap_job_result_is_capped_through_its_nesting() {
+        // `get_pcap_capture_result` returns packets under `result.packets`
+        // rather than as a bare array, so this pins that both caps still
+        // reach them. Built as JSON rather than from `PcapResult` so it runs
+        // without the `pcap` feature -- the fields are the ones
+        // `PcapPacketSummary` serializes.
+        let packets: Vec<Value> = (0..20_000)
+            .map(|i| {
+                json!({
+                    "index": i,
+                    "protocol": "TCP",
+                    "info": "X".repeat(400),
+                    "hex_preview": "de ad be ef ".repeat(40),
+                })
+            })
+            .collect();
+        let job_result = json!({
+            "jobId": "pcap-1",
+            "status": "completed",
+            "result": { "packets_captured": 20_000, "packets": packets },
+        });
+
+        let capped = cap_tool_result(job_result);
+        let encoded = serde_json::to_string(&capped).unwrap();
+
+        // Not an array at the top level, so `cap_result_size` cannot trim it
+        // item by item and says so instead of returning something that looks
+        // complete. Either way the wall of remote text does not arrive.
+        assert!(
+            encoded.len() <= MAX_RESULT_BYTES,
+            "a job result must not exceed the cap; got {} bytes",
+            encoded.len()
+        );
+        assert!(
+            !encoded.contains(&"X".repeat(MAX_BANNER_CHARS + 1)),
+            "no untruncated remote `info` may survive"
+        );
     }
 }
