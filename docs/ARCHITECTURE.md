@@ -2,6 +2,73 @@
 
 NetsCLI has one behavioral core and four user-facing interfaces. New network behavior belongs in `netscli-core` first, then each interface should call that shared operation instead of reimplementing probes or parsing locally.
 
+## Parts
+
+Five deployables over one behavioural core. Only the core is shared; nothing
+below it imports anything above it.
+
+| Part | Path | Ships as | Talks to |
+| --- | --- | --- | --- |
+| Core library | `crates/netscli-core` | crates.io (`netscli-core`) | the OS and the network |
+| MCP server | `crates/netscli-mcp` | crates.io (`netscli-mcp`), exposed by `netscli serve` | an MCP client over stdio |
+| CLI and TUI | `apps/netscli-cli` | crates.io (`netscli`), installers, package managers | a terminal |
+| Desktop app | `apps/netscli-gui` | MSI / DMG / AppImage / deb | its own WebView frontend |
+| Website and docs | `site` | static hosting | browsers |
+
+The desktop app is itself two pieces: a Rust binary and a React frontend it
+serves into a WebView. They are one deployable but not one program, which is
+why the boundary between them is listed below.
+
+## Boundaries
+
+Four places where something crosses from one part to another. Everything
+else is a Rust function call inside one process, which is not a boundary and
+should not be treated as one.
+
+| Boundary | Mechanism | What crosses |
+| --- | --- | --- |
+| MCP client → server | JSON-RPC over stdio | tool calls with arguments chosen by a model |
+| WebView → desktop backend | Tauri IPC commands | form values a user typed |
+| Any interface → core | in-process Rust calls | typed arguments, already validated |
+| Core → network and OS | sockets, `arp`, IP Helper, pcap | probes out, and **untrusted bytes back** |
+
+The last row is the one people forget. A banner, a PTR record and a vendor
+string are all written by whoever runs the other machine.
+
+## Trust
+
+Two boundaries carry real trust decisions; the rest are conveniences.
+
+**The MCP surface is the trust boundary.** Its arguments come from a model,
+which may be repeating something it read on a scanned host. Two guards, both
+in `crates/netscli-mcp/src/server/`:
+
+- `targets.rs` refuses anything outside local scope unless explicitly
+  permitted (`is_local_scope`, `ensure_ip_allowed`, `public_targets_allowed`),
+  so a prompt-injected model cannot point the scanner at strangers.
+- `limits.rs` caps what a scanned host can put into a model's context —
+  banners truncated to `MAX_BANNER_CHARS` (256), whole results to
+  `MAX_RESULT_BYTES` (1 MiB), applied to the fields that carry remote text
+  (`REMOTE_TEXT_KEYS`: `banner`, `hex_preview`, `info`).
+
+Neither may be relaxed to make something faster or more capable. A tool that
+finds unauthenticated services is exactly the one that must not be steerable
+by the thing it reports to.
+
+**Remote text is data, never markup or control.** Trace output is asserted
+free of terminal control sequences (`tests/test_trace.rs`), because an ESC
+reaching a terminal can repaint the screen and forge the lines above it. The
+GUI renders remote strings as text, never as HTML.
+
+**Privilege is a boundary the user owns.** Raw ICMP and clearing the ARP
+table need administrator rights. Where a capability is unavailable the
+product says so and stops; it never silently substitutes a weaker method and
+reports the result as though the stronger one had run. `arp -d *` exiting 0
+while printing "requires elevation" is the reason that rule is written down.
+
+**The website is outside all of this.** It is static, ships no user data, and
+holds no credentials.
+
 ## Ownership Map
 
 | Area | Primary Path | Ownership |
