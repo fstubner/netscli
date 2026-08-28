@@ -10,13 +10,20 @@ they do not *inherit* it — each crate sets its own, and the GUI carries
 further copies in `package.json` and `tauri.conf.json`. See
 `docs/PUBLISHING.md` for the full list of files a bump has to touch.
 
+A version heading carries a date, and a link, only once its release is
+published. Both are claims about the outside world, and the website reads
+them: it printed "24 Aug 2026" for 0.3.1 for four days on the strength of a
+date written here when the notes were drafted. An in-flight version keeps
+its heading and collects entries; the date and the link go on with the tag.
+
 ## [Unreleased]
 
-## [0.3.1] — 2026-08-24
+## [0.3.1]
 
-A bug-fix release. Everything here was found by using the desktop app on a
-real network rather than by reading the code, and three of the fixes are for
-faults that reported success while doing nothing.
+A bug-fix release. Most of it was found by using the desktop app on a real
+network rather than by reading the code, and the rest by an assessment run
+before tagging; the recurring theme is code that reported success while doing
+nothing.
 
 ### Fixed
 
@@ -54,6 +61,39 @@ faults that reported success while doing nothing.
   unrecognised popover was torn down by the global dismissal handler before
   its own item could fire, so the item did nothing, threw nothing and logged
   nothing.
+- **`netscli arp --add` and `--delete` no longer claim to have changed the
+  table when they have not.** The same fault as `--clear` above, in the two
+  functions beside it: `arp -s` and `arp -d` also print "The requested
+  operation requires elevation" and exit 0, so an ordinary run printed "ARP
+  entry added for 192.0.2.77" — and `"ok": true` in JSON — having done
+  nothing. All three now share one check. `--clear` also returns an error on
+  platforms where it was never implemented, instead of reporting a cleared
+  table.
+- **The MCP server no longer says it returned everything while truncating.**
+  A capped result reported the byte count as its item count, so a 40,000-row
+  scan that returned 11,518 rows said `returned: 40000, total: 40000` beside
+  `truncated: true`.
+- **Packet captures fetched as a background MCP job are bounded like every
+  other result.** `get_pcap_capture_result` was routed before the limits that
+  strip and truncate remote text, so the one result made entirely of bytes off
+  the wire was the one that skipped them — while the blocking `capture_pcap`
+  beside it was capped.
+- **A database written by a newer netscli is refused rather than read.** The
+  version check treated a future schema as "already migrated", so an older
+  build queried tables it had never seen.
+- **The Exit item no longer flashes red on the way out**, and Packet Capture
+  is greyed with an explanation rather than hidden on builds without capture
+  support.
+- **The desktop app describes how each host was found.** A discover row from
+  the neighbour table is no longer labelled as having responded to a probe,
+  and the table carries a column for it rather than burying it in the detail
+  pane.
+- **The winget submission would have published the wrong version.** Both
+  package manifests were passed the tag including its `v`, which the action
+  only strips when the input is left empty — `v0.3.1` would have landed in
+  the public catalog beside `0.3.0` and not compared as an upgrade. The same
+  two jobs would also have failed on the documented re-run path, looking for a
+  release tagged `main`.
 
 ### Added
 
@@ -73,6 +113,22 @@ faults that reported success while doing nothing.
   finished. Failures still report unconditionally.
 - Dependency updates: `pcap` 2.4 → 2.5, `astro`, `lucide-react`, `vitest`,
   `@axe-core/cli`, and the vite/rollup group.
+
+### Website
+
+- **The install guide has the verification steps the landing page promises.**
+  It advertised checksums and Sigstore signatures "see the install guide for
+  verification steps" and linked to a page with none of them on it.
+- **The changelog no longer dates a release that has not happened.** An entry
+  marked "Not yet released" was rendered beside a publication date taken from
+  this file's own heading.
+- **The docs table of contents is back in the right-hand rail.** It had been
+  moved under the page hero at every width, which is the mobile layout applied
+  to desktop.
+- **Release notes are in the page rather than painted in by script**, so the
+  changelog reads with JavaScript disabled and does not flash "Loading".
+- The website's colours are now covered by the contrast gate, which had been
+  measuring the desktop app's palette and reporting a pass for both.
 
 ## [0.3.0] — 2026-08-20
 
@@ -649,8 +705,7 @@ backed by the same core library.
 - Desktop app needs the WebView2 runtime on Windows. Most Windows
   10/11 systems have it preinstalled.
 
-[Unreleased]: https://github.com/fstubner/netscli/compare/v0.3.1...HEAD
-[0.3.1]: https://github.com/fstubner/netscli/releases/tag/v0.3.1
+[Unreleased]: https://github.com/fstubner/netscli/compare/v0.3.0...HEAD
 [0.3.0]: https://github.com/fstubner/netscli/releases/tag/v0.3.0
 [0.2.6]: https://github.com/fstubner/netscli/releases/tag/v0.2.6
 [0.2.5]: https://github.com/fstubner/netscli/releases/tag/v0.2.5
