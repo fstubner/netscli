@@ -216,7 +216,19 @@ tool is visible in the GUI, but it shows setup guidance and cannot run unless
 the desktop backend was built with the `pcap` feature and a working
 Npcap/libpcap runtime is installed.
 
-To build from source instead:
+To run it from source:
+
+```bash
+cd apps/netscli-gui
+npm install
+npm run tauri:dev
+```
+
+That starts the Vite dev server and the app together. Building the Tauri
+crate on its own — `cargo build -p netscli-gui` — gives you a binary that
+expects that dev server on `localhost:1420` rather than one with the
+frontend inside it, so running it directly opens an empty window with no
+explanation. Use `tauri:dev`, or build an installer:
 
 ```bash
 cd apps/netscli-gui
