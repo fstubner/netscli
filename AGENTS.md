@@ -41,8 +41,9 @@ cargo build -p netscli
 cargo build -p netscli --features pcap   # with packet capture
 cargo build --release -p netscli          # optimized build
 
-# GUI
-cd apps/netscli-gui && npm install && npm run tauri dev
+# GUI -- use one of these two. See the warning below before reaching for
+# `cargo build -p netscli-gui`.
+cd apps/netscli-gui && npm install && npm run tauri:dev
 cd apps/netscli-gui && npm run tauri build    # build installer
 
 # Tests
@@ -61,6 +62,36 @@ cd apps/netscli-gui && npm run lint           # ESLint for the GUI frontend
 # OUI database refresh
 cd scripts && cargo run --bin generate-oui
 ```
+
+### Running the desktop app
+
+**`cargo build -p netscli-gui` does not produce a runnable app.** It produces
+a *dev* binary that loads `devUrl` from `tauri.conf.json` --
+`http://localhost:1420` -- rather than embedding the frontend. Launching
+`target/debug/netscli-gui.exe` on its own opens a window showing the
+browser's connection-error page, with the app's own title replaced by
+`localhost`. There is no message saying why, and the process runs and stays
+up, so it looks like it worked.
+
+Use `npm run tauri:dev`. It runs the Vite dev server and the app together,
+which is why this never bites when you follow the command above.
+
+If you do launch the binary directly -- the render-automation harness in
+`e2e/tauri-render/` does -- Vite has to already be listening on 1420. How to
+tell the difference from outside the window:
+
+```bash
+# Blank window: the page is the dev URL and the title is the host, not the app
+curl -s http://127.0.0.1:<debug-port>/json | grep -o '"title":"[^"]*"'
+#   "title":"localhost"   -> dev server is down
+#   "title":"NetsCLI"     -> the UI is up
+```
+
+One more trap in the same area: a frontend-only change does not make
+`cargo build` relink, so `Finished in 1.35s` after `npm run build` means the
+binary was **not** updated. That does not matter under `tauri:dev`, which
+serves the frontend live -- but it does matter for anything running the
+binary directly.
 
 ## Toolchain
 
