@@ -180,11 +180,35 @@ jobs:
           echo "asset never appeared after 15 minutes" >&2
           exit 1
 
+      # `version` is the PackageVersion that lands in the catalog, and it must
+      # not carry the tag's `v`. The action strips it only when the input is
+      # empty -- its own source reads
+      #
+      #   If ('' -eq '${{ inputs.version }}') { tag_name -replace '^v' }
+      #   Else                                { inputs.version }
+      #
+      # -- so passing `${{ env.TAG }}` opted out of the stripping and would
+      # have submitted `v0.3.1` beside the existing `0.3.0`. Winget sorts
+      # versions naturally, so the two do not compare as an upgrade.
+      - name: Resolve PackageVersion (tag without the leading v)
+        id: pkg
+        shell: bash
+        env:
+          TAG: ${{ env.TAG }}
+        run: echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
       - name: Submit netscli to microsoft/winget-pkgs
         uses: vedantmgoyal9/winget-releaser@4ffc7888bffd451b357355dc214d43bb9f23917e # v2
         with:
           identifier: fstubner.netscli
-          version: ${{ env.TAG }}
+          version: ${{ steps.pkg.outputs.version }}
+          # `release-tag` defaults to
+          # `github.event.release.tag_name || github.ref_name`, and on a
+          # `workflow_dispatch` the first is null and the second is the branch
+          # the run was dispatched from. The action would then ask the API for
+          # a release tagged `main` and fail -- on precisely the re-run path
+          # this workflow's header offers for recovering a failed publish.
+          release-tag: ${{ env.TAG }}
           installers-regex: 'netscli-windows-x86_64\.exe$'
           token: ${{ secrets.WINGET_TOKEN }}
 
@@ -368,11 +392,22 @@ jobs:
           echo "asset never appeared after 15 minutes" >&2
           exit 1
 
+      # Same two corrections as the CLI winget job above: strip the `v` from
+      # the PackageVersion, and name the release tag explicitly so a
+      # `workflow_dispatch` re-run does not look for a release tagged `main`.
+      - name: Resolve PackageVersion (tag without the leading v)
+        id: pkg
+        shell: bash
+        env:
+          TAG: ${{ env.TAG }}
+        run: echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
       - name: Submit netscli-gui to microsoft/winget-pkgs
         uses: vedantmgoyal9/winget-releaser@4ffc7888bffd451b357355dc214d43bb9f23917e # v2
         with:
           identifier: fstubner.netscli.gui
-          version: ${{ env.TAG }}
+          version: ${{ steps.pkg.outputs.version }}
+          release-tag: ${{ env.TAG }}
           installers-regex: 'netscli-gui-windows-x86_64\.msi$'
           token: ${{ secrets.WINGET_TOKEN }}
 
