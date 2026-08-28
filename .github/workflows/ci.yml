@@ -113,7 +113,7 @@ jobs:
           # 22, matching pages.yml / release.yml / site.yml / site-preview.yml.
           # Node 20 left standard support in April 2026, and the split meant
           # the GUI was tested on one runtime and shipped from another.
-          node-version: 22
+          node-version-file: .nvmrc
       - name: File size guard
         run: node scripts/check-file-size.mjs
 
@@ -261,7 +261,7 @@ jobs:
           # `worker_threads.markAsUncloneable`, added in Node 22.10.0 and
           # never backported to 20, so the whole test suite failed to start
           # its workers on the old runtime.
-          node-version: 22
+          node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: apps/netscli-gui/package-lock.json
       - name: npm ci
