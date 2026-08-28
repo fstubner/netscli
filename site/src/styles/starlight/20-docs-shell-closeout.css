@@ -68,7 +68,6 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
 
   .docs-topbar {
 
-
     gap: 0.45rem !important;
   }
 
@@ -78,7 +77,6 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
     width: 2.5rem !important;
     max-width: 2.5rem !important;
     min-width: 2.5rem !important;
-
 
   }
 
@@ -238,7 +236,19 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
   }
 
   site-search dialog .dialog-frame {
-    align-content: start !important;
+    /* `stretch`, not `start`.
+     *
+     * `start` stopped the grid rows growing, so on a phone the results
+     * drawer ended 151px above the bottom of the screen while the dialog
+     * around it ran nearly the full height. It was added here with no stated
+     * reason; whatever empty-state height it was guarding is set directly by
+     * the `min-height: 10rem` rules in 06-docs-interaction-a.css.
+     *
+     * This has to be the declaration that changes rather than an override in
+     * 08-search-modal.css, where the rest of this fix lives: `!important`
+     * against `!important` at equal specificity is decided by file order, and
+     * 20 loads after 08. */
+    align-content: stretch !important;
   }
 
   site-search dialog .dialog-frame > * {
