@@ -90,6 +90,13 @@ jobs:
         working-directory: site
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Tags, not just the tip. `check:changelog` asks git which versions
+          # are actually tagged so it can catch a changelog entry dated before
+          # its release exists -- and with the default `fetch-depth: 1` there
+          # are no tags to ask about, so it would report that it could not
+          # check rather than passing on nothing.
+          fetch-depth: 0
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
@@ -98,6 +105,11 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm run check
+      # Reads the built changelog page and compares it against CHANGELOG.md.
+      # Both halves of this went wrong in one day and neither was visible in
+      # `astro check` or the a11y pass -- see the header of the script.
+      - name: Changelog dates
+        run: npm run check:changelog
       # Runs axe against both themes; see site/scripts/a11y.mjs for why
       # both are needed, and why it prefers the runner's matched
       # chromedriver over the one the npm package downloads.

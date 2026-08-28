@@ -119,13 +119,26 @@ outside Cargo entirely. Seven files have to move together:
 | `apps/netscli-gui/src-tauri/Cargo.toml` | Tauri backend crate version |
 | `apps/netscli-gui/src-tauri/tauri.conf.json` | installer/bundle version |
 | `apps/netscli-gui/package.json` | version shown in the GUI About dialog and on the website |
-| `CHANGELOG.md` | the release heading and its link reference |
+| `CHANGELOG.md` | the release heading (see below for its date and link) |
 
 Missing the last three is what shipped a GUI installer stamped with the
 wrong version at v0.2.4 and got the Winget submission rejected by a
 moderator (see the 0.2.4 entry in `CHANGELOG.md`). The website reads its
 version from `apps/netscli-gui/package.json`, so a miss there also
 silently mislabels netscli.com.
+
+### The changelog date and link go on with the tag, not with the bump
+
+A version heading gets `## [0.4.0]` at bump time and nothing more. The
+` — YYYY-MM-DD` and the `[0.4.0]: …/releases/tag/v0.4.0` reference are added
+in the same change that pushes the tag.
+
+Both are claims about the outside world, and the website reads them straight
+out of this file. 0.3.1 was bumped and dated `2026-08-24` in the release
+commit, then not tagged; netscli.com showed "v0.3.1 — 24 Aug 2026" for four
+days, and the link reference pointed at a tag page that did not exist. The
+version bump is a statement about this repository and can happen whenever;
+the date and the link are statements about a release that exists.
 
 To release 0.4.0 from 0.3.0:
 
