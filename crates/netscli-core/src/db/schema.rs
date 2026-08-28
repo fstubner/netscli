@@ -32,7 +32,20 @@ impl Database {
             .await?
             .get("v");
 
-        if current >= CURRENT_SCHEMA_VERSION {
+        // A database stamped by a *newer* netscli than this one. The guard
+        // used to be `current >= CURRENT_SCHEMA_VERSION`, which treated that
+        // as "nothing to do" and carried on querying a schema this build has
+        // never seen -- so a downgrade (an older package, a second machine
+        // on the same synced directory) read the file as if it understood
+        // it. Refuse, and say which way the mismatch runs.
+        if current > CURRENT_SCHEMA_VERSION {
+            return Err(Error::Other(format!(
+                "database schema is version {current}, but this build of netscli \
+                 understands version {CURRENT_SCHEMA_VERSION}. Upgrade netscli, or \
+                 point it at a different database file."
+            )));
+        }
+        if current == CURRENT_SCHEMA_VERSION {
             return Ok(());
         }
 

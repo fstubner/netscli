@@ -211,13 +211,26 @@ pub(super) fn pcap_job_status(state: &ServerState, params: Value) -> Result<Valu
     pcap_status_value(p.job_id, &job)
 }
 
+/// Fetch a finished capture's packets.
+///
+/// Capped here rather than relying on the choke point in `dispatch_tool`.
+/// This is the one tool result that never passes through it: both
+/// `handle_tools_call` and the legacy direct method route the pcap job tools
+/// before `dispatch_tool` is reached, so the packets -- every byte of them
+/// chosen by whatever is on the wire -- reached the model whole, while the
+/// blocking `capture_pcap` tool beside it was capped. `start_pcap_capture`'s
+/// own description steers callers to this path for long captures, and
+/// `maxPackets` has no default, so "the recommended way to capture" was also
+/// the only way to get unbounded remote text into a context window.
 pub(super) fn pcap_job_result(state: &ServerState, params: Value) -> Result<Value, RpcError> {
     let p: PcapJobParams = parse_params(params)?;
     let job = state.pcap_job(&p.job_id)?;
     let guard = job
         .lock()
         .map_err(|_| RpcError::Internal("pcap job state lock poisoned".to_string()))?;
-    serde_json::to_value(guard.result(p.job_id)).map_err(|e| RpcError::Internal(e.to_string()))
+    let value = serde_json::to_value(guard.result(p.job_id))
+        .map_err(|e| RpcError::Internal(e.to_string()))?;
+    Ok(super::limits::cap_tool_result(value))
 }
 
 fn pcap_status_value(job_id: String, job: &PcapJobHandle) -> Result<Value, RpcError> {
@@ -225,4 +238,86 @@ fn pcap_status_value(job_id: String, job: &PcapJobHandle) -> Result<Value, RpcEr
         .lock()
         .map_err(|_| RpcError::Internal("pcap job state lock poisoned".to_string()))?;
     serde_json::to_value(guard.status(job_id)).map_err(|e| RpcError::Internal(e.to_string()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use netscli_core::{PcapPacketSummary, PcapResult};
+    use serde_json::json;
+    use std::path::PathBuf;
+    use std::time::Duration;
+
+    fn packet(index: usize) -> PcapPacketSummary {
+        PcapPacketSummary {
+            index,
+            timestamp: "2026-08-28T00:00:00Z".to_string(),
+            source: "192.0.2.1".to_string(),
+            destination: "192.0.2.2".to_string(),
+            protocol: "TCP".to_string(),
+            length: 1500,
+            captured_length: 1500,
+            // Bytes off the wire. Whatever is on the link chooses these.
+            info: "X".repeat(4000),
+            source_port: Some(443),
+            destination_port: Some(51000),
+            tcp_flags: None,
+            icmp_type: None,
+            icmp_code: None,
+            arp_operation: None,
+            ethernet_source: None,
+            ethernet_destination: None,
+            hex_preview: Some("de ad be ef ".repeat(400)),
+        }
+    }
+
+    fn completed_job(packets: usize) -> ServerState {
+        let mut state = ServerState::default();
+        let job = Arc::new(Mutex::new(PcapCaptureJob::new()));
+        job.lock().unwrap().complete(PcapResult {
+            packets_captured: packets,
+            duration: Duration::from_secs(1),
+            file_path: PathBuf::from("capture.pcap"),
+            packets: (0..packets).map(packet).collect(),
+            packets_truncated: false,
+        });
+        state.pcap_jobs.insert("pcap-1".to_string(), job);
+        state
+    }
+
+    // The regression. `get_pcap_capture_result` is routed before
+    // `dispatch_tool`, so it never met the caps that every other tool result
+    // passes through -- while the blocking `capture_pcap` tool beside it did.
+    // A capture with no `maxPackets` (there is no default) put every byte of
+    // remote-chosen text into the model's context.
+    #[test]
+    fn a_finished_capture_is_capped_before_it_reaches_the_client() {
+        let state = completed_job(2_000);
+
+        let value = pcap_job_result(&state, json!({ "jobId": "pcap-1" })).unwrap();
+        let encoded = serde_json::to_string(&value).unwrap();
+
+        assert!(
+            encoded.len() <= 1024 * 1024,
+            "job result must be bounded; got {} bytes",
+            encoded.len()
+        );
+        assert!(
+            !encoded.contains(&"X".repeat(300)),
+            "remote `info` must be truncated, not passed through whole"
+        );
+    }
+
+    #[test]
+    fn a_small_capture_still_arrives_intact() {
+        let state = completed_job(1);
+
+        let value = pcap_job_result(&state, json!({ "jobId": "pcap-1" })).unwrap();
+
+        assert_eq!(value["status"], "completed");
+        assert_eq!(value["jobId"], "pcap-1");
+        assert_eq!(value["result"]["packets_captured"], 1);
+        assert_eq!(value["result"]["packets"][0]["protocol"], "TCP");
+        assert_eq!(value["result"]["packets"][0]["source_port"], 443);
+    }
 }

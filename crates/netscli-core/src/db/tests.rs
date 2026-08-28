@@ -147,3 +147,33 @@ async fn test_set_favorite_and_label() {
     assert!(!hosts[0].is_favorite);
     assert_eq!(hosts[0].custom_label, None);
 }
+
+#[tokio::test]
+async fn a_database_from_a_newer_netscli_is_refused() {
+    // Downgrades happen: an older package pinned somewhere, or two machines
+    // sharing a synced directory. The version check used to read `>=`, so a
+    // future schema looked like "already migrated" and the build queried
+    // tables it has never seen.
+    let temp_dir = TempDir::new().unwrap();
+    let db_path = temp_dir.path().join("from-the-future.db");
+
+    {
+        let db = Database::new(db_path.clone()).await.unwrap();
+        sqlx::query("INSERT INTO schema_version (version) VALUES (?)")
+            .bind(CURRENT_SCHEMA_VERSION + 1)
+            .execute(&db.pool)
+            .await
+            .unwrap();
+    }
+
+    let error = match Database::new(db_path).await {
+        Err(error) => error.to_string(),
+        Ok(_) => panic!("a newer schema must not be opened silently"),
+    };
+
+    assert!(
+        error.contains(&(CURRENT_SCHEMA_VERSION + 1).to_string()),
+        "the error should name the version found: {error}"
+    );
+    assert!(error.contains("Upgrade netscli"), "{error}");
+}
