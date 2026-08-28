@@ -132,6 +132,16 @@ function initialPersistentHistory(): boolean {
   return window.localStorage.getItem('netscli-persistent-history') !== 'off';
 }
 
+/**
+ * Everything the preferences hook owns, as one value.
+ *
+ * Named so it can be passed down whole. App, AppDialogs and SettingsDialog
+ * each used to declare all 22 members as individual props and forward them
+ * one at a time, which is 60-odd lines of plumbing across three files that
+ * says nothing except "these travel together".
+ */
+export type Preferences = ReturnType<typeof usePreferences>;
+
 export function usePreferences() {
   const [darkMode, setDarkMode] = useState(initialDarkMode);
   const [trafficIndicators, setTrafficIndicators] = useState(initialTrafficIndicators);

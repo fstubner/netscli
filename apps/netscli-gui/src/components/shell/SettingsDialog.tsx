@@ -11,48 +11,25 @@ import {
 } from 'lucide-react';
 
 import type { DefaultInterfaceInfo, FileSavePreferences, InterfaceInfo } from '../../types/netscli';
-import type {
-  AddressPreference,
-  MaxConcurrentProbes,
-  TrafficDisplayUnit,
-  TrafficPrecision,
-} from '../../hooks/usePreferences';
+import type { Preferences } from '../../hooks/usePreferences';
 import { useModalFocus } from '../primitives/focus';
 import { NetworkActivitySection } from './NetworkActivitySection';
 import { SettingsNumberInput, SettingsSwitch } from './SettingsControls';
 
 interface SettingsDialogProps {
-  animateTrafficArrows: boolean;
-  addressPreference: AddressPreference;
-  commandBarVisible: boolean;
-  darkMode: boolean;
+  /** Read and written directly; the settings dialog is the one place that
+   *  touches most of these, so unpacking them into props gained nothing. */
+  preferences: Preferences;
   defaultInterface: DefaultInterfaceInfo | null;
   fileSavePreferences: FileSavePreferences;
-  interactionToasts: boolean;
   interfaces: InterfaceInfo[];
-  maxConcurrentProbes: MaxConcurrentProbes;
-  operationToasts: boolean;
-  persistentHistory: boolean;
-  releaseNotifications: boolean;
-  trafficDisplayUnit: TrafficDisplayUnit;
   trafficInterfaceName: string | null;
-  trafficPrecision: TrafficPrecision;
   onClose: () => void;
   onChooseSaveFolder: () => void;
   onClearSaveFolder: () => void;
   onSelectTrafficInterface: (name: string) => void;
-  onSetAddressPreference: (preference: AddressPreference) => void;
-  onSetDarkMode: (enabled: boolean) => void;
-  onSetMaxConcurrentProbes: (value: MaxConcurrentProbes) => void;
-  onSetTrafficDisplayUnit: (unit: TrafficDisplayUnit) => void;
-  onSetTrafficPrecision: (precision: TrafficPrecision) => void;
   onToggleFileSaveAskEachTime: () => void;
-  onToggleInteractionToasts: () => void;
-  onToggleOperationToasts: () => void;
   onTogglePersistentHistory: () => void;
-  onToggleReleaseNotifications: () => void;
-  onToggleCommandBar: () => void;
-  onToggleTrafficArrowAnimation: () => void;
 }
 
 function defaultSaveFolderLabel(): string {
@@ -64,38 +41,30 @@ function defaultSaveFolderLabel(): string {
 }
 
 export function SettingsDialog({
-  animateTrafficArrows,
-  addressPreference,
-  commandBarVisible,
-  darkMode,
+  preferences,
   defaultInterface,
   fileSavePreferences,
-  interactionToasts,
   interfaces,
-  maxConcurrentProbes,
-  operationToasts,
-  persistentHistory,
-  releaseNotifications,
-  trafficDisplayUnit,
   trafficInterfaceName,
-  trafficPrecision,
   onClose,
   onChooseSaveFolder,
   onClearSaveFolder,
   onSelectTrafficInterface,
-  onSetAddressPreference,
-  onSetDarkMode,
-  onSetMaxConcurrentProbes,
-  onSetTrafficDisplayUnit,
-  onSetTrafficPrecision,
   onToggleFileSaveAskEachTime,
-  onToggleInteractionToasts,
-  onToggleOperationToasts,
   onTogglePersistentHistory,
-  onToggleReleaseNotifications,
-  onToggleCommandBar,
-  onToggleTrafficArrowAnimation,
 }: SettingsDialogProps) {
+  const {
+    addressPreference,
+    commandBarVisible,
+    darkMode,
+    interactionToasts,
+    maxConcurrentProbes,
+    operationToasts,
+    persistentHistory,
+    releaseNotifications,
+    trafficDisplayUnit,
+    trafficPrecision,
+  } = preferences;
   const dialogRef = useRef<HTMLElement | null>(null);
 
   useModalFocus({ dialogRef, onClose });
@@ -139,7 +108,7 @@ export function SettingsDialog({
                 data-testid="settings-theme-toggle"
                 role="switch"
                 type="button"
-                onClick={() => onSetDarkMode(!darkMode)}
+                onClick={() => preferences.setDarkMode(!darkMode)}
               >
                 <span className="theme-switch-track">
                   <span className="theme-switch-thumb">{darkMode ? <Moon size={13} /> : <Sun size={13} />}</span>
@@ -152,7 +121,7 @@ export function SettingsDialog({
               label="CLI Command Bar"
               note="Show the equivalent command under the result panes."
               testId="settings-command-bar-toggle"
-              onClick={onToggleCommandBar}
+              onClick={() => preferences.setCommandBarVisible((prev) => !prev)}
             />
           </section>
 
@@ -166,21 +135,21 @@ export function SettingsDialog({
               label="Interaction Toasts"
               note="Confirm copy, export, and preference actions."
               testId="settings-interaction-toasts-toggle"
-              onClick={onToggleInteractionToasts}
+              onClick={() => preferences.setInteractionToasts((prev) => !prev)}
             />
             <SettingsSwitch
               checked={operationToasts}
               label="Operation Toasts"
               note="Report when scans and lookups start, finish, or fail."
               testId="settings-operation-toasts-toggle"
-              onClick={onToggleOperationToasts}
+              onClick={() => preferences.setOperationToasts((prev) => !prev)}
             />
             <SettingsSwitch
               checked={releaseNotifications}
               label="Release Notifications"
               note="Check GitHub for newer NetsCLI releases."
               testId="settings-release-notifications-toggle"
-              onClick={onToggleReleaseNotifications}
+              onClick={() => preferences.setReleaseNotifications((prev) => !prev)}
             />
           </section>
 
@@ -198,7 +167,7 @@ export function SettingsDialog({
                 label="Max Concurrent Probes"
                 testId="settings-max-concurrent-probes"
                 value={maxConcurrentProbes}
-                onChange={onSetMaxConcurrentProbes}
+                onChange={preferences.setMaxConcurrentProbes}
               />
             </div>
           </section>
@@ -256,17 +225,17 @@ export function SettingsDialog({
 
           <NetworkActivitySection
             addressPreference={addressPreference}
-            animateTrafficArrows={animateTrafficArrows}
+            animateTrafficArrows={preferences.trafficIndicators}
             defaultInterface={defaultInterface}
             interfaces={interfaces}
             trafficDisplayUnit={trafficDisplayUnit}
             trafficInterfaceName={trafficInterfaceName}
             trafficPrecision={trafficPrecision}
             onSelectTrafficInterface={onSelectTrafficInterface}
-            onSetAddressPreference={onSetAddressPreference}
-            onSetTrafficDisplayUnit={onSetTrafficDisplayUnit}
-            onSetTrafficPrecision={onSetTrafficPrecision}
-            onToggleTrafficArrowAnimation={onToggleTrafficArrowAnimation}
+            onSetAddressPreference={preferences.setAddressPreference}
+            onSetTrafficDisplayUnit={preferences.setTrafficDisplayUnit}
+            onSetTrafficPrecision={preferences.setTrafficPrecision}
+            onToggleTrafficArrowAnimation={() => preferences.setTrafficIndicators((prev) => !prev)}
           />
         </div>
       </section>

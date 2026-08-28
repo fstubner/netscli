@@ -27,6 +27,9 @@ import { useWorkspace } from './workspace/useWorkspace';
 const APP_VERSION = __APP_VERSION__;
 
 function App() {
+  const preferences = usePreferences();
+  // Only the values App itself reads. The setters exist to build dialog
+  // props, and the dialogs take `preferences` whole now.
   const {
     addressPreference,
     commandBarVisible,
@@ -36,21 +39,10 @@ function App() {
     operationToasts,
     persistentHistory,
     releaseNotifications,
-    setAddressPreference,
-    setCommandBarVisible,
-    setDarkMode,
-    setInteractionToasts,
-    setMaxConcurrentProbes,
-    setOperationToasts,
-    setPersistentHistory,
-    setReleaseNotifications,
-    setTrafficDisplayUnit,
-    setTrafficIndicators,
-    setTrafficPrecision,
     trafficDisplayUnit,
     trafficIndicators,
     trafficPrecision,
-  } = usePreferences();
+  } = preferences;
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [contentContextMenu, setContentContextMenu] = useState<{
     cell?: ResultCellContext;
@@ -265,51 +257,30 @@ function App() {
       />
       <AppDialogs
         aboutOpen={aboutOpen}
+        preferences={preferences}
         activeTab={activeTab}
-        addressPreference={addressPreference}
-        animateTrafficArrows={trafficIndicators}
         appVersion={APP_VERSION}
         chooseSaveFolder={chooseSaveFolder}
         clearSaveFolder={clearSaveFolder}
-        commandBarVisible={commandBarVisible}
         contentContextMenu={contentContextMenu}
-        darkMode={darkMode}
         defaultInterface={workspace.defaultInterface}
         fileSavePreferences={fileSavePreferences}
-        interactionToasts={interactionToasts}
         interfaces={workspace.interfaces}
-        maxConcurrentProbes={maxConcurrentProbes}
         onCloseAbout={() => setAboutOpen(false)}
         onCloseContentContextMenu={() => setContentContextMenu(null)}
         onCloseSettings={() => setSettingsOpen(false)}
         onCloseWorkspaceSearch={() => setWorkspaceSearchOpen(false)}
         onConfirmHistoryDisable={() => {
           setPendingHistoryDisable(false);
-          setPersistentHistory(false);
+          preferences.setPersistentHistory(false);
         }}
         onConfirmPendingRun={(tabId) => void workspace.runTab(tabId)}
-        onSetAddressPreference={setAddressPreference}
-        onSetDarkMode={setDarkMode}
-        onSetMaxConcurrentProbes={setMaxConcurrentProbes}
-        onSetTrafficDisplayUnit={setTrafficDisplayUnit}
-        onSetTrafficPrecision={setTrafficPrecision}
-        onToggleCommandBar={() => setCommandBarVisible((prev) => !prev)}
         onToggleFileSaveAskEachTime={() => void toggleFileSaveAskEachTime()}
-        onToggleInteractionToasts={() => setInteractionToasts((prev) => !prev)}
-        onToggleOperationToasts={() => setOperationToasts((prev) => !prev)}
-        onToggleReleaseNotifications={() => setReleaseNotifications((prev) => !prev)}
-        onToggleTrafficArrowAnimation={() => setTrafficIndicators((prev) => !prev)}
-        operationToasts={operationToasts}
         pendingHistoryDisable={pendingHistoryDisable}
         pendingRun={pendingRun}
-        persistentHistory={persistentHistory}
-        releaseNotifications={releaseNotifications}
         setPendingHistoryDisable={setPendingHistoryDisable}
         setPendingRun={setPendingRun}
-        setPersistentHistory={setPersistentHistory}
         settingsOpen={settingsOpen}
-        trafficDisplayUnit={trafficDisplayUnit}
-        trafficPrecision={trafficPrecision}
         workspace={workspace}
         workspaceSearchOpen={workspaceSearchOpen}
       />
