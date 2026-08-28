@@ -16,7 +16,7 @@
   .right-sidebar-container {
 
 
-    flex: 0 0 100% !important;
+
     order: -1;
     background: var(--sl-color-bg);
     border-bottom: 1px solid var(--sl-color-hairline) !important;
@@ -32,7 +32,7 @@
   .right-sidebar {
 
 
-    height: auto !important;
+
     padding: 0 !important;
     overflow: visible !important;
     border: 0 !important;

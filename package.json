@@ -9,7 +9,7 @@
     "preview": "astro preview",
     "check": "astro check",
     "check:changelog": "node ./scripts/changelog-dates.mjs",
-    "check:css": "node ./scripts/css-shadowing.mjs --max 59",
+    "check:css": "node ./scripts/css-shadowing.mjs --max 42",
     "test:a11y": "npm run build && node ./scripts/a11y.mjs"
   },
   "dependencies": {

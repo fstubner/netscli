@@ -47,12 +47,7 @@
     max-width: calc(100vw - 1rem) !important;
 
     margin: 0.5rem auto !important;
-  }
-
-  site-search dialog .dialog-frame {
-  }
-
-  site-search button[data-close-modal] {
+  }site-search button[data-close-modal] {
     grid-column: 2 !important;
     grid-row: 1 !important;
     justify-self: end !important;
