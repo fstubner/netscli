@@ -176,5 +176,9 @@ export const tryCommands: TryCommand[] = [
   },
 ];
 
+// The link lands on the section that actually carries the commands. It used
+// to point at the top of the install guide, which had no verification steps
+// anywhere on it -- the promise was real (assets are signed) but nobody
+// following it could act on it.
 export const installBinariesNote =
-  'Every asset is checksummed and signed with <a href="https://docs.sigstore.dev/cosign/overview/">Sigstore cosign</a> — see <a href="/docs/install/">the install guide</a> for verification steps, standalone CLI binaries, and packet-capture builds.';
+  'Every asset is checksummed and signed with <a href="https://docs.sigstore.dev/cosign/overview/">Sigstore cosign</a> — see <a href="/docs/install/#verifying-a-download">how to verify a download</a>, plus standalone CLI binaries and packet-capture builds.';
