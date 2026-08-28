@@ -168,7 +168,11 @@
 }
 
 .menu-popover-item.danger:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--red), transparent 82%);
+  /* The same neutral highlight every other item uses. A red wash under the
+     cursor reads as "this went wrong" rather than "this is destructive", and
+     it fires on nothing more than passing over Exit. The red icon below
+     still marks the item as the destructive one. */
+  background: var(--bg-selected);
   color: var(--text-primary);
 }
 
@@ -198,4 +202,22 @@
 
 .menu-popover-item.selected {
   color: var(--mint);
+}
+
+/* A tool that cannot run right now: shown, explained, and still openable.
+   Removing it is what the app used to do, and people went looking for
+   packet capture, found no trace of it and no explanation. Greyed says
+   "not available"; the pane behind it says why and how to fix it. */
+.menu-popover-item.muted {
+  color: var(--text-muted);
+}
+
+.menu-popover-item.muted svg {
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.menu-popover-item.muted:hover:not(:disabled) {
+  background: var(--bg-selected);
+  color: var(--text-secondary);
 }

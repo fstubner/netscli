@@ -17,29 +17,15 @@ import {
   SquareX,
   Trash2,
   X,
-  type LucideIcon,
 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
-import { availableToolKinds, LOOKUP_TOOL_KINDS, SCAN_TOOL_KINDS, TOOL_CONFIG } from '../../tools/registry';
+import { availableToolKinds, LOOKUP_TOOL_KINDS, SCAN_TOOL_KINDS } from '../../tools/registry';
 import type { HistoryEntry, ToolCapabilityMap, ToolKind, WorkspaceTab } from '../../tools/types';
 import { useRovingFocus } from '../primitives/focus';
 import { useAnchoredPopoverPosition, useOverlayDismiss } from '../primitives/overlay';
 import { NetsCliMenuMark } from './NetsCliMenuMark';
-
-interface MenuItem {
-  label: string;
-  Icon: LucideIcon;
-  action?: () => void;
-  disabled?: boolean;
-  selected?: boolean;
-  variant?: 'danger';
-}
-
-interface MenuSection {
-  label?: string;
-  items: MenuItem[];
-}
+import { toolItemFactory, type MenuSection } from './menuItems';
 
 const MENU_POPOVER_LABELS = new Set(['File', 'Edit', 'Scan', 'Tools', 'History', 'Help']);
 
@@ -50,6 +36,8 @@ interface MenuBarProps {
   setOpenMenu: (menu: string | null) => void;
   tabCount: number;
   toolCapabilities: ToolCapabilityMap;
+  /** Why a tool cannot run, keyed by kind. Present => shown greyed. */
+  toolDisabledReasons?: Partial<Record<ToolKind, string>>;
   onAddTab: (kind: ToolKind) => void;
   onAbout: () => void;
   onOpenSettings: () => void;
@@ -80,6 +68,7 @@ export function MenuBar({
   setOpenMenu,
   tabCount,
   toolCapabilities,
+  toolDisabledReasons,
   onAddTab,
   onAbout,
   onOpenSettings,
@@ -148,11 +137,7 @@ export function MenuBar({
     window.setTimeout(() => lastTriggerRef.current?.focus({ preventScroll: true }), 50);
   }, [menuPopoverOpen]);
 
-  const makeToolItem = (kind: ToolKind): MenuItem => ({
-    label: TOOL_CONFIG[kind].label,
-    Icon: TOOL_CONFIG[kind].Icon,
-    action: () => onAddTab(kind),
-  });
+  const makeToolItem = toolItemFactory(onAddTab, toolDisabledReasons);
 
   const groups: Array<{ label: string; sections: MenuSection[] }> = [
     {
@@ -361,7 +346,10 @@ export function MenuBar({
                         'menu-popover-item',
                         item.selected ? 'selected' : '',
                         item.variant === 'danger' ? 'danger' : '',
+                        item.muted ? 'muted' : '',
                       ].filter(Boolean).join(' ')}
+                      data-tooltip={item.tooltip}
+                      data-tooltip-placement="right"
                       disabled={item.disabled}
                       // Index-qualified: repeated history commands share a
                       // label, and React drops the duplicate key (M-1).

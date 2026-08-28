@@ -59,6 +59,7 @@ export function WorkspaceView({
             <ResultTable
               activeTab={activeTab}
               columns={workspace.columns}
+              filterText={workspace.filterText}
               pcapCapability={pcapCapability}
               rows={workspace.rows}
               onContentContextMenu={onContentContextMenu}

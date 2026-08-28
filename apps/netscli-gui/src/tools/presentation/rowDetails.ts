@@ -28,7 +28,17 @@ export function detailLinesForRow(row: ResultRow): DetailLine[] {
         ...lines,
         {
           label: 'Summary',
-          value: `Responded host${row.data.vendor ? ', known vendor' : ', vendor unknown'}`,
+          // "Responded host" was hardcoded, so a host that answered nothing
+          // and is only remembered by the OS neighbour table was reported as
+          // having replied. That is the one thing this product must never
+          // do, and it was doing it on the primary view while the raw tab
+          // one click away said `"found_by": "neighbor"`.
+          value: [
+            row.data.found_by === 'neighbor'
+              ? 'No probe reply; listed in the neighbour table, so it may have left'
+              : 'Responded to a probe',
+            row.data.vendor ? 'known vendor' : 'vendor unknown',
+          ].join(', '),
         },
       ];
     case 'sweep':
