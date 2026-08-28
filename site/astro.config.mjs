@@ -87,7 +87,7 @@ export default defineConfig({
         // declarations several earlier files make on `.sl-markdown-content a`
         // and `code`. See the file for why that is unavoidable today.
         './src/styles/starlight/29-callout-contrast.css',
-        './src/styles/starlight/30-toc-under-hero.css',
+        './src/styles/starlight/30-scroll-and-search-offline.css',
       ],
       social: [
         {

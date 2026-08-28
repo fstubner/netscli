@@ -45,6 +45,16 @@
   .right-sidebar-panel {
     flex-basis: var(--netscli-docs-toc-width);
     width: var(--netscli-docs-toc-width);
+    /* Mirror the section rail's insets, outer edge to outer edge.
+     *
+     * The frame is centred exactly -- measured 25/25 at 1280 and 143/143 at
+     * 1920 -- so the asymmetry a reader sees is not the frame, it is what
+     * each rail does inside it. The section rail insets its text by a fluid
+     * `--netscli-sidebar-rail-inset` (35-50px); this one used a flat 16px, so
+     * the left text column started 84px from the viewport edge while the
+     * right one ended 40px from it. Same two values, mirrored: outer inset
+     * matches outer inset, inner matches inner. */
+    padding-inline: 1.85rem var(--netscli-sidebar-rail-inset, clamp(2.2rem, 3vw, 3.15rem));
   }
 
   .content-panel {

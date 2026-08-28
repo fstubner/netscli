@@ -211,11 +211,31 @@ starlight-theme-select label {
   color: var(--sl-color-gray-2);
 }
 
-starlight-theme-select label:hover,
-starlight-theme-select label:focus-within {
+starlight-theme-select label:hover {
   color: var(--sl-color-white);
   border-color: var(--netscli-hover-border);
   background: transparent;
+}
+
+/* Keyboard focus needs a ring, not a border tint.
+ *
+ * `:focus-within` was grouped with `:hover` above, so tabbing to the control
+ * produced the hover treatment: a slightly different border colour and the
+ * background *removed*. That is not a focus indicator -- it is barely a
+ * change, it disappears against the header, and it is the one state a
+ * keyboard user has nothing else to go on. The <select> inside also has
+ * `appearance: none` and no border of its own, so its own focus ring had
+ * nothing to draw around. */
+starlight-theme-select label:focus-within {
+  color: var(--sl-color-white);
+  border-color: rgba(var(--netscli-accent-rgb), 0.62);
+  background: rgba(var(--netscli-accent-rgb), 0.1);
+  outline: 2px solid var(--netscli-accent);
+  outline-offset: 2px;
+}
+
+starlight-theme-select select:focus-visible {
+  outline: 0;
 }
 
 starlight-theme-select select {
@@ -236,9 +256,19 @@ starlight-theme-select select {
   padding-inline-start: calc(1.625rem + 0.65rem);
 }
 
+/* The dropdown list is drawn by the platform, and it will not use a
+ * translucent colour. `--sl-color-bg-nav` is `rgba(17,17,17,.92)`, so the
+ * option rows fell back to the browser default -- white rows with black text
+ * hanging off a dark header, which is what "the dropdown is unstyled" looks
+ * like. Opaque values, stated per theme, are the only ones that take. */
 starlight-theme-select option {
-  color: var(--sl-color-white);
-  background: var(--sl-color-bg-nav);
+  color: #f4f4f4;
+  background-color: #1a1f27;
+}
+
+html[data-theme='light'] starlight-theme-select option {
+
+  background-color: #ffffff;
 }
 
 html[data-theme='light'] starlight-theme-select label {
