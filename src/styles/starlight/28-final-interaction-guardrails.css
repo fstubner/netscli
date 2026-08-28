@@ -253,7 +253,13 @@ a.download-count:focus-visible,
 
   site-search dialog :where(button[data-close-modal], button[aria-label="Cancel"], .search-cancel) {
     grid-area: close !important;
-    align-self: center !important;
+    /* `start`, not `center`.
+     *
+     * The cell this button sits in is grid row 1, which holds the entire
+     * Pagefind UI -- input and results together -- so it is ~590px tall on a
+     * phone. Centring in it put Cancel at y=287, level with the middle of the
+     * results list rather than with the search field it cancels. */
+    align-self: start !important;
     justify-self: end !important;
     margin: 0 !important;
     min-height: 2.75rem !important;
