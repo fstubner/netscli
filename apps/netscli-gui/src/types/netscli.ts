@@ -1,12 +1,19 @@
 // TypeScript types mirroring netscli-core's serde output.
 // Keep field names and optionality in sync with the Rust structs.
 
+/** How a host came to be in the results. The core's own words: a host that
+ *  answered a probe is definitely there now; one known only from the
+ *  neighbour table is one the OS spoke to recently, which is usually but not
+ *  always still true. */
+export type FoundBy = 'probe' | 'neighbor';
+
 export interface Host {
   ip: string;
   hostname?: string | null;
   mac?: string | null;
   vendor?: string | null;
   rtt_ms?: number | null;
+  found_by?: FoundBy | null;
 }
 
 export type PortStatus = 'open' | 'closed' | 'filtered' | 'error';

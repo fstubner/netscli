@@ -87,6 +87,10 @@ export function buildRows(result: ToolResult | null): ResultRow[] {
           mac: host.mac ?? '',
           vendor: host.vendor ?? '',
           rtt: host.rtt_ms == null ? '' : `${host.rtt_ms} ms`,
+          // Carried through, not dropped. The table said "Responded host"
+          // for every row, including the ones that answered nothing.
+          found_by: host.found_by ?? '',
+          found: host.found_by === 'neighbor' ? 'neighbour table' : host.found_by ? 'probe reply' : '',
         };
         return {
           id: `discover-${host.ip}-${index}`,

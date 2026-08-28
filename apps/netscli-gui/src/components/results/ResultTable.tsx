@@ -18,6 +18,9 @@ import { StatusPill } from './StatusPill';
 interface ResultTableProps {
   activeTab: WorkspaceTab;
   columns: ResultColumn[];
+  /** Needed to tell "the filter hid everything" from "the run found
+   *  nothing". Both produce zero rows and they are not the same news. */
+  filterText: string;
   pcapCapability?: PcapCapability;
   rows: ResultRow[];
   onContentContextMenu: (event: MouseEvent<HTMLElement>, cell?: ResultCellContext) => void;
@@ -29,6 +32,7 @@ interface ResultTableProps {
 export function ResultTable({
   activeTab,
   columns,
+  filterText,
   pcapCapability,
   rows,
   onContentContextMenu,
@@ -214,7 +218,16 @@ export function ResultTable({
           })}
         </tbody>
       </table>
-      {rows.length === 0 && <div className="empty-filter">No rows match the current filter.</div>}
+      {rows.length === 0 && (
+        <div className="empty-filter">
+          {/* This said "No rows match the current filter" whatever the reason,
+              so a scan that legitimately found nothing sent people hunting
+              for a filter they had never set. */}
+          {filterText
+            ? 'No rows match the current filter.'
+            : 'This run completed and found nothing.'}
+        </div>
+      )}
     </div>
   );
 }

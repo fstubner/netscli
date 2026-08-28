@@ -71,6 +71,7 @@ export function columnsFor(
           ? { key: 'vendor', label: 'Vendor', grow: true }
           : { key: 'vendor', label: 'Vendor', width: 180 },
         { key: 'rtt', label: 'RTT', mono: true, width: 100 },
+        { key: 'found', label: 'Found by', width: 130 },
       ];
     case 'dns':
       return [
