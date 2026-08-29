@@ -123,10 +123,33 @@ export async function cancelWorkspaceTab(
   patchTab: (id: string, patch: Partial<WorkspaceTab>) => void,
 ) {
   const opId = activeOps.current[tabId];
-  if (opId && isTauri()) {
-    await netscli.cancelOperation(opId).catch(() => undefined);
+  if (!opId || !isTauri()) {
+    delete activeOps.current[tabId];
+    patchTab(tabId, { busy: false, progress: null, error: null });
+    return;
   }
+
+  // Claim the cancel *before* awaiting the backend. The run's own completion
+  // path guards on this id still matching, and the await is long enough for a
+  // run to finish inside it -- which took the success path, wrote the result
+  // and the history entry, and only then had the tab set idle underneath it.
+  // The user pressed Stop and got a result. `cancelOperationIds` in
+  // useTabLifecycle already ordered this correctly; the two disagreed.
   delete activeOps.current[tabId];
+
+  try {
+    await netscli.cancelOperation(opId);
+  } catch (error) {
+    // The backend refused the cancel, so the operation is still running.
+    // Clearing `busy` here used to claim it had stopped, and dropping the id
+    // meant Stop could never be pressed again -- the run became invisible and
+    // uncancellable. Put the id back and say what happened.
+    activeOps.current[tabId] = opId;
+    const message = error instanceof Error ? error.message : String(error);
+    patchTab(tabId, { error: `Failed to stop the operation: ${message}` });
+    return;
+  }
+
   patchTab(tabId, { busy: false, progress: null, error: null });
 }
 

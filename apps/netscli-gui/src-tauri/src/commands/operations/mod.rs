@@ -75,7 +75,29 @@ where
             registry: manager.registry(),
             op_id: op_id.clone(),
         };
-        rx.await.map_err(|_| "Operation cancelled".to_string())?
+        match rx.await {
+            Ok(result) => result,
+            Err(_) => {
+                // The sender was dropped without sending. That happens when the
+                // task is aborted -- a real cancel -- and also when it panics,
+                // and both used to be reported to the user as "Operation
+                // cancelled": a crash in the scanner was indistinguishable from
+                // the user pressing Stop, and nothing recorded it anywhere.
+                //
+                // `cancel` removes the entry before aborting, so a still
+                // registered operation was not cancelled by anyone.
+                if manager.is_registered(&op_id).await {
+                    // Reaches a terminal only in a debug build; release sets
+                    // windows_subsystem = "windows" and has no console. The
+                    // returned message is what the user actually sees.
+                    eprintln!("operation {op_id} ended without returning a result");
+                    Err("The operation stopped unexpectedly and returned no result.                          This is a fault in netscli rather than a cancellation."
+                        .to_string())
+                } else {
+                    Err("Operation cancelled".to_string())
+                }
+            }
+        }
     } else {
         job().await
     }
