@@ -88,6 +88,7 @@ export function NetworkActivitySection({
         </div>
         <NetworkInterfacePicker
           compact
+          addressPreference={addressPreference}
           defaultInterface={defaultInterface}
           interfaces={interfaces}
           selectedName={trafficInterfaceName}

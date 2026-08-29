@@ -32,6 +32,13 @@
   gap: 2px;
 }
 
+/*
+ * Monospace because design-direction.md reserves it for "anything the user
+ * could paste into a shell" and an interface address is exactly that. It also
+ * makes a truncated address obvious as truncation rather than as the address.
+ * The full value is on the title attribute for the IPv6 case, which cannot fit
+ * at any width this control will ever have.
+ */
 .settings-interface-trigger small,
 .settings-interface-option small {
   min-width: 0;
@@ -120,44 +127,57 @@
   flex-wrap: wrap;
 }
 
+/*
+ * `:first-child` is load-bearing: the word "Down" is a sibling span, and the
+ * old `> span` rule would size it as a 7px dot.
+ */
 .settings-interface-status {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  color: var(--text-secondary);
+  color: var(--red);
   font-size: 11px;
 }
 
-.settings-interface-status > span {
+.settings-interface-status > span:first-child {
+  flex: 0 0 auto;
   width: 7px;
   height: 7px;
   border-radius: 999px;
   background: var(--red);
 }
 
-.settings-interface-status.up > span {
+.settings-interface-status.up > span:first-child {
   background: var(--mint);
 }
 
+/*
+ * Borderless: a bordered chip is a box, and three boxes on one 174px row was
+ * the bulk of what made this list unreadable. "Primary" is a quiet fact, not
+ * a status, so it gets no surface of its own.
+ */
 .settings-interface-badge {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  height: 20px;
-  padding: 0 6px;
-  border: 1px solid var(--border-subtle);
-  color: var(--text-secondary);
-  font-size: 11px;
+  color: var(--text-muted);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
-.settings-interface-badge.selected {
-  border-color: color-mix(in srgb, var(--mint), transparent 50%);
-  color: var(--mint);
-}
-
+/*
+ * Only the left rule and the name go mint. Previously this also recoloured
+ * every descendant, so the address turned mint too and the row carried four
+ * separate mint signals for one piece of information.
+ */
 .settings-interface-option.selected {
+  background: color-mix(in srgb, var(--mint), transparent 92%);
+  box-shadow: inset 2px 0 0 var(--mint);
+}
+
+.settings-interface-option.selected .settings-interface-name {
   color: var(--mint);
-  background: color-mix(in srgb, var(--mint), transparent 90%);
 }
 
 .settings-select-field {

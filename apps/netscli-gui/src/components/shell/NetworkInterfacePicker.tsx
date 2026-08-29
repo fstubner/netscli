@@ -1,11 +1,14 @@
 import { useRef, useState } from 'react';
-import { Check, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 
+import type { AddressPreference } from '../../hooks/usePreferences';
 import type { DefaultInterfaceInfo, InterfaceInfo } from '../../types/netscli';
 import { useRovingFocus } from '../primitives/focus';
 import { useOverlayDismiss } from '../primitives/overlay';
+import { preferredStatusAddress } from './address';
 
 interface NetworkInterfacePickerProps {
+  addressPreference: AddressPreference;
   defaultInterface: DefaultInterfaceInfo | null;
   interfaces: InterfaceInfo[];
   selectedName: string | null;
@@ -14,6 +17,7 @@ interface NetworkInterfacePickerProps {
 }
 
 export function NetworkInterfacePicker({
+  addressPreference,
   defaultInterface,
   interfaces,
   selectedName,
@@ -25,8 +29,11 @@ export function NetworkInterfacePicker({
   const listRef = useRef<HTMLDivElement | null>(null);
   const selectedInterface = interfaces.find((iface) => iface.name === selectedName);
   const selectedInterfaceName = selectedInterface?.name ?? selectedName ?? '';
+  // The trigger is the selection, so saying "Selected" on it was telling the
+  // user the thing they are looking at is the thing they are looking at. The
+  // address is the fact they cannot get anywhere else at a glance.
   const selectedInterfaceDetail = selectedInterface
-    ? compact ? formatSelectedInterfaceMeta(selectedInterface, selectedInterface.name === defaultInterface?.name) : formatInterfaceDetail(selectedInterface)
+    ? formatInterfaceDetail(selectedInterface, addressPreference)
     : 'Detecting...';
 
   useOverlayDismiss({
@@ -66,7 +73,7 @@ export function NetworkInterfacePicker({
       >
         <span>
           <span>{compact ? selectedInterfaceName || 'Detecting...' : 'Network Interface'}</span>
-          <small>
+          <small className="mono" title={selectedInterfaceDetail}>
             {selectedInterfaceName
               ? compact ? selectedInterfaceDetail : `${selectedInterfaceName} - ${selectedInterfaceDetail}`
               : 'Detecting...'}
@@ -108,19 +115,27 @@ export function NetworkInterfacePicker({
                     <span className="settings-interface-name">{iface.name}</span>
                     <span className="settings-interface-badges">
                       {isDefault && <span className="settings-interface-badge">Primary</span>}
-                      {selected && (
-                        <span className="settings-interface-badge selected">
-                          <Check size={11} />
-                          Selected
-                        </span>
-                      )}
-                      <span className={`settings-interface-status ${iface.is_up ? 'up' : 'down'}`}>
+                      {/*
+                        No "Selected" badge: the row highlight and aria-selected
+                        already say it, and a third mint element on the one row
+                        that is already mint reads as noise. "Down" is the only
+                        status worth spelling out -- an interface that is up is
+                        the unremarkable case, and labelling every row "Up"
+                        spends width on a word that never varies usefully.
+                      */}
+                      <span
+                        aria-label={iface.is_up ? 'Up' : 'Down'}
+                        className={`settings-interface-status ${iface.is_up ? 'up' : 'down'}`}
+                        role="img"
+                      >
                         <span aria-hidden="true" />
-                        {iface.is_up ? 'Up' : 'Down'}
+                        {!iface.is_up && <span aria-hidden="true">Down</span>}
                       </span>
                     </span>
                   </span>
-                  <small>{compact ? formatInterfaceAddressSummary(iface) : formatInterfaceDetail(iface)}</small>
+                  <small className="mono" title={formatInterfaceAddress(iface, addressPreference)}>
+                    {formatInterfaceAddress(iface, addressPreference)}
+                  </small>
                 </span>
               </button>
             );
@@ -131,20 +146,13 @@ export function NetworkInterfacePicker({
   );
 }
 
-function formatInterfaceDetail(iface: InterfaceInfo): string {
-  const status = iface.is_up ? 'Up' : 'Down';
-  const addresses = formatInterfaceAddressSummary(iface);
-  return `${addresses} - ${status}`;
+function formatInterfaceDetail(iface: InterfaceInfo, preference: AddressPreference): string {
+  const address = formatInterfaceAddress(iface, preference);
+  // The trigger has no status dot of its own, so a down interface has to say
+  // so in words or the selection looks healthy when it is not.
+  return iface.is_up ? address : `${address} - Down`;
 }
 
-function formatInterfaceAddressSummary(iface: InterfaceInfo): string {
-  return iface.ips.length > 0 ? iface.ips.slice(0, 2).join(', ') : 'No address';
-}
-
-function formatSelectedInterfaceMeta(iface: InterfaceInfo, isDefault: boolean): string {
-  return [
-    'Selected',
-    isDefault ? 'Primary' : '',
-    iface.is_up ? 'Up' : 'Down',
-  ].filter(Boolean).join(' - ');
+function formatInterfaceAddress(iface: InterfaceInfo, preference: AddressPreference): string {
+  return preferredStatusAddress(iface.ips, preference) ?? 'No address';
 }

@@ -5,6 +5,7 @@ import type { AddressPreference, TrafficDisplayUnit, TrafficPrecision } from '..
 import { resultSummary } from '../../tools/presentation';
 import { TOOL_CONFIG } from '../../tools/registry';
 import type { WorkspaceTab } from '../../tools/types';
+import { preferredStatusAddress } from './address';
 
 interface StatusBarProps {
   activeTab: WorkspaceTab | undefined;
@@ -100,20 +101,6 @@ export function StatusBar({
       )}
     </footer>
   );
-}
-
-export function preferredStatusAddress(ips: string[], preference: AddressPreference): string | null {
-  const familyPreferred = preference === 'ipv6' ? isIpv6Cidr : isIpv4Cidr;
-  const fallbackFamily = preference === 'ipv6' ? isIpv4Cidr : isIpv6Cidr;
-  return ips.find(familyPreferred) ?? ips.find(fallbackFamily) ?? ips[0] ?? null;
-}
-
-function isIpv4Cidr(value: string): boolean {
-  return /^\d{1,3}(?:\.\d{1,3}){3}(?:\/\d{1,2})?$/.test(value);
-}
-
-function isIpv6Cidr(value: string): boolean {
-  return value.includes(':');
 }
 
 function footerResultText(tab: WorkspaceTab, rowCount: number, selectedCount: number): string {
