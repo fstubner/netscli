@@ -85,10 +85,14 @@ and reordering renames tabs. See Known gaps.
    Observed: dragged to `[Discover, Scan, Scan]`, cancelled, back to
    `[Scan, Discover, Scan]`.
 3. **Ctrl+Shift+Left/Right moves the focused tab** one place, so reordering is
-   not pointer-only. It stops at the ends rather than wrapping. Plain
-   Left/Right moves the *selection* instead and does wrap: from the last tab,
-   Right selects the first. See Known gaps — focus does not currently follow
-   the tab it moved.
+   not pointer-only. Focus travels with the tab, so a repeated press walks the
+   same tab down the strip rather than swapping a pair back and forth. It stops
+   at the ends rather than wrapping. Plain Left/Right moves the *selection*
+   instead and does wrap: from the last tab, Right selects the first.
+
+   Observed with native key events, from `[Discover, Scan #2, Scan #3]` with
+   Discover focused: one press gives `[Scan, Discover, Scan]` with focus on
+   index 1, a second gives `[Scan, Scan, Discover]` with focus on index 2.
 4. **Right-click a tab for the close menu**: Close, Close others, Close to the
    right, Close to the left, then Close all after a separator. Items that
    would do nothing are disabled rather than hidden, so the menu keeps the
@@ -139,15 +143,6 @@ Recorded so an acceptance pass does not report them as new:
   tab that was `#2` is now `#1`, and the two duplicates read `#1` and `#3`
   with no `#2` between them. A drag is the most likely way to hit this, which
   makes it awkward for the section above.
-- **Ctrl+Shift+Arrow leaves focus behind.** The tab moves, but focus stays on
-  the position it left, so a second press moves whatever slid into that slot
-  instead of continuing to move the same tab — two tabs ping-pong. Observed
-  from `[Discover, Scan, Scan]`: one press gives `[Scan, Discover, Scan]` with
-  focus still on index 0, and the next press undoes it. Reproduced with both
-  synthetic and native key events, so it is not the harness artifact described
-  above. `tabStripKeyboard.ts` and the pull request that added it both state
-  that focus follows the tab so a repeated press keeps moving the same one;
-  that is the intent, not the behaviour.
 
 ---
 
