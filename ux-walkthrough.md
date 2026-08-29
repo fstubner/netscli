@@ -58,9 +58,15 @@ questions you ask once discovery has told you an address exists.
 ## Managing tabs
 
 Each tool opens in a tab, and the strip is the only place they can be
-reordered or closed. Walked at 1100x800 with three tabs open — one
-`Discover 192.168.1.0/24` and two `Scan 127.0.0.1` — because the disabled
-states below only appear once a tab has neighbours on both sides.
+reordered or closed. Walked at 1100x800 with three tabs open, which the strip
+labels `Discover: 192.168.1.0/24`, `Scan: 127.0.0.1 #2` and
+`Scan: 127.0.0.1 #3` — three because the disabled states below only appear
+once a tab has neighbours on both sides.
+
+Those numbers are worth reading before the steps: a tab whose identifier is
+shared with another gets `#` and its **position in the strip**, not its place
+among the duplicates. So the first duplicate here is `#2`, there is no `#1`,
+and reordering renames tabs. See Known gaps.
 
 1. **Drag a tab to reorder it.** Press on a tab and move sideways; past about
    5px of travel the press becomes a drag. The strip reorders **live** —
@@ -123,6 +129,16 @@ Recorded so an acceptance pass does not report them as new:
   verify interaction findings both ways before believing either.
 - The MSI has never been tested on a clean machine without WebView2
   preinstalled.
+- **Reordering renames tabs, and the numbers can end up non-contiguous.**
+  Duplicate tabs are numbered by their position in the strip rather than by
+  which duplicate they are (`tabDisplay.ts`, `#${index + 1}`), so the number
+  is not a name — it moves when anything around it moves. Observed: from
+  `[Discover: 192.168.1.0/24, Scan: 127.0.0.1 #2, Scan: 127.0.0.1 #3]`,
+  moving the Discover tab one place right gives
+  `[Scan: 127.0.0.1 #1, Discover: 192.168.1.0/24, Scan: 127.0.0.1 #3]` — the
+  tab that was `#2` is now `#1`, and the two duplicates read `#1` and `#3`
+  with no `#2` between them. A drag is the most likely way to hit this, which
+  makes it awkward for the section above.
 - **Ctrl+Shift+Arrow leaves focus behind.** The tab moves, but focus stays on
   the position it left, so a second press moves whatever slid into that slot
   instead of continuing to move the same tab — two tabs ping-pong. Observed
