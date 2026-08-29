@@ -20,6 +20,14 @@ its heading and collects entries; the date and the link go on with the tag.
 
 ### Fixed
 
+- **A failed export, copy or file-open no longer says nothing at all.** At
+  stock settings every failure outside a run was reported as an interaction
+  toast, and that toast defaults to off — so exporting to a folder the app
+  could not create wrote no file and showed no message, which on screen is
+  indistinguishable from success. Those failures now go to the tab's error
+  strip, which is not preference-gated; the two with no tab to attach to (the
+  progress listener and the interface poll) use a toast kind that is never
+  suppressed. Found by an independent acceptance pass.
 - **The site's small grey text was unreadable on card surfaces.** The docs
   footer, built-with row and mobile section labels use `--sl-color-gray-3`,
   much of it at 12px. It was raised once already to clear 4.5:1 against the

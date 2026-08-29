@@ -53,7 +53,11 @@ questions you ask once discovery has told you an address exists.
    shows the `netscli …` invocation matching the current form, so anything
    done in the UI can be reproduced in a shell or a script.
 7. **Take the results away.** Export JSON or CSV, copy selected rows, or
-   save a result bundle.
+   save a result bundle. Success is confirmed by a toast *only with
+   interaction toasts enabled*, which is not the default; the file appearing
+   is the signal. **Failure is not optional** — it goes to the tab's error
+   strip whatever the toast preferences say, because a failed export writes
+   nothing, and a silent nothing is indistinguishable from a success.
 
 ## Managing tabs
 

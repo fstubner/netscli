@@ -112,6 +112,13 @@ function initialCommandBarVisible(): boolean {
 //
 // Errors are not covered by these: a failure still surfaces, because the
 // alternative is a table that stays empty with no reason given.
+//
+// That was untrue for every action outside a run until 2026-08-29. Export,
+// copy, bundle-open, capture open/reveal, the progress listener and the
+// interface poll all reported failure as an `interaction` toast, which this
+// default drops -- so at stock settings a failed export said nothing at all.
+// Tab-scoped failures now go to the tab's error strip and app-scoped ones use
+// the ungated `error` toast kind, which is what makes the sentence above true.
 function initialInteractionToasts(): boolean {
   if (typeof window === 'undefined') return false;
   return window.localStorage.getItem('netscli-interaction-toasts') === 'on';

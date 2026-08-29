@@ -171,7 +171,7 @@ export function useNetworkStatus(showToast: (toast: Omit<WorkspaceToast, 'id'>) 
       interfaceFailures.current += 1;
       if (interfaceFailures.current !== INTERFACE_FAILURES_BEFORE_WARNING) return;
       showToast({
-        kind: 'interaction',
+        kind: 'error',
         message: 'Network interfaces are not responding. Interface-dependent tools may be unavailable.',
       });
     };

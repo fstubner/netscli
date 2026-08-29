@@ -40,6 +40,30 @@ export function useResultActions({
   setActiveTabId,
   showToast,
 }: UseResultActionsArgs) {
+  /**
+   * Report a failed action where the user will actually see it.
+   *
+   * The tab's error strip, not a toast: toasts are preference-gated and the
+   * gate defaults to off, so every failure below used to be silent at stock
+   * settings -- a failed export wrote nothing and said nothing, which is
+   * indistinguishable from a successful one. `clearArpThenRun` already learned
+   * this and routes its own failure here; these paths were not converted with
+   * it.
+   *
+   * With no tab to attach to there is no strip, so those fall back to the
+   * ungated `error` toast kind rather than being dropped.
+   */
+  function reportActionFailure(message: string) {
+    const tabId = activeTab?.id;
+    if (!tabId) {
+      showToast({ message, kind: 'error' });
+      return;
+    }
+    setTabs((previous) =>
+      previous.map((tab) => (tab.id === tabId ? { ...tab, error: message } : tab)),
+    );
+  }
+
   function showExportToast(path: string | null | undefined, fallback: string) {
     if (path === undefined) return;
     showToast({ message: path ? `Exported to ${path}` : fallback, kind: 'interaction' });
@@ -47,7 +71,7 @@ export function useResultActions({
 
   function showExportError(error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    showToast({ message: `Export failed: ${message}`, kind: 'interaction' });
+    reportActionFailure(`Export failed: ${message}`);
   }
 
   function exportCurrent(format: 'json' | 'csv') {
@@ -89,7 +113,7 @@ export function useResultActions({
       showToast({ message: 'Result bundle opened', kind: 'interaction' });
     } catch (error) {
       if (!/cancelled/i.test(String(error))) {
-        showToast({ message: `Open failed: ${String(error)}`, kind: 'interaction' });
+        reportActionFailure(`Open failed: ${String(error)}`);
       }
     }
   }
@@ -105,7 +129,7 @@ export function useResultActions({
    */
   async function copyToClipboard(label: string, text: string) {
     if (!navigator.clipboard) {
-      showToast({ message: `${label} failed: clipboard unavailable`, kind: 'interaction' });
+      reportActionFailure(`${label} failed: clipboard unavailable`);
       return;
     }
     try {
@@ -113,7 +137,7 @@ export function useResultActions({
       showToast({ message: `${label} copied`, kind: 'interaction' });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      showToast({ message: `${label} copy failed: ${message}`, kind: 'interaction' });
+      reportActionFailure(`${label} copy failed: ${message}`);
     }
   }
 
@@ -130,14 +154,14 @@ export function useResultActions({
   async function openCaptureFile(path: string) {
     if (!path) return;
     await netscli.openFilesystemPath(path).catch((error) => {
-      showToast({ message: `Open failed: ${String(error)}`, kind: 'interaction' });
+      reportActionFailure(`Open failed: ${String(error)}`);
     });
   }
 
   async function revealCaptureFile(path: string) {
     if (!path) return;
     await netscli.revealFilesystemPath(path).catch((error) => {
-      showToast({ message: `Reveal failed: ${String(error)}`, kind: 'interaction' });
+      reportActionFailure(`Reveal failed: ${String(error)}`);
     });
   }
 
