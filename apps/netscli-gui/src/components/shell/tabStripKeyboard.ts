@@ -47,10 +47,16 @@ export function handleTabStripKeyDown(
 
     event.preventDefault();
     onMoveTab(tab.id, to);
-    // Follow the tab to its new slot, so a repeated press keeps moving the
-    // same one rather than whatever landed under the focus.
-    const sibling = event.currentTarget.parentElement?.children[to];
-    if (sibling instanceof HTMLElement) sibling.focus();
+    // Focus is deliberately left alone. It is already on this tab's own
+    // element, and the strip is keyed by tab id, so React reorders by moving
+    // that node rather than recreating it -- focus travels with the tab for
+    // free.
+    //
+    // This used to focus `parentElement.children[to]`, which ran before React
+    // had re-rendered and so read the pre-move DOM: it grabbed the neighbour,
+    // the tab about to slide into the slot being vacated. The effect was the
+    // exact opposite of the intent -- focus stuck to the index, two tabs
+    // ping-ponged, and a repeated press never carried one tab down the strip.
     return;
   }
 
