@@ -75,9 +75,66 @@ async function assertSettingsDialog(driver) {
   assert.ok(['0px', '2px', '3px', '4px'].includes(themeControl.checkboxRadius), 'Preference checkboxes should not look like pill toggles');
   await driver.findElement(By.css('[data-testid="settings-interface-trigger"]')).click();
   await waitForText(driver, '.settings-interface-list', /\S/);
-  await waitForText(driver, '.settings-interface-list', /Selected/i);
   await waitForText(driver, '.settings-interface-list', /Primary/i);
+  await assertInterfacePickerRows(driver);
   await closeSettingsDialog(driver);
+}
+
+/**
+ * The interface picker's rows, with the dropdown already open.
+ *
+ * Selection is carried by `aria-selected` and the row highlight. It used to
+ * also carry a "Selected" chip, on the one row that was already mint-filled
+ * and mint-texted -- three renderings of one fact on a 174px row.
+ *
+ * The address assertion is the one that matters: each row used to render
+ * `ips.slice(0, 2).join(', ')`, so it showed two OS-ordered addresses, and
+ * the OS order puts a /128 or a link-local first often enough that the
+ * useful address was routinely the one that got cut off. One address, chosen
+ * by the user's IPv4/IPv6 preference, is the contract now -- and a comma in
+ * that cell is the exact shape of the old bug coming back.
+ */
+async function assertInterfacePickerRows(driver) {
+  const rows = await driver.executeScript(`
+    const options = Array.from(document.querySelectorAll('[data-testid="settings-interface-option"]'));
+    return options.map((option) => ({
+      name: option.getAttribute('data-interface-name') ?? '',
+      up: option.getAttribute('data-interface-up') === 'true',
+      ariaSelected: option.getAttribute('aria-selected') === 'true',
+      text: option.innerText ?? '',
+      address: option.querySelector('small')?.innerText ?? '',
+    }));
+  `);
+
+  assert.ok(rows.length > 0, 'Interface picker should list at least one interface');
+
+  const selected = rows.filter((row) => row.ariaSelected);
+  assert.equal(
+    selected.length,
+    1,
+    `Exactly one interface row should be aria-selected, got ${selected.length}`,
+  );
+
+  for (const row of rows) {
+    assert.ok(
+      !/Selected/i.test(row.text),
+      `Row "${row.name}" should not carry a "Selected" chip; the highlight and aria-selected say it`,
+    );
+    assert.ok(
+      !row.address.includes(','),
+      `Row "${row.name}" should show one address, got "${row.address}"`,
+    );
+    assert.ok(
+      row.address === 'No address' || /\d/.test(row.address),
+      `Row "${row.name}" should show an address or say it has none, got "${row.address}"`,
+    );
+    // "Up" is the unremarkable case and is carried by the dot alone; spelling
+    // it out on every row spent width on a word that never varied usefully.
+    assert.ok(
+      row.up ? !/\bUp\b/.test(row.text) : /\bDown\b/.test(row.text),
+      `Row "${row.name}" (${row.up ? 'up' : 'down'}) has the wrong status text: "${row.text}"`,
+    );
+  }
 }
 
 async function openSettingsDialog(driver) {

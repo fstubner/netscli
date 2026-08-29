@@ -18,6 +18,29 @@ its heading and collects entries; the date and the link go on with the tag.
 
 ## [Unreleased]
 
+### Fixed
+
+- **The interface picker shows the address you would actually use.** Each row
+  rendered the first two addresses in whatever order the OS returned them,
+  then cut the result off mid-token to fit. On a real machine that meant every
+  row showed a truncated IPv6: Tailscale's usable `100.106.71.95/32` sat third
+  in the list and never appeared at all, and the down interfaces displayed
+  their `169.254.x` APIPA addresses. The picker now shows one address, chosen
+  by the existing IPv4/IPv6 preference — which the status bar already honoured
+  and the picker did not, so the two could disagree about the same interface.
+
+### Changed
+
+- **The interface dropdown is quieter.** A row could carry three competing
+  status treatments at once — a `Primary` chip, a `Selected` chip and a
+  dot-plus-word `Up`/`Down` — with three different mint elements on the
+  selected row alone. Selection is now carried by the row highlight and
+  `aria-selected`, `Primary` is a plain label rather than a bordered chip, and
+  only `Down` is spelled out: an interface that is up is the unremarkable case,
+  and labelling every row `Up` spent width on a word that never varied.
+  Addresses are monospaced, matching the rule that monospace means "this is
+  literal".
+
 ## [0.3.1]
 
 A bug-fix release. Most of it was found by using the desktop app on a real
