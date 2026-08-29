@@ -1,12 +1,16 @@
 import { useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 
+import { tabDropIndex } from './tabDropIndex';
+
 /** Pointer travel before a press becomes a drag, in px. */
 const DRAG_THRESHOLD = 5;
 
 const IDLE = {
   tabId: '',
   fromIndex: -1,
+  /** Where the tab sits now — it moves as you drag, so this is not fromIndex. */
+  currentIndex: -1,
   pointerId: -1,
   startX: 0,
   dragging: false,
@@ -22,32 +26,31 @@ const IDLE = {
  * tabs themselves -- leaves no gesture for the thing people expect a tab
  * drag to do.
  *
- * The drop index is worked out from tab midpoints rather than by counting
- * pixels moved: the tabs are not a fixed width (each is sized by its label),
- * so a fixed step would drift the further you dragged.
+ * The strip reorders live: the tab moves as you cross each neighbour rather
+ * than jumping into place on release. That is what makes the drag feel
+ * attached to the pointer, and it is why `tabDropIndex` ignores the dragged
+ * tab when deciding — feeding a live reorder back through a naive midpoint
+ * test flickers the tab between two slots for as long as you hold it.
  *
- * `onMove` is only called on release. Reordering live under the cursor looks
- * smoother but moves the element being dragged out from under the pointer,
- * which makes a long drag across several tabs fight itself.
+ * A cancelled gesture puts the tab back where it started, since by then it
+ * has already moved several times.
  */
 export function useTabReorder(
   scrollRef: React.RefObject<HTMLDivElement | null>,
   onMove: (tabId: string, toIndex: number) => void,
 ) {
   const state = useRef({ ...IDLE });
-  const [dragging, setDragging] = useState<{ tabId: string; overIndex: number } | null>(null);
+  const [dragging, setDragging] = useState<{ tabId: string } | null>(null);
 
-  /** Which slot the pointer is currently over, by tab midpoint. */
-  function indexForClientX(clientX: number): number {
+  /** Where the dragged tab belongs for this pointer position. */
+  function slotFor(clientX: number, draggedIndex: number): number {
     const strip = scrollRef.current;
     if (!strip) return -1;
-    const tabs = [...strip.querySelectorAll<HTMLElement>('.work-tab')];
-    if (tabs.length === 0) return -1;
-    for (let i = 0; i < tabs.length; i += 1) {
-      const box = tabs[i].getBoundingClientRect();
-      if (clientX < box.left + box.width / 2) return i;
-    }
-    return tabs.length - 1;
+    const boxes = [...strip.querySelectorAll<HTMLElement>('.work-tab')].map((el) => {
+      const box = el.getBoundingClientRect();
+      return { left: box.left, width: box.width };
+    });
+    return tabDropIndex(boxes, draggedIndex, clientX);
   }
 
   function onPointerDown(event: ReactPointerEvent<HTMLDivElement>, tabId: string, index: number) {
@@ -56,7 +59,14 @@ export function useTabReorder(
     if (event.button !== 0) return;
     // Stop the strip's drag-to-scroll from claiming this press.
     event.stopPropagation();
-    state.current = { tabId, fromIndex: index, pointerId: event.pointerId, startX: event.clientX, dragging: false };
+    state.current = {
+      tabId,
+      fromIndex: index,
+      currentIndex: index,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      dragging: false,
+    };
   }
 
   function onPointerMove(event: ReactPointerEvent<HTMLDivElement>) {
@@ -78,18 +88,20 @@ export function useTabReorder(
       } catch {
         /* not capturable; the drag still tracks via the move handler */
       }
+      setDragging({ tabId: current.tabId });
     }
 
-    const overIndex = indexForClientX(event.clientX);
-    if (overIndex >= 0) setDragging({ tabId: current.tabId, overIndex });
+    const slot = slotFor(event.clientX, current.currentIndex);
+    if (slot >= 0 && slot !== current.currentIndex) {
+      current.currentIndex = slot;
+      onMove(current.tabId, slot);
+    }
   }
 
   function onPointerUp(event: ReactPointerEvent<HTMLDivElement>) {
     const current = state.current;
     if (current.pointerId !== event.pointerId) return;
     const wasDragging = current.dragging;
-    const { tabId } = current;
-    const toIndex = wasDragging ? indexForClientX(event.clientX) : -1;
 
     try {
       event.currentTarget.releasePointerCapture(event.pointerId);
@@ -99,15 +111,21 @@ export function useTabReorder(
     state.current = { ...IDLE };
     setDragging(null);
 
-    if (wasDragging && toIndex >= 0) onMove(tabId, toIndex);
-    // Tell the strip whether to swallow the click this release produces. A
+    // Nothing to commit -- the moves already happened. Tell the strip whether
+    // to swallow the click this release produces. A
     // drag ends with a click on whatever is under the cursor, and that would
     // otherwise switch tabs at the end of every reorder.
     return wasDragging;
   }
 
   function onPointerCancel(event: ReactPointerEvent<HTMLDivElement>) {
-    if (state.current.pointerId !== event.pointerId) return;
+    const current = state.current;
+    if (current.pointerId !== event.pointerId) return;
+    // Put it back. A cancelled drag has usually moved the tab several times
+    // already, so leaving it wherever the gesture died is not "cancel".
+    if (current.dragging && current.currentIndex !== current.fromIndex) {
+      onMove(current.tabId, current.fromIndex);
+    }
     try {
       event.currentTarget.releasePointerCapture(event.pointerId);
     } catch {

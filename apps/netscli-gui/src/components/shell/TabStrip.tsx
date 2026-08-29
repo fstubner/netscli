@@ -146,9 +146,6 @@ export function TabStrip({
                   tab.id === activeTabId ? 'active' : '',
                   tab.busy ? 'busy' : '',
                   reorder.dragging?.tabId === tab.id ? 'dragging' : '',
-                  reorder.dragging && reorder.dragging.tabId !== tab.id && reorder.dragging.overIndex === index
-                    ? 'drop-target'
-                    : '',
                   !identifier ? 'no-identifier' : '',
                 ].filter(Boolean).join(' ')}
                 key={tab.id}
