@@ -4,7 +4,8 @@
 // role, no tabIndex, and no tab-switching shortcut anywhere in the app — so
 // they could not be reached or operated by keyboard at all.
 
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
+import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { TabStrip } from './TabStrip';
@@ -127,5 +128,90 @@ describe('tab strip keyboard access', () => {
     screen.getAllByRole('tab')[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
     expect(onSelectTab).toHaveBeenCalledWith(tabs[1].id);
     expect(onMoveTab).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * The strip with real reordering, which `renderStrip` cannot do: its
+ * `onMoveTab` is a mock, so the tabs never actually move and anything that
+ * depends on the re-render -- focus, most of all -- is invisible to it. That
+ * is why "moves the focused tab with Ctrl+Shift+Arrow" above passed while
+ * focus was being left behind.
+ */
+function StatefulStrip() {
+  const [tabs, setTabs] = useState(() => [createTab('scan'), createTab('arp'), createTab('dns')]);
+  const [activeTabId, setActiveTabId] = useState(() => tabs[0].id);
+  return (
+    <TabStrip
+      tabs={tabs}
+      activeTabId={activeTabId}
+      openMenu={null}
+      toolCapabilities={{} as never}
+      onAddScanTab={vi.fn()}
+      onAddToolTab={vi.fn()}
+      onCloseAllTabs={vi.fn()}
+      onCloseOtherTabs={vi.fn()}
+      onCloseTab={vi.fn()}
+      onCloseTabsBeside={vi.fn()}
+      onMoveTab={(tabId, toIndex) => {
+        setTabs((previous) => {
+          const from = previous.findIndex((tab) => tab.id === tabId);
+          if (from < 0) return previous;
+          const next = [...previous];
+          const [moved] = next.splice(from, 1);
+          next.splice(toIndex, 0, moved);
+          return next;
+        });
+      }}
+      onSelectTab={setActiveTabId}
+      setOpenMenu={vi.fn()}
+    />
+  );
+}
+
+describe('moving a tab with the keyboard', () => {
+  const move = (element: HTMLElement, key: string) =>
+    act(() => {
+      element.dispatchEvent(
+        new KeyboardEvent('keydown', { key, ctrlKey: true, shiftKey: true, bubbles: true }),
+      );
+    });
+
+  it('carries focus with the tab, so a repeated press keeps moving the same one', () => {
+    render(<StatefulStrip />);
+    const before = screen.getAllByRole('tab').map((tab) => tab.getAttribute('aria-label'));
+    const moved = screen.getAllByRole('tab')[0];
+    moved.focus();
+
+    move(moved, 'ArrowRight');
+
+    const afterOne = screen.getAllByRole('tab');
+    expect(afterOne.map((tab) => tab.getAttribute('aria-label'))).toEqual([
+      before[1], before[0], before[2],
+    ]);
+    // The whole point: focus is on the tab that moved, not on the slot it left.
+    expect(document.activeElement).toBe(moved);
+    expect(afterOne[1]).toBe(moved);
+
+    // Pressing again must carry the same tab onward rather than swapping the
+    // pair back and forth, which is what happens when focus stays put.
+    move(document.activeElement as HTMLElement, 'ArrowRight');
+
+    const afterTwo = screen.getAllByRole('tab');
+    expect(afterTwo.map((tab) => tab.getAttribute('aria-label'))).toEqual([
+      before[1], before[2], before[0],
+    ]);
+    expect(afterTwo[2]).toBe(moved);
+  });
+
+  it('leaves focus alone at the end of the strip, where there is no move to make', () => {
+    render(<StatefulStrip />);
+    const last = screen.getAllByRole('tab')[2];
+    last.focus();
+
+    move(last, 'ArrowRight');
+
+    expect(screen.getAllByRole('tab')[2]).toBe(last);
+    expect(document.activeElement).toBe(last);
   });
 });
