@@ -123,7 +123,9 @@ mod tests {
         let never_finishes = tauri::async_runtime::spawn(async {
             tokio::time::sleep(std::time::Duration::from_secs(60)).await;
         });
-        manager.register("op-cancelled".into(), never_finishes, None).await;
+        manager
+            .register("op-cancelled".into(), never_finishes, None)
+            .await;
         assert!(manager.is_registered("op-cancelled").await);
 
         assert!(manager.cancel("op-cancelled").await);
