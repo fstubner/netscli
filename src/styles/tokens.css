@@ -9,18 +9,22 @@
  * Registered first in astro.config.mjs's customCss and imported at the top of
  * global.css, so both stacks read the same declaration.
  *
- * Changing a colour here means updating site/design-tokens.json to match.
- * That file is what the frontend contrast gate reads, and until it existed
- * the gate ran at the repository root, found the *desktop app's* tokens, and
- * reported a pass that said nothing about this site. Its values are measured
- * from a served build rather than copied from here, because several are
- * reached through --sl-color-text and other indirections: the declared value
- * and the painted one are not always the same. Re-measure, then update.
+ * site/design-tokens.json is GENERATED from this file and from
+ * starlight/01-tokens-and-header.css -- do not edit it by hand. Run
+ * `node scripts/design-tokens.mjs --write` after changing a colour, and CI
+ * fails if the committed copy has drifted from its source. It was
+ * hand-maintained until 2026-08-29, on the reasoning that values reached
+ * through --sl-color-text and other indirections are not always the declared
+ * one; generating it reproduced eight of its ten hand-measured values exactly,
+ * so that concern was real but did not apply to the keys the gate reads.
  *
- * Measured ratios against the page background: dark 11.45 / 6.26 / 17.17 /
- * 8.29, light 7.71 / 4.65 / 17.14 / 6.40. The light muted grey has the least
- * headroom at 4.65:1 -- see the note beside --sl-color-gray-3 in
- * starlight/01-tokens-and-header.css before lightening any small grey text.
+ * That file is what the frontend contrast gate reads, and until it existed the
+ * gate ran at the repository root, found the *desktop app's* tokens, and
+ * reported a pass that said nothing about this site.
+ *
+ * The generator checks every text colour against every surface, not just
+ * against the page background. That is what caught --sl-color-gray-3 at
+ * 4.44:1 on the card surface while it measured 4.65:1 on the page.
  */
 :root {
   /* Total height of the top bar including its bottom border, on both the
