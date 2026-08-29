@@ -55,6 +55,52 @@ questions you ask once discovery has told you an address exists.
 7. **Take the results away.** Export JSON or CSV, copy selected rows, or
    save a result bundle.
 
+## Managing tabs
+
+Each tool opens in a tab, and the strip is the only place they can be
+reordered or closed. Walked at 1100x800 with three tabs open, which the strip
+labels `Discover: 192.168.1.0/24`, `Scan: 127.0.0.1 #2` and
+`Scan: 127.0.0.1 #3` — three because the disabled states below only appear
+once a tab has neighbours on both sides.
+
+Those numbers are worth reading before the steps: a tab whose identifier is
+shared with another gets `#` and its **position in the strip**, not its place
+among the duplicates. So the first duplicate here is `#2`, there is no `#1`,
+and reordering renames tabs. See Known gaps.
+
+1. **Drag a tab to reorder it.** Press on a tab and move sideways; past about
+   5px of travel the press becomes a drag. The strip reorders **live** —
+   crossing a neighbour's midpoint swaps them while the button is still down,
+   so the order under the cursor is the order you get. Observed: from
+   `[Discover, Scan, Scan]`, dragging the first tab past the second gives
+   `[Scan, Discover, Scan]` while still held, and releasing keeps it.
+
+   The strip's own drag-to-scroll still applies to the space around the tabs,
+   and the wheel scrolls either way. Grabbing a tab reorders it instead,
+   because otherwise there is no gesture left for the thing a tab drag is
+   expected to do.
+2. **A cancelled drag puts the tab back.** A drag the system interrupts
+   (`pointercancel`) returns to the order before the press, not to wherever
+   the gesture died — by then the tab has usually moved several times.
+   Observed: dragged to `[Discover, Scan, Scan]`, cancelled, back to
+   `[Scan, Discover, Scan]`.
+3. **Ctrl+Shift+Left/Right moves the focused tab** one place, so reordering is
+   not pointer-only. Focus travels with the tab, so a repeated press walks the
+   same tab down the strip rather than swapping a pair back and forth. It stops
+   at the ends rather than wrapping. Plain Left/Right moves the *selection*
+   instead and does wrap: from the last tab, Right selects the first.
+
+   Observed with native key events, from `[Discover, Scan #2, Scan #3]` with
+   Discover focused: one press gives `[Scan, Discover, Scan]` with focus on
+   index 1, a second gives `[Scan, Scan, Discover]` with focus on index 2.
+4. **Right-click a tab for the close menu**: Close, Close others, Close to the
+   right, Close to the left, then Close all after a separator. Items that
+   would do nothing are disabled rather than hidden, so the menu keeps the
+   same shape as you move along the strip. Observed on the first of three
+   tabs, "Close to the left" is disabled; on the last, "Close to the right"
+   is. With a single tab open, others / right / left are all disabled while
+   Close and Close all stay enabled.
+
 ## States
 
 Each of these is a real state the app can be in, and each is worth
@@ -71,6 +117,9 @@ exercising deliberately.
 | **Completion, tab in background** | A toast carrying an "Open tab" action, *only with operation toasts enabled* — which is not the default. At defaults this state is silent, and that is correct. |
 | **Completion, tab in foreground** | No toast. The result arriving in the table is the signal; repeating it teaches people to ignore toasts. |
 | **Preferences at defaults** | Toasts off; concurrency 256; opens on Discover. A profile left at 1 probe by the pre-0.3.1 defect is repaired once, on upgrade. |
+| **Tab dragged, button still down** | The strip has already reordered and the dragged tab is faded in its new slot. Nothing is committed until release, but nothing is hidden either — what you see is what you will get. |
+| **Drag cancelled** | The order returns to what it was before the press. |
+| **No tabs open** — the last tab closed, or Close all | The workspace shows "No Tabs Open" with "Choose Scan" and "Choose Tool" actions. Closing everything is a legitimate state, not a blank window. |
 
 ## Known gaps
 
@@ -84,6 +133,16 @@ Recorded so an acceptance pass does not report them as new:
   verify interaction findings both ways before believing either.
 - The MSI has never been tested on a clean machine without WebView2
   preinstalled.
+- **Reordering renames tabs, and the numbers can end up non-contiguous.**
+  Duplicate tabs are numbered by their position in the strip rather than by
+  which duplicate they are (`tabDisplay.ts`, `#${index + 1}`), so the number
+  is not a name — it moves when anything around it moves. Observed: from
+  `[Discover: 192.168.1.0/24, Scan: 127.0.0.1 #2, Scan: 127.0.0.1 #3]`,
+  moving the Discover tab one place right gives
+  `[Scan: 127.0.0.1 #1, Discover: 192.168.1.0/24, Scan: 127.0.0.1 #3]` — the
+  tab that was `#2` is now `#1`, and the two duplicates read `#1` and `#3`
+  with no `#2` between them. A drag is the most likely way to hit this, which
+  makes it awkward for the section above.
 
 ---
 
