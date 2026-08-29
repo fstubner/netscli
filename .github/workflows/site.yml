@@ -78,6 +78,11 @@ jobs:
       - name: Design token contrast
         run: node scripts/design-tokens.mjs
 
+      # Deleting or renaming a docs page can strand a link inside the desktop
+      # app, which no site check would otherwise notice.
+      - name: App doc links
+        run: node scripts/check-app-doc-links.mjs
+
       # A ratchet on dead CSS, not a target. `css-shadowing.mjs` proves a
       # declaration can never affect the page -- same selector, same media
       # context, a later rule of equal-or-greater importance. It was written
