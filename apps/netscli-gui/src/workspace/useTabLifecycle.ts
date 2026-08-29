@@ -5,6 +5,7 @@ import * as netscli from '../services/netscli';
 import { createTab } from '../tools/registry';
 import type { ToolKind, WorkspaceTab } from '../tools/types';
 import type { DefaultInterfaceInfo, InterfaceInfo } from '../types/netscli';
+import type { WorkspaceToast } from './types';
 import { applyContextDefaults, shouldAutoRun } from './networkDefaults';
 
 interface UseTabLifecycleArgs {
@@ -16,6 +17,7 @@ interface UseTabLifecycleArgs {
   defaultInterface: DefaultInterfaceInfo | null;
   trafficInterfaceName: string | null;
   interfaces: InterfaceInfo[];
+  showToast: (toast: Omit<WorkspaceToast, 'id'>) => void;
 }
 
 /** Tab CRUD (create/close) plus the auto-run flag that App.tsx's own
@@ -31,6 +33,7 @@ export function useTabLifecycle({
   defaultInterface,
   trafficInterfaceName,
   interfaces,
+  showToast,
 }: UseTabLifecycleArgs) {
   const activeOps = useRef<Record<string, string>>({});
   // Read at operation completion, not when the run started: a caller's
@@ -63,7 +66,18 @@ export function useTabLifecycle({
       autoRunTabIds.current.delete(tabId);
       const opId = activeOps.current[tabId];
       if (opId && isTauri()) {
-        void netscli.cancelOperation(opId).catch(() => undefined);
+        // A toast rather than an error strip: these tabs are being closed, so
+        // there is no strip left to write to. It uses the ungated `error`
+        // kind, because a swallowed failure here leaves an operation running
+        // with no tab, no id and nothing on screen -- the run cannot be
+        // stopped or even observed again.
+        void netscli.cancelOperation(opId).catch((error: unknown) => {
+          const message = error instanceof Error ? error.message : String(error);
+          showToast({
+            kind: 'error',
+            message: `A closed tab's operation could not be stopped: ${message}`,
+          });
+        });
       }
       delete activeOps.current[tabId];
     }

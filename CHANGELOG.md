@@ -20,6 +20,22 @@ its heading and collects entries; the date and the link go on with the tag.
 
 ### Fixed
 
+- **A crash in an operation is no longer reported as though you cancelled it.**
+  The task's result channel closes the same way whether the task was aborted or
+  panicked, and both came back as "Operation cancelled" — so a fault in the
+  scanner was indistinguishable from pressing Stop, and nothing recorded it.
+  A cancel deregisters the operation and a crash does not, which is now how the
+  two are told apart; a crash says so instead.
+- **Stopping a run no longer shows a result for it.** The in-flight guard was
+  cleared only after the backend answered, and a run that finished inside that
+  window still matched, took the success path, and wrote a result and a history
+  entry for a run that had been stopped.
+- **A refused stop says so, and stays stoppable.** The cancel call swallowed
+  its own failure, cleared the busy state and dropped the operation id, so a
+  run that could not be stopped carried on with nothing on screen saying so and
+  no way to try again. Closing a tab whose operation cannot be stopped now
+  reports it too, since there is no tab left to show it on.
+
 - **A failed export, copy or file-open no longer says nothing at all.** At
   stock settings every failure outside a run was reported as an interaction
   toast, and that toast defaults to off — so exporting to a folder the app

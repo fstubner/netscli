@@ -76,6 +76,7 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
     defaultInterface,
     trafficInterfaceName,
     interfaces,
+    showToast,
   });
 
   const { selectRow, selectRowInTab, selectAllRows } = useSelection({

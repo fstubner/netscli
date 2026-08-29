@@ -50,6 +50,21 @@ impl OperationManager {
         Arc::clone(&self.tasks)
     }
 
+    /// Whether an operation is still registered.
+    ///
+    /// `cancel` removes the entry before aborting the task, so an operation
+    /// whose task ended without producing a result while still registered was
+    /// not cancelled -- it died on its own. That is the only way to tell the
+    /// two apart from `run_json_operation`, which sees an identical dropped
+    /// sender either way.
+    ///
+    /// `register` also aborts a task when an op id is re-used, which would
+    /// look the same. Op ids are UUIDs minted per run (`generateId('op')`), so
+    /// that path is unreachable in practice.
+    pub(crate) async fn is_registered(&self, op_id: &str) -> bool {
+        self.tasks.lock().await.contains_key(op_id)
+    }
+
     pub(crate) async fn cancel(&self, op_id: &str) -> bool {
         let mut tasks = self.tasks.lock().await;
         if let Some(handle) = tasks.remove(op_id) {
@@ -87,4 +102,44 @@ impl ArtifactRegistry {
 
 fn canonical_artifact_path(path: &Path) -> Result<PathBuf, String> {
     std::fs::canonicalize(path).map_err(|e| format!("Artifact path is not accessible: {e}"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The invariant `run_json_operation` leans on to tell a cancelled
+    /// operation from one that died on its own.
+    ///
+    /// Both drop the oneshot sender, so the receiver sees the same error
+    /// either way, and both were reported to the user as "Operation
+    /// cancelled" -- a panic in the scanner was indistinguishable from
+    /// pressing Stop. The difference is here: `cancel` removes the entry
+    /// before aborting, while a task that ends by itself leaves it behind.
+    #[tokio::test]
+    async fn cancel_deregisters_and_a_task_ending_by_itself_does_not() {
+        let manager = OperationManager::default();
+
+        let never_finishes = tauri::async_runtime::spawn(async {
+            tokio::time::sleep(std::time::Duration::from_secs(60)).await;
+        });
+        manager.register("op-cancelled".into(), never_finishes, None).await;
+        assert!(manager.is_registered("op-cancelled").await);
+
+        assert!(manager.cancel("op-cancelled").await);
+        assert!(
+            !manager.is_registered("op-cancelled").await,
+            "a cancelled operation must leave the map, or a real cancel reads as a crash"
+        );
+
+        let finishes = tauri::async_runtime::spawn(async {});
+        manager.register("op-finished".into(), finishes, None).await;
+        for _ in 0..8 {
+            tokio::task::yield_now().await;
+        }
+        assert!(
+            manager.is_registered("op-finished").await,
+            "a task that ended on its own must stay registered, or a crash reads as a cancel"
+        );
+    }
 }
