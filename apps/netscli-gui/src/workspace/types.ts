@@ -77,7 +77,13 @@ export interface WorkspaceOptions {
 export interface WorkspaceToast {
   id: string;
   message: string;
-  kind: 'interaction' | 'operation' | 'update';
+  /**
+   * `interaction` and `operation` are the preference-gated commentary kinds and
+   * both default to off. `update` and `error` are not gated: an error the user
+   * cannot see is the failure mode this product exists to avoid, so a failure
+   * with no tab to attach an error strip to is reported regardless.
+   */
+  kind: 'interaction' | 'operation' | 'update' | 'error';
   tabId?: string;
   persistent?: boolean;
   actionUrl?: string;

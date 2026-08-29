@@ -44,7 +44,7 @@ export function useOperationProgress({ activeOps, setTabs, showToast }: UseOpera
       // (B-15). Every other Tauri call in the codebase is already guarded.
       .catch((error: unknown) => {
         showToast({
-          kind: 'interaction',
+          kind: 'error',
           message: `Progress updates unavailable: ${error instanceof Error ? error.message : String(error)}`,
         });
       });
