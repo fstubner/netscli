@@ -7,9 +7,9 @@
     "accent": "#22c55e"
   },
   "light": {
-    "surface-base": "#fbfbfb",
+    "surface-base": "#f4f6f8",
     "text-main": "#44516a",
-    "text-muted": "#667387",
+    "text-muted": "#647084",
     "text-strong": "#111827",
     "accent": "#146b2e"
   }

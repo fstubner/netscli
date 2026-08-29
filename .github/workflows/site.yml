@@ -70,6 +70,14 @@ jobs:
           node-version-file: .nvmrc
       - run: node scripts/check-file-size.mjs
 
+      # Also runs in ci.yml, deliberately. That job is gated on `code`, which a
+      # site-only pull request sets to false, so without this the site's own
+      # contrast could regress with nothing looking at it. The script checks
+      # both surfaces and takes milliseconds, so running it twice costs nothing
+      # and neither workflow can be the one that forgot.
+      - name: Design token contrast
+        run: node scripts/design-tokens.mjs
+
       # A ratchet on dead CSS, not a target. `css-shadowing.mjs` proves a
       # declaration can never affect the page -- same selector, same media
       # context, a later rule of equal-or-greater importance. It was written

@@ -20,6 +20,11 @@ its heading and collects entries; the date and the link go on with the tag.
 
 ### Fixed
 
+- **The site's small grey text was unreadable on card surfaces.** The docs
+  footer, built-with row and mobile section labels use `--sl-color-gray-3`,
+  much of it at 12px. It was raised once already to clear 4.5:1 against the
+  page background, but nothing had checked it against the slightly darker card
+  surface, where it sat at 4.44:1. It now clears every light surface.
 - **Muted text, and several status colours, were below the readability bar.**
   Eight colour tokens failed WCAG AA (4.5:1) against surfaces they are actually
   painted on. The worst were in the light theme, which gets far less use than
