@@ -20,6 +20,14 @@ its heading and collects entries; the date and the link go on with the tag.
 
 ### Fixed
 
+- **Muted text, and several status colours, were below the readability bar.**
+  Eight colour tokens failed WCAG AA (4.5:1) against surfaces they are actually
+  painted on. The worst were in the light theme, which gets far less use than
+  the dark one and had drifted furthest: the mint accent failed as text on every
+  light surface, down to 3.85:1. In the dark theme the description lines under
+  every setting in the Settings dialog sat at 4.13:1, and the red "Down" label
+  on a hovered interface row at 3.76:1. All 84 foreground/surface combinations
+  now clear 4.5:1, and a check keeps them there.
 - **The interface picker shows the address you would actually use.** Each row
   rendered the first two addresses in whatever order the OS returned them,
   then cut the result off mid-token to fit. On a real machine that meant every

@@ -116,6 +116,13 @@ jobs:
           node-version-file: .nvmrc
       - name: File size guard
         run: node scripts/check-file-size.mjs
+      # Contrast is invisible until someone cannot read something, and the
+      # light theme gets far less use than the dark one, so a regression there
+      # can sit for months. This also fails if design-tokens.json has drifted
+      # from tokens.css, which is the only thing keeping the generated file
+      # honest.
+      - name: Design token contrast
+        run: node scripts/design-tokens.mjs
 
   # Installer scripts aren't exercised by any other job, so lint them
   # directly. shellcheck and PSScriptAnalyzer are both preinstalled on
