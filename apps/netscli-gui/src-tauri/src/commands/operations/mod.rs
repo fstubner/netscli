@@ -91,8 +91,10 @@ where
                     // windows_subsystem = "windows" and has no console. The
                     // returned message is what the user actually sees.
                     eprintln!("operation {op_id} ended without returning a result");
-                    Err("The operation stopped unexpectedly and returned no result.                          This is a fault in netscli rather than a cancellation."
-                        .to_string())
+                    Err(
+                        "The operation stopped unexpectedly and produced no result. This is a fault in NetsCLI, not a cancellation."
+                            .to_string(),
+                    )
                 } else {
                     Err("Operation cancelled".to_string())
                 }

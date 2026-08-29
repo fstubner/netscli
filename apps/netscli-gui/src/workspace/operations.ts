@@ -145,8 +145,16 @@ export async function cancelWorkspaceTab(
     // meant Stop could never be pressed again -- the run became invisible and
     // uncancellable. Put the id back and say what happened.
     activeOps.current[tabId] = opId;
-    const message = error instanceof Error ? error.message : String(error);
-    patchTab(tabId, { error: `Failed to stop the operation: ${message}` });
+    // Deliberately not the backend's own message. What comes back here is
+    // internal -- a Tauri command or argument error -- and means nothing to
+    // the person reading it; the first version of this put
+    // "invalid args `opId` for command `cancel_operation`" on screen. What
+    // they need is that the run did not stop and that pressing Stop again is
+    // worth trying. The detail goes to the console for a bug report.
+    console.error('Stopping the operation failed', error);
+    patchTab(tabId, {
+      error: 'Could not stop the operation, so it may still be running. Try Stop again.',
+    });
     return;
   }
 

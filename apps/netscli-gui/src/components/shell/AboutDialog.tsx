@@ -14,7 +14,9 @@ export function AboutDialog({ appVersion, onClose }: AboutDialogProps) {
   useModalFocus({ dialogRef, onClose });
 
   function openProjectUrl(url: string) {
-    void openAllowedExternalUrl(url);
+    // Nothing on screen owns this failure, so it goes to the console rather
+    // than nowhere. The ungated toast is not reachable from here.
+    openAllowedExternalUrl(url).catch((error: unknown) => console.error('Opening the link failed', error));
   }
 
   return (

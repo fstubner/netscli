@@ -13,8 +13,10 @@
     {
       "identifier": "opener:allow-open-url",
       "allow": [
+        { "url": "https://netscli.com/*" },
         { "url": "https://github.com/fstubner/netscli" },
-        { "url": "https://github.com/fstubner/netscli/*" }
+        { "url": "https://github.com/fstubner/netscli/*" },
+        { "url": "https://github.com/fstubner/netscli#*" }
       ]
     }
   ]

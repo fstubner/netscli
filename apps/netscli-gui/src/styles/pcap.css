@@ -57,3 +57,10 @@
   border-color: color-mix(in srgb, var(--mint), transparent 35%);
   color: var(--mint);
 }
+
+.pcap-unavailable-open-error {
+  grid-column: 1 / -1;
+  margin: 8px 0 0;
+  color: var(--red);
+  font-size: 12px;
+}
