@@ -20,6 +20,15 @@ its heading and collects entries; the date and the link go on with the tag.
 
 ### Fixed
 
+- **Stop actually stops a run now, and progress shows real counts.** Every
+  command argument was sent under its Rust name (`op_id`, `max_concurrent`)
+  where Tauri expects the camelCase form, so the keys never matched. Stop
+  failed outright — the error was swallowed, so the button looked like it
+  worked while the run carried on — and because the operation id never reached
+  the backend, no operation registered for progress events either: the bar sat
+  on its opening message for the whole run instead of counting. Found by the
+  first test to drive Stop in the app.
+
 - **A crash in an operation is no longer reported as though you cancelled it.**
   The task's result channel closes the same way whether the task was aborted or
   panicked, and both came back as "Operation cancelled" — so a fault in the

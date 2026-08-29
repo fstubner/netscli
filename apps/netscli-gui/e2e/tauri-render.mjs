@@ -26,6 +26,7 @@ import {
   exerciseInterfaces,
   exerciseMenusAndToolbar,
   exercisePcapValidation,
+  exerciseCancel,
   exerciseScan,
   exerciseSweep,
 } from './tauri-render/scenarios.mjs';
@@ -139,6 +140,12 @@ async function main() {
 
     await exerciseArp(driver);
     await saveScreenshot(driver, 'screen-arp.png');
+
+    // Last of the tool scenarios: a stopped run deliberately leaves no result
+    // table behind, and the scenarios above reach for one. Placing it here
+    // keeps that from failing them somewhere unrelated.
+    await exerciseCancel(driver);
+    await saveScreenshot(driver, 'screen-cancel.png');
 
     if (await exercisePcapValidation(driver)) {
       await saveScreenshot(driver, 'screen-pcap-validation.png');
