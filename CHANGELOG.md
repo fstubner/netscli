@@ -28,6 +28,19 @@ its heading and collects entries; the date and the link go on with the tag.
   the backend, no operation registered for progress events either: the bar sat
   on its opening message for the whole run instead of counting. Found by the
   first test to drive Stop in the app.
+- **"Open setup docs" opens something.** The button asked the system to open
+  `github.com/fstubner/netscli#packet-capture`, which the app's own URL
+  allowlist did not cover — it permitted the repository URL and paths beneath
+  it, but not a fragment — and the refusal was swallowed by a `window.open`
+  fallback that does nothing inside a desktop window. It now opens the Packet
+  Capture page on netscli.com, and a browser that cannot be opened says so
+  instead of leaving the button looking dead.
+- **A failed Stop no longer shows internal text.** It reported the backend's
+  own message, so pressing Stop could put ``invalid args `opId` for command
+  `cancel_operation` `` on screen. It now says the run may still be going and
+  that Stop is worth pressing again; the detail goes to the console.
+  The unexpected-stop message also carried a run of stray spaces from a
+  mangled line continuation.
 
 - **A crash in an operation is no longer reported as though you cancelled it.**
   The task's result channel closes the same way whether the task was aborted or
@@ -86,6 +99,10 @@ its heading and collects entries; the date and the link go on with the tag.
   and labelling every row `Up` spent width on a word that never varied.
   Addresses are monospaced, matching the rule that monospace means "this is
   literal".
+- **The warning icon in confirmation dialogs lost its amber box.** It sat in a
+  32px square with an amber border and wash, which read as decoration next to
+  every confirmation. It is now the icon alone, matching the packet-capture
+  notice, which had always done it that way.
 
 ## [0.3.1]
 

@@ -24,14 +24,20 @@
   border-bottom: 1px solid var(--border-subtle);
 }
 
+/*
+ * The icon alone, with no surface of its own.
+ *
+ * It used to sit in a 32px box with an amber border and an amber wash, which
+ * put a filled square next to every confirmation and read as decoration --
+ * design-direction.md reserves amber for state. The app's other warning
+ * surface, `.pcap-unavailable`, already did it this way: a bare amber glyph
+ * beside the text. The two now match.
+ */
 .confirm-dialog-icon {
-  width: 32px;
-  height: 32px;
   display: inline-grid;
   place-items: center;
-  border: 1px solid color-mix(in srgb, var(--amber), transparent 58%);
+  padding-top: 2px;
   color: var(--amber);
-  background: color-mix(in srgb, var(--amber), transparent 91%);
 }
 
 .confirm-dialog h2 {

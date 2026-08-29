@@ -58,7 +58,13 @@ describe('cancelling a run', () => {
     // never be pressed again.
     expect(activeOps.current['tab-1']).toBe('op-1');
     const patches = patchTab.mock.calls.map(([, patch]) => patch);
-    expect(patches.some((patch) => /operation not found/i.test(String(patch.error)))).toBe(true);
+    const errors = patches.map((patch) => String(patch.error ?? ''));
+    // What the user needs: the run may still be going, and Stop is worth
+    // pressing again.
+    expect(errors.some((message) => /still be running/i.test(message))).toBe(true);
+    // And not the backend's own words. This path once put
+    // "invalid args `opId` for command `cancel_operation`" on screen.
+    expect(errors.some((message) => /operation not found/i.test(message))).toBe(false);
     // And it must not report the run as stopped when it is not.
     expect(patches.some((patch) => patch.busy === false)).toBe(false);
   });

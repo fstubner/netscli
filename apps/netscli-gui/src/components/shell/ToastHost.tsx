@@ -55,7 +55,9 @@ function ToastButton({
       type="button"
       onClick={() => {
         if (toast.actionUrl) {
-          void openAllowedExternalUrl(toast.actionUrl);
+          openAllowedExternalUrl(toast.actionUrl).catch((error: unknown) =>
+            console.error('Opening the link failed', error),
+          );
           if (toast.releaseVersion) {
             window.localStorage.setItem('netscli-dismissed-release-version', toast.releaseVersion);
           }
