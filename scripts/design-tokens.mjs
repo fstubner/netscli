@@ -117,12 +117,19 @@ const generated = Object.fromEntries(
 );
 const serialized = `${JSON.stringify(generated, null, 2)}\n`;
 
+// Compared with line endings normalised, not byte for byte. `.gitattributes`
+// sets `* text=auto`, so this file is checked out CRLF on Windows and LF on the
+// Linux runner while the generator always emits LF. A byte comparison therefore
+// passed CI and failed on every Windows working copy -- a guard that is green
+// where nobody reads it and red where the maintainer works is worse than none.
+const normalise = (text) => text.replace(/\r\n/g, '\n');
+
 if (process.argv.includes('--write')) {
   fs.writeFileSync(jsonPath, serialized);
   console.log(`Wrote ${path.relative(repoRoot, jsonPath)}`);
 } else if (!fs.existsSync(jsonPath)) {
   failures.push('design-tokens.json is missing; run: node scripts/design-tokens.mjs --write');
-} else if (fs.readFileSync(jsonPath, 'utf8') !== serialized) {
+} else if (normalise(fs.readFileSync(jsonPath, 'utf8')) !== normalise(serialized)) {
   failures.push(
     'design-tokens.json is out of date with tokens.css; run: node scripts/design-tokens.mjs --write',
   );
