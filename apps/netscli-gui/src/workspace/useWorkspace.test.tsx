@@ -273,6 +273,35 @@ describe('tab lifecycle', () => {
     });
   });
 
+  // Opening a scan/inspect from a result row's context menu carries the host
+  // with it, so the new tab is already complete and runs itself. Without the
+  // flag the tab opened pre-filled and sat there, waiting for a Run press
+  // that could not add anything the click had not already said.
+  it('runs a host tool opened from a result without a second press', async () => {
+    const { result } = renderWorkspace();
+
+    act(() => {
+      result.current.openHostTool('scan', '192.168.1.5');
+    });
+
+    const opened = result.current.activeTabId;
+    expect(result.current.tabs.at(-1)?.form.host).toBe('192.168.1.5');
+    expect(result.current.needsAutoRun(opened)).toBe(true);
+  });
+
+  // The opposite case, and the reason this is not `shouldAutoRun(kind)`: a
+  // scan tab opened from the toolbar has no host yet, so running it on sight
+  // would scan the placeholder rather than anything the user asked about.
+  it('does not run a blank scan tab opened from the toolbar', async () => {
+    const { result } = renderWorkspace();
+
+    act(() => {
+      result.current.addTab('scan');
+    });
+
+    expect(result.current.needsAutoRun(result.current.activeTabId)).toBe(false);
+  });
+
   it('closing a background tab leaves the active tab active', async () => {
     const { result } = renderWorkspace();
     const first = result.current.activeTabId;

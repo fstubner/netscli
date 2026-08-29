@@ -57,6 +57,12 @@ export function useTabLifecycle({
     if (!value) return;
     const tab = applyContextDefaults(createTab(kind), defaultInterface, trafficInterfaceName, interfaces);
     tab.form = { ...tab.form, host: value };
+    // Choosing "Scan 192.168.1.5" from the result menu IS the request: the
+    // one argument the tool needs came in with the click, so the tab opens
+    // with nothing left to fill in and a Run press answers no question. This
+    // is not `shouldAutoRun(kind)`, which asks whether a *blank* tab of this
+    // kind can run on its own -- a scan tab opened empty still needs a host.
+    autoRunTabIds.current.add(tab.id);
     setTabs((prev) => [...prev, tab]);
     setActiveTabId(tab.id);
   }
