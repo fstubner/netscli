@@ -64,13 +64,13 @@ button {
   --border-strong: #343b49;
   --text-primary: #e4e7ef;
   --text-secondary: #9aa2b3;
-  --text-muted: #7a8499;
+  --text-muted: #959dae;
   --mint: #3eddb0;
   --mint-deep: #0aae7a;
   --focus-ring: color-mix(in srgb, var(--mint), transparent 35%);
   --focus-surface: color-mix(in srgb, var(--mint), transparent 88%);
   --cyan: #1edcff;
-  --red: #ef4456;
+  --red: #f47582;
   --amber: #f5a524;
   --shadow: rgba(0, 0, 0, 0.35);
   --z-form: 260;
@@ -145,14 +145,14 @@ button {
   --border-strong: #c2cad6;
   --text-primary: #17202b;
   --text-secondary: #4d5a6b;
-  --text-muted: #687484;
-  --mint: #008a63;
+  --text-muted: #626d7d;
+  --mint: #007c59;
   --mint-deep: #007052;
   --focus-ring: color-mix(in srgb, var(--mint), transparent 24%);
   --focus-surface: color-mix(in srgb, var(--mint), transparent 90%);
-  --cyan: #0476a8;
+  --cyan: #0473a4;
   --red: #c6293d;
-  --amber: #a96700;
+  --amber: #9b5e00;
   --shadow: rgba(35, 45, 60, 0.14);
 }
 

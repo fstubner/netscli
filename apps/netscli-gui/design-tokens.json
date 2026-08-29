@@ -1,0 +1,14 @@
+{
+  "dark": {
+    "surface-base": "#20242d",
+    "text-main": "#e4e7ef",
+    "text-muted": "#959dae",
+    "accent": "#3eddb0"
+  },
+  "light": {
+    "surface-base": "#eef1f5",
+    "text-main": "#17202b",
+    "text-muted": "#626d7d",
+    "accent": "#007c59"
+  }
+}

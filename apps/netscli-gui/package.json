@@ -17,6 +17,7 @@
     "tauri:dev:pcap": "tauri dev --features pcap",
     "test:maintainability": "node ../../scripts/check-file-size.mjs",
     "test:tauri-render": "node e2e/tauri-render.mjs",
+    "test:tokens": "node ../../scripts/design-tokens.mjs",
     "test:unit": "vitest run"
   },
   "dependencies": {
