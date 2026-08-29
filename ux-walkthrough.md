@@ -27,14 +27,14 @@ questions you ask once discovery has told you an address exists.
 
 ## Steps
 
-1. **Launch.** The window opens on a **Discover** tab, pre-filled with the
+1. **Launch.** The window shows a **Discover** tab, pre-filled with the
    subnet of the default interface. Discover is the entry point because the
    first useful question on an unfamiliar network is "what is on it", and a
    scan needs a host you do not have yet.
-2. **Run discovery.** Press the run button, which carries the tool’s own
-   name and so reads "Discover" here. The chevron beside it offers "Clear
-   ARP table, then discover", on discover, sweep and the ARP tab only.
-   Progress replaces the empty table while the sweep runs.
+2. **Run discovery.** Press the run button, which reads "Discover" here
+   because it carries the tool’s own name. The chevron beside it offers
+   "Clear ARP table, then discover", on discover, sweep and the ARP tab
+   only. Progress replaces the empty table while the sweep runs.
 3. **Read the results.** Each host is a row: IP, hostname, MAC, vendor, RTT,
    and **Found by**, reading either `probe reply` or `neighbour table`. The
    second means the host answered nothing and is only remembered by the OS,
@@ -43,19 +43,21 @@ questions you ask once discovery has told you an address exists.
 
    The column exists because the app used to call every discovered host a
    “Responded host”, including the ones that had answered nothing.
-4. **Select and inspect.** Click a row, or navigate with the arrow keys;
-   Ctrl+A selects all. The detail pane below shows the selected row's
-   fields and the raw result.
-5. **Ask a follow-up.** From a host, open a port scan or an inspect tab.
-   Each tool is a tab, and tabs are independent — a long sweep in one does
-   not block another.
+4. **Select and inspect.** Click a row and the detail pane below shows that
+   row's fields and the raw result. The arrow keys move the selection;
+   Ctrl+A selects all.
+5. **Ask a follow-up.** A port scan or inspect tab opened from a host appears
+   at the end of the strip, pre-filled with that host, and becomes the active
+   tab. Each tool is a tab, and tabs are independent — a long sweep in one
+   does not block another.
 6. **Read the equivalent command.** The command strip under the results
    shows the `netscli …` invocation matching the current form, so anything
    done in the UI can be reproduced in a shell or a script.
-7. **Take the results away.** Export JSON or CSV, copy selected rows, or
-   save a result bundle. Success is confirmed by a toast *only with
-   interaction toasts enabled*, which is not the default; the file appearing
-   is the signal. **Failure is not optional** — it goes to the tab's error
+7. **Take the results away.** Export JSON or CSV and the file appears on
+   disk — with interaction toasts off, which is the default, that is the only
+   signal it worked. Copying selected rows and saving a result bundle are the
+   other two exits, and are just as quiet when they succeed.
+   **Failure is not optional** — it goes to the tab's error
    strip whatever the toast preferences say, because a failed export writes
    nothing, and a silent nothing is indistinguishable from a success.
 
