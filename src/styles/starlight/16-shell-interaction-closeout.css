@@ -31,17 +31,17 @@
  * the same size and radius, and were painted differently: the search button
  * was `rgba(17,22,29,.9)` under a white gradient with a
  * `rgba(140,149,166,.24)` border, the menu toggle a flat
- * `rgba(255,255,255,.035)` with `rgba(255,255,255,.1)`. One looked recessed
+ * `rgba(var(--netscli-lift-rgb), .035)` with `rgba(var(--netscli-lift-rgb), .1)`. One looked recessed
  * and the other flat. The toggle's values win because they are the ones
  * derived from the theme's hairline token. */
 site-search button[data-open-modal] {
-  background: rgba(255, 255, 255, 0.035) !important;
+  background: rgba(var(--netscli-lift-rgb), 0.035) !important;
   border-color: var(--sl-color-hairline-light) !important;
 }site-search button[data-open-modal]:hover {
   border-color: rgba(var(--netscli-accent-rgb), 0.48) !important;
   box-shadow:
     0 0 0 1px rgba(var(--netscli-accent-rgb), 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 0.035) !important;
+    inset 0 1px 0 rgba(var(--netscli-lift-rgb), 0.035) !important;
 }
 
 html[data-theme='light'] site-search button[data-open-modal] {

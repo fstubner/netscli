@@ -50,7 +50,7 @@ html {
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(var(--netscli-hairline-rgb), 0.42) rgba(255, 255, 255, 0.035);
+  scrollbar-color: rgba(var(--netscli-hairline-rgb), 0.42) rgba(var(--netscli-lift-rgb), 0.035);
 }
 
 ::-webkit-scrollbar {
@@ -196,7 +196,7 @@ header.header starlight-theme-select label {
 starlight-menu-button button {
   border: 1px solid var(--sl-color-hairline-light);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.035);
+  background: rgba(var(--netscli-lift-rgb), 0.035);
   color: var(--sl-color-gray-2);
   box-shadow: none;
 }
@@ -214,13 +214,13 @@ site-search button[data-open-modal] {
   border-radius: 6px;
 
   color: var(--sl-color-gray-2);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  box-shadow: inset 0 1px 0 rgba(var(--netscli-lift-rgb), 0.035);
 }
 
 site-search button[data-open-modal]:hover {
 
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.018)),
+    linear-gradient(180deg, rgba(var(--netscli-lift-rgb), 0.04), rgba(var(--netscli-lift-rgb), 0.018)),
     rgba(17, 22, 29, 0.96);
   color: var(--sl-color-white);
 
@@ -231,5 +231,5 @@ site-search button[data-open-modal]:focus-visible {
   border-color: rgba(159, 248, 222, 0.62);
   box-shadow:
     0 0 0 2px rgba(var(--netscli-accent-rgb), 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    inset 0 1px 0 rgba(var(--netscli-lift-rgb), 0.04);
 }

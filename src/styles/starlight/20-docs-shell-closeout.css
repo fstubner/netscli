@@ -151,7 +151,7 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
   }.docs-mobile-section-menu a:hover,
   .docs-mobile-section-menu a:focus-visible {
     color: var(--sl-color-white) !important;
-    background: rgba(255, 255, 255, 0.04) !important;
+    background: rgba(var(--netscli-lift-rgb), 0.04) !important;
   }
 
   mobile-starlight-toc nav {
@@ -179,7 +179,7 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
   mobile-starlight-toc .dropdown a:hover,
   mobile-starlight-toc .dropdown a:focus-visible {
     color: var(--sl-color-white) !important;
-    background: rgba(255, 255, 255, 0.04) !important;
+    background: rgba(var(--netscli-lift-rgb), 0.04) !important;
   }
 
   mobile-starlight-toc .dropdown a[aria-current='true'],
