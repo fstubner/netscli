@@ -1,39 +1,12 @@
-import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, readdirSync } from 'node:fs';
+import { spawn } from 'node:child_process';
 import { join } from 'node:path';
 import process from 'node:process';
-import { setTimeout as delay } from 'node:timers/promises';
+
+import { discoverRoutes, startPreview, resolveChromedriverPath } from './lib/preview-server.mjs';
 
 const host = process.env.A11Y_HOST || '127.0.0.1';
 const port = process.env.A11Y_PORT || '4322';
 const baseUrl = process.env.A11Y_BASE_URL || `http://${host}:${port}`;
-// Derive the route list from what was actually built rather than hard-coding
-// it (B-26). The hard-coded list covered 7 of 14 routes, and the seven it
-// missed -- /docs/cli/, /mcp/, /tui/, /operations/, /packet-capture/,
-// /core-library/, /result-model/ -- hold the heaviest table markup, which
-// docs-header.ts then wraps at runtime on every docs page. A list that has to
-// be updated by hand is exactly the list that drifts as pages are added.
-function discoverRoutes() {
-  const dist = join(process.cwd(), 'dist');
-  if (!existsSync(dist)) return null;
-
-  const found = [];
-  const walk = (dir, prefix) => {
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      const full = join(dir, entry.name);
-      if (entry.isDirectory()) {
-        walk(full, `${prefix}${entry.name}/`);
-      } else if (entry.name === 'index.html') {
-        found.push(prefix || '/');
-      } else if (entry.name.endsWith('.html')) {
-        found.push(`${prefix}${entry.name}`);
-      }
-    }
-  };
-  walk(dist, '/');
-  return found.sort();
-}
-
 // Falls back to the previous list only if dist/ is missing, so a caller who
 // forgot to build still gets a meaningful run instead of scanning nothing --
 // an empty route list would otherwise pass silently.
@@ -57,123 +30,6 @@ const urls = routes.map((route) => new URL(route, baseUrl).href);
 const modulePath = (...segments) => join(process.cwd(), 'node_modules', ...segments);
 const astroCli = modulePath('astro', 'bin', 'astro.mjs');
 const axeCli = modulePath('@axe-core', 'cli', 'dist', 'src', 'bin', 'cli.js');
-
-let preview;
-let previewOutput = '';
-
-// Cleanup kills whatever is listening on our port, not `preview.pid`.
-//
-// `preview.kill()` leaked the server on every run, and the tree-walk fix
-// tried first did not help either: `taskkill /T` exited 128 ("process not
-// found"). The node process we spawn re-execs and exits, so the process
-// actually holding the port is an orphan whose parent is already gone --
-// there is no tree left to walk from `preview.pid`.
-//
-// The leak was not cosmetic. The next run hit this script's own "something
-// is already listening, refusing to scan it" guard and exited 1, so the
-// check reliably blocked itself on its second invocation.
-//
-// Killing by port is safe here precisely because of that guard: we only
-// reach this point having confirmed the port was free and started the
-// server ourselves, so nothing else can own it.
-const listenersOnPort = () => {
-  if (process.platform === 'win32') {
-    const r = spawnSync('netstat', ['-ano'], { encoding: 'utf8' });
-    if (r.status !== 0 || !r.stdout) return [];
-    const lines = r.stdout.split(/\r?\n/);
-    const pids = lines
-      .filter((line) => line.includes('LISTENING') && line.includes(':' + port))
-      .map((line) => line.trim().split(/\s+/).pop())
-      .filter((pid) => pid && pid !== '0');
-    return [...new Set(pids)];
-  }
-  const r = spawnSync('lsof', ['-ti', 'tcp:' + port], { encoding: 'utf8' });
-  if (r.status !== 0 || !r.stdout) return [];
-  return [...new Set(r.stdout.split(/\s+/).filter(Boolean))];
-};
-
-const cleanup = () => {
-  if (!preview) return;
-  for (const pid of listenersOnPort()) {
-    if (process.platform === 'win32') {
-      spawnSync('taskkill', ['/pid', pid, '/T', '/F'], { stdio: 'ignore' });
-    } else {
-      try {
-        process.kill(Number(pid), 'SIGKILL');
-      } catch {
-        // Already gone.
-      }
-    }
-  }
-  if (!preview.killed) preview.kill();
-};
-
-process.on('exit', cleanup);
-process.on('SIGINT', () => {
-  cleanup();
-  process.exit(130);
-});
-process.on('SIGTERM', () => {
-  cleanup();
-  process.exit(143);
-});
-
-async function isServing() {
-  try {
-    const response = await fetch(baseUrl, { signal: AbortSignal.timeout(1500) });
-    return response.status < 500;
-  } catch {
-    return false;
-  }
-}
-
-async function waitForServer() {
-  for (let attempt = 0; attempt < 60; attempt += 1) {
-    if (await isServing()) return;
-    await delay(500);
-  }
-
-  throw new Error(`Timed out waiting for ${baseUrl}\n${previewOutput}`);
-}
-
-async function ensurePreview() {
-  if (await isServing()) {
-    // Reusing whatever answers on this port is how a green local run stops
-    // meaning anything. A long-running `astro dev` server also listens on
-    // 4322 and serves from source with different CSS processing, so the gate
-    // silently scanned something other than `dist/` -- and passed while CI,
-    // which always starts fresh, failed on a 1.53:1 contrast bug.
-    //
-    // Opt in explicitly if the running server really is the built output.
-    if (process.env.A11Y_REUSE_SERVER === '1') {
-      console.log(`Reusing the server already at ${baseUrl} (A11Y_REUSE_SERVER=1).`);
-      console.log('Note: this is only valid if it is serving the current dist/.');
-      return;
-    }
-    console.error(
-      `Something is already listening on ${baseUrl}.\n` +
-        'Refusing to scan it, because a dev server serves different output than\n' +
-        'the production build and would make this check pass on the wrong thing.\n' +
-        'Stop it, or set A11Y_REUSE_SERVER=1 if it is serving the current dist/.',
-    );
-    process.exit(1);
-  }
-
-  console.log(`Starting Astro preview at ${baseUrl}`);
-  preview = spawn(process.execPath, [astroCli, 'preview', '--host', host, '--port', port], {
-    env: { ...process.env, ASTRO_TELEMETRY_DISABLED: '1' },
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
-
-  preview.stdout.on('data', (chunk) => {
-    previewOutput += chunk.toString();
-  });
-  preview.stderr.on('data', (chunk) => {
-    previewOutput += chunk.toString();
-  });
-
-  await waitForServer();
-}
 
 /**
  * The site has a light and a dark theme with SEPARATE colour tokens, and
@@ -211,24 +67,7 @@ const THEMES = [
  * the latter. Prefer that when it exists, and fall back to whatever
  * axe resolves on its own (which is the right behaviour locally).
  */
-function resolveChromedriverPath() {
-  const explicit = process.env.A11Y_CHROMEDRIVER_PATH;
-  const candidates = [
-    explicit,
-    process.env.CHROMEWEBDRIVER && join(process.env.CHROMEWEBDRIVER, 'chromedriver'),
-    process.env.CHROMEWEBDRIVER && join(process.env.CHROMEWEBDRIVER, 'chromedriver.exe'),
-  ].filter(Boolean);
-
-  for (const candidate of candidates) {
-    if (existsSync(candidate)) return candidate;
-  }
-  if (explicit) {
-    console.warn(`A11Y_CHROMEDRIVER_PATH is set but ${explicit} does not exist; ignoring.`);
-  }
-  return null;
-}
-
-const chromedriverPath = resolveChromedriverPath();
+const chromedriverPath = resolveChromedriverPath(process.env.A11Y_CHROMEDRIVER_PATH);
 if (chromedriverPath) {
   console.log(`Using runner-matched chromedriver: ${chromedriverPath}`);
 }
@@ -270,7 +109,14 @@ function runAxe({ name, chromeOptions }) {
   });
 }
 
-await ensurePreview();
+const { cleanup } = await startPreview({
+  baseUrl,
+  host,
+  port,
+  astroCli,
+  allowReuse: process.env.A11Y_REUSE_SERVER === '1',
+  reuseHint: 'A11Y_REUSE_SERVER',
+});
 
 let failed = false;
 for (const theme of THEMES) {
