@@ -50,12 +50,12 @@ html[data-theme='light'] .sl-markdown-content .expressive-code .frame {
 }
 .sl-markdown-content tbody tr,
 .sl-markdown-content tbody tr:hover {
-  background: #20242b !important;
+  background: var(--netscli-table-bg) !important;
 }
 
 .sl-markdown-content tbody tr:nth-child(even),
 .sl-markdown-content tbody tr:nth-child(even):hover {
-  background: #242932 !important;
+  background: var(--netscli-table-stripe) !important;
 }
 
 html[data-theme='light'] .sl-markdown-content tbody tr,
@@ -65,7 +65,7 @@ html[data-theme='light'] .sl-markdown-content tbody tr:hover {
 
 html[data-theme='light'] .sl-markdown-content tbody tr:nth-child(even),
 html[data-theme='light'] .sl-markdown-content tbody tr:nth-child(even):hover {
-  background: #f6f8fa !important;
+  background: var(--netscli-table-stripe) !important;
 }
 
 html[data-theme='light'] .sl-markdown-content .expressive-code .copy button {

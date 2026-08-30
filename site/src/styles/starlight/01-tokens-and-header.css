@@ -21,6 +21,15 @@ html[data-theme='dark'] ::backdrop {
   --sl-color-hairline-light: rgba(255, 255, 255, 0.1);
   --sl-color-hairline-shade: #070707;
   --sl-content-width: 64rem;
+
+  /* Table surfaces. Three roles, and the striping is a real distinction --
+     odd and even rows differ on purpose, so these must not be collapsed into
+     one value however close they look. The same three colours were written
+     out as literals in six files, including the wrapper block that appears
+     verbatim in 15, 19 and 23. */
+  --netscli-table-bg: #20242b;
+  --netscli-table-stripe: #242932;
+  --netscli-table-head: #252b36;
 }
 
 html[data-theme='light'],
@@ -54,6 +63,11 @@ html[data-theme='light'] ::backdrop {
   --sl-color-hairline-light: rgba(17, 24, 39, 0.12);
   --sl-color-hairline-shade: rgba(17, 24, 39, 0.04);
   --sl-content-width: 64rem;
+
+  /* Light counterparts of the table surfaces; see the dark block above. */
+  --netscli-table-bg: #f7faf9;
+  --netscli-table-stripe: #f6f8fa;
+  --netscli-table-head: #eef2f4;
 }
 
 :root {
