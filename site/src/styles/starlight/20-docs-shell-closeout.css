@@ -57,7 +57,7 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
 
 
 
-  border-inline-start: 1px solid transparent !important;
+
   background-clip: border-box !important;
 }
 
