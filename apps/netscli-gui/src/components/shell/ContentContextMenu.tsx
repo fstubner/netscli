@@ -20,6 +20,11 @@ interface ContextAction {
   Icon: LucideIcon;
   label: string;
   onClick: () => void;
+  /** Marks an action that destroys something. Renders the icon in red, the
+   *  same signal the menu bar's `danger` variant uses -- this menu offers
+   *  Clear Current Results too, and the two should not disagree about how a
+   *  destructive item looks. */
+  variant?: 'danger';
 }
 
 interface ContentContextMenuProps {
@@ -89,7 +94,7 @@ export function ContentContextMenu({
     { label: 'Copy Selected Raw', Icon: Copy, onClick: onCopyRaw, disabled: !canUseSelection },
     { label: 'Export Selected JSON', Icon: Download, onClick: onExportJson, disabled: !canUseSelection },
     { label: 'Export Selected CSV', Icon: FileSpreadsheet, onClick: onExportCsv, disabled: !canUseSelection },
-    { label: 'Clear Current Results', Icon: Trash2, onClick: onClearResults, disabled: !canClear },
+    { label: 'Clear Current Results', Icon: Trash2, onClick: onClearResults, disabled: !canClear, variant: 'danger' },
   ];
   const estimatedHeight = 190 + (cell ? 34 : 0) + (host ? 68 : 0) + (captureFilePath ? 68 : 0);
   const position = useMemo(
@@ -121,6 +126,7 @@ export function ContentContextMenu({
     >
       {actions.map((action) => (
         <button
+          className={action.variant === 'danger' ? 'danger' : undefined}
           disabled={action.disabled}
           key={action.label}
           role="menuitem"
