@@ -256,7 +256,7 @@ html[data-theme='light'] .sl-markdown-content .expressive-code .frame {
 
 html[data-theme='light'] .sl-markdown-content .expressive-code pre {
   background:
-    linear-gradient(180deg, rgba(0, 122, 84, 0.035), transparent 14rem),
+    linear-gradient(180deg, rgba(var(--netscli-accent-rgb), 0.035), transparent 14rem),
     #f7faf9 !important;
 }
 

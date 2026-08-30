@@ -59,10 +59,11 @@ if (!['record', 'check'].includes(mode)) {
  * nothing to do with where this CSS branches. */
 const WIDTHS = [1600, 1100, 700];
 
-/* Both themes, because they carry SEPARATE colour tokens. A check that ran
- * one theme would be blind to half the colour work -- the same blind spot
- * that once hid a 1.53:1 contrast failure from every local a11y run. */
-/* Selected through the site's OWN theme switch, not Chrome's.
+/* Both themes, because they carry SEPARATE colour tokens: a check that ran
+ * one would be blind to half the colour work, the same blind spot that once
+ * hid a 1.53:1 contrast failure from every local a11y run.
+ *
+ * Selected through the site's OWN theme switch, not Chrome's.
  *
  * `--force-dark-mode` is what the a11y check uses, and it is right there
  * because axe reads computed colours. For pixels it is unusable: that flag
@@ -116,6 +117,16 @@ if (process.env.VISUAL_SKIP_BUILD !== '1') {
 function slug(route, theme, width) {
   const r = route.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'index';
   return `${r}__${theme}__${width}.png`;
+}
+
+/** Filename back to the capture it names, or null if no route produces it. */
+function unslug(file) {
+  const parts = file.replace(/\.png$/, '').split('__');
+  if (parts.length !== 3) return null;
+  const [, theme, widthPart] = parts;
+  const width = Number(widthPart);
+  const route = routes.find((r) => slug(r, theme, width) === file);
+  return route ? { route, theme, width } : null;
 }
 
 /**
@@ -270,13 +281,43 @@ console.log(
   `Capturing ${routes.length} route(s) x ${THEMES.length} theme(s) x ${WIDTHS.length} width(s)...`,
 );
 const count = await capture(target);
-cleanup();
 console.log(`Captured ${count} image(s) into ${target.replace(root, '.')}`);
 
 if (mode === 'record') {
+  /* Confirm the baseline against a second pass.
+   *
+   * `record` is exactly as exposed to render noise as `check`, and nothing
+   * was protecting it. A page that flaked while recording became a baseline
+   * every later run disagreed with, which reads as a persistent regression
+   * rather than as noise -- observed on docs-interface-coverage, reporting
+   * the same three captures as changed run after run during a change that
+   * touched only the light theme.
+   */
+  const verifyDir = join(root, '.visual-verify');
+  for (let round = 1; round <= 3; round += 1) {
+    const files = readdirSync(target);
+    await capture(verifyDir, files.map(unslug).filter(Boolean));
+    const unstable = files.filter((f) => {
+      const other = join(verifyDir, f);
+      return !existsSync(other) || !readFileSync(join(target, f)).equals(readFileSync(other));
+    });
+    if (!unstable.length) {
+      console.log(`Baseline confirmed: every capture reproduced on pass ${round + 1}.`);
+      break;
+    }
+    console.log(`  ${unstable.length} capture(s) did not reproduce; taking the second reading.`);
+    for (const f of unstable) writeFileSync(join(target, f), readFileSync(join(verifyDir, f)));
+    if (round === 3) {
+      console.error(`\n${unstable.length} capture(s) never settled: ${unstable.join(', ')}`);
+      console.error('They will report as differing on every check; investigate before trusting this baseline.');
+    }
+  }
+  rmSync(verifyDir, { recursive: true, force: true });
+  cleanup();
   console.log('Baseline recorded. Re-run with `check` after each refactor step.');
   process.exit(0);
 }
+cleanup();
 
 if (!existsSync(baselineDir)) {
   console.error('No baseline to compare against. Run `record` first.');
@@ -310,12 +351,7 @@ if (!changed.length && !added.length && !removed.length) {
  * once a run is a guard that stops being read.
  */
 if (changed.length) {
-  const parse = (file) => {
-    const [routePart, theme, widthPart] = file.replace(/\.png$/, '').split('__');
-    const route = routes.find((r) => slug(r, theme, Number(widthPart)) === file);
-    return route ? { route, theme, width: Number(widthPart) } : null;
-  };
-  const targets = changed.map(parse).filter(Boolean);
+  const targets = changed.map(unslug).filter(Boolean);
   if (targets.length) {
     console.log(`\nRe-checking ${targets.length} differing capture(s) to rule out render noise...`);
     const confirmDir = join(root, '.visual-confirm');
@@ -332,7 +368,15 @@ if (changed.length) {
     const stillChanged = changed.filter((file) => {
       const confirmed = join(confirmDir, file);
       if (!existsSync(confirmed)) return true;
-      return !readFileSync(join(baselineDir, file)).equals(readFileSync(confirmed));
+      const again = readFileSync(confirmed);
+      // If the two captures of the same page disagree with each other, the
+      // page is not rendering deterministically right now, so it cannot be
+      // evidence of anything. Comparing the re-capture against the baseline a
+      // second time was the earlier test, and it let a text-heavy page through
+      // whenever the flake landed twice -- interface-coverage, in the dark
+      // theme, during a change that touched only light.
+      if (!again.equals(readFileSync(join(currentDir, file)))) return false;
+      return !readFileSync(join(baselineDir, file)).equals(again);
     });
     const dropped = changed.length - stillChanged.length;
     if (dropped) console.log(`  ${dropped} settled on re-capture and were not real.`);

@@ -68,7 +68,7 @@ html[data-theme='light'] ::backdrop {
   --sl-color-bg: #fbfbfb;
   --sl-color-bg-nav: rgba(251, 251, 251, 0.92);
   --sl-color-bg-sidebar: #fbfbfb;
-  --sl-color-bg-inline-code: rgba(0, 122, 84, 0.08);
+  --sl-color-bg-inline-code: rgba(var(--netscli-accent-rgb), 0.08);
   --sl-color-hairline: rgba(17, 24, 39, 0.1);
   --sl-color-hairline-light: rgba(17, 24, 39, 0.12);
   --sl-color-hairline-shade: rgba(17, 24, 39, 0.04);
@@ -78,4 +78,18 @@ html[data-theme='light'] ::backdrop {
   --netscli-table-bg: #f7faf9;
   --netscli-table-stripe: #f6f8fa;
   --netscli-table-head: #eef2f4;
+
+  /* The light theme's own accent, as channels, for the rgba() call sites.
+   *
+   * tokens.css declares --netscli-accent-rgb once under :root, as the DARK
+   * accent, because the landing page is not themed. The docs are, and without
+   * this override every `rgba(var(--netscli-accent-rgb), a)` wash rendered the
+   * dark theme's #22c55e on a light page -- 33 of them. Someone hand-patched
+   * 21 spots with a literal teal at 0/122/84, which matched neither this
+   * theme's accent nor the dark one, leaving the light theme carrying three
+   * greens.
+   *
+   * Matches --sl-color-accent (#146b2e) above, so text, borders and washes
+   * are now one colour at different alphas. */
+  --netscli-accent-rgb: 20, 107, 46;
 }
