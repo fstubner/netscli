@@ -65,7 +65,7 @@ body.lightbox-open{overflow:hidden}
   font-size:.85rem;
   /* Deliberately not a dim grey: this sits on the overlay's near-black
      backdrop, where the site's muted greys fall under 4.5:1. */
-  color:#e6e6e6;
+  color:var(--netscli-text);
 }
 .image-lightbox-caption:empty{display:none}
 
@@ -87,7 +87,7 @@ body.lightbox-open{overflow:hidden}
   border:1px solid rgba(var(--netscli-lift-rgb),.18);
   border-radius:999px;
   background:#1b1b1b;
-  color:#fff;
+  color:var(--netscli-text-strong);
   font-size:1.25rem;
   line-height:1;
   cursor:pointer;

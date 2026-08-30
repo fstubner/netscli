@@ -82,8 +82,8 @@ const { surfaces, copy } = site;
 .surface.flip{direction:rtl}
 .surface.flip>*{direction:ltr;min-width:0}
 .surface-text{padding-top:0}
-.surface-text h3{font-size:1.125rem;font-weight:700;color:#f5f5f5;margin:0 0 22px}
-.surface-text p{font-size:.875rem;color:#a8a8a8;margin:0;line-height:1.6}
+.surface-text h3{font-size:1.125rem;font-weight:700;color:var(--netscli-text-strong);margin:0 0 22px}
+.surface-text p{font-size:.875rem;color:var(--netscli-text-muted);margin:0;line-height:1.6}
 .surface-text code{font-size:.75rem}
 .surface-visual picture{
   display:block;
@@ -104,7 +104,7 @@ const { surfaces, copy } = site;
   background:#0b0d0e;border:1px solid rgba(var(--netscli-lift-rgb),.08);
   border-radius:10px;padding:16px 58px 16px 20px;
   font-family:ui-monospace,"SF Mono",Menlo,monospace;
-  font-size:.75rem;line-height:1.7;white-space:pre;overflow-x:auto;color:#ccc;
+  font-size:.75rem;line-height:1.7;white-space:pre;overflow-x:auto;color:var(--netscli-text);
   box-shadow:0 12px 40px rgba(0,0,0,.4);
   position:relative;
 }

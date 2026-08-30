@@ -74,7 +74,21 @@ const TARGETS = [
     // Starlight inverts its own naming in the light theme -- `--sl-color-white`
     // is #111827 there -- so white/gray-1..3 are the text ramp in both themes
     // and black/bg/gray-6 are the surfaces in both.
-    foregrounds: ['sl-color-white', 'sl-color-gray-1', 'sl-color-gray-2', 'sl-color-gray-3', 'sl-color-accent'],
+    // netscli-text-* are the landing page's ramp and share values with the
+    // sl-color-* entries beside them. Listed anyway: they are what the landing
+    // stack actually names, and a future change to one of them has to be
+    // checked here rather than rely on a reader noticing the values match.
+    // Their absence let a fourth, dimmer step ship to axe at 3.04:1.
+    foregrounds: [
+      'sl-color-white',
+      'sl-color-gray-1',
+      'sl-color-gray-2',
+      'sl-color-gray-3',
+      'sl-color-accent',
+      'netscli-text-strong',
+      'netscli-text',
+      'netscli-text-muted',
+    ],
     surfaces: ['sl-color-bg', 'sl-color-bg-sidebar', 'sl-color-black', 'sl-color-gray-6'],
     keys: {
       dark: { 'surface-base': 'sl-color-bg', 'text-main': 'sl-color-gray-2', 'text-muted': 'sl-color-gray-3', 'text-strong': 'sl-color-white', accent: 'sl-color-accent' },

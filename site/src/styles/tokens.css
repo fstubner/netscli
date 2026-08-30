@@ -10,7 +10,7 @@
  * global.css, so both stacks read the same declaration.
  *
  * site/design-tokens.json is GENERATED from this file and from
- * starlight/01-tokens-and-header.css -- do not edit it by hand. Run
+ * starlight/00-theme-tokens.css -- do not edit it by hand. Run
  * `node scripts/design-tokens.mjs --write` after changing a colour, and CI
  * fails if the committed copy has drifted from its source. It was
  * hand-maintained until 2026-08-29, on the reasoning that values reached
@@ -75,6 +75,28 @@
   --netscli-hairline-rgb: 140, 149, 166;
   /* The direction "raised" points: white on a dark surface. */
   --netscli-lift-rgb: 255, 255, 255;
+
+  /* ---- Text ramp ------------------------------------------------------
+   *
+   * Three steps, because the landing stack had FORTY distinct `color:` values
+   * across 91 declarations and no way to theme any of them. Most of that was
+   * drift rather than intent -- #e5e5e5 beside #e6e6e6 and #e0e0e0, #ccc
+   * beside #cfcfcf, #888 beside #8a8a8a -- differences no reader can see and
+   * nobody chose.
+   *
+   * The values are the docs' own ramp (--sl-color-white / gray-2 / gray-3),
+   * so the two halves of the site finally describe text the same
+   * way and a re-theme is one edit rather than two. That does move the
+   * landing page's text slightly: collapsing a 40-value ramp onto three
+   * cannot be pixel-preserving, and it was chosen over keeping forty.
+   *
+   * There is no fourth, dimmer step. One was tried, borrowing Starlight's
+   * gray-4, and axe caught it on both themes at 3.04:1 and 3.50:1 against a
+   * 4.5 floor -- gray-4 is a BORDER colour there, and using it for text was
+   * the mistake. The dimmest text this site draws is --netscli-text-muted. */
+  --netscli-text-strong: #f4f4f4;
+  --netscli-text: #c2cad8;
+  --netscli-text-muted: #8c95a6;
 }
 
 /* The light theme's overrides of the three roles above.
@@ -88,4 +110,14 @@ html[data-theme='light'] {
   /* On a light surface, raised is DARKER. See the note in the docs' token
      file for the 27 rules that had this backwards. */
   --netscli-lift-rgb: 17, 24, 39;
+
+  /* The light ramp, again matching the docs. Starlight inverts its own
+     naming here -- --sl-color-white is #111827 in the light theme -- which is
+     why "strong" is the darkest of these rather than the lightest.
+     --sl-color-gray-3 carries a note about not lightening it; the same
+     applies to --netscli-text-muted, which is the same value and is checked
+     against every surface by scripts/design-tokens.mjs. */
+  --netscli-text-strong: #111827;
+  --netscli-text: #44516a;
+  --netscli-text-muted: #647084;
 }
