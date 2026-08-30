@@ -109,6 +109,6 @@ html[data-theme='light'] .pagination-links a:hover,
 html[data-theme='light'] .pagination-links a:focus-visible {
   background: transparent !important;
   background-image: none !important;
-  border-color: rgba(0, 122, 84, 0.22) !important;
+  border-color: rgba(var(--netscli-accent-rgb), 0.22) !important;
   box-shadow: none !important;
 }

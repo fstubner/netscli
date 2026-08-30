@@ -145,5 +145,5 @@ site-search button[data-open-modal]:focus-visible {
 html[data-theme='light'] site-search button[data-open-modal]:hover,
 html[data-theme='light'] site-search button[data-open-modal]:focus-visible {
   background: var(--sl-color-black) !important;
-  border-color: rgba(0, 122, 84, 0.45) !important;
+  border-color: rgba(var(--netscli-accent-rgb), 0.45) !important;
 }

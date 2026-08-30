@@ -125,7 +125,7 @@ html[data-theme='light'] site-search button[data-close-modal] {
 
 html[data-theme='light'] site-search button[data-close-modal]:hover,
 html[data-theme='light'] site-search button[data-close-modal]:focus-visible {
-  background: rgba(0, 122, 84, 0.1) !important;
+  background: rgba(var(--netscli-accent-rgb), 0.1) !important;
   color: var(--sl-color-white) !important;
 }
 

@@ -78,7 +78,7 @@ html[data-theme='light'] .sl-markdown-content .expressive-code .copy button {
 
 html[data-theme='light'] .sl-markdown-content .expressive-code .copy button:hover,
 html[data-theme='light'] .sl-markdown-content .expressive-code .copy button:focus-visible {
-  border-color: rgba(0, 122, 84, 0.32) !important;
+  border-color: rgba(var(--netscli-accent-rgb), 0.32) !important;
   background: #dde6ea !important;
 }
 
