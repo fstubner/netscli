@@ -41,16 +41,9 @@ html[data-theme='dark'] ::backdrop {
   --netscli-table-stripe: #242932;
   --netscli-table-head: #252b36;
 
-  /* The neutral this theme draws hairlines, dividers and low-alpha washes
-     from, as channels for the rgba() call sites. Same channels as
-     --sl-color-gray-3 above; declared separately because rgba() needs the
-     numbers, not the colour. */
-  --netscli-hairline-rgb: 140, 149, 166;
-
-  /* The direction "raised" points in this theme. On a dark surface a lift is
-     a white wash; see the light block for why this needs to be a token rather
-     than a literal. */
-  --netscli-lift-rgb: 255, 255, 255;
+  /* --netscli-hairline-rgb and --netscli-lift-rgb are declared in
+     styles/tokens.css, which both this stack and the landing page load. They
+     were here first, and moved when the landing page needed them too. */
 
   /* The raised panel that content sits on: search results and their tag
      rows, and the frame and body of a code block. One surface, written out
@@ -100,31 +93,10 @@ html[data-theme='light'] ::backdrop {
   --netscli-table-stripe: #f6f8fa;
   --netscli-table-head: #eef2f4;
 
-  /* The light theme's own accent, as channels, for the rgba() call sites.
-   *
-   * tokens.css declares --netscli-accent-rgb once under :root, as the DARK
-   * accent, because the landing page is not themed. The docs are, and without
-   * this override every `rgba(var(--netscli-accent-rgb), a)` wash rendered the
-   * dark theme's #22c55e on a light page -- 33 of them. Someone hand-patched
-   * 21 spots with a literal teal at 0/122/84, which matched neither this
-   * theme's accent nor the dark one, leaving the light theme carrying three
-   * greens.
-   *
-   * Matches --sl-color-accent (#146b2e) above, so text, borders and washes
-   * are now one colour at different alphas. */
-  --netscli-accent-rgb: 20, 107, 46;
+  /* --netscli-accent-rgb, --netscli-hairline-rgb and --netscli-lift-rgb
+     for this theme are declared in styles/tokens.css. */
 
-  /* The light theme's neutral for hairlines and washes: its own ink, #111827,
-     which is --sl-color-white here because Starlight inverts that name in the
-     light theme. 33 rules already wrote these channels out by hand. */
-  --netscli-hairline-rgb: 17, 24, 39;
 
-  /* On a light surface, raised is DARKER, not lighter. 26 hover and inset
-     highlight rules wrote rgba(255, 255, 255, a) with no theme scope, at
-     alphas between 0.015 and 0.1 -- white on a near-white page, which is
-     nothing at all. Those hover states have been invisible in this theme.
-     Same alphas, opposite direction. */
-  --netscli-lift-rgb: 17, 24, 39;
 
   /* Light counterpart of the raised panel; see the dark block above. */
   --netscli-panel-bg: #f6f8fa;

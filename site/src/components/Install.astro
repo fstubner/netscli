@@ -111,16 +111,16 @@ const groups = [
 .install-label{font-size:.8125rem;font-weight:600;color:#e5e5e5;margin:0 0 6px}
 .install-hint{font-size:.6875rem;color:#8a8a8a;margin:4px 0 0}
 .cmd{
-  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  background:rgba(var(--netscli-lift-rgb),.04);border:1px solid rgba(var(--netscli-lift-rgb),.08);
   border-radius:8px;padding:12px 16px;
   font-family:ui-monospace,"SF Mono",Menlo,monospace;
   font-size:clamp(.6875rem,1.4vw,.8125rem);
   overflow-x:auto;white-space:pre;color:#ccc;
-  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.15) transparent;
+  scrollbar-width:thin;scrollbar-color:rgba(var(--netscli-lift-rgb),.15) transparent;
   position:relative;
 }
 .tryblock{
-  background:#0b0d0e;border:1px solid rgba(255,255,255,.08);
+  background:#0b0d0e;border:1px solid rgba(var(--netscli-lift-rgb),.08);
   border-radius:10px;padding:16px 20px;height:100%;
   font-family:ui-monospace,"SF Mono",Menlo,monospace;
   font-size:clamp(.6875rem,1.4vw,.8125rem);
@@ -212,9 +212,9 @@ a.install-download{
   color:#ccc;
   text-decoration:none;
   padding:8px 14px;
-  border:1px solid rgba(255,255,255,.08);
+  border:1px solid rgba(var(--netscli-lift-rgb),.08);
   border-radius:7px;
-  background:rgba(255,255,255,.04);
+  background:rgba(var(--netscli-lift-rgb),.04);
   transition:background 140ms ease,border-color 140ms ease,color 140ms ease;
 }
 a.install-download:hover,
@@ -230,7 +230,7 @@ a.install-download:focus-visible{
 /* Try it sidebar — one row per command, each row gets .has-copy so the
    existing copy-button JS auto-attaches a button. */
 .try{
-  background:#0a0a0a;border:1px solid rgba(255,255,255,.08);border-radius:10px;
+  background:#0a0a0a;border:1px solid rgba(var(--netscli-lift-rgb),.08);border-radius:10px;
   padding:18px;
 }
 .try .try-title{margin:0 0 12px}
@@ -256,7 +256,7 @@ a.install-download:focus-visible{
 }
 .has-copy.always-show .copy-btn:hover{
   background:#2a2d32;
-  border-color:rgba(255,255,255,.18);
+  border-color:rgba(var(--netscli-lift-rgb),.18);
   color:rgba(255,255,255,.58);
 }
 
