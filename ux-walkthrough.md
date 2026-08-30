@@ -47,9 +47,10 @@ questions you ask once discovery has told you an address exists.
    row's fields and the raw result. The arrow keys move the selection;
    Ctrl+A selects all.
 5. **Ask a follow-up.** A port scan or inspect tab opened from a host appears
-   at the end of the strip, pre-filled with that host, and becomes the active
-   tab. Each tool is a tab, and tabs are independent — a long sweep in one
-   does not block another.
+   at the end of the strip, pre-filled with that host, and starts running at
+   once — the click named the host, which is the only thing the tool needed.
+   Each tool is a tab, and tabs are independent — a long sweep in one does
+   not block another.
 6. **Read the equivalent command.** The command strip under the results
    shows the `netscli …` invocation matching the current form, so anything
    done in the UI can be reproduced in a shell or a script.
