@@ -191,7 +191,19 @@
   color: currentColor;
 }
 
-.menu-popover .menu-popover-item.danger:hover:not(:disabled) > svg {
+/* Red at rest, not only under the cursor: the moment a warning is worth
+   anything is while you are still choosing, and a colour that appears only
+   once you have already aimed at the item arrives too late to redirect you.
+   Covers hover too, since that is a subset.
+
+   The icon only. Colouring the label as well would make the row read as an
+   error message sitting in the menu, rather than an ordinary item that
+   happens to destroy something -- and `Exit` is not a problem, it is a
+   choice.
+
+   `:not(:disabled)` because a greyed-out "Clear History" with a red icon
+   claims a consequence it cannot have. */
+.menu-popover .menu-popover-item.danger:not(:disabled) > svg {
   color: var(--red);
   stroke: var(--red);
 }

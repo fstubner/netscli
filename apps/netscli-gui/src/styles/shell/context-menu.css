@@ -33,6 +33,18 @@
   color: var(--text-muted);
 }
 
+/* Destructive actions, matching the menu bar's `danger` variant -- see the
+   longer note in menu.css. Icon only, at rest as well as on hover, and never
+   while disabled. This menu and the File/History menus both offer "Clear
+   Current Results", so the two have to agree.
+
+   `> svg` rather than the button, because the label keeps its ordinary
+   colour, including the mint it turns on hover. */
+.content-context-menu button.danger:not(:disabled) > svg {
+  color: var(--red);
+  stroke: var(--red);
+}
+
 .content-context-menu button span {
   min-width: 0;
   overflow: hidden;
