@@ -126,7 +126,7 @@ html[data-theme='light'] site-search button[data-close-modal] {
 html[data-theme='light'] site-search button[data-close-modal]:hover,
 html[data-theme='light'] site-search button[data-close-modal]:focus-visible {
   background: rgba(0, 122, 84, 0.1) !important;
-  color: #111827 !important;
+  color: var(--sl-color-white) !important;
 }
 
 html[data-theme='light'] #starlight__search .pagefind-ui__form::before {
@@ -137,25 +137,25 @@ html[data-theme='light'] #starlight__search .pagefind-ui__form::before {
 html[data-theme='light'] #starlight__search .pagefind-ui__search-input {
 
   border-color: rgba(17, 24, 39, 0.24) !important;
-  color: #111827 !important;
+  color: var(--sl-color-white) !important;
 }
 
 html[data-theme='light'] #starlight__search .pagefind-ui__search-input::placeholder {
   color: #5b667a;
   opacity: 1;
 }html[data-theme='light'] #starlight__search .pagefind-ui__message {
-  color: #44516a;
+  color: var(--sl-color-gray-2);
 }
 html[data-theme='light'] #starlight__search .pagefind-ui__message .search-data {
-  color: #111827;
+  color: var(--sl-color-white);
 }
 
 html[data-theme='light'] #starlight__search .pagefind-ui__search-clear::before {
-  background-color: #146b2e;
+  background-color: var(--sl-color-accent);
 }
 
 html[data-theme='light'] #starlight__search .pagefind-ui__result-inner {
-  background: #ffffff !important;
+  background: var(--sl-color-black) !important;
   border-color: rgba(17, 24, 39, 0.14);
 }
 
@@ -167,12 +167,12 @@ html[data-theme='light']
 
 html[data-theme='light'] #starlight__search .pagefind-ui__result-nested,
 html[data-theme='light'] #starlight__search .pagefind-ui__result-tags {
-  background: #ffffff !important;
+  background: var(--sl-color-black) !important;
 }
 
 html[data-theme='light'] #starlight__search .pagefind-ui__result-link {
   --pagefind-ui-text: #111827;
-  color: #111827 !important;
+  color: var(--sl-color-white) !important;
 }
 
 html[data-theme='light'] #starlight__search .pagefind-ui__result-excerpt {
@@ -180,8 +180,8 @@ html[data-theme='light'] #starlight__search .pagefind-ui__result-excerpt {
 }
 
 html[data-theme='light'] #starlight__search mark {
-  color: #0b4a1f !important;
-  background: #dcf8e4 !important;
+  color: var(--sl-color-accent-high) !important;
+  background: var(--sl-color-accent-low) !important;
 }
 
 html[data-theme='light']
@@ -189,9 +189,9 @@ html[data-theme='light']
   .pagefind-ui__drawer:not(:has(.pagefind-ui__result)):not(:has(.pagefind-ui__message)),
 html[data-theme='light'] site-search dialog .search-container:has(.pagefind-ui__drawer.pagefind-ui__hidden)::after,
 html[data-theme='light'] #starlight__search .pagefind-ui__drawer:has(.pagefind-ui__message):not(:has(.pagefind-ui__result)) {
-  background: #ffffff;
+  background: var(--sl-color-black);
   border-color: rgba(17, 24, 39, 0.18);
-  color: #44516a;
+  color: var(--sl-color-gray-2);
 }
 
 /* ─── Narrow-screen search dialog ───────────────────────────────────────

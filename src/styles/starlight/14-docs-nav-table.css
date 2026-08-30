@@ -184,18 +184,18 @@
 }
 
 html[data-theme='light'] mobile-starlight-toc .dropdown {
-  background: #ffffff !important;
+  background: var(--sl-color-black) !important;
   box-shadow: 0 14px 32px rgba(17, 24, 39, 0.12) !important;
 }
 
 html[data-theme='light'] mobile-starlight-toc .dropdown a:hover,
 html[data-theme='light'] mobile-starlight-toc .dropdown a:focus-visible {
-  color: #111827 !important;
+  color: var(--sl-color-white) !important;
   background: rgba(17, 24, 39, 0.045) !important;
 }
 
 html[data-theme='light'] mobile-starlight-toc .dropdown a[aria-current='true'] {
-  color: #0b4a1f !important;
-  border-inline-start-color: #146b2e !important;
-  background: rgba(0, 122, 84, 0.08) !important;
+  color: var(--sl-color-accent-high) !important;
+  border-inline-start-color: var(--sl-color-accent) !important;
+  background: var(--sl-color-bg-inline-code) !important;
 }

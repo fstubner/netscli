@@ -238,7 +238,7 @@ html[data-theme='light'] .main-pane {
 }
 
 html[data-theme='light'] .sl-markdown-content .expressive-code .frame {
-  border-color: rgba(17, 24, 39, 0.12);
+  border-color: var(--sl-color-hairline-light);
   box-shadow:
     0 12px 34px rgba(17, 24, 39, 0.11),
     inset 0 1px 0 rgba(255, 255, 255, 0.78);

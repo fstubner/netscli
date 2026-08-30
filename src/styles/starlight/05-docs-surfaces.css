@@ -204,7 +204,7 @@ html[data-theme='light'] .sl-markdown-content .expressive-code pre {
 
 html[data-theme='light'] .sl-markdown-content table {
 
-  border-color: rgba(17, 24, 39, 0.12);
+  border-color: var(--sl-color-hairline-light);
   box-shadow: 0 10px 24px rgba(17, 24, 39, 0.07);
 }
 
@@ -214,11 +214,11 @@ html[data-theme='light'] .sl-markdown-content thead tr {
 }
 
 html[data-theme='light'] .sl-markdown-content th {
-  color: #243044;
+  color: var(--sl-color-gray-1);
 }
 
 html[data-theme='light'] .sl-markdown-content tbody tr {
-  background: #ffffff;
+  background: var(--sl-color-black);
 }
 
 html[data-theme='light'] .sl-markdown-content tbody tr:nth-child(even) {
