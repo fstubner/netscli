@@ -114,22 +114,22 @@
 html[data-theme='light'] mobile-starlight-toc .toggle {
   border-color: rgba(17, 24, 39, 0.14) !important;
   background: rgba(255, 255, 255, 0.72) !important;
-  color: #243044 !important;
+  color: var(--sl-color-gray-1) !important;
 }
 
 html[data-theme='light'] mobile-starlight-toc details[open] .toggle,
 html[data-theme='light'] mobile-starlight-toc details .toggle:hover,
 html[data-theme='light'] mobile-starlight-toc summary:focus-visible .toggle {
   border-color: rgba(0, 122, 84, 0.36) !important;
-  color: #111827 !important;
+  color: var(--sl-color-white) !important;
 }
 
 html[data-theme='light'] mobile-starlight-toc .caret {
-  color: #146b2e;
+  color: var(--sl-color-accent);
 }
 
 html[data-theme='light'] mobile-starlight-toc .display-current {
-  color: #44516a !important;
+  color: var(--sl-color-gray-2) !important;
 }.sl-markdown-content .expressive-code .copy .feedback {
   position: absolute !important;
   width: 1px !important;
@@ -196,9 +196,9 @@ html[data-theme='light'] .sl-markdown-content .expressive-code .copy button[data
 html[data-theme='light'] .sl-markdown-content .expressive-code .copy:has(.feedback.show) button {
   border-color: rgba(0, 122, 84, 0.3) !important;
   background: #e5f3ef !important;
-  color: #146b2e !important;
+  color: var(--sl-color-accent) !important;
 }
 
 html[data-theme='light'] .sl-markdown-content .expressive-code .copy:has(.feedback.show) button::after {
-  background: #146b2e !important;
+  background: var(--sl-color-accent) !important;
 }

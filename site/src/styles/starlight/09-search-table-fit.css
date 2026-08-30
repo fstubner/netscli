@@ -60,7 +60,7 @@ html[data-theme='light'] .sl-markdown-content .expressive-code .frame {
 
 html[data-theme='light'] .sl-markdown-content tbody tr,
 html[data-theme='light'] .sl-markdown-content tbody tr:hover {
-  background: #ffffff !important;
+  background: var(--sl-color-black) !important;
 }
 
 html[data-theme='light'] .sl-markdown-content tbody tr:nth-child(even),
@@ -71,7 +71,7 @@ html[data-theme='light'] .sl-markdown-content tbody tr:nth-child(even):hover {
 html[data-theme='light'] .sl-markdown-content .expressive-code .copy button {
   border-color: rgba(17, 24, 39, 0.14) !important;
   background: #e9eef2 !important;
-  color: #243044 !important;
+  color: var(--sl-color-gray-1) !important;
   opacity: 1;
   box-shadow: none !important;
 }
