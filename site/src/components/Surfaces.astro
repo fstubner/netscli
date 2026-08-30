@@ -58,7 +58,7 @@ const { surfaces, copy } = site;
 /* ─── SURFACE CARDS ─── */
 .surfaces-section{
   background:#141718;
-  border-block:1px solid rgba(255,255,255,.045);
+  border-block:1px solid rgba(var(--netscli-lift-rgb),.045);
 }
 .surfaces-section::before{
   content:none;
@@ -92,7 +92,7 @@ const { surfaces, copy } = site;
 .surface-visual img{
   display:block;
   width:100%;height:auto;border-radius:10px;
-  border:1px solid rgba(255,255,255,.08);
+  border:1px solid rgba(var(--netscli-lift-rgb),.08);
   box-shadow:0 12px 40px rgba(0,0,0,.4);
 }
 .surface-visual img:focus-visible,
@@ -101,7 +101,7 @@ const { surfaces, copy } = site;
   outline-offset:3px;
 }
 .surface-visual .codeblock{
-  background:#0b0d0e;border:1px solid rgba(255,255,255,.08);
+  background:#0b0d0e;border:1px solid rgba(var(--netscli-lift-rgb),.08);
   border-radius:10px;padding:16px 58px 16px 20px;
   font-family:ui-monospace,"SF Mono",Menlo,monospace;
   font-size:.75rem;line-height:1.7;white-space:pre;overflow-x:auto;color:#ccc;

@@ -57,12 +57,12 @@ const faqGroups = grouped.sort(
   text-transform:uppercase;
 }
 .faq details{
-  background:rgba(255,255,255,.025);
-  border:1px solid rgba(255,255,255,.08);
+  background:rgba(var(--netscli-lift-rgb),.025);
+  border:1px solid rgba(var(--netscli-lift-rgb),.08);
   border-radius:10px;padding:14px 18px;
   transition:background 150ms,border-color 150ms;
 }
-.faq details[open]{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.14)}
+.faq details[open]{background:rgba(var(--netscli-lift-rgb),.04);border-color:rgba(var(--netscli-lift-rgb),.14)}
 .faq summary{
   cursor:pointer;font-size:.9375rem;font-weight:600;color:#e5e5e5;
   list-style:none;display:flex;align-items:center;gap:10px;
@@ -103,9 +103,9 @@ const faqGroups = grouped.sort(
   align-items:center;
   min-height:40px;
   padding:8px 48px 8px 12px;
-  border:1px solid rgba(255,255,255,.07);
+  border:1px solid rgba(var(--netscli-lift-rgb),.07);
   border-radius:5px;
-  background:rgba(255,255,255,.045);
+  background:rgba(var(--netscli-lift-rgb),.045);
   color:#d8dee8;
   white-space:pre;
   overflow-x:auto;

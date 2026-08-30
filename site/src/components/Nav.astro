@@ -73,7 +73,7 @@ nav[data-site-nav]{
      border renders as 0.8 at this device pixel ratio. */
   min-height:var(--netscli-nav-height);
   background:rgba(17,17,17,.85);backdrop-filter:blur(12px);
-  border-bottom:1px solid rgba(255,255,255,.06);
+  border-bottom:1px solid rgba(var(--netscli-lift-rgb),.06);
   box-shadow:none;
   transition:box-shadow 160ms ease,border-color 160ms ease;
 }
@@ -141,10 +141,10 @@ body.nav-scrolled nav[data-site-nav]::after{
   justify-content:center;
   flex-direction:column;
   gap:4px;
-  border:1px solid rgba(255,255,255,.1);
+  border:1px solid rgba(var(--netscli-lift-rgb),.1);
   border-radius:7px;
   color:#d7d7d7;
-  background:rgba(255,255,255,.035);
+  background:rgba(var(--netscli-lift-rgb),.035);
   cursor:pointer;
 }
 .nav-menu-toggle span{
@@ -229,7 +229,7 @@ body.nav-scrolled nav[data-site-nav]::after{
     gap:2px;
     padding:8px;
     background:rgba(22,24,26,.98);
-    border:1px solid rgba(255,255,255,.1);
+    border:1px solid rgba(var(--netscli-lift-rgb),.1);
     border-radius:8px;
     box-shadow:0 14px 34px rgba(0,0,0,.36);
     backdrop-filter:blur(12px);
