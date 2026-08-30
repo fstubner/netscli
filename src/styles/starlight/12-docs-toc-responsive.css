@@ -8,7 +8,7 @@
 
 
 
-    overflow: visible !important;
+
     border: 0 !important;
   }
 
@@ -37,7 +37,7 @@
 
 
 
-    color: var(--sl-color-gray-1) !important;
+
     font-weight: 720 !important;
   }mobile-starlight-toc .caret {
     color: var(--netscli-accent);

@@ -24,20 +24,7 @@
        header. `clip` contains the same horizontal overflow without creating a
        scroll container. */
     overflow-x: clip !important;
-  }
-
-  .main-pane,
-  .content-panel,
-  .content-panel > .sl-container,
-  .sl-markdown-content {
-
-
-
-
-    overflow-wrap: anywhere;
-  }
-
-  .main-pane .content-panel > div.sl-container,
+  }.main-pane .content-panel > div.sl-container,
   .main-pane main .content-panel > div.sl-container {
     width: calc(100vw - 2rem) !important;
     max-width: calc(100vw - 2rem) !important;
@@ -51,18 +38,8 @@
     width: 100% !important;
 
     min-width: 0 !important;
-  }starlight-menu-button {
-
-
-
-
-    z-index: calc(var(--sl-z-index-navbar) + 2) !important;
   }.docs-header-search {
 
-
-
-
-    width: 2.5rem !important;
     max-width: 2.5rem !important;
     min-width: 2.5rem !important;
   }
@@ -70,18 +47,12 @@
   .sl-markdown-content .netscli-table-scroll,
   .content-panel .netscli-table-scroll {
 
-
-
-
-    overflow-y: hidden !important;
     -webkit-overflow-scrolling: touch !important;
   }
 
   .sl-markdown-content .netscli-table-scroll table,
   .content-panel .netscli-table-scroll table {
     display: table !important;
-
-
 
     table-layout: fixed !important;
   }
