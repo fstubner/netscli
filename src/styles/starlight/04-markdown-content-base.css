@@ -226,12 +226,19 @@ starlight-theme-select label:hover {
  * keyboard user has nothing else to go on. The <select> inside also has
  * `appearance: none` and no border of its own, so its own focus ring had
  * nothing to draw around. */
+/* Quieter than it was, and matching the rest of the header.
+ *
+ * The fix above overshot: a solid 2px accent outline AND an accent border AND
+ * a 10% accent background is three signals for one state, and next to the
+ * search button -- which marks focus with a soft 2px ring at 0.18 alpha -- it
+ * read as an error rather than a cursor position. One ring, the same idiom,
+ * still unmistakable against the header and still the only state a keyboard
+ * user has to go on. */
 starlight-theme-select label:focus-within {
   color: var(--sl-color-white);
-  border-color: rgba(var(--netscli-accent-rgb), 0.62);
-  background: rgba(var(--netscli-accent-rgb), 0.1);
-  outline: 2px solid var(--netscli-accent);
-  outline-offset: 2px;
+  border-color: rgba(var(--netscli-accent-rgb), 0.45);
+  box-shadow: 0 0 0 2px rgba(var(--netscli-accent-rgb), 0.22);
+  outline: 0;
 }
 
 starlight-theme-select select:focus-visible {
