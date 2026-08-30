@@ -85,6 +85,11 @@ skills-lock.json
 # untracked noise throughout the documented Windows workflow (C-27).
 /target-pcap/
 
+# Written by scripts/check-linux.sh, from inside the container. Separate from
+# /target for the same reason as above: Linux and Windows objects would evict
+# each other on every alternating build.
+/target-linux/
+
 # Brainstorming companion (superpowers skill)
 .superpowers/
 
