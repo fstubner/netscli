@@ -88,7 +88,10 @@ describe('tab lifecycle', () => {
     });
 
     const opened = result.current.activeTabId;
-    expect(result.current.tabs.at(-1)?.form.host).toBe('192.168.1.5');
+    // Indexed rather than `.at(-1)`: the project's TS lib target predates
+    // Array.prototype.at, and tsc rejects it even though vitest runs it fine.
+    const newest = result.current.tabs[result.current.tabs.length - 1];
+    expect(newest?.form.host).toBe('192.168.1.5');
     expect(result.current.needsAutoRun(opened)).toBe(true);
   });
 
