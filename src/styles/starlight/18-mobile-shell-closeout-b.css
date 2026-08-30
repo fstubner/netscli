@@ -96,7 +96,7 @@
     overscroll-behavior: contain !important;
     border-block: 1px solid var(--sl-color-hairline) !important;
     border-inline: 0 !important;
-    background: #1b2028 !important;
+    background: var(--netscli-menu-bg) !important;
     box-shadow: none !important;
   }
 
@@ -153,7 +153,7 @@
 
 html[data-theme='light'] .docs-mobile-section-menu,
 html[data-theme='light'] mobile-starlight-toc .dropdown {
-  background: #ffffff !important;
+  background: var(--netscli-menu-bg) !important;
 }
 
 html[data-theme='light'] .docs-mobile-section-menu a[aria-current='page'],
