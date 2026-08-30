@@ -112,7 +112,7 @@
 }
 
 html[data-theme='light'] mobile-starlight-toc .toggle {
-  border-color: rgba(17, 24, 39, 0.14) !important;
+  border-color: rgba(var(--netscli-hairline-rgb), 0.14) !important;
   background: rgba(255, 255, 255, 0.72) !important;
   color: var(--sl-color-gray-1) !important;
 }
@@ -156,7 +156,7 @@ html[data-theme='light'] mobile-starlight-toc .display-current {
 }
 
 .sl-markdown-content .expressive-code .copy button[data-copied] {
-  border-color: rgba(140, 149, 166, 0.18) !important;
+  border-color: rgba(var(--netscli-hairline-rgb), 0.18) !important;
   background: #252b36 !important;
   color: rgba(216, 222, 232, 0.46) !important;
 }
@@ -184,7 +184,7 @@ html[data-theme='light'] mobile-starlight-toc .display-current {
 }
 
 html[data-theme='light'] .sl-markdown-content .expressive-code .copy button[data-copied] {
-  border-color: rgba(17, 24, 39, 0.14) !important;
+  border-color: rgba(var(--netscli-hairline-rgb), 0.14) !important;
   background: #e9eef2 !important;
   color: #536176 !important;
 }

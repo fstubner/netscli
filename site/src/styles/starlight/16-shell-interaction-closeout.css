@@ -45,7 +45,7 @@ site-search button[data-open-modal] {
 }
 
 html[data-theme='light'] site-search button[data-open-modal] {
-  background: rgba(17, 24, 39, 0.035) !important;
+  background: rgba(var(--netscli-hairline-rgb), 0.035) !important;
 }#starlight__search .pagefind-ui__drawer:has(.pagefind-ui__result)::before,
 #starlight__search .pagefind-ui__drawer:has(.pagefind-ui__result)::after {
   height: 1.35rem !important;

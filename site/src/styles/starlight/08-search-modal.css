@@ -111,7 +111,7 @@ site-search dialog .search-container:has(.pagefind-ui__drawer.pagefind-ui__hidde
 
 html[data-theme='light'] site-search dialog {
   background: #f6f8fa !important;
-  border-color: rgba(17, 24, 39, 0.24) !important;
+  border-color: rgba(var(--netscli-hairline-rgb), 0.24) !important;
 }
 
 html[data-theme='light'] site-search dialog .dialog-frame,
@@ -136,7 +136,7 @@ html[data-theme='light'] #starlight__search .pagefind-ui__form::before {
 
 html[data-theme='light'] #starlight__search .pagefind-ui__search-input {
 
-  border-color: rgba(17, 24, 39, 0.24) !important;
+  border-color: rgba(var(--netscli-hairline-rgb), 0.24) !important;
   color: var(--sl-color-white) !important;
 }
 
@@ -156,7 +156,7 @@ html[data-theme='light'] #starlight__search .pagefind-ui__search-clear::before {
 
 html[data-theme='light'] #starlight__search .pagefind-ui__result-inner {
   background: var(--sl-color-black) !important;
-  border-color: rgba(17, 24, 39, 0.14);
+  border-color: rgba(var(--netscli-hairline-rgb), 0.14);
 }
 
 html[data-theme='light']
@@ -190,7 +190,7 @@ html[data-theme='light']
 html[data-theme='light'] site-search dialog .search-container:has(.pagefind-ui__drawer.pagefind-ui__hidden)::after,
 html[data-theme='light'] #starlight__search .pagefind-ui__drawer:has(.pagefind-ui__message):not(:has(.pagefind-ui__result)) {
   background: var(--sl-color-black);
-  border-color: rgba(17, 24, 39, 0.18);
+  border-color: rgba(var(--netscli-hairline-rgb), 0.18);
   color: var(--sl-color-gray-2);
 }
 
