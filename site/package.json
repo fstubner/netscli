@@ -13,7 +13,9 @@
     "check": "astro check",
     "check:changelog": "node ./scripts/changelog-dates.mjs",
     "check:css": "node ./scripts/css-shadowing.mjs --max 24",
-    "test:a11y": "npm run build && node ./scripts/a11y.mjs"
+    "test:a11y": "npm run build && node ./scripts/a11y.mjs",
+    "visual:record": "node ./scripts/visual-snapshot.mjs record",
+    "visual:check": "node ./scripts/visual-snapshot.mjs check"
   },
   "dependencies": {
     "@astrojs/starlight": "^0.41.7",
@@ -23,6 +25,7 @@
     "@astrojs/check": "^0.9.10",
     "@axe-core/cli": "^4.13.0",
     "linkedom": "^0.18.13",
+    "selenium-webdriver": "^4.44.0",
     "typescript": "^5.5.0"
   }
 }

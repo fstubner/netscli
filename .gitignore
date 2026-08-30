@@ -105,3 +105,11 @@ docs/superpowers/
 IMPLEMENTATION_PLAN.md
 NEXT_GEN_NETWORKING_PLAN.md
 
+# Local visual-regression baselines for the docs refactor
+# (scripts/visual-snapshot.mjs). PNG bytes are exact on one machine and
+# meaningless across two -- font rasterisation differs between Windows and
+# the Ubuntu runners -- so these are a before/after tool for whoever is doing
+# the work, never a committed artifact or a CI gate.
+site/.visual-baseline/
+site/.visual-current/
+site/.visual-diff/
