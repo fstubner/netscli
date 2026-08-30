@@ -1,20 +1,19 @@
 /* Docs shell close-out: align desktop/mobile navigation states after the
    Starlight defaults and earlier responsive passes have loaded. */
-/* The "On this page" list gets the same rail-and-marker treatment as the
-   left nav. It had neither: no rail on the list, and the active link's
-   inline-start border was explicitly forced transparent, so the only cue was
-   a colour change on the text. */
+/* The "On this page" list gets the rail, and only the rail.
+   An earlier pass gave it the left nav's full rail-and-marker treatment, on
+   the reasoning that a colour change alone was too weak a cue. On a wide
+   screen that put two accent bars on screen at once, one per rail, at
+   different weights -- 2px here against the nav's 1px -- which read less
+   like a system than like a mistake. The marker belongs to the nav; see the
+   note on the current-link rule below. */
 .right-sidebar-panel :where(nav ul) {
   border-inline-start: 1px solid var(--sl-color-hairline);
 }
 
 .right-sidebar-panel :where(a) {
   display: block !important;
-  /* -1px so the link's own 2px border covers the list's 1px rail, rather
-     than sitting 7.2px inside it as the old -0.45rem did. */
-  margin-inline: -1px 0 !important;
   padding: 0.28rem 0.45rem 0.28rem 0.65rem !important;
-  border-inline-start: 2px solid transparent !important;
   color: var(--sl-color-gray-3) !important;
   text-decoration: none !important;
   border-radius: 0 !important;
@@ -27,12 +26,19 @@
   outline: 0 !important;
 }
 
+/* Colour only, no inline-start marker. The left nav's marker says "this is
+   the page you are on", which is a fact about the whole document; a second
+   marker in the rail beside it says the same thing about a heading, and two
+   bars of the same colour on one screen read as two claims of the same
+   weight. The heading you are level with changes as you scroll, so it is
+   the weaker of the two and a colour change carries it.
+
+   The rail on the <ul> above stays. That is a track, not a marker. */
 .right-sidebar-panel :where(a[aria-current='true']),
 .right-sidebar-panel :where(a[aria-current='page']),
 .right-sidebar-panel :where(a[aria-current='location']) {
   color: var(--netscli-accent-high) !important;
   background: transparent !important;
-  border-inline-start-color: var(--netscli-accent) !important;
 }
 
 html[data-theme='light'] .right-sidebar-panel :where(a):hover,
@@ -167,7 +173,7 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
   }
 
   mobile-starlight-toc .dropdown a {
-    border-inline-start: 2px solid transparent !important;
+    border-inline-start: 1px solid transparent !important;
   }
 
   mobile-starlight-toc .dropdown a:hover,
