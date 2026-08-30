@@ -115,7 +115,7 @@ a.download-count:focus-visible,
   .sl-markdown-content table,
   .content-panel table {
     display: table !important;
-    border: 1px solid rgba(140, 149, 166, 0.18) !important;
+    border: 1px solid rgba(var(--netscli-hairline-rgb), 0.18) !important;
     background: var(--sl-color-bg-inline-code) !important;
     overflow: visible !important;
   }
@@ -146,7 +146,7 @@ a.download-count:focus-visible,
     display: table-cell !important;
     min-width: 10rem !important;
     padding: 0.65rem 0.85rem !important;
-    border-bottom: 1px solid rgba(140, 149, 166, 0.14) !important;
+    border-bottom: 1px solid rgba(var(--netscli-hairline-rgb), 0.14) !important;
     white-space: normal !important;
   }
 }

@@ -138,7 +138,7 @@
     width: 100% !important;
     max-width: 100% !important;
     overflow-x: auto !important;
-    border: 1px solid rgba(140, 149, 166, 0.2) !important;
+    border: 1px solid rgba(var(--netscli-hairline-rgb), 0.2) !important;
     border-radius: 8px !important;
     background: #20242b !important;
   }
@@ -165,7 +165,7 @@
     width: auto !important;
     min-width: 9rem;
     padding: 0.68rem 0.85rem !important;
-    border-bottom: 1px solid rgba(140, 149, 166, 0.11) !important;
+    border-bottom: 1px solid rgba(var(--netscli-hairline-rgb), 0.11) !important;
     white-space: normal !important;
     overflow-wrap: normal !important;
   }
@@ -179,19 +179,19 @@
 
   .sl-markdown-content table td + td,
   .sl-markdown-content table th + th {
-    border-inline-start: 1px solid rgba(140, 149, 166, 0.11) !important;
+    border-inline-start: 1px solid rgba(var(--netscli-hairline-rgb), 0.11) !important;
   }
 }
 
 html[data-theme='light'] mobile-starlight-toc .dropdown {
   background: var(--sl-color-black) !important;
-  box-shadow: 0 14px 32px rgba(17, 24, 39, 0.12) !important;
+  box-shadow: 0 14px 32px rgba(var(--netscli-hairline-rgb), 0.12) !important;
 }
 
 html[data-theme='light'] mobile-starlight-toc .dropdown a:hover,
 html[data-theme='light'] mobile-starlight-toc .dropdown a:focus-visible {
   color: var(--sl-color-white) !important;
-  background: rgba(17, 24, 39, 0.045) !important;
+  background: rgba(var(--netscli-hairline-rgb), 0.045) !important;
 }
 
 html[data-theme='light'] mobile-starlight-toc .dropdown a[aria-current='true'] {

@@ -40,6 +40,12 @@ html[data-theme='dark'] ::backdrop {
   --netscli-table-bg: #20242b;
   --netscli-table-stripe: #242932;
   --netscli-table-head: #252b36;
+
+  /* The neutral this theme draws hairlines, dividers and low-alpha washes
+     from, as channels for the rgba() call sites. Same channels as
+     --sl-color-gray-3 above; declared separately because rgba() needs the
+     numbers, not the colour. */
+  --netscli-hairline-rgb: 140, 149, 166;
 }
 
 html[data-theme='light'],
@@ -92,4 +98,9 @@ html[data-theme='light'] ::backdrop {
    * Matches --sl-color-accent (#146b2e) above, so text, borders and washes
    * are now one colour at different alphas. */
   --netscli-accent-rgb: 20, 107, 46;
+
+  /* The light theme's neutral for hairlines and washes: its own ink, #111827,
+     which is --sl-color-white here because Starlight inverts that name in the
+     light theme. 33 rules already wrote these channels out by hand. */
+  --netscli-hairline-rgb: 17, 24, 39;
 }

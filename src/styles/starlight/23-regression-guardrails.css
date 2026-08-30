@@ -81,7 +81,7 @@
     margin-block: 1rem 1.35rem !important;
     overflow-x: auto !important;
     overflow-y: hidden !important;
-    border: 1px solid rgba(140, 149, 166, 0.2) !important;
+    border: 1px solid rgba(var(--netscli-hairline-rgb), 0.2) !important;
     border-radius: 8px !important;
     background: var(--netscli-table-bg) !important;
     -webkit-overflow-scrolling: touch !important;
@@ -119,7 +119,7 @@
     width: auto !important;
     min-width: 0 !important;
     padding: 0.85rem 1rem !important;
-    border-bottom: 1px solid rgba(140, 149, 166, 0.11) !important;
+    border-bottom: 1px solid rgba(var(--netscli-hairline-rgb), 0.11) !important;
     line-height: 1.42 !important;
     white-space: normal !important;
     overflow-wrap: normal !important;

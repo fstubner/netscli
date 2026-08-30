@@ -18,12 +18,12 @@
   text-align: left;
   vertical-align: middle;
 }.sl-markdown-content tbody td {
-  border-bottom: 1px solid rgba(140, 149, 166, 0.105);
+  border-bottom: 1px solid rgba(var(--netscli-hairline-rgb), 0.105);
 }
 
 .sl-markdown-content td + td,
 .sl-markdown-content th + th {
-  border-inline-start: 1px solid rgba(140, 149, 166, 0.11);
+  border-inline-start: 1px solid rgba(var(--netscli-hairline-rgb), 0.11);
 }
 
 .sl-markdown-content td:first-child,

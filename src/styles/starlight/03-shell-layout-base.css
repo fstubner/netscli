@@ -185,18 +185,18 @@ html[data-theme='light'] .main-pane {
 }
 
 .sl-markdown-content .expressive-code {
-  --ec-brdCol: rgba(140, 149, 166, 0.22);
+  --ec-brdCol: rgba(var(--netscli-hairline-rgb), 0.22);
   --ec-codeBg: #10151b;
   --ec-codeFg: #d7dce5;
   --ec-codeLineHt: 1.64;
   --ec-codePadBlk: 1rem;
   --ec-codePadInl: 1.15rem;
   --ec-focusBrd: var(--netscli-accent-high);
-  --ec-sbThumbCol: rgba(140, 149, 166, 0.22);
+  --ec-sbThumbCol: rgba(var(--netscli-hairline-rgb), 0.22);
   --ec-sbThumbHoverCol: rgba(159, 248, 222, 0.32);
   --ec-frm-frameBoxShdCssVal: 0 18px 46px rgba(0, 0, 0, 0.34);
   --ec-frm-trmTtbBg: #202733;
-  --ec-frm-trmTtbBrdBtmCol: rgba(140, 149, 166, 0.2);
+  --ec-frm-trmTtbBrdBtmCol: rgba(var(--netscli-hairline-rgb), 0.2);
   --ec-frm-trmTtbDotsFg: #8c95a6;
   --ec-frm-trmTtbDotsOpa: 0.48;
   --ec-frm-trmBg: #10151b;
@@ -210,7 +210,7 @@ html[data-theme='light'] .main-pane {
 .sl-markdown-content .expressive-code .frame {
 
   border-radius: 8px !important;
-  border: 1px solid rgba(140, 149, 166, 0.18);
+  border: 1px solid rgba(var(--netscli-hairline-rgb), 0.18);
 
 }
 
@@ -240,14 +240,14 @@ html[data-theme='light'] .main-pane {
 html[data-theme='light'] .sl-markdown-content .expressive-code .frame {
   border-color: var(--sl-color-hairline-light);
   box-shadow:
-    0 12px 34px rgba(17, 24, 39, 0.11),
+    0 12px 34px rgba(var(--netscli-hairline-rgb), 0.11),
     inset 0 1px 0 rgba(255, 255, 255, 0.78);
 }html[data-theme='light'] .sl-markdown-content .expressive-code {
-  --ec-brdCol: rgba(17, 24, 39, 0.12);
+  --ec-brdCol: rgba(var(--netscli-hairline-rgb), 0.12);
   --ec-codeBg: #f7faf9;
   --ec-codeFg: #243044;
   --ec-frm-trmTtbBg: #edf2f3;
-  --ec-frm-trmTtbBrdBtmCol: rgba(17, 24, 39, 0.1);
+  --ec-frm-trmTtbBrdBtmCol: rgba(var(--netscli-hairline-rgb), 0.1);
   --ec-frm-trmBg: #f7faf9;
   --ec-frm-inlBtnFg: #146b2e;
   --ec-frm-inlBtnBg: #146b2e;
@@ -276,7 +276,7 @@ html[data-theme='light'] .sl-markdown-content .expressive-code .ec-line :where(s
   margin: 1.2rem 0 2rem;
   border-collapse: separate;
   border-spacing: 0;
-  border: 1px solid rgba(140, 149, 166, 0.18);
+  border: 1px solid rgba(var(--netscli-hairline-rgb), 0.18);
   border-radius: 8px;
   overflow: hidden;
 
