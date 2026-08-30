@@ -180,7 +180,7 @@
 
 .pagination-links a {
   box-shadow: none;
-  background: rgba(255, 255, 255, 0.025);
+  background: rgba(var(--netscli-lift-rgb), 0.025);
 }
 
 starlight-theme-select label,
@@ -207,7 +207,7 @@ starlight-theme-select label {
   padding-inline: 0.65rem;
   border: 1px solid var(--sl-color-hairline-light);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(var(--netscli-lift-rgb), 0.03);
   color: var(--sl-color-gray-2);
 }
 
