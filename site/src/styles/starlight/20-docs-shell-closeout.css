@@ -1,15 +1,14 @@
 /* Docs shell close-out: align desktop/mobile navigation states after the
    Starlight defaults and earlier responsive passes have loaded. */
-/* The "On this page" list gets the rail, and only the rail.
-   An earlier pass gave it the left nav's full rail-and-marker treatment, on
-   the reasoning that a colour change alone was too weak a cue. On a wide
-   screen that put two accent bars on screen at once, one per rail, at
-   different weights -- 2px here against the nav's 1px -- which read less
-   like a system than like a mistake. The marker belongs to the nav; see the
-   note on the current-link rule below. */
-.right-sidebar-panel :where(nav ul) {
-  border-inline-start: 1px solid var(--sl-color-hairline);
-}
+/* The "On this page" list gets neither rail nor marker.
+   Two earlier passes went the other way: the first gave it the left nav's
+   full rail-and-marker treatment, the second dropped the marker and kept the
+   rail as "a track, not a marker". Both were wrong about the same thing --
+   the rail is the left nav's device for showing where you are in a tree, and
+   a flat list of headings on the opposite edge of the page is not that tree.
+   Borrowing it made the two rails look like a matched pair that had drifted
+   rather than two different things. The current heading is marked by colour;
+   see the note on the current-link rule below. */
 
 .right-sidebar-panel :where(a) {
   display: block !important;
