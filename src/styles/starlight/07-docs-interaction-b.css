@@ -76,11 +76,11 @@
 }
 
 .sl-markdown-content tbody tr:hover {
-  background: #20242b;
+  background: var(--netscli-table-bg);
 }
 
 .sl-markdown-content tbody tr:nth-child(even):hover {
-  background: #242932;
+  background: var(--netscli-table-stripe);
 }
 
 html[data-theme='light'] .sl-markdown-content tbody tr:hover {
@@ -88,7 +88,7 @@ html[data-theme='light'] .sl-markdown-content tbody tr:hover {
 }
 
 html[data-theme='light'] .sl-markdown-content tbody tr:nth-child(even):hover {
-  background: #f6f8fa;
+  background: var(--netscli-table-stripe);
 }
 
 .sl-markdown-content a,

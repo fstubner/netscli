@@ -20,7 +20,7 @@
     overflow-y: hidden !important;
     border: 1px solid rgba(140, 149, 166, 0.2) !important;
     border-radius: 8px !important;
-    background: #20242b !important;
+    background: var(--netscli-table-bg) !important;
     -webkit-overflow-scrolling: touch;
   }
 
@@ -66,5 +66,5 @@
 }
 
 html[data-theme='light'] .sl-markdown-content table {
-  background: #f7faf9 !important;
+  background: var(--netscli-table-bg) !important;
 }

@@ -162,14 +162,14 @@ html[data-theme='light'] .sl-markdown-content .expressive-code pre {
 
 .sl-markdown-content table {
   border-color: rgba(140, 149, 166, 0.2);
-  background: #20242b;
+  background: var(--netscli-table-bg);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.025) inset,
     0 12px 26px rgba(0, 0, 0, 0.16);
 }
 
 .sl-markdown-content thead tr {
-  background: #252b36;
+  background: var(--netscli-table-head);
   box-shadow: inset 0 -2px 0 rgba(var(--netscli-accent-rgb), 0.55);
 }
 
@@ -179,11 +179,11 @@ html[data-theme='light'] .sl-markdown-content .expressive-code pre {
 }
 
 .sl-markdown-content tbody tr {
-  background: #20242b;
+  background: var(--netscli-table-bg);
 }
 
 .sl-markdown-content tbody tr:nth-child(even) {
-  background: #242932;
+  background: var(--netscli-table-stripe);
 }.sl-markdown-content td,
 .sl-markdown-content th {
   border-color: rgba(140, 149, 166, 0.13);
@@ -209,7 +209,7 @@ html[data-theme='light'] .sl-markdown-content table {
 }
 
 html[data-theme='light'] .sl-markdown-content thead tr {
-  background: #eef2f4;
+  background: var(--netscli-table-head);
   box-shadow: inset 0 -2px 0 rgba(0, 122, 84, 0.42);
 }
 
@@ -222,5 +222,5 @@ html[data-theme='light'] .sl-markdown-content tbody tr {
 }
 
 html[data-theme='light'] .sl-markdown-content tbody tr:nth-child(even) {
-  background: #f6f8fa;
+  background: var(--netscli-table-stripe);
 }
