@@ -130,19 +130,28 @@ function unslug(file) {
 }
 
 /**
- * Screenshot repeatedly until two in a row are byte-identical.
+ * Screenshot repeatedly until the page holds still: `needed` byte-identical
+ * frames in a row, and at least `minMs` elapsed.
  *
- * Returns the stable image, or the last one taken if the page never settles
- * (a page that genuinely never stops moving should show up as a difference
- * rather than hang the run).
+ * Returns the stable image, or the last one taken if the page never settles —
+ * a page that genuinely never stops moving should surface as a difference
+ * rather than hang the run.
  */
-async function settle(driver, attempts = 6, gapMs = 200) {
+async function settle(driver, { needed = 2, gapMs = 200, minMs = 500, attempts = 10 } = {}) {
+  const started = Date.now();
   let previous = await driver.takeScreenshot();
+  let matches = 1;
   for (let i = 0; i < attempts; i += 1) {
     await new Promise((r) => setTimeout(r, gapMs));
     const next = await driver.takeScreenshot();
-    if (next === previous) return next;
+    matches = next === previous ? matches + 1 : 1;
     previous = next;
+    // Consecutive matching frames AND a minimum elapsed time, not just the first
+    // matching pair. Two identical early frames prove nothing when a late
+    // change is still coming: the changelog fetches GitHub releases on load,
+    // and with the network blackholed that request fails at a moment that
+    // varies, so an early accept captured whichever state happened to be up.
+    if (matches >= needed && Date.now() - started >= minMs) return next;
   }
   return previous;
 }
@@ -223,11 +232,16 @@ async function capture(outDir, only) {
       for (const width of WIDTHS) {
         for (const route of routes) {
           if (wanted && !wanted.has(slug(route, theme.name, width))) continue;
-          await driver.get(new URL(route, baseUrl).href);
-          // Size to the full document so the capture is the whole page, not
-          // the fold. Height is read after the width is applied, because the
-          // page reflows and a tall-at-1600 page is a different height at 700.
+          // Width FIRST, then navigate. Resizing after load means the page is
+          // laid out at the previous capture's width and then reflowed, and a
+          // reflow does not always land where a fresh layout would -- worst on
+          // table-heavy pages. docs-interface-coverage was byte-identical when
+          // captured alone and unstable inside the 14-route run, which is that
+          // difference and nothing else.
           await driver.manage().window().setRect({ width, height: 900 });
+          await driver.get(new URL(route, baseUrl).href);
+          // Then grow to the full document so the capture is the whole page
+          // rather than the fold. Height only, so the layout is untouched.
           const docHeight = await driver.executeScript(
             'return Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);',
           );
@@ -294,8 +308,11 @@ if (mode === 'record') {
    * touched only the light theme.
    */
   const verifyDir = join(root, '.visual-verify');
-  for (let round = 1; round <= 3; round += 1) {
-    const files = readdirSync(target);
+  // Narrows each round: the first pass re-takes everything, later ones only
+  // the captures still disagreeing. Re-taking all 84 every round made a
+  // record run exceed ten minutes once the settle window grew.
+  let files = readdirSync(target);
+  for (let round = 1; round <= 5; round += 1) {
     await capture(verifyDir, files.map(unslug).filter(Boolean));
     const unstable = files.filter((f) => {
       const other = join(verifyDir, f);
@@ -307,7 +324,8 @@ if (mode === 'record') {
     }
     console.log(`  ${unstable.length} capture(s) did not reproduce; taking the second reading.`);
     for (const f of unstable) writeFileSync(join(target, f), readFileSync(join(verifyDir, f)));
-    if (round === 3) {
+    files = unstable;
+    if (round === 5) {
       console.error(`\n${unstable.length} capture(s) never settled: ${unstable.join(', ')}`);
       console.error('They will report as differing on every check; investigate before trusting this baseline.');
     }
