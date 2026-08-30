@@ -1,60 +1,8 @@
-/* Theme tokens (dark/light custom properties) and header/search-button base overrides. */
-
-html[data-theme='dark'],
-html[data-theme='dark'] ::backdrop {
-  --sl-color-accent-low: #0a2a13;
-  --sl-color-accent: var(--netscli-accent);
-  --sl-color-accent-high: var(--netscli-accent-high);
-  --sl-color-white: #f4f4f4;
-  --sl-color-gray-1: #e7edf6;
-  --sl-color-gray-2: #c2cad8;
-  --sl-color-gray-3: #8c95a6;
-  --sl-color-gray-4: #586174;
-  --sl-color-gray-5: #2b313d;
-  --sl-color-gray-6: #191d25;
-  --sl-color-black: #111111;
-  --sl-color-bg: #111111;
-  --sl-color-bg-nav: rgba(17, 17, 17, 0.92);
-  --sl-color-bg-sidebar: #111111;
-  --sl-color-bg-inline-code: rgba(var(--netscli-accent-rgb), 0.09);
-  --sl-color-hairline: rgba(255, 255, 255, 0.08);
-  --sl-color-hairline-light: rgba(255, 255, 255, 0.1);
-  --sl-color-hairline-shade: #070707;
-  --sl-content-width: 64rem;
-}
-
-html[data-theme='light'],
-html[data-theme='light'] ::backdrop {
-  --sl-color-accent-low: #dcf8e4;
-  --sl-color-accent: #146b2e;
-  --sl-color-accent-high: #0b4a1f;
-  --sl-color-white: #111827;
-  --sl-color-gray-1: #243044;
-  --sl-color-gray-2: #44516a;
-  /* gray-3 is the secondary/small-text colour used by the docs footer,
-     built-with row, and mobile section labels — much of it at 12px. It has
-     now been raised twice: #718096 was 3.88:1 on --sl-color-bg (#fbfbfb),
-     and #667387 cleared that at 4.65:1 but was still 4.44:1 on
-     --sl-color-gray-6 (#f4f6f8), the card surface, which the earlier check
-     never looked at. #647084 clears every light surface: 4.84 on bg, 5.01
-     on black, 4.62 on gray-6. Do not lighten this; scripts/design-tokens.mjs
-     checks it against every surface now. The dark theme has its own gray-3
-     above and is unaffected. */
-  --sl-color-gray-3: #647084;
-  --sl-color-gray-4: #c6d0dd;
-  --sl-color-gray-5: #e3e8ef;
-  --sl-color-gray-6: #f4f6f8;
-  --sl-color-gray-7: #fbfbfb;
-  --sl-color-black: #ffffff;
-  --sl-color-bg: #fbfbfb;
-  --sl-color-bg-nav: rgba(251, 251, 251, 0.92);
-  --sl-color-bg-sidebar: #fbfbfb;
-  --sl-color-bg-inline-code: rgba(0, 122, 84, 0.08);
-  --sl-color-hairline: rgba(17, 24, 39, 0.1);
-  --sl-color-hairline-light: rgba(17, 24, 39, 0.12);
-  --sl-color-hairline-shade: rgba(17, 24, 39, 0.04);
-  --sl-content-width: 64rem;
-}
+/* Layout tokens and header/search-button base overrides.
+ *
+ * The dark/light COLOUR tokens moved to 00-theme-tokens.css, which loads
+ * before this file. The name is kept because the numbered order is load
+ * order and renaming would move the file in the cascade. */
 
 :root {
   --sl-nav-height: var(--netscli-nav-height);

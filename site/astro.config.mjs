@@ -55,6 +55,10 @@ export default defineConfig({
       // rules' cascade dependency first.
       customCss: [
         './src/styles/tokens.css',
+        // The whole colour palette, both themes. First on purpose: everything
+        // after it reads these tokens, and re-theming for another project
+        // should be a change to this one file.
+        './src/styles/starlight/00-theme-tokens.css',
         './src/styles/starlight/01-tokens-and-header.css',
         './src/styles/starlight/02-search-and-sidebar-base.css',
         './src/styles/starlight/03-shell-layout-base.css',

@@ -7,7 +7,7 @@
   overflow-y: hidden;
   border: 1px solid rgba(140, 149, 166, 0.2);
   border-radius: 8px;
-  background: #20242b;
+  background: var(--netscli-table-bg);
   -webkit-overflow-scrolling: touch;
 }
 
@@ -45,7 +45,7 @@
 }
 
 html[data-theme='light'] .sl-markdown-content .netscli-table-scroll {
-  background: #f7faf9;
+  background: var(--netscli-table-bg);
 }
 
 @media (min-width: 72rem) {
