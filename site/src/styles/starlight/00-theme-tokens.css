@@ -51,6 +51,16 @@ html[data-theme='dark'] ::backdrop {
      a white wash; see the light block for why this needs to be a token rather
      than a literal. */
   --netscli-lift-rgb: 255, 255, 255;
+
+  /* The raised panel that content sits on: search results and their tag
+     rows, and the frame and body of a code block. One surface, written out
+     six times across three files before this. */
+  --netscli-panel-bg: #20242b;
+
+  /* The floating menu surface: the mobile section menu and the mobile table
+     of contents dropdown, which are the same panel and were written out
+     separately in three files. */
+  --netscli-menu-bg: #1b2028;
 }
 
 html[data-theme='light'],
@@ -115,4 +125,12 @@ html[data-theme='light'] ::backdrop {
      nothing at all. Those hover states have been invisible in this theme.
      Same alphas, opposite direction. */
   --netscli-lift-rgb: 17, 24, 39;
+
+  /* Light counterpart of the raised panel; see the dark block above. */
+  --netscli-panel-bg: #f6f8fa;
+
+  /* Light counterpart of the floating menu; plain white, which this theme
+     also calls --sl-color-black. Named for the role so both themes read the
+     same way at the call site. */
+  --netscli-menu-bg: #ffffff;
 }

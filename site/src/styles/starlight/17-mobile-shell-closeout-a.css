@@ -136,7 +136,7 @@
     overscroll-behavior: contain;
     padding: 0.8rem clamp(1rem, 3.4vw, 1.75rem) 1rem;
     border-block: 1px solid var(--sl-color-hairline);
-    background: #1b2028;
+    background: var(--netscli-menu-bg);
   }
 
   .docs-mobile-section-menu section + section {

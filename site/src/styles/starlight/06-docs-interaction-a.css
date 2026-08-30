@@ -143,7 +143,7 @@ site-search dialog .search-container:has(.pagefind-ui__drawer.pagefind-ui__hidde
   overflow: hidden;
   border: 1px solid rgba(var(--netscli-hairline-rgb), 0.16);
   border-radius: 8px;
-  background: #20242b;
+  background: var(--netscli-panel-bg);
   box-shadow:
     0 1px 0 rgba(var(--netscli-lift-rgb), 0.025) inset,
     0 12px 26px rgba(0, 0, 0, 0.16);
@@ -154,7 +154,7 @@ site-search dialog .search-container:has(.pagefind-ui__drawer.pagefind-ui__hidde
 #starlight__search .pagefind-ui__result-tags {
   border: 0 !important;
   border-radius: 0 !important;
-  background: #20242b !important;
+  background: var(--netscli-panel-bg) !important;
 }
 
 #starlight__search .pagefind-ui__result-title:not(:where(.pagefind-ui__result-nested *)) {
