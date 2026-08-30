@@ -280,7 +280,7 @@ html[data-theme='light'] starlight-theme-select label {
 html[data-theme='light'] starlight-theme-select label:hover,
 html[data-theme='light'] starlight-theme-select label:focus-within {
   color: var(--sl-color-white);
-  border-color: rgba(0, 122, 84, 0.34);
+  border-color: rgba(var(--netscli-accent-rgb), 0.34);
   background: transparent;
 }
 
