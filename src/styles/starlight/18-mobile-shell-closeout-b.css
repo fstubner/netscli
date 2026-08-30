@@ -12,7 +12,7 @@
     align-items: center;
     min-height: 2.25rem;
     padding: 0.35rem 0.75rem;
-    border-inline-start: 2px solid transparent;
+    border-inline-start: 1px solid transparent;
     color: var(--sl-color-gray-2);
     text-decoration: none;
   }
@@ -112,7 +112,7 @@
     padding-block: 0.35rem !important;
     padding-inline: clamp(1rem, 3.4vw, 1.75rem) !important;
     border-top: 0 !important;
-    border-inline-start: 2px solid transparent !important;
+    border-inline-start: 1px solid transparent !important;
     color: var(--sl-color-gray-2) !important;
     background: transparent !important;
   }
