@@ -69,7 +69,7 @@ html[data-theme='light'] .sl-markdown-content tbody tr:nth-child(even):hover {
 }
 
 html[data-theme='light'] .sl-markdown-content .expressive-code .copy button {
-  border-color: rgba(17, 24, 39, 0.14) !important;
+  border-color: rgba(var(--netscli-hairline-rgb), 0.14) !important;
   background: #e9eef2 !important;
   color: var(--sl-color-gray-1) !important;
   opacity: 1;
@@ -83,7 +83,7 @@ html[data-theme='light'] .sl-markdown-content .expressive-code .copy button:focu
 }
 
 html[data-theme='light'] .sl-markdown-content .expressive-code .copy button::before {
-  border-color: rgba(17, 24, 39, 0.26) !important;
+  border-color: rgba(var(--netscli-hairline-rgb), 0.26) !important;
 }
 
 .sl-markdown-content .expressive-code .copy button {

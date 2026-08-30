@@ -5,7 +5,7 @@
   margin-block: 1.2rem;
   overflow-x: auto;
   overflow-y: hidden;
-  border: 1px solid rgba(140, 149, 166, 0.2);
+  border: 1px solid rgba(var(--netscli-hairline-rgb), 0.2);
   border-radius: 8px;
   background: var(--netscli-table-bg);
   -webkit-overflow-scrolling: touch;

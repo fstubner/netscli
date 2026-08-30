@@ -209,7 +209,7 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
     height: auto !important;
     max-height: calc(100dvh - var(--sl-nav-height) - 1.3rem) !important;
     padding: 0 !important;
-    border: 1px solid rgba(140, 149, 166, 0.22) !important;
+    border: 1px solid rgba(var(--netscli-hairline-rgb), 0.22) !important;
     border-radius: 8px !important;
     /* Opaque, and theme-aware.
      *

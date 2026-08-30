@@ -10,14 +10,14 @@ site-search button[data-open-modal]:focus-visible svg {
 }
 
 site-search button[data-open-modal] > kbd {
-  border: 1px solid rgba(140, 149, 166, 0.24);
+  border: 1px solid rgba(var(--netscli-hairline-rgb), 0.24);
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.04);
   color: var(--sl-color-gray-3);
 }
 
 site-search dialog {
-  border: 1px solid rgba(140, 149, 166, 0.34) !important;
+  border: 1px solid rgba(var(--netscli-hairline-rgb), 0.34) !important;
   border-radius: 8px !important;
 
   box-shadow:
@@ -54,12 +54,12 @@ site-search button[data-close-modal]:focus-visible {
   --pagefind-ui-primary: var(--sl-color-gray-1);
   --pagefind-ui-text: var(--sl-color-gray-2);
   --pagefind-ui-background: #171b22;
-  --pagefind-ui-border: rgba(140, 149, 166, 0.28);
+  --pagefind-ui-border: rgba(var(--netscli-hairline-rgb), 0.28);
   --pagefind-ui-border-width: 1px;
   --pagefind-ui-tag: rgba(var(--netscli-accent-rgb), 0.12);
   --sl-search-corners: 6px;
 }#starlight__search .pagefind-ui__search-input {
-  border-color: rgba(140, 149, 166, 0.32) !important;
+  border-color: rgba(var(--netscli-hairline-rgb), 0.32) !important;
   border-radius: 6px !important;
 
   color: var(--sl-color-gray-1) !important;
@@ -90,8 +90,8 @@ site-search button[data-close-modal]:focus-visible {
 
 html[data-theme='light'] site-search button[data-open-modal] {
 
-  border-color: rgba(17, 24, 39, 0.14);
-  box-shadow: 0 1px 2px rgba(17, 24, 39, 0.04);
+  border-color: rgba(var(--netscli-hairline-rgb), 0.14);
+  box-shadow: 0 1px 2px rgba(var(--netscli-hairline-rgb), 0.04);
 }
 
 html[data-theme='light'] site-search button[data-open-modal]:hover {
@@ -106,16 +106,16 @@ html[data-theme='light'] site-search button[data-open-modal]:hover {
 html[data-theme='light'] site-search dialog {
 
   box-shadow:
-    0 30px 70px rgba(17, 24, 39, 0.18),
+    0 30px 70px rgba(var(--netscli-hairline-rgb), 0.18),
     0 0 0 1px rgba(255, 255, 255, 0.72) inset !important;
 }
 
 html[data-theme='light'] #starlight__search {
   --pagefind-ui-background: #ffffff;
-  --pagefind-ui-border: rgba(17, 24, 39, 0.14);
+  --pagefind-ui-border: rgba(var(--netscli-hairline-rgb), 0.14);
   --pagefind-ui-tag: rgba(var(--netscli-accent-rgb), 0.11);
 }html[data-theme='light'] starlight-menu-button button {
-  background: rgba(17, 24, 39, 0.035);
+  background: rgba(var(--netscli-hairline-rgb), 0.035);
   color: var(--sl-color-gray-2);
 }
 
