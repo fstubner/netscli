@@ -83,7 +83,7 @@ html[data-theme='light'] #starlight__search .pagefind-ui__drawer:has(.pagefind-u
 html[data-theme='light'] .pagination-links a:hover,
 html[data-theme='light'] .pagination-links a:focus-visible {
 
-  color: #111827 !important;
+  color: var(--sl-color-white) !important;
 }
 
 #starlight__search .pagefind-ui__button {

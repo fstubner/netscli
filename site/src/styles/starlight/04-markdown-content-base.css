@@ -268,7 +268,7 @@ starlight-theme-select option {
 
 html[data-theme='light'] starlight-theme-select option {
 
-  background-color: #ffffff;
+  background-color: var(--sl-color-black);
 }
 
 html[data-theme='light'] starlight-theme-select label {

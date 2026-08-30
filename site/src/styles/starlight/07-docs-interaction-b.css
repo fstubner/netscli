@@ -84,7 +84,7 @@
 }
 
 html[data-theme='light'] .sl-markdown-content tbody tr:hover {
-  background: #ffffff;
+  background: var(--sl-color-black);
 }
 
 html[data-theme='light'] .sl-markdown-content tbody tr:nth-child(even):hover {
@@ -126,7 +126,7 @@ html[data-theme='light'] .sl-markdown-content tbody tr:nth-child(even):hover {
 html[data-theme='light'] .pagination-links a:hover {
   background: rgba(17, 24, 39, 0.022) !important;
   border-color: rgba(17, 24, 39, 0.16) !important;
-  color: #111827 !important;
+  color: var(--sl-color-white) !important;
 }
 
 .pagination-links a > svg {
@@ -135,7 +135,7 @@ html[data-theme='light'] .pagination-links a:hover {
 }
 
 html[data-theme='light'] .pagination-links a > svg {
-  color: #146b2e;
+  color: var(--sl-color-accent);
 }
 
 html[data-theme='light'] #starlight__search .pagefind-ui__result-inner,
