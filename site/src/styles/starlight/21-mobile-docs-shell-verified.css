@@ -4,7 +4,7 @@
 }.sidebar-content :where(details > ul a:hover),
 .sidebar-content :where(details > ul a:focus-visible) {
   color: var(--sl-color-white) !important;
-  background: rgba(255, 255, 255, 0.045) !important;
+  background: rgba(var(--netscli-lift-rgb), 0.045) !important;
 }
 
 .sidebar-content :where(details > ul a[aria-current='page']) {

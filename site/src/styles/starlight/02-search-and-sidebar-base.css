@@ -12,7 +12,7 @@ site-search button[data-open-modal]:focus-visible svg {
 site-search button[data-open-modal] > kbd {
   border: 1px solid rgba(var(--netscli-hairline-rgb), 0.24);
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(var(--netscli-lift-rgb), 0.04);
   color: var(--sl-color-gray-3);
 }
 
@@ -22,7 +22,7 @@ site-search dialog {
 
   box-shadow:
     0 34px 90px rgba(0, 0, 0, 0.62),
-    0 0 0 1px rgba(255, 255, 255, 0.02) inset !important;
+    0 0 0 1px rgba(var(--netscli-lift-rgb), 0.02) inset !important;
 }
 
 site-search dialog::backdrop {
@@ -71,7 +71,7 @@ site-search button[data-close-modal]:focus-visible {
   border-color: rgba(159, 248, 222, 0.72) !important;
   box-shadow:
     0 0 0 2px rgba(var(--netscli-accent-rgb), 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+    inset 0 1px 0 rgba(var(--netscli-lift-rgb), 0.04) !important;
 }#starlight__search .pagefind-ui__result-title:not(:where(.pagefind-ui__result-nested *)):hover,
 #starlight__search .pagefind-ui__result-title:not(:where(.pagefind-ui__result-nested *)):focus-within,
 #starlight__search .pagefind-ui__result-nested:hover,
@@ -176,7 +176,7 @@ html[data-theme='light'] starlight-menu-button[aria-expanded='true'] button {
 
 .sidebar-content a:hover {
   color: var(--sl-color-white);
-  background: rgba(255, 255, 255, 0.045);
+  background: rgba(var(--netscli-lift-rgb), 0.045);
 }
 
 @media (max-width: 72rem) {

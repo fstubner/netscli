@@ -11,7 +11,7 @@
 
 #starlight__search .pagefind-ui__search-input {
   background: #171b22 !important;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.015) !important;
+  box-shadow: inset 0 0 0 1px rgba(var(--netscli-lift-rgb), 0.015) !important;
 }
 
 #starlight__search .pagefind-ui__drawer {

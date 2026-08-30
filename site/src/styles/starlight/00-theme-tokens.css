@@ -46,6 +46,11 @@ html[data-theme='dark'] ::backdrop {
      --sl-color-gray-3 above; declared separately because rgba() needs the
      numbers, not the colour. */
   --netscli-hairline-rgb: 140, 149, 166;
+
+  /* The direction "raised" points in this theme. On a dark surface a lift is
+     a white wash; see the light block for why this needs to be a token rather
+     than a literal. */
+  --netscli-lift-rgb: 255, 255, 255;
 }
 
 html[data-theme='light'],
@@ -103,4 +108,11 @@ html[data-theme='light'] ::backdrop {
      which is --sl-color-white here because Starlight inverts that name in the
      light theme. 33 rules already wrote these channels out by hand. */
   --netscli-hairline-rgb: 17, 24, 39;
+
+  /* On a light surface, raised is DARKER, not lighter. 26 hover and inset
+     highlight rules wrote rgba(255, 255, 255, a) with no theme scope, at
+     alphas between 0.015 and 0.1 -- white on a near-white page, which is
+     nothing at all. Those hover states have been invisible in this theme.
+     Same alphas, opposite direction. */
+  --netscli-lift-rgb: 17, 24, 39;
 }

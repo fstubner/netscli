@@ -88,7 +88,7 @@
   border: 1px dashed rgba(var(--netscli-hairline-rgb), 0.22);
   border-radius: 8px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 9rem),
+    linear-gradient(180deg, rgba(var(--netscli-lift-rgb), 0.025), transparent 9rem),
     rgba(32, 36, 43, 0.56);
 }
 
@@ -106,7 +106,7 @@ site-search dialog .search-container:has(.pagefind-ui__drawer.pagefind-ui__hidde
   border: 1px dashed rgba(var(--netscli-hairline-rgb), 0.22);
   border-radius: 8px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 9rem),
+    linear-gradient(180deg, rgba(var(--netscli-lift-rgb), 0.025), transparent 9rem),
     rgba(32, 36, 43, 0.56);
   color: var(--sl-color-gray-3);
   font-size: 0.95rem;
@@ -145,7 +145,7 @@ site-search dialog .search-container:has(.pagefind-ui__drawer.pagefind-ui__hidde
   border-radius: 8px;
   background: #20242b;
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.025) inset,
+    0 1px 0 rgba(var(--netscli-lift-rgb), 0.025) inset,
     0 12px 26px rgba(0, 0, 0, 0.16);
 }
 
