@@ -57,4 +57,35 @@
   --netscli-accent-bright: #86efac;
   /* Pale tint for active text on dark surfaces. */
   --netscli-accent-high: #a7f3c6;
+
+  /* ---- Cross-stack role channels -------------------------------------
+   *
+   * These moved up from starlight/00-theme-tokens.css, which only the docs
+   * load. The landing page and the changelog need the same three roles to be
+   * themeable at all, and a second copy of them under different names is how
+   * the two halves of this site drifted apart in the first place.
+   *
+   * Declared here as the DARK values because that is what an unthemed page
+   * gets; the light block below overrides all three.
+   *
+   * Channels rather than colours because every call site is an rgba() with
+   * its own alpha. */
+
+  /* Hairlines, dividers, and the neutral washes drawn from them. */
+  --netscli-hairline-rgb: 140, 149, 166;
+  /* The direction "raised" points: white on a dark surface. */
+  --netscli-lift-rgb: 255, 255, 255;
+}
+
+/* The light theme's overrides of the three roles above.
+ *
+ * Set here rather than in the docs' own token file so the landing page and
+ * changelog resolve them too. Values match the docs light theme exactly, so
+ * the two stacks cannot disagree about what "light" means. */
+html[data-theme='light'] {
+  --netscli-accent-rgb: 20, 107, 46;
+  --netscli-hairline-rgb: 17, 24, 39;
+  /* On a light surface, raised is DARKER. See the note in the docs' token
+     file for the 27 rules that had this backwards. */
+  --netscli-lift-rgb: 17, 24, 39;
 }

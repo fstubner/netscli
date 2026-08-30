@@ -306,7 +306,7 @@ const { hero, social } = site;
   width:min(260px,calc(100vw - 48px));min-width:0;box-sizing:border-box;
   /* See the wrapped-layout rule below, which widens this to the trigger. */
   padding:5px;border-radius:8px;
-  background:#181b20;border:1px solid rgba(255,255,255,.12);
+  background:#181b20;border:1px solid rgba(var(--netscli-lift-rgb),.12);
   box-shadow:0 18px 40px rgba(0,0,0,.42);
 }
 .hero-desktop-menu a{
@@ -377,7 +377,7 @@ const { hero, social } = site;
   position:relative;display:grid;grid-template-columns:minmax(0,1fr);
   align-items:center;gap:10px;min-height:36px;
   padding:8px 58px 8px 14px;border-radius:9px;
-  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
+  background:rgba(var(--netscli-lift-rgb),.04);border:1px solid rgba(var(--netscli-lift-rgb),.1);
   box-shadow:0 0 0 1px rgba(var(--netscli-accent-rgb),.26),0 0 14px rgba(var(--netscli-accent-rgb),.08);
 }
 .hero-command.hero-copy .copy-btn{opacity:1}
@@ -477,7 +477,7 @@ const { hero, social } = site;
 .bigshot{
   margin:48px auto 78px;max-width:980px;
   border-radius:10px;overflow:hidden;
-  border:1px solid rgba(255,255,255,.08);
+  border:1px solid rgba(var(--netscli-lift-rgb),.08);
   box-shadow:0 32px 80px rgba(0,0,0,.6);
 }
 .bigshot img{width:100%;height:auto;display:block}

@@ -123,7 +123,7 @@ const staticRelease = renderReleaseListHtml(fallbackReleases, hero.sourceUrl.spl
   max-width:var(--netscli-shell-width);margin:0 auto;padding:64px var(--netscli-shell-gutter) 86px;
 }
 .changelog-hero{
-  border-bottom:1px solid rgba(255,255,255,.08);
+  border-bottom:1px solid rgba(var(--netscli-lift-rgb),.08);
   padding-bottom:28px;margin-bottom:28px;
 }
 .changelog-kicker{
@@ -176,7 +176,7 @@ const staticRelease = renderReleaseListHtml(fallbackReleases, hero.sourceUrl.spl
   position:sticky;
   top:calc(var(--nav-height, 72px) + 22px);
   padding-left:18px;
-  border-left:1px solid rgba(255,255,255,.08);
+  border-left:1px solid rgba(var(--netscli-lift-rgb),.08);
 }
 .release-timeline p{
   margin:0 0 11px;
@@ -244,8 +244,8 @@ const staticRelease = renderReleaseListHtml(fallbackReleases, hero.sourceUrl.spl
   font-size:.78rem;
 }
 .release-item{
-  background:rgba(255,255,255,.028);
-  border:1px solid rgba(255,255,255,.085);
+  background:rgba(var(--netscli-lift-rgb),.028);
+  border:1px solid rgba(var(--netscli-lift-rgb),.085);
   border-radius:8px;overflow:hidden;
   max-width:100%;
   min-width:0;
@@ -254,8 +254,8 @@ const staticRelease = renderReleaseListHtml(fallbackReleases, hero.sourceUrl.spl
 }
 .release-head{
   display:flex;align-items:center;justify-content:space-between;gap:16px;
-  padding:10px 20px;border-bottom:1px solid rgba(255,255,255,.07);
-  background:rgba(255,255,255,.018);
+  padding:10px 20px;border-bottom:1px solid rgba(var(--netscli-lift-rgb),.07);
+  background:rgba(var(--netscli-lift-rgb),.018);
 }
 .release-title-group{min-width:0}
 .release-item h2{margin:0;font-size:1.08rem;color:#f0f0f0;line-height:1.35;min-width:0;overflow-wrap:anywhere}
@@ -356,8 +356,8 @@ const staticRelease = renderReleaseListHtml(fallbackReleases, hero.sourceUrl.spl
   padding:8px 12px;background:rgba(var(--netscli-accent-rgb),.065);color:#b8c0cd;
 }
 .release-empty{
-  color:#8f98a8;background:rgba(255,255,255,.03);
-  border:1px dashed rgba(255,255,255,.12);border-radius:10px;padding:16px;
+  color:#8f98a8;background:rgba(var(--netscli-lift-rgb),.03);
+  border:1px dashed rgba(var(--netscli-lift-rgb),.12);border-radius:10px;padding:16px;
 }
 .release-disclosure{
   display:flex;justify-content:center;

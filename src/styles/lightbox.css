@@ -44,7 +44,7 @@ body.lightbox-open{overflow:hidden}
 }
 .image-lightbox-frame{
   min-height:0; /* lets the image shrink inside the flex column */
-  border:1px solid rgba(255,255,255,.14);
+  border:1px solid rgba(var(--netscli-lift-rgb),.14);
   border-radius:10px;
   background:#0d0d0d;
   overflow:hidden;
@@ -84,7 +84,7 @@ body.lightbox-open{overflow:hidden}
   height:36px;
   display:grid;
   place-items:center;
-  border:1px solid rgba(255,255,255,.18);
+  border:1px solid rgba(var(--netscli-lift-rgb),.18);
   border-radius:999px;
   background:#1b1b1b;
   color:#fff;
