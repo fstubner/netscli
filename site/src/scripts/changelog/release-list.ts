@@ -37,39 +37,75 @@ function mergeRelease(
   };
 }
 
-export function setupReleaseDisclosure(item: HTMLElement, body: HTMLElement, index: number): void {
-  const collapsedHeight = window.matchMedia('(max-width: 42rem)').matches ? 260 : 300;
-  const minimumOverflow = 80;
+/**
+ * Emit the collapsed structure. Runs at BUILD time as well as in the browser,
+ * and measures nothing.
+ *
+ * It used to measure: `scrollHeight` after a `requestAnimationFrame`, to decide
+ * whether a card was long enough to be worth collapsing. That decision cannot
+ * exist before layout, so the page shipped every release fully expanded and
+ * collapsed them once a module had run -- painting at about 10,700px and
+ * snapping to about 3,750px a moment later. A ~7,000px jump on every visit.
+ *
+ * So the decision moved off the critical path rather than being made faster.
+ * Every card is collapsible in the markup; the CSS only applies the clamp
+ * under `html[data-js]`, which the pre-paint script in Page.astro sets, so the
+ * clamp is in effect before the first frame and a reader without JavaScript
+ * still gets the full notes and no dead button.
+ *
+ * `hydrateReleaseDisclosures` then corrects the rare card that turns out to be
+ * short enough not to need it. Measured across all eight releases at 1600,
+ * 1100, 700 and 420: every one exceeds the threshold at every width, the
+ * narrowest margin being 405px against 380. So the correction is a no-op
+ * today, and the shift it can cause is bounded by the threshold rather than by
+ * the length of the release notes.
+ */
+export function renderReleaseDisclosure(item: HTMLElement, body: HTMLElement, index: number): void {
   const bodyId = `release-body-${index}`;
   body.id = bodyId;
+  item.classList.add('release-collapsible');
 
-  requestAnimationFrame(() => {
-    if (body.scrollHeight <= collapsedHeight + minimumOverflow) return;
+  const disclosure = el('div', 'release-disclosure');
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'release-toggle';
+  button.setAttribute('aria-controls', bodyId);
+  button.setAttribute('aria-expanded', 'false');
+  button.setAttribute('aria-label', 'Show full release notes');
+  button.textContent = 'Show more';
+  disclosure.append(button);
+  item.append(disclosure);
+}
 
-    item.classList.add('release-collapsible');
-    body.style.setProperty('--release-collapsed-height', `${collapsedHeight}px`);
+/**
+ * Wire the toggle rendered above, and drop the collapse from any card that
+ * does not need one.
+ *
+ * `scrollHeight` reports the full content height even while `max-height` is
+ * clipping it, so the check still works against an already-collapsed card.
+ */
+export function setupReleaseDisclosure(item: HTMLElement, body: HTMLElement): void {
+  const collapsedHeight = window.matchMedia('(max-width: 42rem)').matches ? 260 : 300;
+  const minimumOverflow = 80;
+  const button = item.querySelector<HTMLButtonElement>('.release-toggle');
+  if (!button) return;
+
+  if (body.scrollHeight <= collapsedHeight + minimumOverflow) {
+    item.classList.remove('release-collapsible');
+    item.querySelector('.release-disclosure')?.remove();
+    return;
+  }
+
+  body.style.setProperty('--release-collapsed-height', `${collapsedHeight}px`);
+
+  button.addEventListener('click', () => {
+    const expanded = !item.classList.contains('release-expanded');
     body.style.setProperty('--release-expanded-height', `${body.scrollHeight}px`);
-
-    const disclosure = el('div', 'release-disclosure');
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'release-toggle';
-    button.setAttribute('aria-controls', bodyId);
-    button.setAttribute('aria-expanded', 'false');
-    button.setAttribute('aria-label', 'Show full release notes');
-    button.textContent = 'Show more';
-    disclosure.append(button);
-    item.append(disclosure);
-
-    button.addEventListener('click', () => {
-      const expanded = !item.classList.contains('release-expanded');
-      body.style.setProperty('--release-expanded-height', `${body.scrollHeight}px`);
-      item.classList.toggle('release-expanded', expanded);
-      button.setAttribute('aria-expanded', String(expanded));
-      button.setAttribute('aria-label', expanded ? 'Collapse release notes' : 'Show full release notes');
-      button.textContent = expanded ? 'Show less' : 'Show more';
-      if (!expanded) item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    });
+    item.classList.toggle('release-expanded', expanded);
+    button.setAttribute('aria-expanded', String(expanded));
+    button.setAttribute('aria-label', expanded ? 'Collapse release notes' : 'Show full release notes');
+    button.textContent = expanded ? 'Show less' : 'Show more';
+    if (!expanded) item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   });
 }
 
@@ -139,24 +175,27 @@ export function renderReleaseList(
     const body = renderMarkdown(release.body || '', release, repo, releaseSummaries);
     item.append(header, body);
     list.appendChild(item);
-    if (interactive) setupReleaseDisclosure(item, body, index);
+    // Always rendered, at build time as well as in the browser -- the markup
+    // no longer depends on a measurement. Only the wiring does.
+    renderReleaseDisclosure(item, body, index);
+    if (interactive) setupReleaseDisclosure(item, body);
   }
   updateReleaseTimeline(releases.map((release) => mergeRelease(release, fallbackByTag, releaseSummaries)));
   return true;
 }
 
 /**
- * Attach the collapse affordance to cards that were rendered at build time.
+ * Make the build-rendered toggles work.
  *
- * The server render skips it because it measures `scrollHeight`, which is 0
- * without layout. This runs once on load, against the markup already on the
- * page, so the notes are readable before any script runs and gain the
- * collapse once one does.
+ * The cards arrive already collapsed -- see renderReleaseDisclosure -- so this
+ * attaches click handlers and nothing about the page moves. It used to be the
+ * step that introduced the collapse, which is what made the changelog jump on
+ * every load.
  */
 export function hydrateReleaseDisclosures(): void {
   const items = document.querySelectorAll<HTMLElement>('#release-list .release-item');
-  items.forEach((item, index) => {
+  items.forEach((item) => {
     const body = item.querySelector<HTMLElement>('.release-body');
-    if (body) setupReleaseDisclosure(item, body, index);
+    if (body) setupReleaseDisclosure(item, body);
   });
 }
