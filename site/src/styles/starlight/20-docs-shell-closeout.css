@@ -66,11 +66,14 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
   box-shadow: none !important;
 }
 
+/* The `.docs-nav-links { display: none !important }` that used to head this
+   block is gone. It was a second copy of the collapse rule Header.astro
+   already had, and being unlayered and !important it was the one that
+   actually won -- so moving the breakpoint in the component did nothing, and
+   the docs bar kept collapsing 250px before the landing bar. Header.astro
+   owns it now; nothing else on the page selects .docs-nav-links, so there is
+   no layered-vs-unlayered fight left to have. */
 @media (max-width: 72rem) {
-  .docs-nav-links {
-    display: none !important;
-  }
-
   .docs-topbar {
 
     gap: 0.45rem !important;
