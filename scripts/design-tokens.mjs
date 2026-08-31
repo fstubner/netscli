@@ -88,6 +88,22 @@ const TARGETS = [
       'netscli-text-strong',
       'netscli-text',
       'netscli-text-muted',
+      // The accent as ink, and the four code-sample colours.
+      //
+      // Added after the light theme shipped with --netscli-accent left at the
+      // dark #22c55e -- 2.0:1 on a white page, across every accent-coloured
+      // link on the landing page and the changelog -- and the code samples
+      // still carrying a palette picked for a near-black background. Neither
+      // was reachable from this list, so the gate reported a pass on both.
+      // --netscli-accent is the one to watch: only its -rgb twin was
+      // overridden per theme, and channels are invisible to a contrast check.
+      'netscli-accent',
+      'netscli-accent-bright',
+      'netscli-accent-high',
+      'netscli-code-comment',
+      'netscli-code-punct',
+      'netscli-code-key',
+      'netscli-code-string',
     ],
     surfaces: ['sl-color-bg', 'sl-color-bg-sidebar', 'sl-color-black', 'sl-color-gray-6'],
     keys: {

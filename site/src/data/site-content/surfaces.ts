@@ -38,30 +38,30 @@ export const surfaces: SurfaceCard[] = [
     title: 'Command line',
     body:
       'Use the CLI for repeatable diagnostics and automation. Network operations expose <code>--json</code> and <code>--yaml</code> output, so scripts and other tools can consume the same data the desktop app displays.',
-    codeHtml: `<span style="color:#888">$</span> netscli scan demo.local -p 80,443 --json
-<span style="color:#7b7b7b">[</span>
-  <span style="color:#7b7b7b">{</span> <span style="color:#7c9fc7">"port"</span>: 80,  <span style="color:#7c9fc7">"open"</span>: true, <span style="color:#7c9fc7">"service"</span>: <span style="color:#8fbc7f">"http"</span>  <span style="color:#7b7b7b">}</span>,
-  <span style="color:#7b7b7b">{</span> <span style="color:#7c9fc7">"port"</span>: 443, <span style="color:#7c9fc7">"open"</span>: true, <span style="color:#7c9fc7">"service"</span>: <span style="color:#8fbc7f">"https"</span> <span style="color:#7b7b7b">}</span>
-<span style="color:#7b7b7b">]</span>
+    codeHtml: `<span style="color:var(--netscli-code-comment)">$</span> netscli scan demo.local -p 80,443 --json
+<span style="color:var(--netscli-code-punct)">[</span>
+  <span style="color:var(--netscli-code-punct)">{</span> <span style="color:var(--netscli-code-key)">"port"</span>: 80,  <span style="color:var(--netscli-code-key)">"open"</span>: true, <span style="color:var(--netscli-code-key)">"service"</span>: <span style="color:var(--netscli-code-string)">"http"</span>  <span style="color:var(--netscli-code-punct)">}</span>,
+  <span style="color:var(--netscli-code-punct)">{</span> <span style="color:var(--netscli-code-key)">"port"</span>: 443, <span style="color:var(--netscli-code-key)">"open"</span>: true, <span style="color:var(--netscli-code-key)">"service"</span>: <span style="color:var(--netscli-code-string)">"https"</span> <span style="color:var(--netscli-code-punct)">}</span>
+<span style="color:var(--netscli-code-punct)">]</span>
 
-<span style="color:#888">$</span> netscli discover --json | jq '.[].hostname'
-<span style="color:#8fbc7f">"workstation.local"</span>
-<span style="color:#8fbc7f">"phone.local"</span>
-<span style="color:#8fbc7f">"pi.local"</span>`,
+<span style="color:var(--netscli-code-comment)">$</span> netscli discover --json | jq '.[].hostname'
+<span style="color:var(--netscli-code-string)">"workstation.local"</span>
+<span style="color:var(--netscli-code-string)">"phone.local"</span>
+<span style="color:var(--netscli-code-string)">"pi.local"</span>`,
   },
   {
     title: 'MCP server',
     body:
       'Run <code>netscli serve</code> when an MCP client needs local network tools. Discovery, scanning, ping, DNS, ARP and interfaces are all exposed as structured tools, so an agent gets the same results you would, in a shape it can parse.',
-    codeHtml: `<span style="color:#888">// claude_desktop_config.json</span>
-<span style="color:#7b7b7b">{</span>
-  <span style="color:#7c9fc7">"mcpServers"</span>: <span style="color:#7b7b7b">{</span>
-    <span style="color:#7c9fc7">"netscli"</span>: <span style="color:#7b7b7b">{</span>
-      <span style="color:#7c9fc7">"command"</span>: <span style="color:#8fbc7f">"netscli"</span>,
-      <span style="color:#7c9fc7">"args"</span>: [<span style="color:#8fbc7f">"serve"</span>]
-    <span style="color:#7b7b7b">}</span>
-  <span style="color:#7b7b7b">}</span>
-<span style="color:#7b7b7b">}</span>`,
+    codeHtml: `<span style="color:var(--netscli-code-comment)">// claude_desktop_config.json</span>
+<span style="color:var(--netscli-code-punct)">{</span>
+  <span style="color:var(--netscli-code-key)">"mcpServers"</span>: <span style="color:var(--netscli-code-punct)">{</span>
+    <span style="color:var(--netscli-code-key)">"netscli"</span>: <span style="color:var(--netscli-code-punct)">{</span>
+      <span style="color:var(--netscli-code-key)">"command"</span>: <span style="color:var(--netscli-code-string)">"netscli"</span>,
+      <span style="color:var(--netscli-code-key)">"args"</span>: [<span style="color:var(--netscli-code-string)">"serve"</span>]
+    <span style="color:var(--netscli-code-punct)">}</span>
+  <span style="color:var(--netscli-code-punct)">}</span>
+<span style="color:var(--netscli-code-punct)">}</span>`,
     flip: true,
   },
 ];

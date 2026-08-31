@@ -69,11 +69,21 @@ html[data-theme='light'] ::backdrop {
      now been raised twice: #718096 was 3.88:1 on --sl-color-bg (#fbfbfb),
      and #667387 cleared that at 4.65:1 but was still 4.44:1 on
      --sl-color-gray-6 (#f4f6f8), the card surface, which the earlier check
-     never looked at. #647084 clears every light surface: 4.84 on bg, 5.01
-     on black, 4.62 on gray-6. Do not lighten this; scripts/design-tokens.mjs
-     checks it against every surface now. The dark theme has its own gray-3
-     above and is unaffected. */
-  --sl-color-gray-3: #647084;
+     never looked at. #647084 cleared every DECLARED light surface -- 4.84 on
+     bg, 5.01 on black, 4.62 on gray-6 -- and still failed in practice, at
+     4.42:1 on the changelog's release header. Nothing there is a declared
+     surface: the card lays a 2.8% wash over the page and the header lays
+     another 1.8% over the card, and two washes nobody would call a colour
+     ate the 0.34 of headroom the value had.
+
+     That is the third time this token has been re-picked, twice to a value
+     that merely cleared the bar. #596478 is chosen with margin instead --
+     5.77 on bg, 5.27 through both changelog washes -- because the gate
+     compares declared colours and cannot see a composite, so the margin is
+     the only thing standing in for the surfaces it will never enumerate.
+     Do not lighten this. The dark theme has its own gray-3 above and is
+     unaffected. */
+  --sl-color-gray-3: #596478;
   --sl-color-gray-4: #c6d0dd;
   --sl-color-gray-5: #e3e8ef;
   --sl-color-gray-6: #f4f6f8;
