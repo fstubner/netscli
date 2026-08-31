@@ -195,8 +195,11 @@ header.header > .header > * {
   align-self: center;
 }
 
-header.header site-search button,
-header.header starlight-theme-select label {
+/* The theme select's half of this moved to src/styles/theme-control.css.
+   Its 2.35rem was the last thing keeping the two bars' controls different
+   sizes -- 37.6px here against 17.2px on the landing bar, which had no
+   equivalent rule to reach. */
+header.header site-search button {
   min-height: 2.35rem;
   display: inline-flex;
   align-items: center;

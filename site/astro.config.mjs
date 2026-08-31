@@ -92,6 +92,11 @@ export default defineConfig({
         // and `code`. See the file for why that is unavoidable today.
         './src/styles/starlight/29-callout-contrast.css',
         './src/styles/starlight/30-scroll-and-search-offline.css',
+        // The theme select, shared with the landing bar, which imports the
+        // same file in Page.astro. Last on purpose: it is the control's
+        // definition rather than an override of one, and it has to outrank
+        // Starlight's own scoped styles for that component. See the file.
+        './src/styles/theme-control.css',
       ],
       social: [
         {
