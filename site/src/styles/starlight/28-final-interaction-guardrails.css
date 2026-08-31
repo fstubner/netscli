@@ -25,8 +25,15 @@
   border-color: var(--netscli-panel-hover-border) !important;
 }
 
-.pagination-links a:hover :where(.link-title, .link-subtitle, span),
-.pagination-links a:focus-visible :where(.link-title, .link-subtitle, span) {
+/* `.link-title` is excluded on purpose.
+ *
+ * This existed to stop a child re-colouring itself on hover and breaking the
+ * card's single hover colour. But the title is meant to be a step brighter
+ * than the label at rest (see 07-docs-interaction-b.css), and `inherit` here
+ * collapsed the two back together the moment the pointer touched the card --
+ * so the distinction existed everywhere except where a reader was looking. */
+.pagination-links a:hover :where(.link-subtitle, span:not(.link-title)),
+.pagination-links a:focus-visible :where(.link-subtitle, span:not(.link-title)) {
   color: inherit !important;
 }
 

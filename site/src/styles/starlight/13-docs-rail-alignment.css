@@ -7,9 +7,25 @@
 
 .sidebar-pane,
 .sidebar-content,
-.right-sidebar,
 .right-sidebar-panel {
   overflow-x: hidden !important;
+}
+
+/* .right-sidebar is deliberately NOT in the list above.
+ *
+ * `overflow-x: hidden` with `overflow-y: visible` is not a thing CSS will do:
+ * when one axis is clipped the other computes to `auto`, so the rail becomes
+ * a scroll container. That silently captures the `position: sticky` on the
+ * contents panel inside it -- the panel sticks to the rail, which does not
+ * scroll, so it looks like sticky was never applied at all. It cost an hour
+ * of measuring the panel scrolling off screen with the rule right there.
+ *
+ * Below 72rem the rail is a full-width block where the clip still earns its
+ * place, so it keeps it there. */
+@media (max-width: 71.99rem) {
+  .right-sidebar {
+    overflow-x: hidden !important;
+  }
 }
 
 @media (min-width: 72rem) {
@@ -84,5 +100,57 @@
     width: 1px;
     background: var(--sl-color-hairline);
     pointer-events: none;
+  }
+}
+
+/* ---- The contents list sticks instead of hanging -------------------------
+ *
+ * Starlight fixes the whole rail (`position: fixed; top: 0; padding-top:
+ * var(--sl-nav-height)`), which pins the contents list just under the header
+ * and never moves it. Giving the panel a top margin so it starts below the
+ * title band therefore pinned it 133px BELOW the header instead -- for the
+ * whole page, long after the band had scrolled away. Measured: with the band
+ * 1378px off the top of the screen, the list was still sitting at y=193.
+ *
+ * A fixed element cannot start below something and then catch up, so the rail
+ * goes back into normal flow and the panel gets `position: sticky`. The margin
+ * places it under the band at rest; scrolling carries it up until its top
+ * reaches the header, and it stays there. Same two positions the fixed version
+ * offered, without having to choose one.
+ *
+ * The mobile close-out already unfixes this rail for the same reason -- see
+ * 17-mobile-shell-closeout-a.css.
+ *
+ * `overflow-y` and a height cap move to the panel with it: they were on the
+ * rail so a contents list taller than the screen could scroll on its own, and
+ * that has to keep working now the rail is not the viewport-sized box.
+ */
+@media (min-width: 72rem) {
+  .right-sidebar {
+    position: static;
+    /* Full column height, not `auto`. A sticky element can only travel inside
+       its containing block, and an auto-height rail shrink-wraps to the panel
+       -- leaving it nowhere to go, so it scrolled away like a static box. The
+       container is the in-flow <aside>, which is as tall as the page. */
+    height: 100%;
+    /* The offset that starts the contents list below the title band, as
+       PADDING on the rail rather than a margin on the panel.
+
+       As a margin it collapsed out through the rail, moving the rail's own top
+       down 133px while `height: 100%` still measured from the container -- so
+       the rail overran the bottom of the page by exactly that much. Padding
+       does not collapse, and with border-box it comes out of the same 100%.
+       Starlight uses padding here for its own nav-height offset, for what is
+       presumably the same reason. */
+    padding-top: calc(var(--netscli-docs-hero-height) + 1px);
+    overflow: visible;
+  }
+
+  .right-sidebar-panel {
+    position: sticky;
+    top: var(--sl-nav-height);
+    max-height: calc(100vh - var(--sl-nav-height));
+    overflow-y: auto;
+    scrollbar-width: none;
   }
 }

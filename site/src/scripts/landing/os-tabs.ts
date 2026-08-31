@@ -111,27 +111,33 @@ export function initOsTabs(): void {
     //   Linux: `packageCommands.linux` was byte-identical to
     //   `hero.quickInstall`, so the hero printed the same command twice.
     //
-    // Primary is whatever the install section recommends for that
-    // platform, so the hero and "Get started" agree; secondary is a
-    // genuinely different route.
-    const heroCommands: Record<OperatingSystem, { primary: string; secondary: string }> = {
+    // Keyed by ROUTE, not by rank.
+    //
+    // These were `primary` and `secondary`, meaning "what the install section
+    // recommends" and "a genuinely different route" -- but the two rows the
+    // hero puts them in are different SIZES, not different ranks, and Linux
+    // had the script under `primary` while Windows and macOS had it under
+    // `secondary`. So the wide row got a package-manager command on two
+    // platforms and a 90-character URL on the third. Naming them for what
+    // they are lets each row take the one that fits it.
+    const heroCommands: Record<OperatingSystem, { packageManager: string; script: string }> = {
       windows: {
         // Moniker, matching the hero's server-rendered default. `Moniker:
         // netscli` is published in the winget catalog alongside the
         // canonical `fstubner.netscli`, so both resolve.
-        primary: "winget install netscli",
-        secondary:
+        packageManager: "winget install netscli",
+        script:
           "iwr -useb https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.ps1 | iex",
       },
       macos: {
-        primary: "brew tap fstubner/tap && brew install netscli",
-        secondary:
+        packageManager: "brew tap fstubner/tap && brew install netscli",
+        script:
           "curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash",
       },
       linux: {
-        primary:
+        packageManager: "yay -S netscli-bin",
+        script:
           "curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash",
-        secondary: "yay -S netscli-bin",
       },
     };
 
@@ -142,8 +148,12 @@ export function initOsTabs(): void {
       const code = host.querySelector("code");
       if (code) code.textContent = command;
     };
-    setHeroCommand("hero-quick-install", heroCommands[detected].primary);
-    setHeroCommand("hero-package-install", heroCommands[detected].secondary);
+    // `hero-quick-install` is the wide slot beside the Desktop app button and
+    // takes the script one-liner; `hero-package-install` is the narrower row
+    // below and takes the package-manager command. Named per role rather than
+    // per position, so the two stay right if the rows ever move again.
+    setHeroCommand("hero-quick-install", heroCommands[detected].script);
+    setHeroCommand("hero-package-install", heroCommands[detected].packageManager);
 
     const desktopDownload = document.querySelector<HTMLAnchorElement>("#hero-desktop-download");
     if (desktopDownload) {

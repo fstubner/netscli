@@ -104,6 +104,17 @@ const TARGETS = [
       'netscli-code-punct',
       'netscli-code-key',
       'netscli-code-string',
+      // The three stops of the "Desktop app" button's gradient label.
+      //
+      // Gradient-filled text sets `-webkit-text-fill-color: transparent`, so
+      // axe measures a transparent foreground and skips the element entirely.
+      // That blind spot hid a stop at 2.23:1 on the dark page and another at
+      // 1.59:1 on the light one -- one end of the word near-invisible in each
+      // theme, for as long as the button has existed. Nothing else can see
+      // these: a running browser reports the fill, not the paint.
+      'netscli-brand-gradient-from',
+      'netscli-brand-gradient-via',
+      'netscli-brand-gradient-to',
     ],
     surfaces: ['sl-color-bg', 'sl-color-bg-sidebar', 'sl-color-black', 'sl-color-gray-6'],
     keys: {

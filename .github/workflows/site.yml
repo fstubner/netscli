@@ -138,6 +138,15 @@ jobs:
       - name: Accessibility check
         run: npm run test:a11y
 
+      # Runs alongside axe rather than instead of it, because it covers the
+      # one thing axe cannot: axe files text over a gradient or a
+      # pseudo-element under `incomplete`, and `--exit` only fails on
+      # `violations`. On the landing page that was 48 unchecked nodes reported
+      # as a clean pass -- including a heading at 1.03:1. This composites the
+      # ancestor stack itself. See the header of the script.
+      - name: Rendered contrast sweep
+        run: npm run check:contrast
+
   # ─── Required status check ────────────────────────────────────────────
   # The only job here that should be marked required in branch protection.
   # See the equivalent note in ci.yml.
