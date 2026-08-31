@@ -274,15 +274,28 @@ const staticRelease = renderReleaseListHtml(fallbackReleases, hero.sourceUrl.spl
 .release-body :where(p, li, blockquote, h3, h4, h5, a, span, strong, em){
   min-width:0;max-width:100%;overflow-wrap:anywhere;word-break:normal;
 }
-.release-collapsible .release-body{
+/* The clamp, and the button that undoes it, are gated on scripts running.
+ *
+ * `data-js` is set by the pre-paint inline script in Page.astro, so the clamp
+ * is in effect before the first frame. Without it the release notes render at
+ * full height, which is what a reader with no JavaScript should get -- and
+ * they get no "Show more" button that could not do anything either.
+ *
+ * The markup is identical in both cases: every card ships collapsible. That is
+ * the point. Deciding per-card needs a measurement that does not exist before
+ * layout, and making the page wait for it is what had the changelog painting
+ * at ~10,700px and snapping to ~3,750px on every visit. */
+html[data-js] .release-collapsible .release-body{
   max-height:var(--release-collapsed-height, 300px);
   overflow:hidden;
   transition:max-height 220ms ease;
 }
-.release-collapsible.release-expanded .release-body{
+html[data-js] .release-collapsible.release-expanded .release-body{
   max-height:var(--release-expanded-height, 1200px);
 }
-.release-collapsible:not(.release-expanded) .release-body::after{
+.release-disclosure{display:none}
+html[data-js] .release-collapsible .release-disclosure{display:flex}
+html[data-js] .release-collapsible:not(.release-expanded) .release-body::after{
   content:"";
   position:absolute;left:0;right:0;bottom:0;height:84px;
   pointer-events:none;
@@ -360,7 +373,8 @@ const staticRelease = renderReleaseListHtml(fallbackReleases, hero.sourceUrl.spl
   border:1px dashed rgba(var(--netscli-lift-rgb),.12);border-radius:10px;padding:16px;
 }
 .release-disclosure{
-  display:flex;justify-content:center;
+  /* `display` is set above, gated on data-js. */
+  justify-content:center;
   padding:4px 20px 22px;
   margin-top:-4px;
 }
