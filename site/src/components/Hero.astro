@@ -94,17 +94,27 @@ const { hero, social } = site;
           </a>
         </div>
       </div>
+      {/* The SCRIPT one-liner sits here, in the wide slot beside the button,
+          and the package-manager command goes in the narrower row below.
+
+          It used to be the other way round, which put the longest command in
+          the narrowest box: `iwr -useb https://raw.githubus...` was truncated
+          mid-URL, so the row a reader would scan for the command showed a
+          fragment of one. Copy still worked, but nothing about the ellipsis
+          said so. The ids keep their meaning -- `hero-quick-install` is the
+          quick script, `hero-package-install` is the package manager -- and
+          scripts/landing/os-tabs.ts fills both by id, not by position. */}
       <div
         class="hero-command hero-command-wide has-copy hero-copy"
-        data-copy={hero.quickInstall}
+        data-copy={hero.quickInstallAlt}
         id="hero-quick-install"
       >
-        <code>{hero.quickInstall}</code>
+        <code>{hero.quickInstallAlt}</code>
       </div>
     </div>
     <div class="hero-cta-sub">
-      <div class="hero-command has-copy hero-copy" id="hero-package-install" data-copy={hero.quickInstallAlt}>
-        <code>{hero.quickInstallAlt}</code>
+      <div class="hero-command has-copy hero-copy" id="hero-package-install" data-copy={hero.quickInstall}>
+        <code>{hero.quickInstall}</code>
       </div>
       <a class="hero-install-link" href="#install">{hero.installLinkLabel}</a>
     </div>
@@ -243,9 +253,13 @@ const { hero, social } = site;
   padding:0;
   border:1px solid transparent;
   border-radius:9px;
+  /* Tokens, not literals. The fill was a hard-coded #191b1e, so in the light
+     theme the one primary button on the page stayed dark charcoal on a white
+     surface; the border gradient ended on the dark theme's bright cyan for the
+     same reason. Both follow the theme now. */
   background:
-    linear-gradient(#191b1e,#191b1e) padding-box,
-    linear-gradient(90deg,var(--netscli-accent) 0%,var(--netscli-accent) 62%,#1edcff 100%) border-box;
+    linear-gradient(var(--netscli-surface),var(--netscli-surface)) padding-box,
+    linear-gradient(90deg,var(--netscli-accent) 0%,var(--netscli-accent) 62%,var(--netscli-brand-gradient-to) 100%) border-box;
   box-shadow:0 0 12px rgba(var(--netscli-accent-rgb),.08);
   overflow:visible;
 }
@@ -266,7 +280,10 @@ const { hero, social } = site;
 }
 .hero-primary-label{
   transform:translateX(8px);
-  background-image:linear-gradient(90deg,#005a1e,var(--netscli-accent),#1edcff);
+  background-image:linear-gradient(90deg,
+    var(--netscli-brand-gradient-from),
+    var(--netscli-brand-gradient-via),
+    var(--netscli-brand-gradient-to));
   -webkit-background-clip:text;background-clip:text;
   -webkit-text-fill-color:transparent;
 }
@@ -296,8 +313,8 @@ const { hero, social } = site;
 .hero-primary-wrap:focus-within,
 .hero-primary-wrap:hover{
   background:
-    linear-gradient(#1c1f23,#1c1f23) padding-box,
-    linear-gradient(90deg,var(--netscli-accent) 0%,var(--netscli-accent) 62%,#1edcff 100%) border-box;
+    linear-gradient(var(--netscli-surface-raised),var(--netscli-surface-raised)) padding-box,
+    linear-gradient(90deg,var(--netscli-accent) 0%,var(--netscli-accent) 62%,var(--netscli-brand-gradient-to) 100%) border-box;
   box-shadow:0 0 0 1px rgba(var(--netscli-accent-rgb),.16),0 0 12px rgba(var(--netscli-accent-rgb),.08);
 }
 .hero-primary-menu:hover{color:var(--netscli-text-strong)}
