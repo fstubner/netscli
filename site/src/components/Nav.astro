@@ -35,14 +35,34 @@ const onHome = pathname === '/';
           {link.label}
         </a>
       ))}
-      <label class="theme-select">
-        <span class="sr-only">Theme</span>
-        <select data-theme-select>
-          <option value="auto">Auto</option>
-          <option value="light">Light</option>
-          <option value="dark">Dark</option>
-        </select>
-      </label>
+      {/*
+        Deliberately the same shape as Starlight's ThemeSelect -- label
+        wrapping a leading icon, a bare <select>, and a caret -- because
+        src/styles/theme-control.css styles both from one rule set and the
+        docs bar renders the upstream component, which this cannot reuse:
+        it lives inside Starlight and the landing page does not load it.
+
+        The two icons are Starlight's own `laptop` and `down-caret` paths,
+        copied rather than imported for the same reason. Option order and
+        labels match upstream too, so the list reads identically in both
+        bars.
+      */}
+      <div class="netscli-theme-select">
+        <label>
+          <span class="sr-only">Select theme</span>
+          <svg aria-hidden="true" class="icon label-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z" />
+          </svg>
+          <select autocomplete="off" data-theme-select>
+            <option value="dark">Dark</option>
+            <option value="light">Light</option>
+            <option value="auto" selected>Auto</option>
+          </select>
+          <svg aria-hidden="true" class="icon caret" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17 9.17a1 1 0 0 0-1.41 0L12 12.71 8.46 9.17a1 1 0 1 0-1.41 1.42l4.24 4.24a1.002 1.002 0 0 0 1.42 0L17 10.59a1.002 1.002 0 0 0 0-1.42Z" />
+          </svg>
+        </label>
+      </div>
     </div>
   </div>
 </nav>
@@ -192,36 +212,20 @@ body.nav-scrolled nav[data-site-nav]::after{
  * reader correct for free, and the docs' control is the same element, so the
  * two bars behave identically.
  *
+ * Its appearance is NOT here. It lives in src/styles/theme-control.css, which
+ * both stacks load, because the docs bar draws Starlight's version of this
+ * control and the two were visibly different objects while each bar styled
+ * its own. The only rule left here is the one thing that is genuinely local:
+ * standing the control to the bar's full height.
+ *
  * The option list is drawn by the operating system, so it cannot be styled
  * the way the rest of the bar is. What it CAN follow is `color-scheme`, which
- * tokens.css now sets per theme -- Starlight declares that for the docs in
- * its own reset, and this page never loads that reset, so the docs popup was
+ * tokens.css sets per theme -- Starlight declares that for the docs in its
+ * own reset, and this page never loads that reset, so the docs popup was
  * already dark while this one was drawn white over a near-black bar. That is
  * as far as it is worth going: a bespoke listbox for three options would have
  * to re-implement the keyboard and screen reader behaviour this gets free. */
-.theme-select{display:inline-flex;align-items:center;height:calc(var(--netscli-nav-height) - 1px)}
-.theme-select select{
-  font:inherit;font-size:.8125rem;
-  color:var(--netscli-text-muted);
-  background:transparent;
-  border:1px solid rgba(var(--netscli-hairline-rgb),.24);
-  border-radius:6px;
-  padding:4px 6px;
-  cursor:pointer;
-}
-.theme-select select:hover{color:var(--netscli-text)}
-.theme-select select:focus-visible{
-  outline:0;
-  color:var(--netscli-text);
-  border-color:rgba(var(--netscli-accent-rgb),.45);
-  box-shadow:0 0 0 2px rgba(var(--netscli-accent-rgb),.22);
-}
-/* Kept alongside `color-scheme` rather than replaced by it. These two are the
-   only option properties that reliably take, and whether a given platform's
-   popup honours color-scheme on its own is not something this repo can
-   verify -- the popup is a separate OS window and does not appear in a page
-   screenshot. One line is cheaper than finding out it does not. */
-.theme-select option{color:var(--netscli-text);background:var(--netscli-surface-raised)}
+.netscli-theme-select{display:inline-flex;align-items:center;height:calc(var(--netscli-nav-height) - 1px)}
 
 /* Visually hidden, still announced. The control needs a name and the bar has
    no room for a visible one. */

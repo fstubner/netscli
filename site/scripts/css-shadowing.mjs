@@ -41,7 +41,24 @@ export function loadOrder() {
   const config = readFileSync(CONFIG, 'utf8');
   const block = config.match(/customCss:\s*\[([\s\S]*?)\]/);
   if (!block) throw new Error('could not find customCss in astro.config.mjs');
-  return [...block[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+  // Drop `//` comments before looking for quoted paths.
+  //
+  // The list is heavily commented, and an apostrophe in prose -- "the
+  // control's own styles" -- is indistinguishable from an opening quote to
+  // the matcher below. Two of them in one comment block made a "path" out of
+  // three lines of English, and the run died on ENOENT for a filename that
+  // was a sentence. Comments explaining why a file sits where it does in this
+  // array are worth more than the rule that they avoid apostrophes.
+  const withoutComments = block[1].replace(/^[ \t]*\/\/.*$/gm, '');
+  const paths = [...withoutComments.matchAll(/'([^']+)'/g)].map((m) => m[1]);
+  const bad = paths.filter((p) => !p.endsWith('.css'));
+  if (bad.length) {
+    throw new Error(
+      `customCss yielded ${bad.length} entr(y/ies) that are not .css paths: ${JSON.stringify(bad)}. ` +
+        'The parser has picked up something that is not a stylesheet path.'
+    );
+  }
+  return paths;
 }
 
 /** Strip comments so braces inside them cannot desync the parser. */
