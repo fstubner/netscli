@@ -50,7 +50,7 @@ const faqGroups = grouped.sort(
 .faq-section{display:grid;gap:8px}
 .faq-section-title{
   margin:0 0 2px;
-  color:#8b95a8;
+  color:var(--netscli-text-muted);
   font-size:.72rem;
   font-weight:600;
   letter-spacing:.08em;
@@ -64,7 +64,7 @@ const faqGroups = grouped.sort(
 }
 .faq details[open]{background:rgba(var(--netscli-lift-rgb),.04);border-color:rgba(var(--netscli-lift-rgb),.14)}
 .faq summary{
-  cursor:pointer;font-size:.9375rem;font-weight:600;color:#e5e5e5;
+  cursor:pointer;font-size:.9375rem;font-weight:600;color:var(--netscli-text);
   list-style:none;display:flex;align-items:center;gap:10px;
 }
 .faq summary::-webkit-details-marker{display:none}
@@ -75,7 +75,7 @@ const faqGroups = grouped.sort(
 }
 .faq details[open] summary::before{content:"−"}
 .faq .answer{
-  color:#b0b0b0;font-size:.875rem;line-height:1.65;margin-top:12px;
+  color:var(--netscli-text-muted);font-size:.875rem;line-height:1.65;margin-top:12px;
   padding-left:24px;
   /* Long URLs inside <code> spans don't break by default and force the
      details card wider than the viewport. Allow breaks at any char so
@@ -94,7 +94,7 @@ const faqGroups = grouped.sort(
   position:relative;
 }
 .faq-command span{
-  color:#8b95a8;
+  color:var(--netscli-text-muted);
   font-size:.78rem;
   line-height:1.7;
 }
@@ -106,7 +106,7 @@ const faqGroups = grouped.sort(
   border:1px solid rgba(var(--netscli-lift-rgb),.07);
   border-radius:5px;
   background:rgba(var(--netscli-lift-rgb),.045);
-  color:#d8dee8;
+  color:var(--netscli-text);
   white-space:pre;
   overflow-x:auto;
 }
@@ -118,7 +118,7 @@ const faqGroups = grouped.sort(
   word-break:normal;
 }
 .faq .answer .faq-command code{
-  color:#e8edf4;
+  color:var(--netscli-text);
   white-space:pre;
   overflow-x:auto;
   overflow-wrap:normal;

@@ -69,7 +69,7 @@ import Footer from '../components/Footer.astro';
 }
 .not-found h1{
   margin:0;
-  color:#f5f5f5;
+  color:var(--netscli-text-strong);
   font-size:clamp(2.4rem,6vw,5rem);
   line-height:1.05;
   letter-spacing:-.035em;
@@ -77,7 +77,7 @@ import Footer from '../components/Footer.astro';
 .not-found p{
   margin:20px 0 0;
   max-width:43rem;
-  color:#bfc5cf;
+  color:var(--netscli-text);
   font-size:clamp(1rem,1.6vw,1.18rem);
 }
 .not-found-actions{
@@ -94,7 +94,7 @@ import Footer from '../components/Footer.astro';
   padding:9px 17px;
   border:1px solid rgba(var(--netscli-accent-rgb),.35);
   border-radius:7px;
-  color:#e5e5e5;
+  color:var(--netscli-text);
   text-decoration:none;
   background:rgba(var(--netscli-lift-rgb),.025);
   font-weight:700;
@@ -108,7 +108,7 @@ import Footer from '../components/Footer.astro';
 .not-found-actions a:focus-visible{
   outline:0;
   border-color:rgba(30,220,255,.62);
-  color:#fff;
+  color:var(--netscli-text-strong);
 }
 .not-found-actions a.primary:hover,
 .not-found-actions a.primary:focus-visible{

@@ -143,7 +143,7 @@ body.nav-scrolled nav[data-site-nav]::after{
   gap:4px;
   border:1px solid rgba(var(--netscli-lift-rgb),.1);
   border-radius:7px;
-  color:#d7d7d7;
+  color:var(--netscli-text);
   background:rgba(var(--netscli-lift-rgb),.035);
   cursor:pointer;
 }
@@ -155,13 +155,13 @@ body.nav-scrolled nav[data-site-nav]::after{
 }
 .nav-menu-toggle:hover,
 .nav-menu-toggle:focus-visible{
-  color:#fff;
+  color:var(--netscli-text-strong);
   border-color:rgba(var(--netscli-accent-rgb),.35);
   outline:none;
 }
 .nlinks{display:flex;gap:20px;font-size:.8125rem;flex-wrap:wrap;justify-content:flex-end}
 .nlinks a{
-  color:#b0b0b0;text-decoration:none;
+  color:var(--netscli-text-muted);text-decoration:none;
   display:inline-flex;align-items:center;
   border-bottom:2px solid transparent;
   /* Full bar height, so the underline lands on the bar's bottom edge the way
@@ -172,7 +172,7 @@ body.nav-scrolled nav[data-site-nav]::after{
      border. Minus 1px for the border on <nav>. */
   height:calc(var(--netscli-nav-height) - 1px);
 }
-.nlinks a:hover{color:#e5e5e5}
+.nlinks a:hover{color:var(--netscli-text)}
 /* Both values, because two different things set this attribute here.
    Nav.astro marks a genuine current page with "page"; the scroll spy in
    scripts/site-nav.ts marks the section you are looking at with "location",
@@ -185,7 +185,7 @@ body.nav-scrolled nav[data-site-nav]::after{
    contains it, `location` the scroll-spy section on the landing page --
    all three should look current. */
 .nlinks a[aria-current]{
-  color:#e5e5e5;
+  color:var(--netscli-text);
   border-bottom-color:var(--netscli-accent);
 }
 .external-link{

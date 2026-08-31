@@ -131,11 +131,11 @@ const staticRelease = renderReleaseListHtml(fallbackReleases, hero.sourceUrl.spl
   text-transform:uppercase;letter-spacing:.08em;
 }
 .changelog-hero h1{
-  margin:0;color:#f5f5f5;font-size:clamp(2rem,4vw,3rem);
+  margin:0;color:var(--netscli-text-strong);font-size:clamp(2rem,4vw,3rem);
   line-height:1.1;letter-spacing:-.02em;
 }
 .changelog-hero p{
-  margin:12px 0 0;color:#a3a3a3;font-size:.95rem;max-width:680px;
+  margin:12px 0 0;color:var(--netscli-text-muted);font-size:.95rem;max-width:680px;
 }
 /* A text link, not a button. Two bordered pills sat under the intro as if
    they were the page's primary actions; the only one worth keeping is a
@@ -180,7 +180,7 @@ const staticRelease = renderReleaseListHtml(fallbackReleases, hero.sourceUrl.spl
 }
 .release-timeline p{
   margin:0 0 11px;
-  color:#a3a3a3;
+  color:var(--netscli-text-muted);
   font-size:.72rem;
   font-weight:700;
   letter-spacing:.08em;
@@ -196,7 +196,7 @@ const staticRelease = renderReleaseListHtml(fallbackReleases, hero.sourceUrl.spl
   gap:5px;
 }
 .release-timeline-year{
-  color:#f0f0f0;
+  color:var(--netscli-text-strong);
   font-size:.82rem;
   line-height:1.2;
 }
@@ -208,7 +208,7 @@ const staticRelease = renderReleaseListHtml(fallbackReleases, hero.sourceUrl.spl
   gap:10px;
   min-height:24px;
   padding:3px 0 3px 10px;
-  color:#8f98a8;
+  color:var(--netscli-text-muted);
   font-size:.78rem;
   line-height:1.2;
   text-decoration:none;
@@ -225,7 +225,7 @@ const staticRelease = renderReleaseListHtml(fallbackReleases, hero.sourceUrl.spl
   transform:translateY(-50%);
 }
 .release-timeline-link small{
-  color:#737f91;
+  color:var(--netscli-text-muted);
   font-size:.68rem;
 }
 .release-timeline-link:hover,
@@ -240,7 +240,7 @@ const staticRelease = renderReleaseListHtml(fallbackReleases, hero.sourceUrl.spl
   background:var(--netscli-accent);
 }
 .release-timeline-empty{
-  color:#737f91;
+  color:var(--netscli-text-muted);
   font-size:.78rem;
 }
 .release-item{
@@ -258,16 +258,16 @@ const staticRelease = renderReleaseListHtml(fallbackReleases, hero.sourceUrl.spl
   background:rgba(var(--netscli-lift-rgb),.018);
 }
 .release-title-group{min-width:0}
-.release-item h2{margin:0;font-size:1.08rem;color:#f0f0f0;line-height:1.35;min-width:0;overflow-wrap:anywhere}
+.release-item h2{margin:0;font-size:1.08rem;color:var(--netscli-text-strong);line-height:1.35;min-width:0;overflow-wrap:anywhere}
 .release-item h2 a{color:inherit;text-decoration:none;min-width:0;overflow-wrap:anywhere}
 .release-item h2 a:hover .external-link-label{text-decoration:underline;text-underline-offset:3px}
 .release-meta{
-  flex:0 0 auto;margin:0;color:#9aa8bd;font-size:.76rem;
+  flex:0 0 auto;margin:0;color:var(--netscli-text-muted);font-size:.76rem;
   line-height:1.4;white-space:nowrap;text-align:right;
 }
 .release-body{
   position:relative;
-  padding:20px 20px 22px;color:#b8c0cd;font-size:.9rem;line-height:1.65;
+  padding:20px 20px 22px;color:var(--netscli-text);font-size:.9rem;line-height:1.65;
   width:100%;min-width:0;max-width:100%;box-sizing:border-box;
   overflow-wrap:anywhere;word-break:normal;
 }
@@ -292,7 +292,7 @@ const staticRelease = renderReleaseListHtml(fallbackReleases, hero.sourceUrl.spl
 .release-summary{
   margin:0;
   max-width:none;
-  color:#dbe2ec;
+  color:var(--netscli-text);
   font-size:.94rem;
   line-height:1.65;
   padding:0;
@@ -306,7 +306,7 @@ const staticRelease = renderReleaseListHtml(fallbackReleases, hero.sourceUrl.spl
  * introduces. More space above than below now, which is the relationship a
  * section heading is supposed to have. */
 .release-body .release-heading{
-  color:#e5e5e5;font-size:.96rem;line-height:1.35;
+  color:var(--netscli-text);font-size:.96rem;line-height:1.35;
   margin:26px 0 9px;
 }
 .release-body .release-heading:first-child{margin-top:0}
@@ -331,7 +331,7 @@ const staticRelease = renderReleaseListHtml(fallbackReleases, hero.sourceUrl.spl
 .release-body .release-code{
   position:relative;margin:0;max-width:100%;overflow-x:auto;
   background:#20242b;border:1px solid rgba(140,149,166,.2);
-  border-radius:8px;padding:.82rem 1rem;color:#d7dce5;
+  border-radius:8px;padding:.82rem 1rem;color:var(--netscli-text);
   box-shadow:none;
 }
 .release-body .release-code::before{
@@ -353,10 +353,10 @@ const staticRelease = renderReleaseListHtml(fallbackReleases, hero.sourceUrl.spl
 .release-body a:hover .external-link-label{text-decoration-color:var(--netscli-accent-bright)}
 .release-quote{
   margin:0;max-width:none;border-left:3px solid rgba(var(--netscli-accent-rgb),.55);
-  padding:8px 12px;background:rgba(var(--netscli-accent-rgb),.065);color:#b8c0cd;
+  padding:8px 12px;background:rgba(var(--netscli-accent-rgb),.065);color:var(--netscli-text);
 }
 .release-empty{
-  color:#8f98a8;background:rgba(var(--netscli-lift-rgb),.03);
+  color:var(--netscli-text-muted);background:rgba(var(--netscli-lift-rgb),.03);
   border:1px dashed rgba(var(--netscli-lift-rgb),.12);border-radius:10px;padding:16px;
 }
 .release-disclosure{
