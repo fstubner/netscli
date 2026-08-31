@@ -145,13 +145,6 @@ body.nav-scrolled nav[data-site-nav]::after{
   display:block;width:var(--netscli-mark-width);height:auto;image-rendering:auto;
 }
 .mark:hover{filter:brightness(1)}
-@media(max-width:600px){
-  /* Narrows the wordmark AND its inset -- the transparent margin is a
-     fraction of the rendered width, so a fixed pull-back would over-correct
-     here. This breakpoint used to change only the width, leaving the desktop
-     -10px in place against a 10.3px margin. */
-  .mark{--netscli-mark-width:132px}
-}
 .nav-menu-toggle{
   display:none;
   width:2.45rem;
@@ -277,6 +270,9 @@ body.nav-scrolled nav[data-site-nav]::after{
   .nav-inner{padding:10px 18px;gap:10px 16px}
   .nlinks{font-size:.8rem}
 }
+/* The bar collapses here. The docs bar collapses at the same width, in
+   starlight/Header.astro -- see the note there for why the number is written
+   in both files rather than shared. */
 @media(max-width:900px){
   .nav-inner{flex-wrap:nowrap}
   .nav-menu-toggle{display:inline-flex}

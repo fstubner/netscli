@@ -178,10 +178,6 @@ const pathname = Astro.url.pathname;
         padding-inline: 1rem;
       }
 
-      .docs-mark {
-        --netscli-mark-width: 140px;
-      }
-
       .docs-nav-links {
         gap: 0.75rem;
         font-size: 0.78rem;
@@ -194,6 +190,13 @@ const pathname = Astro.url.pathname;
         min-width: 7.75rem;
       }
 
+    }
+
+    /* Same width the landing bar collapses at -- see the note on
+       .docs-nav-links below. The theme control moves into the mobile menu's
+       footer at this point (MobileMenuFooter.astro), so it is relocated
+       rather than lost. */
+    @media (max-width: 900px) {
       .docs-header-theme {
         display: none !important;
       }
@@ -211,7 +214,6 @@ const pathname = Astro.url.pathname;
 
       .docs-mark {
         margin-right: 0;
-        --netscli-mark-width: 132px;
       }
 
       .docs-nav-links {
@@ -230,7 +232,19 @@ const pathname = Astro.url.pathname;
 
     }
 
-    @media (max-width: 72rem) {
+    /* 900px, matching the landing bar's own collapse in Nav.astro.
+     *
+     * This was 72rem (1152px), so between 901 and 1152 the docs bar showed a
+     * hamburger while the landing bar showed the same six links -- the two
+     * halves of one site with visibly different navigation, and the shape of
+     * the bar changing under the cursor when you clicked "Docs".
+     *
+     * Nothing forced the early collapse: measured at 901px the bar's contents
+     * come to 476px against 842px of room, with the wordmark at its full size
+     * and search already reduced to its icon. If you change this, change
+     * Nav.astro's `@media(max-width:900px)` with it; a media query cannot read
+     * a custom property, so the number genuinely has to be written twice. */
+    @media (max-width: 900px) {
       .docs-nav-links {
         display: none;
       }

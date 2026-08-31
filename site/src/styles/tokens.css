@@ -184,6 +184,27 @@
   --netscli-bg-rgb: 17, 17, 17;
 }
 
+/* The wordmark's one size step, for both bars.
+ *
+ * It was three different ladders: the landing bar went 160 -> 132 at 600px,
+ * the docs bar went 160 -> 140 -> 132 at 72rem, and an override file forced
+ * 132 again below 50rem. So at a 1000px window the same logo was 160px on
+ * the landing page and 132px in the docs, and clicking "Docs" visibly
+ * resized it.
+ *
+ * The docs bar had no need of the early steps: measured at 901px it uses
+ * 476px of the 842px available, 366px spare, even with the search icon and
+ * the full link list. It was shrinking to make room it already had.
+ *
+ * Declared on :root rather than on each bar's own class so the inset
+ * ratio above resolves against it -- see the note there about var() in a
+ * custom property resolving where it is declared. */
+@media (max-width: 600px) {
+  :root {
+    --netscli-mark-width: 132px;
+  }
+}
+
 /* The light theme's overrides of everything above.
  *
  * Set here rather than in the docs' own token file so the landing page and
