@@ -37,9 +37,14 @@ import Footer from '../components/Footer.astro';
 <style is:global>
 .not-found{
   padding:clamp(32px,5vh,60px) 24px;
+  /* var(), not `#111`. Same shape of bug as the section band in global.css:
+     the base layer of a multi-line `background:` shorthand, sitting alone on
+     its own line, which the pass that tokenised every other opaque background
+     never matched. In the light theme this painted the whole 404 page
+     near-black under light-theme text -- the heading measured 1.06:1. */
   background:
     linear-gradient(180deg,rgba(var(--netscli-accent-rgb),.045),transparent 20rem),
-    #111;
+    var(--netscli-bg);
 }
 .not-found-shell{
   width:min(720px,100%);

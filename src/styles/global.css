@@ -102,10 +102,20 @@ section{
   position:relative;
   scroll-margin-top:72px;
 }
+/* The alternating band.
+ *
+ * `#151515` sat here as the base layer until now, so in the light theme the
+ * "Get started" section painted a near-black band under near-black headings:
+ * measured at 1.03:1. It survived the pass that mapped every other opaque
+ * background onto a surface token because that pass matched a hex on the same
+ * line as its `background:` property, and this one is the second layer of a
+ * multi-line shorthand -- the value sat alone on its own line and was never
+ * seen. Nothing since caught it either; see the note in scripts/a11y.mjs about
+ * what axe does with text over a gradient. */
 section:nth-of-type(even){
   background:
     linear-gradient(180deg,rgba(var(--netscli-lift-rgb),.018),rgba(var(--netscli-lift-rgb),.006)),
-    #151515;
+    var(--netscli-surface);
   border-block:1px solid rgba(var(--netscli-lift-rgb),.045);
 }
 section:nth-of-type(even)::before{
@@ -128,7 +138,15 @@ section .lead a:hover{color:var(--netscli-accent-bright)}
   position:absolute;top:50%;right:5px;transform:translateY(-50%);
   /* Opaque background so text behind the button isn't visible through it */
   background:var(--netscli-surface-raised);border:1px solid rgba(var(--netscli-lift-rgb),.12);
-  border-radius:6px;color:rgba(255,255,255,.34);
+  border-radius:6px;
+  /* Themed, not a literal white. The icon is an inline SVG stroked with
+     `currentColor`, so `rgba(255,255,255,.34)` drew it white on white in the
+     light theme -- every copy button rendered as an empty square. The button's
+     own background and border already used the lift channel; only the ink did
+     not. --netscli-text-muted rather than a lift alpha because it is the same
+     ink the rest of the page uses for secondary marks, and it is contrast
+     checked. */
+  color:var(--netscli-text-muted);
   width:27px;height:27px;padding:0;
   display:inline-flex;align-items:center;justify-content:center;
   cursor:pointer;opacity:0;
@@ -138,7 +156,7 @@ section .lead a:hover{color:var(--netscli-accent-bright)}
 .has-copy:hover .copy-btn,.has-copy:focus-within .copy-btn{opacity:1}
 .faq-command:hover .copy-btn,.faq-command:focus-within .copy-btn{opacity:1}
 .faq-command .copy-btn{right:10px}
-.copy-btn:hover{background:var(--netscli-surface-raised);border-color:rgba(var(--netscli-lift-rgb),.18);color:rgba(255,255,255,.58)}
+.copy-btn:hover{background:var(--netscli-surface-raised);border-color:rgba(var(--netscli-lift-rgb),.18);color:var(--netscli-text-strong)}
 .copy-btn.copied{color:#3fb950;border-color:rgba(63,185,80,.4)}
 .surface-visual .codeblock .copy-btn,
 .tryblock .copy-btn{

@@ -112,9 +112,22 @@ html[data-theme='light'] .sl-markdown-content tbody tr:nth-child(even):hover {
 .sl-markdown-content .sl-anchor-icon > svg {
   color: var(--netscli-accent);
   height: var(--sl-anchor-icon-size);
-}.pagination-links a {
+}/* Two lines, two weights.
+ *
+ * The card reads "Previous" over "Packet capture", and both were drawn at
+ * effectively the same brightness -- gray-1 (#e7edf6) for the label against
+ * white (#f4f4f4) for the title, a step no one can see. The label is chrome
+ * and the title is the destination, so the title keeps white and the label
+ * drops to the body-text step. The hover rule in
+ * 28-final-interaction-guardrails.css has to preserve this; see the note
+ * there. */
+.pagination-links a {
   align-items: flex-start;
-  color: var(--sl-color-gray-1) !important;
+  color: var(--sl-color-gray-2) !important;
+}
+
+.pagination-links a .link-title {
+  color: var(--sl-color-white) !important;
 }
 
 .pagination-links a:hover {

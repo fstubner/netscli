@@ -114,21 +114,34 @@
    * failures. They are var() references now, which inline styles DO resolve
    * per theme.
    *
-   * The two blue and green values are the original literals exactly. The two
-   * neutrals are not: naming them made them reachable by
-   * scripts/design-tokens.mjs, which measured the punctuation grey at 4.46:1
-   * on the page and 3.99:1 on a card -- below AA and wrong since long before
-   * the light theme. axe had not caught it because its dark pass ran under
-   * `--force-dark-mode`, which re-tints the page and so measured a colour
-   * nobody wrote. They are lifted to 6.71:1 and 5.47:1 here.
-   *
-   * They were also #888888 and #7b7b7b, a 3% difference no reader can see,
-   * which made the comment/punctuation distinction decorative. The new pair
-   * is far enough apart to read as two things. */
+   * The blue and green are the original literals. The two neutrals are not:
+   * naming them made them reachable by scripts/design-tokens.mjs, which
+   * measured the punctuation grey at 4.46:1 on the page and 3.99:1 on a card
+   * -- below AA, and wrong since long before the light theme. They are also
+   * no longer #888888 beside #7b7b7b, a 3% difference no reader can see. */
   --netscli-code-comment: #9a9a9a;
   --netscli-code-punct: #8a8a8a;
   --netscli-code-key: #7c9fc7;
   --netscli-code-string: #8fbc7f;
+
+  /* ---- Brand gradient -------------------------------------------------
+   *
+   * The "Desktop app" button fills its label with this and sets
+   * `-webkit-text-fill-color: transparent` -- which is why nothing caught the
+   * two failures below. A contrast checker reads the transparent fill, not
+   * the paint behind it, so axe skipped the element and the token gate never
+   * saw the stops: they were literals inside a component.
+   *
+   * Both ends were failing, in opposite themes. One ramp served both --
+   * #005a1e -> accent -> #1edcff -- so the dark-green START was 2.23:1 on the
+   * near-black page and the cyan END was 1.59:1 on white. Half the word was
+   * near-invisible either way.
+   *
+   * Every stop now clears 4.5:1 on its own theme's page: 5.73 / 8.29 / 11.45
+   * dark, 8.18 / 6.40 / 7.02 light. scripts/design-tokens.mjs checks them. */
+  --netscli-brand-gradient-from: #16a34a;
+  --netscli-brand-gradient-via: #22c55e;
+  --netscli-brand-gradient-to: #1edcff;
 
   /* ---- Cross-stack role channels -------------------------------------
    *
@@ -253,6 +266,11 @@ html[data-theme='light'] {
      alpha per theme, and this reproduces it rather than rounding the two
      together. */
   --netscli-hover-border: color-mix(in srgb, var(--netscli-accent) 42%, rgba(var(--netscli-lift-rgb), 0.1));
+  /* The same arc, walked in the direction that stays legible on white. */
+  --netscli-brand-gradient-from: #005a1e;
+  --netscli-brand-gradient-via: #146b2e;
+  --netscli-brand-gradient-to: #155e75;
+
   --netscli-hairline-rgb: 17, 24, 39;
   /* On a light surface, raised is DARKER. See the note in the docs' token
      file for the 27 rules that had this backwards. */
