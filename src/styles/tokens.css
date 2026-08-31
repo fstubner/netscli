@@ -90,6 +90,14 @@
   --netscli-accent-bright: #86efac;
   /* Pale tint for active text on dark surfaces. */
   --netscli-accent-high: #a7f3c6;
+  /* Hover border for interactive chrome: the theme control in both bars, and
+     the pagination links in the docs. Was declared only in
+     starlight/28-final-interaction-guardrails.css, so the landing bar's copy
+     of the same control could not reach it and hovered a different colour.
+     The expression is unchanged -- --sl-color-accent and --sl-color-hairline
+     were aliases of these two netscli values. */
+  --netscli-hover-border: color-mix(in srgb, var(--netscli-accent) 42%, rgba(var(--netscli-lift-rgb), 0.08));
+
   /* Text drawn ON the accent, where the accent is a fill rather than ink.
      A literal near-black in 404.astro until the light theme existed, at
      which point it became near-black on a dark green button. */
@@ -241,6 +249,10 @@ html[data-theme='light'] {
   --netscli-code-key: #2b5f96;
   --netscli-code-string: #2f6b32;
 
+  /* 0.1, not the dark theme's 0.08: --sl-color-hairline carried a different
+     alpha per theme, and this reproduces it rather than rounding the two
+     together. */
+  --netscli-hover-border: color-mix(in srgb, var(--netscli-accent) 42%, rgba(var(--netscli-lift-rgb), 0.1));
   --netscli-hairline-rgb: 17, 24, 39;
   /* On a light surface, raised is DARKER. See the note in the docs' token
      file for the 27 rules that had this backwards. */

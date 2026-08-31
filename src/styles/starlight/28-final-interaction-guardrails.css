@@ -1,6 +1,11 @@
 /* Consistency pass: final interaction and responsive guardrails. */
 :root {
-  --netscli-hover-border: color-mix(in srgb, var(--sl-color-accent) 42%, var(--sl-color-hairline));
+  /* --netscli-hover-border moved to tokens.css: the landing bar's theme
+     control needs it too, and a token only the docs stack declares is a
+     token the two halves cannot share. --sl-color-accent and
+     --sl-color-hairline are themselves aliases of netscli values, so the
+     expression there resolves to the same colour -- verified equal in both
+     themes before the move. */
   --netscli-panel-hover-border: color-mix(in srgb, var(--sl-color-accent) 34%, var(--sl-color-hairline));
 }
 

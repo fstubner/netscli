@@ -1,0 +1,197 @@
+/* The theme select, for both top bars.
+ *
+ * There are two of these controls on the site and there is no way to make it
+ * one: the docs bar renders Starlight's <starlight-theme-select>, which owns
+ * the localStorage key and the pre-paint provider, and the landing bar
+ * renders its own markup because it does not load Starlight at all. Before
+ * this file they also LOOKED like two controls -- the docs one an icon and a
+ * caret in a bordered pill, the landing one a bare <select> with the
+ * platform's own arrow -- so crossing between the two halves of the site
+ * swapped the control in the corner of the bar.
+ *
+ * The markup is now the same shape on both sides (label > icon + select +
+ * caret) and every rule below names both, so the two cannot drift apart
+ * without someone editing a selector list that has the other one sitting
+ * next to it.
+ *
+ * Registered last in astro.config.mjs's customCss and imported by
+ * Page.astro. Last on purpose: this file is the control's definition, not an
+ * override of one, and nothing later should be quietly re-styling it. The
+ * docs half still inherits Starlight's own scoped layer underneath, which is
+ * why several rules here restate a property that looks like it should
+ * already be correct -- they are cancelling upstream, not decorating.
+ */
+
+/* The control's own colours.
+ *
+ * Here rather than in tokens.css because they describe one component and
+ * nothing else reads them -- and because tokens.css is at the 300-line guard,
+ * where the answer is to split by ownership rather than to raise the limit.
+ * The cross-stack values the control also uses (the accent, the text ramp,
+ * --netscli-hover-border, --netscli-lift-rgb) stay there: those are shared.
+ *
+ * The option colours are stated opaquely and per theme on purpose. The
+ * dropdown list is drawn by the platform, which will not use a translucent
+ * colour: --sl-color-bg-nav is rgba(17,17,17,.92), and given that, the option
+ * rows fell back to the browser default -- white rows with black text hanging
+ * off a dark header, which is what "the dropdown is unstyled" looks like. */
+:root {
+  --netscli-control-border: rgba(var(--netscli-lift-rgb), 0.1);
+  --netscli-control-bg: rgba(var(--netscli-lift-rgb), 0.03);
+  --netscli-control-option-fg: #f4f4f4;
+  --netscli-control-option-bg: #1a1f27;
+}
+
+html[data-theme='light'] {
+  /* Not the lift channel at a different alpha, unlike the dark pair above: a
+     wash of the light theme's near-black reads grey-blue and heavy on a white
+     bar, so these keep the hand-picked values the docs control already used. */
+  --netscli-control-border: rgba(70, 89, 120, 0.24);
+  --netscli-control-bg: rgba(255, 255, 255, 0.58);
+  --netscli-control-option-fg: #132033;
+  --netscli-control-option-bg: #f4f7fb;
+}
+
+/* Structure. Starlight's Select.astro supplies this for the docs control
+   through its own scoped styles; the landing control has no such source, so
+   it is stated here for both rather than left to one side's component. */
+starlight-theme-select label,
+.netscli-theme-select label {
+  --sl-label-icon-size: 0.875rem;
+  --sl-caret-size: 1.25rem;
+  --sl-inline-padding: 0.5rem;
+  --sl-select-width: 6.25em;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  /* Matches the search button beside it in the docs bar. The <select> inside
+     has its block padding zeroed (below), so without this the label collapses
+     to its 17.2px line box -- which is what the landing control did, having no
+     equivalent of the docs-only rule this came from. */
+  min-height: 2.35rem;
+  min-width: 5.35rem;
+  padding-inline: 0.65rem;
+  border: 1px solid var(--netscli-control-border);
+  border-radius: 6px;
+  background: var(--netscli-control-bg);
+  color: var(--netscli-text);
+}
+
+starlight-theme-select,
+.netscli-theme-select {
+  color: var(--netscli-text);
+}
+
+starlight-theme-select label .icon,
+.netscli-theme-select label .icon {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  width: 1em;
+  height: 1em;
+}
+
+/* Upstream pins the leading icon at `inset-inline-start: 0`, which is the
+   label's PADDING box -- so it ignored the 0.65rem inline padding and sat 1px
+   from the border, visibly crowding the edge. Pin it to the same inset as the
+   padding instead. The <select> keeps its own left padding, so its text still
+   clears the icon. */
+starlight-theme-select label .label-icon,
+.netscli-theme-select label .label-icon {
+  font-size: var(--sl-label-icon-size);
+  inset-inline-start: 0.65rem;
+}
+
+starlight-theme-select label .caret,
+.netscli-theme-select label .caret {
+  font-size: var(--sl-caret-size);
+  inset-inline-end: 0;
+}
+
+starlight-theme-select select,
+.netscli-theme-select select {
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  /* 14px, and stated because `font: inherit` above is a shorthand that resets
+     font-size along with everything else.
+
+     That is how the docs control ended up at 16px: Starlight sets
+     `font-size: var(--sl-text-sm)` (0.875rem) on this select, our override
+     stack set `font: inherit` afterwards, and unlayered beats layered -- so
+     the size upstream chose was silently replaced by the inherited body size,
+     leaving the control's text visibly larger than everything around it.
+
+     0.875rem restores that and matches the search button beside it in the
+     docs bar, which is the other bordered control on the row and the same
+     37.6px tall. The nav links are 13px; this is deliberately the button's
+     size rather than the links'. */
+  font-size: 0.875rem;
+  cursor: pointer;
+  appearance: none;
+  text-overflow: ellipsis;
+  width: calc(var(--sl-select-width) + var(--sl-inline-padding) * 2);
+  margin-inline: calc(var(--sl-inline-padding) * -1);
+  /* Upstream pads the <select> 10px top and bottom, which forced the label
+     that wraps it to 60px -- against the 37.6px search button beside it, so
+     the bordered box looked oversized and misaligned in the header. The
+     label's own min-height sets the height now. */
+  padding-block: 0;
+  line-height: 1.2;
+  /* Upstream's inline padding assumes the icon is pinned at inset 0. Having
+     moved it in by the label's 0.65rem padding, the text needs the same
+     shift or it ends up 4px from the icon. */
+  padding-inline-start: calc(1.625rem + 0.65rem);
+  padding-inline-end: calc(var(--sl-caret-size) + var(--sl-inline-padding) + 0.25rem);
+}
+
+starlight-theme-select label:hover,
+.netscli-theme-select label:hover {
+  color: var(--netscli-text-strong);
+  border-color: var(--netscli-hover-border);
+  background: transparent;
+}
+
+/* Keyboard focus needs a ring, not a border tint.
+ *
+ * `:focus-within` was once grouped with `:hover`, so tabbing to the control
+ * produced the hover treatment: a slightly different border colour and the
+ * background *removed*. That is not a focus indicator -- it is barely a
+ * change, it disappears against the header, and it is the one state a
+ * keyboard user has nothing else to go on. The <select> inside has
+ * `appearance: none` and no border of its own, so its own ring has nothing
+ * to draw around.
+ *
+ * One ring, at the same alpha the search button beside it uses. An earlier
+ * version stacked a solid 2px outline AND an accent border AND a 10% accent
+ * background, which is three signals for one state and read as an error
+ * rather than a cursor position. */
+starlight-theme-select label:focus-within,
+.netscli-theme-select label:focus-within {
+  color: var(--netscli-text-strong);
+  border-color: rgba(var(--netscli-accent-rgb), 0.45);
+  box-shadow: 0 0 0 2px rgba(var(--netscli-accent-rgb), 0.22);
+  outline: 0;
+}
+
+starlight-theme-select select:focus-visible,
+.netscli-theme-select select:focus-visible {
+  outline: 0;
+}
+
+/* Opaque, per theme -- see the note on the tokens at the top of this file. */
+starlight-theme-select option,
+.netscli-theme-select option {
+  color: var(--netscli-control-option-fg);
+  background-color: var(--netscli-control-option-bg);
+}
+
+html[data-theme='light'] starlight-theme-select label:hover,
+html[data-theme='light'] starlight-theme-select label:focus-within,
+html[data-theme='light'] .netscli-theme-select label:hover,
+html[data-theme='light'] .netscli-theme-select label:focus-within {
+  border-color: rgba(var(--netscli-accent-rgb), 0.34);
+}
