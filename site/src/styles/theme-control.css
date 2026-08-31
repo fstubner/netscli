@@ -104,10 +104,15 @@ starlight-theme-select label .label-icon,
   inset-inline-start: 0.65rem;
 }
 
+/* Same 0.65rem inset as the leading icon above, for the same reason.
+   Upstream pins both against the padding box, and the rule above had already
+   moved the leading one in to clear the border -- leaving the caret alone at
+   0. Measured: the icon sat 11.2px from the label's left edge and the caret
+   0.8px from its right, inside 10.4px of padding on both sides. */
 starlight-theme-select label .caret,
 .netscli-theme-select label .caret {
   font-size: var(--sl-caret-size);
-  inset-inline-end: 0;
+  inset-inline-end: 0.65rem;
 }
 
 starlight-theme-select select,

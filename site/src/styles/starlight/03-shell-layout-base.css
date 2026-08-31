@@ -1,8 +1,9 @@
 /* Main-frame/sidebar responsive layout and main-pane/content-panel base overrides. */
 
-.right-sidebar-panel {
-  border-inline-start: 1px solid var(--sl-color-hairline);
-}
+/* The divider between the content column and the contents rail is drawn in
+   13-docs-rail-alignment.css -- not here, and not by Starlight's border on
+   .right-sidebar, which is fixed and full-height and so ran straight up
+   through the title band. */
 
 /* The sidebar's inset has to be the frame's inset, exactly.
  *
@@ -62,11 +63,10 @@
      * level with the page title inside the band -- reading as a second
      * heading on the same row rather than as navigation for the body below.
      * The band's height plus its 1px bottom border puts the panel's top edge
-     * exactly on the band's bottom edge, so its own left divider starts where
-     * the band's underline ends instead of crossing it.
+     * exactly on the band's bottom edge.
      *
-     * A margin rather than padding: the divider is a border on this element,
-     * so padding would leave the line running up beside the band. */
+     * The divider itself is drawn in 13-docs-rail-alignment.css, not by a
+     * border here -- see the note at the top of this file. */
     margin-block-start: calc(var(--netscli-docs-hero-height) + 1px);
   }
 

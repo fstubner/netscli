@@ -152,6 +152,14 @@ html[data-theme='light'] starlight-menu-button[aria-expanded='true'] button {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   font-weight: 760;
+  /* Flush right, so the group's chevron lines up with the right edge of the
+     current page's highlight rather than sitting 8px inside it.
+
+     Upstream pads the summary equally on both sides, which put the chevron at
+     239.2px while the highlight below it ran to 247.2px -- reading as a
+     background that spilled past the control it was meant to sit under. The
+     links set their own inline padding, so only this side needs unsetting. */
+  padding-inline-end: 0;
 }
 
 .sidebar-content a {
