@@ -13,6 +13,7 @@
     "check": "astro check",
     "check:changelog": "node ./scripts/changelog-dates.mjs",
     "check:css": "node ./scripts/css-shadowing.mjs --max 14",
+    "check:wordmark": "node ./scripts/wordmark-inset.mjs",
     "test:a11y": "npm run build && node ./scripts/a11y.mjs",
     "visual:record": "node ./scripts/visual-snapshot.mjs record",
     "visual:check": "node ./scripts/visual-snapshot.mjs check"

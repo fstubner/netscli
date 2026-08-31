@@ -40,18 +40,37 @@ const axeCli = modulePath('@axe-core', 'cli', 'dist', 'src', 'bin', 'cli.js');
  * light-theme contrast bugs could sit unnoticed behind a green local
  * check. Run both explicitly.
  *
- * Chrome has no "force light" switch because light IS the default with
- * no OS preference; `--force-dark-mode` covers the other side.
+ * Both passes name the preference outright. The light pass used to pass no
+ * flag at all, on the reasoning that light IS the default when the runner
+ * has no OS preference -- true on Ubuntu, false on a workstation, where
+ * Chrome inherits the OS setting. On a dark-mode desktop that made BOTH
+ * passes render dark and report a clean run, which is the same
+ * environment-dependence this block was written to remove, just moved one
+ * step along. It cost a false green: two pages were reported as passing in
+ * both themes while CI had been failing them on 23 and 10 contrast
+ * violations.
+ *
+ * `blink-settings=preferredColorScheme` sets what `prefers-color-scheme`
+ * reports (1 = light, 2 = dark), which is the thing the site actually reads.
+ * `--force-dark-mode` is not that: it is Chrome's automatic darkening of
+ * pages that have no dark theme, so it re-tints an already-dark page and
+ * tests colours nobody wrote. The visual harness dropped it for the same
+ * reason.
  */
 // `headless` is not optional here. Without it, axe launches a headed Chrome
-// that takes its colour scheme from the OS and ignores --force-dark-mode, so
+// that takes its colour scheme from the OS and overrides the flag above, so
 // *both* passes render the same theme and one of them is never tested. That
 // blind spot is not theoretical: it hid a 1.53:1 contrast failure in the
 // caution callout on /docs/packet-capture/ from every local run, and only CI
 // -- which is headless -- caught it.
+//
+// Sabotage-checked in both directions on a dark-mode workstation, against a
+// light theme deliberately broken by restoring the dark accent: the old
+// unflagged light pass reported 0 violations and exited 0; this one reports
+// 6 and exits 1.
 const THEMES = [
-  { name: 'light', chromeOptions: ['headless'] },
-  { name: 'dark', chromeOptions: ['headless', 'force-dark-mode'] },
+  { name: 'light', chromeOptions: ['headless', 'blink-settings=preferredColorScheme=1'] },
+  { name: 'dark', chromeOptions: ['headless', 'blink-settings=preferredColorScheme=2'] },
 ];
 
 /**

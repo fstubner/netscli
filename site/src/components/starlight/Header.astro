@@ -78,12 +78,16 @@ const pathname = Astro.url.pathname;
       min-width: 0;
       height: var(--sl-nav-height);
       margin: 0 auto 0 0;
-      transform: translateX(-18px);
+      /* Cancels the wordmark asset's own transparent left margin. This was a
+         flat -18px against a 12.4px margin, so the docs logo hung 5.5px
+         further left than the identical logo on the landing bar. See
+         tokens.css. */
+      transform: translateX(calc(var(--netscli-mark-width) * var(--netscli-mark-inset-ratio) * -1));
     }
 
     .docs-mark img {
       display: block;
-      width: 160px;
+      width: var(--netscli-mark-width);
       height: auto;
     }
 
@@ -174,8 +178,8 @@ const pathname = Astro.url.pathname;
         padding-inline: 1rem;
       }
 
-      .docs-mark img {
-        width: 140px;
+      .docs-mark {
+        --netscli-mark-width: 140px;
       }
 
       .docs-nav-links {
@@ -207,17 +211,13 @@ const pathname = Astro.url.pathname;
 
       .docs-mark {
         margin-right: 0;
-        transform: translateX(-8px);
+        --netscli-mark-width: 132px;
       }
 
       .docs-nav-links {
         margin-left: auto;
         gap: 0.7rem;
         font-size: 0.76rem;
-      }
-
-      .docs-mark img {
-        width: 132px;
       }
 
       .docs-header-search {

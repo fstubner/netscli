@@ -55,6 +55,19 @@
      * right one ended 40px from it. Same two values, mirrored: outer inset
      * matches outer inset, inner matches inner. */
     padding-inline: 1.85rem var(--netscli-sidebar-rail-inset, clamp(2.2rem, 3vw, 3.15rem));
+
+    /* Start below the title band, not beside it.
+     *
+     * The contents list began at the top of the content column, so it sat
+     * level with the page title inside the band -- reading as a second
+     * heading on the same row rather than as navigation for the body below.
+     * The band's height plus its 1px bottom border puts the panel's top edge
+     * exactly on the band's bottom edge, so its own left divider starts where
+     * the band's underline ends instead of crossing it.
+     *
+     * A margin rather than padding: the divider is a border on this element,
+     * so padding would leave the line running up beside the band. */
+    margin-block-start: calc(var(--netscli-docs-hero-height) + 1px);
   }
 
   .content-panel {

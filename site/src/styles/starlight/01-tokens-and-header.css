@@ -20,6 +20,15 @@
      same token with drifted values, which is how the contents rail ended up
      unable to match it at all. */
   --netscli-sidebar-rail-inset: clamp(2.2rem, 3vw, 3.15rem);
+  /* Height of the title band at the top of every docs page.
+     Declared here because two rules need to agree on it: the band's own
+     min-height in 11-docs-chrome-consistency.css, and the offset that starts
+     the contents rail below it in 03-shell-layout-base.css. Measured across
+     all eleven docs pages at five widths, the band is exactly this value plus
+     its 1px bottom border on every one of them -- no page's title wraps -- so
+     the offset can be a shared expression rather than a tracked measurement.
+     Change it here and both move together. */
+  --netscli-docs-hero-height: clamp(6.75rem, 9vw, 8.25rem);
   --netscli-docs-frame-width: calc(
     var(--netscli-shell-width) + var(--netscli-docs-sidebar-width) + var(--netscli-docs-toc-width)
   );

@@ -35,9 +35,22 @@ const onHome = pathname === '/';
           {link.label}
         </a>
       ))}
+      <label class="theme-select">
+        <span class="sr-only">Theme</span>
+        <select data-theme-select>
+          <option value="auto">Auto</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
+      </label>
     </div>
   </div>
 </nav>
+
+<script>
+  import { initThemeSelect } from '../scripts/theme-select';
+  initThemeSelect();
+</script>
 
 {
   onHome && (
@@ -72,7 +85,7 @@ nav[data-site-nav]{
      plus a border instead left the landing bar 0.2px shorter, because a 1px
      border renders as 0.8 at this device pixel ratio. */
   min-height:var(--netscli-nav-height);
-  background:rgba(17,17,17,.85);backdrop-filter:blur(12px);
+  background:rgba(var(--netscli-bg-rgb), .85);backdrop-filter:blur(12px);
   border-bottom:1px solid rgba(var(--netscli-lift-rgb),.06);
   box-shadow:none;
   transition:box-shadow 160ms ease,border-color 160ms ease;
@@ -124,14 +137,20 @@ body.nav-scrolled nav[data-site-nav]::after{
 .mark{
   display:inline-block;line-height:0;text-decoration:none;
   filter:brightness(1);transition:filter 200ms;
-  transform:translateX(-10px);
+  /* Cancels the wordmark asset's own transparent left margin, so the glyph
+     starts on the gutter the nav links start on. See tokens.css. */
+  transform:translateX(calc(var(--netscli-mark-width) * var(--netscli-mark-inset-ratio) * -1));
 }
 .mark img{
-  display:block;width:160px;height:auto;image-rendering:auto;
+  display:block;width:var(--netscli-mark-width);height:auto;image-rendering:auto;
 }
 .mark:hover{filter:brightness(1)}
 @media(max-width:600px){
-  .mark img{width:132px}
+  /* Narrows the wordmark AND its inset -- the transparent margin is a
+     fraction of the rendered width, so a fixed pull-back would over-correct
+     here. This breakpoint used to change only the width, leaving the desktop
+     -10px in place against a 10.3px margin. */
+  .mark{--netscli-mark-width:132px}
 }
 .nav-menu-toggle{
   display:none;
@@ -173,6 +192,51 @@ body.nav-scrolled nav[data-site-nav]::after{
   height:calc(var(--netscli-nav-height) - 1px);
 }
 .nlinks a:hover{color:var(--netscli-text)}
+
+/* Theme control.
+ *
+ * A native <select> rather than a custom listbox: it is keyboard and screen
+ * reader correct for free, and the docs' control is the same element, so the
+ * two bars behave identically.
+ *
+ * The option list is drawn by the operating system, so it cannot be styled
+ * the way the rest of the bar is. What it CAN follow is `color-scheme`, which
+ * tokens.css now sets per theme -- Starlight declares that for the docs in
+ * its own reset, and this page never loads that reset, so the docs popup was
+ * already dark while this one was drawn white over a near-black bar. That is
+ * as far as it is worth going: a bespoke listbox for three options would have
+ * to re-implement the keyboard and screen reader behaviour this gets free. */
+.theme-select{display:inline-flex;align-items:center;height:calc(var(--netscli-nav-height) - 1px)}
+.theme-select select{
+  font:inherit;font-size:.8125rem;
+  color:var(--netscli-text-muted);
+  background:transparent;
+  border:1px solid rgba(var(--netscli-hairline-rgb),.24);
+  border-radius:6px;
+  padding:4px 6px;
+  cursor:pointer;
+}
+.theme-select select:hover{color:var(--netscli-text)}
+.theme-select select:focus-visible{
+  outline:0;
+  color:var(--netscli-text);
+  border-color:rgba(var(--netscli-accent-rgb),.45);
+  box-shadow:0 0 0 2px rgba(var(--netscli-accent-rgb),.22);
+}
+/* Kept alongside `color-scheme` rather than replaced by it. These two are the
+   only option properties that reliably take, and whether a given platform's
+   popup honours color-scheme on its own is not something this repo can
+   verify -- the popup is a separate OS window and does not appear in a page
+   screenshot. One line is cheaper than finding out it does not. */
+.theme-select option{color:var(--netscli-text);background:var(--netscli-surface-raised)}
+
+/* Visually hidden, still announced. The control needs a name and the bar has
+   no room for a visible one. */
+.sr-only{
+  position:absolute;width:1px;height:1px;
+  padding:0;margin:-1px;overflow:hidden;
+  clip-path:inset(50%);white-space:nowrap;border:0;
+}
 /* Both values, because two different things set this attribute here.
    Nav.astro marks a genuine current page with "page"; the scroll spy in
    scripts/site-nav.ts marks the section you are looking at with "location",
@@ -228,7 +292,7 @@ body.nav-scrolled nav[data-site-nav]::after{
     justify-content:flex-start;
     gap:2px;
     padding:8px;
-    background:rgba(22,24,26,.98);
+    background:rgba(var(--netscli-bg-rgb), .98);
     border:1px solid rgba(var(--netscli-lift-rgb),.1);
     border-radius:8px;
     box-shadow:0 14px 34px rgba(0,0,0,.36);

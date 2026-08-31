@@ -33,6 +33,40 @@
   --netscli-nav-height: 3.75rem;
   --netscli-shell-width: 72rem;
 
+  /* ---- Wordmark ------------------------------------------------------
+   *
+   * netscli-wordmark.png is 720px wide and its first 56 columns are fully
+   * transparent, so the glyph starts 7.78% of the rendered width in. Every
+   * bar that shows it has to pull it back by that much, or the logo sits
+   * indented while the nav links beside it start at the gutter.
+   *
+   * Five rules did that with five different hand-tuned pixel values --
+   * -10px on the landing bar, -18px on the docs bar, -8px below 72rem,
+   * -24px !important below 50rem, and nothing at all on the landing page's
+   * narrow breakpoint -- so no two bars agreed. Measured against the asset,
+   * the docs bar overshot by 5.5px at desktop and by 14px below 50rem, which
+   * is the indent that looked wrong.
+   *
+   * A ratio rather than a length because the transparent margin scales with
+   * the rendered width, so the compensation has to as well: a breakpoint
+   * that narrows the wordmark sets --netscli-mark-width and the inset
+   * follows. Do not pre-compose the two into a single length token -- a
+   * var() inside a custom property resolves where it is DECLARED, so the
+   * composed value would freeze at whatever :root said and quietly ignore
+   * every breakpoint.
+   *
+   * scripts/wordmark-inset.mjs re-derives the ratio from the PNG itself and
+   * fails if this value has drifted from it. */
+  --netscli-mark-width: 160px;
+  --netscli-mark-inset-ratio: 0.0778;
+
+  /* Tells the browser which way to draw the controls it renders itself: the
+   * <select> popup in the theme control, native focus rings, and form
+   * widgets. Starlight declares this for the docs in its own reset, which is
+   * why the docs popup was already dark and the landing page's -- which
+   * never loads that reset -- was drawn white over a near-black bar. */
+  color-scheme: dark;
+
   /* Brand accent.
    *
    * Was #0aae7a, which sits at hue 160 -- right on the green/teal boundary.
@@ -45,8 +79,7 @@
    * The -rgb form is the same colour as a bare triple, for the rgba() call
    * sites that need an alpha. There were 108 hard-coded copies of the old
    * value across 20 files before this; changing it should be one edit here.
-   * The docs light theme keeps its own darker pair in
-   * starlight/01-tokens-and-header.css, as it did before. */
+   * The light theme's darker accent is in the light block below. */
   --netscli-accent: #22c55e;
   --netscli-accent-rgb: 34, 197, 94;
   /* Hover and other lifted states.
@@ -57,11 +90,42 @@
   --netscli-accent-bright: #86efac;
   /* Pale tint for active text on dark surfaces. */
   --netscli-accent-high: #a7f3c6;
+  /* Text drawn ON the accent, where the accent is a fill rather than ink.
+     A literal near-black in 404.astro until the light theme existed, at
+     which point it became near-black on a dark green button. */
+  --netscli-on-accent: #06130f;
+
+  /* ---- Code sample colours -------------------------------------------
+   *
+   * The landing page's terminal and JSON samples are pre-highlighted HTML in
+   * src/data/site-content/, and their spans carried inline
+   * `style="color:#..."` literals -- four values, 32 uses, all picked for a
+   * near-black background. An inline style cannot be overridden by a
+   * stylesheet, so when the landing page gained a light theme these stayed
+   * mid-grey and pastel on white and were the bulk of its 23 contrast
+   * failures. They are var() references now, which inline styles DO resolve
+   * per theme.
+   *
+   * The two blue and green values are the original literals exactly. The two
+   * neutrals are not: naming them made them reachable by
+   * scripts/design-tokens.mjs, which measured the punctuation grey at 4.46:1
+   * on the page and 3.99:1 on a card -- below AA and wrong since long before
+   * the light theme. axe had not caught it because its dark pass ran under
+   * `--force-dark-mode`, which re-tints the page and so measured a colour
+   * nobody wrote. They are lifted to 6.71:1 and 5.47:1 here.
+   *
+   * They were also #888888 and #7b7b7b, a 3% difference no reader can see,
+   * which made the comment/punctuation distinction decorative. The new pair
+   * is far enough apart to read as two things. */
+  --netscli-code-comment: #9a9a9a;
+  --netscli-code-punct: #8a8a8a;
+  --netscli-code-key: #7c9fc7;
+  --netscli-code-string: #8fbc7f;
 
   /* ---- Cross-stack role channels -------------------------------------
    *
    * These moved up from starlight/00-theme-tokens.css, which only the docs
-   * load. The landing page and the changelog need the same three roles to be
+   * load. The landing page and the changelog need these roles to be
    * themeable at all, and a second copy of them under different names is how
    * the two halves of this site drifted apart in the first place.
    *
@@ -97,15 +161,65 @@
   --netscli-text-strong: #f4f4f4;
   --netscli-text: #c2cad8;
   --netscli-text-muted: #8c95a6;
+
+  /* ---- Surfaces -------------------------------------------------------
+   *
+   * Three depths, from the same 21 opaque backgrounds the landing stack had
+   * spread across 32 declarations. They fell into three tight luminance
+   * bands with nothing between them -- eight values from #0a0a0a to #151515
+   * doing the page, six from #141718 to #1b1b1b doing panels, three from
+   * #222 to #2a2d32 doing the layer above -- so the bands were real and only
+   * the exact values inside them were arbitrary.
+   *
+   * Values are the docs' --sl-color-bg, gray-6 and the panel surface, so a
+   * card on the landing page and a card in the docs are finally the same
+   * colour. */
+  --netscli-bg: #111111;
+  --netscli-surface: #191d25;
+  --netscli-surface-raised: #20242b;
+  /* The page background as channels, for the translucent bars drawn over
+     content: the sticky nav, the mobile menu, the lightbox scrim. Those were
+     four slightly different near-black rgba() values -- 17/17/17, 22/24/26,
+     25/25/25, 8/8/8 -- none of which could follow a theme. */
+  --netscli-bg-rgb: 17, 17, 17;
 }
 
-/* The light theme's overrides of the three roles above.
+/* The light theme's overrides of everything above.
  *
  * Set here rather than in the docs' own token file so the landing page and
  * changelog resolve them too. Values match the docs light theme exactly, so
  * the two stacks cannot disagree about what "light" means. */
 html[data-theme='light'] {
+  color-scheme: light;
+
+  /* The accent, as a colour and as channels.
+   *
+   * Only the -rgb form was overridden here until now, so every
+   * `color: var(--netscli-accent)` call site kept rendering the DARK #22c55e
+   * on a white page -- 2.0:1, and the single largest source of the light
+   * theme's contrast failures. It went unnoticed because the a11y check's
+   * light pass was passing no colour-scheme flag and so tested dark twice on
+   * a dark-mode workstation; see scripts/a11y.mjs.
+   *
+   * Depth inverts with the theme here as it does for surfaces: "bright" is a
+   * hover state, which means further from the page, so on white it is DARKER
+   * than the base accent rather than lighter. */
+  --netscli-accent: #146b2e;
   --netscli-accent-rgb: 20, 107, 46;
+  --netscli-accent-bright: #0e5122;
+  --netscli-accent-high: #0a3d19;
+  /* White on the accent fill: 6.62:1 against #146b2e, where the dark theme's
+     near-black would be 1.7:1. */
+  --netscli-on-accent: #ffffff;
+
+  /* The code sample palette, re-picked for a white background. Same four
+     roles, same hue families -- neutral, neutral, blue, green -- at
+     5.22:1, 7.59:1, 6.38:1 and 6.21:1 against the page. */
+  --netscli-code-comment: #5f6b7d;
+  --netscli-code-punct: #4a5262;
+  --netscli-code-key: #2b5f96;
+  --netscli-code-string: #2f6b32;
+
   --netscli-hairline-rgb: 17, 24, 39;
   /* On a light surface, raised is DARKER. See the note in the docs' token
      file for the 27 rules that had this backwards. */
@@ -119,5 +233,14 @@ html[data-theme='light'] {
      against every surface by scripts/design-tokens.mjs. */
   --netscli-text-strong: #111827;
   --netscli-text: #44516a;
-  --netscli-text-muted: #647084;
+  --netscli-text-muted: #596478;
+
+  /* Light surfaces, again the docs' own: --sl-color-bg, gray-6, and the
+     panel. Depth inverts with the theme -- a raised surface is lighter than
+     the page in the dark theme and darker than it here -- which is why these
+     are named for depth rather than for a colour. */
+  --netscli-bg: #fbfbfb;
+  --netscli-surface: #f4f6f8;
+  --netscli-surface-raised: #f6f8fa;
+  --netscli-bg-rgb: 251, 251, 251;
 }

@@ -62,7 +62,7 @@ html[data-theme='light'][data-docs-scrolled='true'] header.header {
 .main-pane > .content-panel:first-child > .sl-container,
 .main-pane > main > .content-panel:first-of-type > .sl-container,
 .main-pane > main > .content-panel:first-child > .sl-container {
-  min-height: clamp(6.75rem, 9vw, 8.25rem);
+  min-height: var(--netscli-docs-hero-height);
   padding-block: clamp(1.2rem, 2vw, 1.7rem) !important;
   padding-inline: clamp(1.75rem, 2.2vw, 2.5rem) !important;
   display: flex;
