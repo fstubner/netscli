@@ -85,6 +85,35 @@ const shouldNoindex = noindex || isPreviewBuild;
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
+{/*
+  Apply the stored theme before anything paints.
+
+  Inline and first in <head> on purpose: a deferred module would run after
+  first paint and the page would flash dark before turning light, on every
+  navigation. This is the one script here that cannot be a module.
+
+  `starlight-theme` is Starlight's own localStorage key, deliberately. The
+  docs already write it, so a reader who picks light in the docs and clicks
+  through to the landing page stays in light -- which is the whole point of
+  the two halves sharing a palette.
+*/}
+<script is:inline>
+  (() => {
+    try {
+      const stored = localStorage.getItem('starlight-theme');
+      const theme =
+        stored === 'light' || stored === 'dark'
+          ? stored
+          : matchMedia('(prefers-color-scheme: light)').matches
+            ? 'light'
+            : 'dark';
+      document.documentElement.dataset.theme = theme;
+    } catch {
+      // Private mode, or storage blocked. Falling through leaves the dark
+      // default, which is what an unthemed page has always rendered.
+    }
+  })();
+</script>
 <meta name="theme-color" content={meta.themeColor} />
 <title>{title}</title>
 <meta name="description" content={description} />

@@ -286,7 +286,7 @@ const staticRelease = renderReleaseListHtml(fallbackReleases, hero.sourceUrl.spl
   content:"";
   position:absolute;left:0;right:0;bottom:0;height:84px;
   pointer-events:none;
-  background:linear-gradient(180deg,rgba(25,25,25,0),rgba(25,25,25,.95) 70%,#191919);
+  background:linear-gradient(180deg,rgba(var(--netscli-bg-rgb), 0),rgba(var(--netscli-bg-rgb), .95) 70%,var(--netscli-surface));
 }
 .release-body>*+*{margin-top:14px}
 .release-summary{
@@ -330,7 +330,7 @@ const staticRelease = renderReleaseListHtml(fallbackReleases, hero.sourceUrl.spl
 }
 .release-body .release-code{
   position:relative;margin:0;max-width:100%;overflow-x:auto;
-  background:#20242b;border:1px solid rgba(140,149,166,.2);
+  background:var(--netscli-surface-raised);border:1px solid rgba(140,149,166,.2);
   border-radius:8px;padding:.82rem 1rem;color:var(--netscli-text);
   box-shadow:none;
 }

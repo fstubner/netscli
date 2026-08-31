@@ -45,8 +45,7 @@
    * The -rgb form is the same colour as a bare triple, for the rgba() call
    * sites that need an alpha. There were 108 hard-coded copies of the old
    * value across 20 files before this; changing it should be one edit here.
-   * The docs light theme keeps its own darker pair in
-   * starlight/01-tokens-and-header.css, as it did before. */
+   * The light theme's darker accent is in the light block below. */
   --netscli-accent: #22c55e;
   --netscli-accent-rgb: 34, 197, 94;
   /* Hover and other lifted states.
@@ -61,7 +60,7 @@
   /* ---- Cross-stack role channels -------------------------------------
    *
    * These moved up from starlight/00-theme-tokens.css, which only the docs
-   * load. The landing page and the changelog need the same three roles to be
+   * load. The landing page and the changelog need these roles to be
    * themeable at all, and a second copy of them under different names is how
    * the two halves of this site drifted apart in the first place.
    *
@@ -97,9 +96,30 @@
   --netscli-text-strong: #f4f4f4;
   --netscli-text: #c2cad8;
   --netscli-text-muted: #8c95a6;
+
+  /* ---- Surfaces -------------------------------------------------------
+   *
+   * Three depths, from the same 21 opaque backgrounds the landing stack had
+   * spread across 32 declarations. They fell into three tight luminance
+   * bands with nothing between them -- eight values from #0a0a0a to #151515
+   * doing the page, six from #141718 to #1b1b1b doing panels, three from
+   * #222 to #2a2d32 doing the layer above -- so the bands were real and only
+   * the exact values inside them were arbitrary.
+   *
+   * Values are the docs' --sl-color-bg, gray-6 and the panel surface, so a
+   * card on the landing page and a card in the docs are finally the same
+   * colour. */
+  --netscli-bg: #111111;
+  --netscli-surface: #191d25;
+  --netscli-surface-raised: #20242b;
+  /* The page background as channels, for the translucent bars drawn over
+     content: the sticky nav, the mobile menu, the lightbox scrim. Those were
+     four slightly different near-black rgba() values -- 17/17/17, 22/24/26,
+     25/25/25, 8/8/8 -- none of which could follow a theme. */
+  --netscli-bg-rgb: 17, 17, 17;
 }
 
-/* The light theme's overrides of the three roles above.
+/* The light theme's overrides of everything above.
  *
  * Set here rather than in the docs' own token file so the landing page and
  * changelog resolve them too. Values match the docs light theme exactly, so
@@ -120,4 +140,13 @@ html[data-theme='light'] {
   --netscli-text-strong: #111827;
   --netscli-text: #44516a;
   --netscli-text-muted: #647084;
+
+  /* Light surfaces, again the docs' own: --sl-color-bg, gray-6, and the
+     panel. Depth inverts with the theme -- a raised surface is lighter than
+     the page in the dark theme and darker than it here -- which is why these
+     are named for depth rather than for a colour. */
+  --netscli-bg: #fbfbfb;
+  --netscli-surface: #f4f6f8;
+  --netscli-surface-raised: #f6f8fa;
+  --netscli-bg-rgb: 251, 251, 251;
 }

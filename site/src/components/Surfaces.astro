@@ -57,7 +57,7 @@ const { surfaces, copy } = site;
 <style is:global>
 /* ─── SURFACE CARDS ─── */
 .surfaces-section{
-  background:#141718;
+  background:var(--netscli-surface);
   border-block:1px solid rgba(var(--netscli-lift-rgb),.045);
 }
 .surfaces-section::before{
@@ -101,7 +101,7 @@ const { surfaces, copy } = site;
   outline-offset:3px;
 }
 .surface-visual .codeblock{
-  background:#0b0d0e;border:1px solid rgba(var(--netscli-lift-rgb),.08);
+  background:var(--netscli-bg);border:1px solid rgba(var(--netscli-lift-rgb),.08);
   border-radius:10px;padding:16px 58px 16px 20px;
   font-family:ui-monospace,"SF Mono",Menlo,monospace;
   font-size:.75rem;line-height:1.7;white-space:pre;overflow-x:auto;color:var(--netscli-text);

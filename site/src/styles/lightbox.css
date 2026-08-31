@@ -23,7 +23,7 @@
   inset:0;
   z-index:1200; /* above .skip-link's 1000 */
   padding:32px;
-  background:rgba(8,8,8,.86);
+  background:rgba(var(--netscli-bg-rgb), .86);
   backdrop-filter:blur(3px);
 }
 .image-lightbox.open{
@@ -46,7 +46,7 @@ body.lightbox-open{overflow:hidden}
   min-height:0; /* lets the image shrink inside the flex column */
   border:1px solid rgba(var(--netscli-lift-rgb),.14);
   border-radius:10px;
-  background:#0d0d0d;
+  background:var(--netscli-bg);
   overflow:hidden;
 }
 .image-lightbox-frame img{
@@ -86,13 +86,13 @@ body.lightbox-open{overflow:hidden}
   place-items:center;
   border:1px solid rgba(var(--netscli-lift-rgb),.18);
   border-radius:999px;
-  background:#1b1b1b;
+  background:var(--netscli-surface);
   color:var(--netscli-text-strong);
   font-size:1.25rem;
   line-height:1;
   cursor:pointer;
 }
-.image-lightbox-close:hover{background:#2a2d32;border-color:rgba(255,255,255,.32)}
+.image-lightbox-close:hover{background:var(--netscli-surface-raised);border-color:rgba(255,255,255,.32)}
 .image-lightbox-close:focus-visible{outline:2px solid #2dd4bf;outline-offset:2px}
 
 /* No light-theme overrides here on purpose. The lightbox only runs on the

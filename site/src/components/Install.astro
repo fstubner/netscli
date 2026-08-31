@@ -120,7 +120,7 @@ const groups = [
   position:relative;
 }
 .tryblock{
-  background:#0b0d0e;border:1px solid rgba(var(--netscli-lift-rgb),.08);
+  background:var(--netscli-bg);border:1px solid rgba(var(--netscli-lift-rgb),.08);
   border-radius:10px;padding:16px 20px;height:100%;
   font-family:ui-monospace,"SF Mono",Menlo,monospace;
   font-size:clamp(.6875rem,1.4vw,.8125rem);
@@ -143,7 +143,7 @@ const groups = [
 }
 .os-tabs{
   grid-column:1;grid-row:1;display:flex;gap:0;
-  border-bottom:1px solid #222;margin-bottom:20px;
+  border-bottom:1px solid var(--netscli-surface-raised);margin-bottom:20px;
 }
 .install-content{grid-column:1;grid-row:2}
 .try{grid-column:2;grid-row:2}
@@ -157,20 +157,20 @@ const groups = [
 .os-panel{display:none}
 .os-panel.active{display:block}
 .reco{
-  background:#0d0d0d;border:1px solid #2a2a2a;border-radius:10px;
+  background:var(--netscli-bg);border:1px solid var(--netscli-surface-raised);border-radius:10px;
   padding:14px 18px;margin-bottom:16px;
 }
 .reco-meta{font-size:.85rem;font-weight:500;color:var(--netscli-text);margin-bottom:8px}
 .cmd.big{font-size:1.05rem;padding-right:74px}
 .alts{
   display:flex;flex-direction:column;gap:1px;
-  background:#1a1a1a;border:1px solid #1a1a1a;border-radius:8px;overflow:hidden;
+  background:var(--netscli-surface);border:1px solid var(--netscli-surface);border-radius:8px;overflow:hidden;
 }
 .alt{
   display:grid;grid-template-columns:140px 1fr;gap:16px;align-items:center;
-  padding:11px 16px;background:#0c0c0c;transition:background .15s;position:relative;
+  padding:11px 16px;background:var(--netscli-bg);transition:background .15s;position:relative;
 }
-.alt:hover{background:#0f0f0f}
+.alt:hover{background:var(--netscli-bg)}
 .alt-label{font-size:.85rem;color:var(--netscli-text)}
 .alt-cmd{
   font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.82rem;
@@ -230,7 +230,7 @@ a.install-download:focus-visible{
 /* Try it sidebar — one row per command, each row gets .has-copy so the
    existing copy-button JS auto-attaches a button. */
 .try{
-  background:#0a0a0a;border:1px solid rgba(var(--netscli-lift-rgb),.08);border-radius:10px;
+  background:var(--netscli-bg);border:1px solid rgba(var(--netscli-lift-rgb),.08);border-radius:10px;
   padding:18px;
 }
 .try .try-title{margin:0 0 12px}
@@ -240,7 +240,7 @@ a.install-download:focus-visible{
   font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.83rem;
   color:var(--netscli-text);transition:background .15s;position:relative;
 }
-.try-cmd:hover{background:#101010}
+.try-cmd:hover{background:var(--netscli-bg)}
 .try-comment{
   color:var(--netscli-text-muted);font-size:.74rem;line-height:1.35;
 }
@@ -255,7 +255,7 @@ a.install-download:focus-visible{
   opacity:1;
 }
 .has-copy.always-show .copy-btn:hover{
-  background:#2a2d32;
+  background:var(--netscli-surface-raised);
   border-color:rgba(var(--netscli-lift-rgb),.18);
   color:rgba(255,255,255,.58);
 }
