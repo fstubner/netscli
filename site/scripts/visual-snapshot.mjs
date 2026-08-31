@@ -137,6 +137,50 @@ function unslug(file) {
  * a page that genuinely never stops moving should surface as a difference
  * rather than hang the run.
  */
+/**
+ * Wait until the document stops changing HEIGHT, and return the settled value.
+ *
+ * Separate from `settle` below, and it has to run first, because the two
+ * answer different questions. `settle` asks whether the rendered pixels have
+ * stopped moving; this asks whether the page has finished deciding how tall it
+ * is. The capture window is sized from that number, so reading it early does
+ * not produce a slightly-wrong screenshot -- it produces a correctly-rendered
+ * screenshot of the wrong size, which then settles perfectly and passes every
+ * stability check the harness has.
+ *
+ * That is what made the changelog captures flaky. The page ships its release
+ * notes fully expanded so they are readable without JavaScript, and a module
+ * script collapses them once it can measure `scrollHeight`. Polled every 60ms
+ * after load, the height reads 10746 on the first sample and 3752 on the
+ * second, every time -- so whether the capture came out 3720px or 10714px tall
+ * was decided by which side of a ~60ms boundary one `executeScript` landed on.
+ * Screenshot-settling could never catch it: by the time the frames were
+ * compared the window was already the wrong size and perfectly stable.
+ *
+ * Three consecutive equal readings rather than two: the collapse is one reflow
+ * and a two-sample rule can straddle it. Polling a number is far cheaper than
+ * a screenshot, so the extra sample costs almost nothing.
+ */
+async function settleLayout(driver, { needed = 3, gapMs = 60, minMs = 250, attempts = 40 } = {}) {
+  const read = async () =>
+    Number(
+      await driver.executeScript(
+        'return Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);',
+      ),
+    );
+  const started = Date.now();
+  let previous = await read();
+  let matches = 1;
+  for (let i = 0; i < attempts; i += 1) {
+    await new Promise((r) => setTimeout(r, gapMs));
+    const next = await read();
+    matches = next === previous ? matches + 1 : 1;
+    previous = next;
+    if (matches >= needed && Date.now() - started >= minMs) return next;
+  }
+  return previous;
+}
+
 async function settle(driver, { needed = 2, gapMs = 200, minMs = 500, attempts = 10 } = {}) {
   const started = Date.now();
   let previous = await driver.takeScreenshot();
@@ -240,15 +284,20 @@ async function capture(outDir, only) {
           // difference and nothing else.
           await driver.manage().window().setRect({ width, height: 900 });
           await driver.get(new URL(route, baseUrl).href);
+          // Fonts first: they land after first paint and reflow the page, so
+          // measuring the height before they resolve measures the wrong page.
+          // This used to run after the resize below, which is the same
+          // ordering mistake as the one settleLayout exists to fix.
+          await driver.executeScript('return document.fonts ? document.fonts.ready : true;');
           // Then grow to the full document so the capture is the whole page
           // rather than the fold. Height only, so the layout is untouched.
-          const docHeight = await driver.executeScript(
-            'return Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);',
-          );
-          await driver.manage().window().setRect({ width, height: Math.min(Number(docHeight) + 120, 12000) });
-          // Fonts and the theme script both land after first paint; without
-          // this the first capture of each run differs from every later one.
-          await driver.executeScript('return document.fonts ? document.fonts.ready : true;');
+          //
+          // The height is settled, not sampled once -- see settleLayout. A
+          // single read here is taken while scripts may still be reflowing the
+          // page, and it decides the size of every pixel that follows.
+          const docHeight = await settleLayout(driver);
+          let windowHeight = Math.min(docHeight + 120, 12000);
+          await driver.manage().window().setRect({ width, height: windowHeight });
           // Freeze motion. A transition or animation mid-flight is a pixel
           // difference that says nothing about the CSS being audited.
           await driver.executeScript(`
@@ -266,7 +315,35 @@ async function capture(outDir, only) {
           // per page. Capturing until two consecutive frames match makes the
           // wait self-adjusting and, more importantly, makes "stable" the
           // condition being tested rather than "0.25s elapsed".
-          const png = await settle(driver);
+          let png = await settle(driver);
+
+          // Did the page outgrow the window we sized for it?
+          //
+          // The screenshot is the viewport, so anything past the window's
+          // bottom edge is cropped -- and a crop is indistinguishable from
+          // content that was never there, which is the one failure a pixel
+          // baseline cannot report for itself.
+          //
+          // Only checked in that direction, and only against the window rather
+          // than against the earlier reading. A page that ends up SHORTER
+          // captures some dead space: identical every run, so it cannot flake.
+          // A page that grows a little but still fits inside the 120px of
+          // headroom has not lost anything either -- an earlier version of
+          // this compared the two heights instead and re-captured three docs
+          // pages over a 2px creep.
+          const settledHeight = await settleLayout(driver);
+          if (settledHeight > windowHeight) {
+            windowHeight = Math.min(settledHeight + 120, 12000);
+            await driver.manage().window().setRect({ width, height: windowHeight });
+            png = await settle(driver);
+            const recheck = await settleLayout(driver);
+            if (recheck > windowHeight) {
+              console.warn(
+                `  ${slug(route, theme.name, width)}: still ${recheck}px tall in a ${windowHeight}px window; capture is cropped.`,
+              );
+            }
+          }
+
           const name = slug(route, theme.name, width);
           writeFileSync(join(outDir, name), Buffer.from(png, 'base64'));
           captured += 1;
