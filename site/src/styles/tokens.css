@@ -33,6 +33,40 @@
   --netscli-nav-height: 3.75rem;
   --netscli-shell-width: 72rem;
 
+  /* ---- Wordmark ------------------------------------------------------
+   *
+   * netscli-wordmark.png is 720px wide and its first 56 columns are fully
+   * transparent, so the glyph starts 7.78% of the rendered width in. Every
+   * bar that shows it has to pull it back by that much, or the logo sits
+   * indented while the nav links beside it start at the gutter.
+   *
+   * Five rules did that with five different hand-tuned pixel values --
+   * -10px on the landing bar, -18px on the docs bar, -8px below 72rem,
+   * -24px !important below 50rem, and nothing at all on the landing page's
+   * narrow breakpoint -- so no two bars agreed. Measured against the asset,
+   * the docs bar overshot by 5.5px at desktop and by 14px below 50rem, which
+   * is the indent that looked wrong.
+   *
+   * A ratio rather than a length because the transparent margin scales with
+   * the rendered width, so the compensation has to as well: a breakpoint
+   * that narrows the wordmark sets --netscli-mark-width and the inset
+   * follows. Do not pre-compose the two into a single length token -- a
+   * var() inside a custom property resolves where it is DECLARED, so the
+   * composed value would freeze at whatever :root said and quietly ignore
+   * every breakpoint.
+   *
+   * scripts/wordmark-inset.mjs re-derives the ratio from the PNG itself and
+   * fails if this value has drifted from it. */
+  --netscli-mark-width: 160px;
+  --netscli-mark-inset-ratio: 0.0778;
+
+  /* Tells the browser which way to draw the controls it renders itself: the
+   * <select> popup in the theme control, native focus rings, and form
+   * widgets. Starlight declares this for the docs in its own reset, which is
+   * why the docs popup was already dark and the landing page's -- which
+   * never loads that reset -- was drawn white over a near-black bar. */
+  color-scheme: dark;
+
   /* Brand accent.
    *
    * Was #0aae7a, which sits at hue 160 -- right on the green/teal boundary.
@@ -125,6 +159,8 @@
  * changelog resolve them too. Values match the docs light theme exactly, so
  * the two stacks cannot disagree about what "light" means. */
 html[data-theme='light'] {
+  color-scheme: light;
+
   --netscli-accent-rgb: 20, 107, 46;
   --netscli-hairline-rgb: 17, 24, 39;
   /* On a light surface, raised is DARKER. See the note in the docs' token

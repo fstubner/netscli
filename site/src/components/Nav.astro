@@ -137,14 +137,20 @@ body.nav-scrolled nav[data-site-nav]::after{
 .mark{
   display:inline-block;line-height:0;text-decoration:none;
   filter:brightness(1);transition:filter 200ms;
-  transform:translateX(-10px);
+  /* Cancels the wordmark asset's own transparent left margin, so the glyph
+     starts on the gutter the nav links start on. See tokens.css. */
+  transform:translateX(calc(var(--netscli-mark-width) * var(--netscli-mark-inset-ratio) * -1));
 }
 .mark img{
-  display:block;width:160px;height:auto;image-rendering:auto;
+  display:block;width:var(--netscli-mark-width);height:auto;image-rendering:auto;
 }
 .mark:hover{filter:brightness(1)}
 @media(max-width:600px){
-  .mark img{width:132px}
+  /* Narrows the wordmark AND its inset -- the transparent margin is a
+     fraction of the rendered width, so a fixed pull-back would over-correct
+     here. This breakpoint used to change only the width, leaving the desktop
+     -10px in place against a 10.3px margin. */
+  .mark{--netscli-mark-width:132px}
 }
 .nav-menu-toggle{
   display:none;
@@ -191,9 +197,15 @@ body.nav-scrolled nav[data-site-nav]::after{
  *
  * A native <select> rather than a custom listbox: it is keyboard and screen
  * reader correct for free, and the docs' control is the same element, so the
- * two bars behave identically. The option list itself is drawn by the
- * operating system and cannot be fully styled -- known, and not worth a
- * bespoke widget for three options. */
+ * two bars behave identically.
+ *
+ * The option list is drawn by the operating system, so it cannot be styled
+ * the way the rest of the bar is. What it CAN follow is `color-scheme`, which
+ * tokens.css now sets per theme -- Starlight declares that for the docs in
+ * its own reset, and this page never loads that reset, so the docs popup was
+ * already dark while this one was drawn white over a near-black bar. That is
+ * as far as it is worth going: a bespoke listbox for three options would have
+ * to re-implement the keyboard and screen reader behaviour this gets free. */
 .theme-select{display:inline-flex;align-items:center;height:calc(var(--netscli-nav-height) - 1px)}
 .theme-select select{
   font:inherit;font-size:.8125rem;
@@ -211,8 +223,11 @@ body.nav-scrolled nav[data-site-nav]::after{
   border-color:rgba(var(--netscli-accent-rgb),.45);
   box-shadow:0 0 0 2px rgba(var(--netscli-accent-rgb),.22);
 }
-/* The option list is OS-drawn; these two are the only properties that
-   reliably take, and without them a dark theme gets a white popup. */
+/* Kept alongside `color-scheme` rather than replaced by it. These two are the
+   only option properties that reliably take, and whether a given platform's
+   popup honours color-scheme on its own is not something this repo can
+   verify -- the popup is a separate OS window and does not appear in a page
+   screenshot. One line is cheaper than finding out it does not. */
 .theme-select option{color:var(--netscli-text);background:var(--netscli-surface-raised)}
 
 /* Visually hidden, still announced. The control needs a name and the bar has

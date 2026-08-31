@@ -16,8 +16,6 @@
     padding-inline-start: max(0.65rem, env(safe-area-inset-left)) !important;
     padding-inline-end: max(0.5rem, env(safe-area-inset-right)) !important;
 
-  }.docs-mark img {
-    width: 132px !important;
   }
 
   .docs-header-search {

@@ -196,10 +196,7 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
   }
 }
 
-@media (max-width: 49.99rem) {.docs-mark {
-    transform: translateX(-24px) !important;
-  }
-
+@media (max-width: 49.99rem) {
   .sidebar-pane[aria-hidden='false'],
   .sidebar-pane:not([aria-hidden]) {
     inset-block-start: calc(var(--sl-nav-height) + 0.65rem) !important;

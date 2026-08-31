@@ -93,6 +93,15 @@ jobs:
         working-directory: site
         run: npm run check:css
 
+      # Reads the wordmark PNG and checks the token that cancels its
+      # transparent left margin still matches it. Needs no build and no
+      # browser: it is here rather than in the build job so a bad re-export
+      # fails in seconds. See the script for the five drifted values that
+      # made it worth checking.
+      - name: Wordmark inset
+        working-directory: site
+        run: npm run check:wordmark
+
   build:
     name: Build + typecheck
     needs: [changes, maintainability]
