@@ -12,14 +12,14 @@ html{
   scrollbar-color:rgba(140,149,166,.42) rgba(var(--netscli-lift-rgb),.035);
 }
 ::-webkit-scrollbar{width:12px;height:12px}
-::-webkit-scrollbar-track{background:#151515}
+::-webkit-scrollbar-track{background:var(--netscli-bg)}
 ::-webkit-scrollbar-thumb{
   background:rgba(140,149,166,.45);
-  border:3px solid #151515;
+  border:3px solid var(--netscli-bg);
   border-radius:999px;
 }
 ::-webkit-scrollbar-thumb:hover{background:rgba(170,178,192,.62)}
-::-webkit-scrollbar-corner{background:#151515}
+::-webkit-scrollbar-corner{background:var(--netscli-bg)}
 html[data-theme='light']{
   scrollbar-color:rgba(68,81,106,.42) rgba(241,245,249,.92);
 }
@@ -36,7 +36,7 @@ html[data-theme='light'] ::-webkit-scrollbar-corner{background:#f1f5f9}
 body{
   margin:0;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
-  background:#111;color:var(--netscli-text);line-height:1.6;
+  background:var(--netscli-bg);color:var(--netscli-text);line-height:1.6;
   -webkit-font-smoothing:antialiased;
 }
 .skip-link{
@@ -47,7 +47,7 @@ body{
   padding:8px 12px;
   border:1px solid #2dd4bf;
   border-radius:6px;
-  background:#111;
+  background:var(--netscli-bg);
   color:var(--netscli-text-strong);
   transform:translateY(calc(-100% - 16px));
   transition:transform .15s ease;
@@ -89,7 +89,7 @@ code{
   padding:10px 20px;border-radius:8px;font-size:.875rem;font-weight:600;
   text-decoration:none;transition:all 120ms;
 }
-.btn-w{background:#e5e5e5;color:#111;border:1px solid #e5e5e5}
+.btn-w{background:#e5e5e5;color:var(--netscli-bg);border:1px solid #e5e5e5}
 .btn-w:hover{background:#fff;border-color:#fff}
 .btn-o{background:transparent;color:var(--netscli-text-muted);border:1px solid rgba(var(--netscli-lift-rgb),.15)}
 .btn-o:hover{color:var(--netscli-text);border-color:rgba(255,255,255,.3);text-decoration:none}
@@ -127,7 +127,7 @@ section .lead a:hover{color:var(--netscli-accent-bright)}
 .copy-btn{
   position:absolute;top:50%;right:5px;transform:translateY(-50%);
   /* Opaque background so text behind the button isn't visible through it */
-  background:#222;border:1px solid rgba(var(--netscli-lift-rgb),.12);
+  background:var(--netscli-surface-raised);border:1px solid rgba(var(--netscli-lift-rgb),.12);
   border-radius:6px;color:rgba(255,255,255,.34);
   width:27px;height:27px;padding:0;
   display:inline-flex;align-items:center;justify-content:center;
@@ -138,7 +138,7 @@ section .lead a:hover{color:var(--netscli-accent-bright)}
 .has-copy:hover .copy-btn,.has-copy:focus-within .copy-btn{opacity:1}
 .faq-command:hover .copy-btn,.faq-command:focus-within .copy-btn{opacity:1}
 .faq-command .copy-btn{right:10px}
-.copy-btn:hover{background:#2a2d32;border-color:rgba(var(--netscli-lift-rgb),.18);color:rgba(255,255,255,.58)}
+.copy-btn:hover{background:var(--netscli-surface-raised);border-color:rgba(var(--netscli-lift-rgb),.18);color:rgba(255,255,255,.58)}
 .copy-btn.copied{color:#3fb950;border-color:rgba(63,185,80,.4)}
 .surface-visual .codeblock .copy-btn,
 .tryblock .copy-btn{
