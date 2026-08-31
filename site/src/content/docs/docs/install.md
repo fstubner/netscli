@@ -40,7 +40,7 @@ scoop install netscli-gui
 Or the PowerShell install script, which picks the right asset for your machine:
 
 ```powershell
-iwr -useb https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.ps1 | iex
+iwr -useb https://netscli.com/install.ps1 | iex
 ```
 
 Direct Windows installers are attached to GitHub Releases. They are not Authenticode-signed yet, so Windows may show a publisher warning when installing outside winget. The winget manifests verify release asset hashes.
@@ -56,7 +56,7 @@ brew tap fstubner/tap && brew install netscli
 Or use the install script:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash
+curl -fsSL https://netscli.com/install.sh | bash
 ```
 
 Desktop `.dmg` artifacts are attached to GitHub Releases where the release workflow publishes them. macOS may require the usual first-run approval for unsigned or independently distributed apps.
@@ -66,7 +66,7 @@ Desktop `.dmg` artifacts are attached to GitHub Releases where the release workf
 Use the install script:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash
+curl -fsSL https://netscli.com/install.sh | bash
 ```
 
 Install with Homebrew on Linux when you use Linuxbrew:
@@ -185,11 +185,11 @@ If you do want packet capture, you need **both** a build that has the feature co
 The install script does both at once — it selects the `-pcap` build *and* installs the system library:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | NETSCLI_PCAP=1 bash
+curl -fsSL https://netscli.com/install.sh | NETSCLI_PCAP=1 bash
 ```
 
 ```powershell
-$env:NETSCLI_PCAP=1; iwr -useb https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.ps1 | iex
+$env:NETSCLI_PCAP=1; iwr -useb https://netscli.com/install.ps1 | iex
 ```
 
 On Windows this runs the Npcap installer, which needs administrator rights. Add `NETSCLI_SKIP_NPCAP=1` (or `NETSCLI_SKIP_LIBPCAP=1` on Unix) if you manage the capture library yourself.
