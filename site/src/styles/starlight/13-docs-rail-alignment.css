@@ -41,3 +41,48 @@
     padding-inline-start: var(--sl-content-inline-start) !important;
   }
 }
+
+/* ---- The contents rail's divider and the title band's underline ----------
+ *
+ * Moved here from 03-shell-layout-base.css, which had crossed the 300-line
+ * guard, and this file is named for exactly this. Nothing between the two
+ * touches .right-sidebar-container, so the later load order changes nothing;
+ * verified by measurement after the move.
+ */
+@media (min-width: 72rem) {
+  /* Starlight draws the divider on .right-sidebar, which is fixed and
+     full-viewport, so it had no way to stop at the band. */
+  .right-sidebar {
+    border-inline-start: 0;
+  }
+
+  .right-sidebar-container {
+    position: relative;
+  }
+
+  /* The band's bottom border, continued across the contents rail so it reaches
+     the frame's right edge. The band cannot do this itself: it lives in
+     .main-pane, the column beside this rail, so its own border stops where
+     that column does -- 256px short. */
+  .right-sidebar-container::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: var(--netscli-docs-hero-height);
+    height: 1px;
+    background: var(--sl-color-hairline);
+    pointer-events: none;
+  }
+
+  /* The divider, starting where the band's underline ends rather than
+     crossing it. */
+  .right-sidebar-container::after {
+    content: "";
+    position: absolute;
+    inset-inline-start: 0;
+    inset-block: calc(var(--netscli-docs-hero-height) + 1px) 0;
+    width: 1px;
+    background: var(--sl-color-hairline);
+    pointer-events: none;
+  }
+}
