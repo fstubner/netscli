@@ -100,7 +100,18 @@ const shouldNoindex = noindex || isPreviewBuild;
   through to the landing page stays in light -- which is the whole point of
   the two halves sharing a palette.
 */}
+{/*
+  `data-js` marks "scripts run here", set before the first frame.
+
+  It gates CSS that would be wrong for a reader without JavaScript -- today,
+  the changelog's collapsed release cards, which need a "Show more" button to
+  be usable and so must not be clamped when nothing can wire that button up.
+  Set here rather than in a module for the same reason as the theme above: a
+  module runs after first paint, and a clamp applied then is a layout jump
+  instead of a layout.
+*/}
 <script is:inline>
+  document.documentElement.dataset.js = '';
   (() => {
     try {
       const stored = localStorage.getItem('starlight-theme');
