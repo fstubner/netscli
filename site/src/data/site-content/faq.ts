@@ -1,4 +1,5 @@
 import type { FaqItem, SectionCopy } from './types';
+import { INSTALL_SH_COMMAND } from './install-urls';
 
 export const faqCopy: SectionCopy = {
   heading: 'FAQ',
@@ -21,12 +22,12 @@ export const faq: FaqItem[] = [
   {
     group: 'Install and updates',
     q: 'How do I install NetsCLI?',
-    a: 'Install the netscli package for the CLI, terminal UI, and MCP server. On Windows, run: winget install netscli (the full identifier fstubner.netscli also works). On Linux or macOS, run: curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash. For the Windows desktop app, run: winget install netscli-gui. With Rust installed you can also run: cargo install netscli. Prebuilt binaries and desktop installers are attached to GitHub releases when available for that platform.',
+    a: 'Install the netscli package for the CLI, terminal UI, and MCP server. On Windows, run: winget install netscli (the full identifier fstubner.netscli also works). On Linux or macOS, run: ${INSTALL_SH_COMMAND}. For the Windows desktop app, run: winget install netscli-gui. With Rust installed you can also run: cargo install netscli. Prebuilt binaries and desktop installers are attached to GitHub releases when available for that platform.',
     aHtml: `
       <p>Install the <code>netscli</code> package for the CLI, terminal UI, and MCP server:</p>
       <div class="faq-command-list" aria-label="Install commands">
         <div class="faq-command"><span>Windows</span><code>winget install netscli</code></div>
-        <div class="faq-command"><span>Linux/macOS</span><code>curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash</code></div>
+        <div class="faq-command"><span>Linux/macOS</span><code>${INSTALL_SH_COMMAND}</code></div>
         <div class="faq-command"><span>Rust</span><code>cargo install netscli</code></div>
       </div>
       <p>Install the Windows desktop app separately:</p>
@@ -95,7 +96,7 @@ export const faq: FaqItem[] = [
         <div class="faq-command"><span>Windows app</span><code>winget install netscli-gui</code></div>
         <div class="faq-command"><span>Windows</span><code>scoop bucket add fstubner https://github.com/fstubner/scoop-bucket &amp;&amp; scoop install netscli</code></div>
         <div class="faq-command"><span>macOS</span><code>brew tap fstubner/tap &amp;&amp; brew install netscli</code></div>
-        <div class="faq-command"><span>Linux</span><code>curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash</code></div>
+        <div class="faq-command"><span>Linux</span><code>${INSTALL_SH_COMMAND}</code></div>
         <div class="faq-command"><span>Arch Linux</span><code>yay -S netscli-bin</code></div>
       </div>
       <p>Packet capture is the only workflow that needs a system capture library: libpcap on Linux/macOS or Npcap on Windows. mDNS discovery is pure Rust and is included in the published app, CLI, and MCP builds.</p>

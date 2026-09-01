@@ -1,4 +1,5 @@
 import type { PlatformInstall, Platform, SectionCopy, TryCommand } from './types';
+import { INSTALL_PS1_COMMAND, INSTALL_SH_COMMAND } from './install-urls';
 
 export const installCopy: SectionCopy = {
   heading: 'Get started',
@@ -54,7 +55,7 @@ export const installByPlatform: Record<Platform, PlatformInstall> = {
       {
         label: 'PowerShell script',
         command:
-          'iwr -useb https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.ps1 | iex',
+          INSTALL_PS1_COMMAND,
       },
     ],
     desktop: [
@@ -85,7 +86,7 @@ export const installByPlatform: Record<Platform, PlatformInstall> = {
       {
         label: 'Install script',
         command:
-          'curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash',
+          INSTALL_SH_COMMAND,
       },
     ],
     desktop: [
@@ -114,7 +115,7 @@ export const installByPlatform: Record<Platform, PlatformInstall> = {
       {
         label: 'Install script',
         command:
-          'curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash',
+          INSTALL_SH_COMMAND,
       },
       {
         label: 'AUR (Arch)',

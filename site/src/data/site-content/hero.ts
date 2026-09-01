@@ -1,4 +1,5 @@
 import type { Hero } from './types';
+import { INSTALL_SH_COMMAND } from './install-urls';
 
 export const hero: Hero = {
   // Platforms only. "Open source" and "MIT" repeat in the footer and the
@@ -34,8 +35,7 @@ export const hero: Hero = {
   // winget catalog, so the short form resolves. The canonical identifier
   // stays in the install guide for anyone who wants to be unambiguous.
   quickInstall: 'winget install netscli',
-  quickInstallAlt:
-    'curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash',
+  quickInstallAlt: INSTALL_SH_COMMAND,
   installLinkLabel: 'More install options ↓',
   heroImage: '/assets/tui-discover.png',
   heroImageWebp: '/assets/tui-discover.webp',

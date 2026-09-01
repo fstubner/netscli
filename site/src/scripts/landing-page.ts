@@ -117,14 +117,26 @@ export function initLandingPage(repo: string): void {
           menu.hidden = !willOpen;
           button.setAttribute("aria-expanded", String(willOpen));
         });
-        document.addEventListener("click", (event) => {
-          if (
-            !menu.hidden
-            && event.target instanceof Node
-            && !menu.contains(event.target)
-            && event.target !== button
-          ) closeMenu();
-        });
+        // Capture phase, deliberately.
+        //
+        // In the bubble phase this never fired for a click on a copy button,
+        // because copy-buttons.ts calls `stopPropagation()` on its own click
+        // — so opening the installer menu and then copying the command beside
+        // it left the menu hanging open over the page. "Click anywhere else
+        // and I close" should not be defeatable by whatever you clicked on;
+        // capture runs before any of it.
+        document.addEventListener(
+          "click",
+          (event) => {
+            if (
+              !menu.hidden
+              && event.target instanceof Node
+              && !menu.contains(event.target)
+              && event.target !== button
+            ) closeMenu();
+          },
+          true,
+        );
         menu.querySelectorAll("a").forEach((link) => {
           link.addEventListener("click", closeMenu);
         });
