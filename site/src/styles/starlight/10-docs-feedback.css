@@ -54,6 +54,3 @@
   background: #ffffff !important;
   box-shadow: none !important;
 }
-
-html[data-theme='light'] .sl-markdown-content .expressive-code .copy button[data-copied] {
-}
