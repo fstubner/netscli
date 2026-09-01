@@ -124,11 +124,25 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
   .docs-mobile-section-separator,
   .docs-mobile-section-caret {
     color: var(--netscli-accent) !important;
-    /* `›` is drawn around the middle of the em box while the words beside it
-       sit on the baseline, so line-box centring -- which is correct, and
-       measured identical: label, separator and current page all centre at
-       81px -- still leaves the glyph reading low. A 1px lift is an optical
-       correction, not a layout one. */
+  }
+
+  /* The separator is an <svg> now, matching the mobile table of contents
+     below it -- see PageSidebar.astro. It sizes from its own width/height
+     attributes rather than from font-size, and it is centred by the flex row
+     rather than sitting on a text baseline, so the 1px optical lift that the
+     `›` glyph needed is gone with it: an icon box is already centred, and
+     lifting it would push it off. */
+  .docs-mobile-section-separator {
+    flex: 0 0 auto;
+    align-self: center;
+  }
+
+  /* Still a text glyph, and still needs the lift. `›` is drawn around the
+     middle of the em box while the words beside it sit on the baseline, so
+     line-box centring -- which is correct, and measured identical: label,
+     separator and current page all centre at 81px -- still leaves the glyph
+     reading low. An optical correction, not a layout one. */
+  .docs-mobile-section-caret {
     position: relative;
     top: -1px;
   }

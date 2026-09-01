@@ -69,11 +69,27 @@ const currentGroupLabel = formatCrumb(currentGroup?.label) || 'Start';
   mobileGroups.length > 0 && (
     <div class="docs-mobile-section-nav print:hidden">
       <details id="netscli-mobile-docs-nav">
+        {/*
+          The separators are Starlight's own `right-caret`, not a typographic
+          `›`, and they have to be: the mobile table of contents sits directly
+          below this row and draws its chevron with that icon. A text glyph and
+          a vector icon are not the same mark. Measured at 375px with the
+          separator at its rendered 13.12px, the `›` inked 4x4 while the TOC
+          caret inked 4.13x7 -- same width, 75% taller, one hairline and one
+          stroked. Two chevrons that close together should not disagree.
+
+          Copied inline rather than imported: Starlight's <Icon> lives behind
+          `virtual:starlight/...` internals this override does not get, and the
+          path is the one in
+          node_modules/@astrojs/starlight/components-internals/Icons.ts.
+          `width`/`height` 16 with viewBox 0 0 24 24 reproduces the TOC's
+          `size="1rem"` exactly.
+        */}
         <summary>
           <span class="docs-mobile-section-label">Docs</span>
-          <span class="docs-mobile-section-separator" aria-hidden="true">›</span>
+          <svg class="docs-mobile-section-separator" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg>
           <span class="docs-mobile-section-group">{currentGroupLabel}</span>
-          <span class="docs-mobile-section-separator" aria-hidden="true">›</span>
+          <svg class="docs-mobile-section-separator" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m14.83 11.29-4.24-4.24a1 1 0 1 0-1.42 1.41L12.71 12l-3.54 3.54a1 1 0 0 0 0 1.41 1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.24-4.24a1.002 1.002 0 0 0 0-1.42Z"/></svg>
           <span class="docs-mobile-section-current">{currentLink?.label ?? 'Overview'}</span>
           <span class="docs-mobile-section-caret" aria-hidden="true">›</span>
         </summary>
