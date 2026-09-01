@@ -120,56 +120,36 @@ section:nth-of-type(even){
     var(--netscli-surface);
   border-block:1px solid rgba(var(--netscli-lift-rgb),.045);
 }
-/* Alternating bands on the light page, ODD sections tinted.
+/* No section-level band on a light page. The rhythm is inside the surfaces
+ * section instead, where every other card gets a full-bleed dark band -- see
+ * Surfaces.astro.
  *
- * The hero is a div, so the sections count surfaces(1), install(2), faq(3):
- * odd tints surfaces and faq and leaves install white, and no two banded
- * sections ever touch. That adjacency is the thing that matters here -- four
- * treatments were built and measured before this one, and the two that failed
- * failed for different reasons:
+ * Five treatments were built and measured getting here, and it is worth
+ * knowing why each failed, because three of them failed for reasons a
+ * screenshot does not show:
  *
  *   1.09:1  the original tint (--netscli-surface). Invisible; not a band.
  *  16.43:1  #install inverted to dark navy. Worse where it counts -- the .alt
- *           and .tryblock command blocks are #10151b, so they went from
+ *           and .tryblock command blocks were #10151b, so they went from
  *           16.21:1 on a light band to 1.08:1 on a navy one. The commands a
  *           visitor came to copy vanished into the band while the container
- *           shouted. Contrast had moved from inside the section, where it was
- *           working, to around it, where it is decoration.
- *   1.27:1  a deeper tint, #dae1ee, on BOTH surfaces and install. Coherent
- *           and clearly visible, and rejected on looks: those two sections
- *           are adjacent, so it tinted 59.6% of the page in one continuous
- *           run and read as a second background rather than as punctuation.
+ *           shouted.
+ *   1.27:1  a deeper tint on BOTH surfaces and install. Those two sections
+ *           are adjacent, so it tinted 59.6% of the page in one run and read
+ *           as a second background rather than as punctuation.
  *    1:1    no bands at all. Measurably the best for the content -- command
- *           blocks separate at 17.72:1 on the page against 13.96:1 on the
- *           deeper tint -- and too flat to give the page structure.
+ *           blocks separate at 17.72:1 on the page -- and too flat.
+ *  1.143:1  a quiet tint, alternating so no two banded sections touch. The
+ *           structure was right and the colour was not: a pale blue-grey at
+ *           that strength reads as washed out rather than as a band.
  *
- * So the tint can be quiet, because alternation does the work the tint was
- * being asked to do alone: #e9ecf3 is 1.143:1 against the page, and every
- * banded section has a white one above and below it. Command blocks still
- * clear 15.5:1 on it.
- *
- * This was only possible once .reco got a real border (see Install.astro).
- * Before that, #install had to be tinted -- its cards are near-white and had
- * nothing else to sit on -- which forced surfaces and install to share a
- * treatment and made true alternation impossible.
- *
- * `.surfaces-section` is listed as well as the nth-of-type rule, and has to
- * be: Surfaces.astro paints its own band from --netscli-surface in a
- * component style, so the nth-of-type rule alone does not reach it. An
- * earlier build tinted one and not the other, which is invisible from either
- * file alone.
- *
- * NOTE: dark mode still bands the EVEN section (install) plus surfaces, so
- * the two themes currently mark different sections. Left that way because
- * only the light page was being reworked; making dark alternate is changing
- * `odd` in one more rule. */
-html[data-theme='light'] section:nth-of-type(odd),
+ * So the band went dark and moved down a level, to the thing it is actually
+ * separating: the four surface cards. `.surfaces-section` is still listed
+ * here because Surfaces.astro paints its own background in a component style
+ * and the bare `section` selector does not reach it -- an earlier build
+ * cleared one and not the other, which is invisible from either file alone. */
+html[data-theme='light'] section,
 html[data-theme='light'] .surfaces-section{
-  --netscli-band-tint:#e9ecf3;
-  background:var(--netscli-band-tint);
-}
-
-html[data-theme='light'] section:nth-of-type(even){
   background:var(--netscli-bg);
 }
 
@@ -195,12 +175,12 @@ html[data-theme='light'] footer{
      token alone leaves text that sets no colour of its own dark on navy.
      Measured rgb(68,81,106) until this line. */
   color:var(--netscli-text);
-  --netscli-text:#d7dce5;
-  --netscli-text-strong:#f4f4f4;
-  --netscli-text-muted:#9aa4b8;
-  --netscli-accent:#22c55e;
-  --netscli-accent-rgb:34, 197, 94;
-  --netscli-accent-bright:#86efac;
+  --netscli-text:var(--netscli-ondark-text);
+  --netscli-text-strong:var(--netscli-ondark-text-strong);
+  --netscli-text-muted:var(--netscli-ondark-text-muted);
+  --netscli-accent:var(--netscli-ondark-accent);
+  --netscli-accent-rgb:var(--netscli-ondark-accent-rgb);
+  --netscli-accent-bright:var(--netscli-ondark-accent-bright);
   --netscli-hairline-rgb:255, 255, 255;
   --netscli-lift-rgb:255, 255, 255;
 }

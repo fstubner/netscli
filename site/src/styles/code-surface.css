@@ -79,6 +79,26 @@
   --netscli-chip-fg-muted: #9a9a9a;
   --netscli-chip-raised: #20242b;
   --netscli-chip-lift-rgb: 255, 255, 255;
+
+  /* ---- Ink on a dark surface -------------------------------------------
+   *
+   * Anything that paints itself dark on a light page has to re-point the
+   * text ramp, and there are three such places now: the navy footer, the
+   * alternating dark surface cards, and any future one. Each was carrying
+   * its own copy of these six values, which is exactly how two of them
+   * would eventually disagree. One definition, referenced. */
+  --netscli-ondark-text: #d7dce5;
+  --netscli-ondark-text-strong: #f4f4f4;
+  --netscli-ondark-text-muted: #9aa4b8;
+  --netscli-ondark-accent: #22c55e;
+  --netscli-ondark-accent-rgb: 34, 197, 94;
+  --netscli-ondark-accent-bright: #86efac;
+
+  /* The dark band behind every other surface card. Measured against the
+     light page at 14.75:1, and it carries body ink at 11.09:1 and muted ink
+     at 6.09:1. Not as dark as the code surface on purpose -- see the note on
+     the card rule in Surfaces.astro for why that gap cannot do the work. */
+  --netscli-band-dark: #1c2634;
 }
 
 html[data-theme='light'] {
