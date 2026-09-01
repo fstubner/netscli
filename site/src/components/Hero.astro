@@ -168,8 +168,19 @@ const { hero, social } = site;
   max-width:34ch;
 }
 .hero .sub{font-size:1.0625rem;color:var(--netscli-text-muted);max-width:640px;margin:14px auto 0}
+/* .8125rem and the body ink, not .75rem and the muted step.
+ *
+ * The line was 12px at rgb(89,100,120) -- 5.77:1, so legible, but it read as
+ * a footnote rather than as the star count, the download count and the
+ * version, which are the only third-party evidence above the fold. Size was
+ * the bigger half of that: 12px is the smallest thing on the page and it sat
+ * directly under a 17px subhead.
+ *
+ * 13px and the body step measure 7.71:1 light and 11.45:1 dark. The `·`
+ * separators keep the muted colour below, so the line still reads as one
+ * group rather than four competing items. */
 .hero .social-proof{
-  margin:12px auto 0;font-size:.75rem;color:var(--netscli-text-muted);
+  margin:12px auto 0;font-size:.8125rem;color:var(--netscli-text);
   display:flex;justify-content:center;align-items:center;gap:10px;
   font-variant-numeric:tabular-nums;min-height:1em;
 }
@@ -239,7 +250,11 @@ const { hero, social } = site;
    and lifting them to 4.5:1 would give a punctuation mark the same
    visual weight as the metrics it separates. Marking them hidden also
    stops a screen reader announcing "middle dot" three times. */
-.hero .social-proof .sep{color:#555}
+/* The muted step, not a literal. This was #555 -- a dark-theme grey that the
+   light theme had no say over, and the one thing on this line that did not
+   move when the rest of it did. It is the separator's job to sit behind the
+   items it separates, so it takes the muted token they just left. */
+.hero .social-proof .sep{color:var(--netscli-text-muted)}
 .hero-cta{
   /* 610, not 560, and sized off the viewport rather than a vw fraction.
      At 560 the wide command slot was 351px against 397px of text, so
