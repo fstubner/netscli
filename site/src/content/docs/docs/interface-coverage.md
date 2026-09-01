@@ -67,8 +67,11 @@ server does not expose it as a tool.
 ### Notes on the ticks
 
 - **Packet capture** needs a build compiled with the feature *and* the system
-  capture library — Npcap on Windows, libpcap elsewhere. No published build
-  has it. See [Installation](/docs/install/#packet-capture).
+  capture library — Npcap on Windows, libpcap elsewhere. No *default* install
+  has it: the desktop installers, the standard CLI assets and
+  `cargo install netscli` are all built without it. Each release does publish
+  separate `-pcap` CLI assets that have it compiled in. See
+  [Installation](/docs/install/#packet-capture).
 - **Structured output** means something different on each surface, which is
   why it is one row rather than four: the desktop app exports files and
   result bundles, the CLI takes `--json` and `--yaml`, the TUI exports a

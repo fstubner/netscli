@@ -38,13 +38,18 @@ export const surfaces: SurfaceCard[] = [
     title: 'Command line',
     body:
       'Use the CLI for repeatable diagnostics and automation. Network operations expose <code>--json</code> and <code>--yaml</code> output, so scripts and other tools can consume the same data the desktop app displays.',
+    // `--resolve` on the discover line is load-bearing, not decoration.
+    // `hostname` is only populated when the flag is passed (core's
+    // discover.rs guards the reverse-lookup pass on it), so without it this
+    // sample's own output would be three nulls rather than the three names
+    // shown below it.
     codeHtml: `<span style="color:var(--netscli-code-comment)">$</span> netscli scan demo.local -p 80,443 --json
 <span style="color:var(--netscli-code-punct)">[</span>
   <span style="color:var(--netscli-code-punct)">{</span> <span style="color:var(--netscli-code-key)">"port"</span>: 80,  <span style="color:var(--netscli-code-key)">"open"</span>: true, <span style="color:var(--netscli-code-key)">"service"</span>: <span style="color:var(--netscli-code-string)">"http"</span>  <span style="color:var(--netscli-code-punct)">}</span>,
   <span style="color:var(--netscli-code-punct)">{</span> <span style="color:var(--netscli-code-key)">"port"</span>: 443, <span style="color:var(--netscli-code-key)">"open"</span>: true, <span style="color:var(--netscli-code-key)">"service"</span>: <span style="color:var(--netscli-code-string)">"https"</span> <span style="color:var(--netscli-code-punct)">}</span>
 <span style="color:var(--netscli-code-punct)">]</span>
 
-<span style="color:var(--netscli-code-comment)">$</span> netscli discover --json | jq '.[].hostname'
+<span style="color:var(--netscli-code-comment)">$</span> netscli discover --resolve --json | jq '.[].hostname'
 <span style="color:var(--netscli-code-string)">"workstation.local"</span>
 <span style="color:var(--netscli-code-string)">"phone.local"</span>
 <span style="color:var(--netscli-code-string)">"pi.local"</span>`,
