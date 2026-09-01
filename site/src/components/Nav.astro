@@ -161,8 +161,21 @@ html[data-theme='light'] body.nav-scrolled nav[data-site-nav]{
     0 12px 26px rgba(var(--netscli-hairline-rgb),.11),
     0 1px 0 rgba(var(--netscli-accent-rgb),.12) !important;
 }
+/* No second layer on a light page.
+ *
+ * The bar casts a 26px blurred box-shadow AND this 22px hard gradient, and
+ * they stack. Softening only the box-shadow -- which is what the previous
+ * pass did -- left the heavier of the two untouched: measured on
+ * rgb(251,251,251), the shadow alone composites to rgb(225,226,228) and this
+ * gradient then takes it to rgb(200,202,205), a 1.59:1 step in a 22px band
+ * directly under the bar. That reads as a grey smear, not depth.
+ *
+ * The gradient exists for the dark theme, where it is rgba(0,0,0,.42) against
+ * a near-black page and does real work selling the bar as floating. On white
+ * the blurred shadow is enough on its own, so this drops to nothing rather
+ * than to a smaller number -- one soft layer is the whole effect. */
 html[data-theme='light'] nav[data-site-nav]::after{
-  background:linear-gradient(180deg,rgba(var(--netscli-hairline-rgb),.12),rgba(var(--netscli-hairline-rgb),0));
+  opacity:0;
 }
 .nav-inner{
   /* Matches the docs top bar. Padding alone gave 12+32+12 plus the 1px
