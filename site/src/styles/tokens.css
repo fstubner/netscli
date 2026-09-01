@@ -58,6 +58,13 @@
    * scripts/wordmark-inset.mjs re-derives the ratio from the PNG itself and
    * fails if this value has drifted from it. */
   --netscli-mark-width: 160px;
+
+  /* Both bars filter the wordmark through this. Dark leaves it alone; the
+     light theme darkens it -- see the override below for why. A token rather
+     than a rule on `.mark`, because the landing bar and the docs bar are
+     different components with their own scoped styles, and this is one
+     decision, not two. */
+  --netscli-mark-filter: none;
   --netscli-mark-inset-ratio: 0.0778;
 
   /* Tells the browser which way to draw the controls it renders itself: the
@@ -212,6 +219,24 @@
  * the two stacks cannot disagree about what "light" means. */
 html[data-theme='light'] {
   color-scheme: light;
+
+  /* The wordmark is a dark-theme asset and there is only one of it.
+   * netscli-wordmark.png runs green -> cyan and the cyan half is picked for a
+   * near-black bar, so on white the right side of the logo barely separates.
+   * Measured over its 34,754 opaque pixels: mean ink rgb(12,167,132) is
+   * 6.18:1 on #111 against 3.05:1 on white, and the cyan end rgb(27,213,235)
+   * is 1.79:1 on white. brightness(.62) takes the mean to 6.84:1 and the
+   * weakest pixel to 4.43:1.
+   *
+   * No gate caught this and none should have -- WCAG exempts logotypes from
+   * the contrast rules, so axe and contrast-sweep.mjs are correctly silent.
+   *
+   * A uniform multiply shifts the cyan towards teal instead of re-picking the
+   * gradient for a light page. A light-theme PNG would be more faithful and
+   * would also be a second file to keep in step with this one and with
+   * scripts/wordmark-inset.mjs. One declaration, reversible, until the hue
+   * shift bothers someone. */
+  --netscli-mark-filter: brightness(0.62);
 
   /* The accent, as a colour and as channels.
    *
