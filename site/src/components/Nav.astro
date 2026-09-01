@@ -251,12 +251,28 @@ html[data-theme='light'] nav[data-site-nav]::after{
 .nlinks a:hover{color:var(--netscli-text)}
 /* Separates the links that scroll from the links that navigate.
    A rule, not a gap alone: at this size a gap on its own reads as an
-   accident. Purely decorative, so it is a border rather than an element --
-   nothing for a screen reader to announce between two links. */
+   accident. Purely decorative, so it is drawn rather than announced --
+   nothing here for a screen reader to find between two links.
+
+   A short centred rule, not a border. These links are the full height of the
+   bar so the underline for the current page can sit on the bar's bottom edge,
+   which meant `border-inline-start` drew a 59px line floor to ceiling -- a
+   divider that split the bar in two rather than grouping the links. The
+   pseudo-element is 18px, centred on the text it sits between. */
 .nlinks a.nav-group-start{
+  position:relative;
   margin-inline-start:12px;
   padding-inline-start:20px;
-  border-inline-start:1px solid rgba(var(--netscli-hairline-rgb),.28);
+}
+.nlinks a.nav-group-start::before{
+  content:"";
+  position:absolute;
+  inset-inline-start:0;
+  top:50%;
+  width:1px;
+  height:18px;
+  margin-block-start:-9px;
+  background:rgba(var(--netscli-hairline-rgb),.28);
 }
 
 /* Theme control.
@@ -374,6 +390,11 @@ html[data-theme='light'] nav[data-site-nav]::after{
     margin-block-start:6px;
     padding-block-start:6px;
     border-block-start:1px solid rgba(var(--netscli-hairline-rgb),.28);
+  }
+  /* The stacked menu divides the two groups with the horizontal rule above,
+     so the vertical one has nothing to do here. */
+  .nlinks a.nav-group-start::before{
+    content:none;
   }
   .nlinks a:hover,
   .nlinks a[aria-current]{
