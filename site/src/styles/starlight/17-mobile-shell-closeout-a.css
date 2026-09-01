@@ -43,7 +43,9 @@
     inset-block-start: var(--sl-nav-height) !important;
   }}@media (max-width: 71.99rem) {
   :root {
-    --netscli-mobile-docs-nav-height: 2.625rem;
+    /* --netscli-mobile-docs-nav-height is gone with the section-nav row it
+       measured; the contents bar and the main frame now offset from
+       --sl-nav-height alone. See PageSidebar.astro. */
     --netscli-mobile-toc-bar-height: 2.625rem;
   }
 
@@ -69,84 +71,4 @@
     padding: 0 !important;
     overflow: visible !important;
     border: 0 !important;
-  }
-
-  .docs-mobile-section-nav {
-    display: block !important;
-    position: sticky !important;
-    top: var(--sl-nav-height) !important;
-    z-index: calc(var(--sl-z-index-navbar) - 1) !important;
-    width: 100% !important;
-    border-bottom: 1px solid var(--sl-color-hairline) !important;
-    background: var(--sl-color-bg-nav) !important;
-    backdrop-filter: blur(16px);
-    transform: translateY(0);
-    transition: transform 140ms linear;
-  }
-
-  .docs-mobile-section-nav details {
-    position: relative;
-  }
-
-  .docs-mobile-section-nav summary {
-    display: flex;
-    align-items: center;
-    gap: 0.65rem;
-    min-height: var(--netscli-mobile-docs-nav-height);
-    padding: 0 clamp(1rem, 3.4vw, 1.75rem);
-    list-style: none;
-    cursor: pointer;
-    outline-offset: var(--sl-outline-offset-inside);
-  }
-
-  .docs-mobile-section-nav summary::marker,
-  .docs-mobile-section-nav summary::-webkit-details-marker {
-    display: none;
-  }
-
-  .docs-mobile-section-label {
-    color: var(--sl-color-white);
-    font-size: 0.82rem;
-    font-weight: 720;
-  }
-
-  .docs-mobile-section-current {
-    min-width: 0;
-    overflow: hidden;
-    color: var(--sl-color-gray-3);
-    font-size: 0.84rem;
-    line-height: 1.2;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .docs-mobile-section-caret {
-    color: var(--netscli-accent);
-    font-size: 1rem;
-    line-height: 1;
-
-  }.docs-mobile-section-menu {
-    position: absolute;
-    inset-inline: 0;
-    top: 100%;
-    max-height: min(58vh, 30rem);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    padding: 0.8rem clamp(1rem, 3.4vw, 1.75rem) 1rem;
-    border-block: 1px solid var(--sl-color-hairline);
-    background: var(--netscli-menu-bg);
-  }
-
-  .docs-mobile-section-menu section + section {
-    margin-top: 0.95rem;
-  }
-
-  .docs-mobile-section-menu h2 {
-    margin: 0 0 0.35rem;
-    color: var(--sl-color-gray-3);
-    font-size: 0.68rem;
-    font-weight: 760;
-    letter-spacing: 0.08em;
-    line-height: 1.2;
-    text-transform: uppercase;
   }

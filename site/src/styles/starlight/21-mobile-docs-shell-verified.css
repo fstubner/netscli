@@ -28,18 +28,6 @@
     padding: 0 !important;
     border: 0 !important;
     overflow: visible !important;
-  }.docs-mobile-section-nav {
-    position: fixed !important;
-    inset-inline: 0 !important;
-  }
-
-  .docs-mobile-section-nav {
-    top: var(--sl-nav-height) !important;
-    transform: none !important;
-  }
-
-  html[data-mobile-scroll-direction='down'] .docs-mobile-section-nav {
-    transform: none !important;
   }
 
   .content-panel:first-child {
