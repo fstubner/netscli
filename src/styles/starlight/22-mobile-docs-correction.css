@@ -37,7 +37,7 @@
   .netscli-mobile-toc-wrapper {
     display: block !important;
     position: sticky !important;
-    top: calc(var(--sl-nav-height) + var(--netscli-mobile-docs-nav-height)) !important;
+    top: var(--sl-nav-height) !important;
     z-index: calc(var(--sl-z-index-navbar) - 2) !important;
     width: 100% !important;
     background: var(--sl-color-bg-nav) !important;
@@ -84,16 +84,11 @@
   .netscli-mobile-toc-wrapper mobile-starlight-toc .dropdown a:focus-visible,
   .netscli-mobile-toc-wrapper mobile-starlight-toc .dropdown a[aria-current='true'] {
     color: var(--netscli-accent-high) !important;
-  }
-
-  .docs-mobile-section-menu {
-    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.34) !important;
-  }
-}
+  }}
 
 @media (max-width: 49.99rem) {
   .main-frame {
-    padding-top: calc(var(--sl-nav-height) + var(--netscli-mobile-docs-nav-height)) !important;
+    padding-top: var(--sl-nav-height) !important;
   }
 
   .main-pane > .content-panel:first-of-type,

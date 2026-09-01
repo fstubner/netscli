@@ -1,33 +1,4 @@
-/* Mobile shell close-out, part 2 of 2 (continues 16-mobile-shell-closeout-a.css). */
 
-  .docs-mobile-section-menu ul {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    border-inline-start: 1px solid var(--sl-color-hairline);
-  }
-
-  .docs-mobile-section-menu a {
-    display: flex;
-    align-items: center;
-    min-height: 2.25rem;
-    padding: 0.35rem 0.75rem;
-    border-inline-start: 1px solid transparent;
-    color: var(--sl-color-gray-2);
-    text-decoration: none;
-  }
-
-  .docs-mobile-section-menu a:hover,
-  .docs-mobile-section-menu a:focus-visible {
-    color: var(--sl-color-white);
-    background: transparent;
-  }
-
-  .docs-mobile-section-menu a[aria-current='page'] {
-    color: var(--sl-color-white);
-    border-inline-start-color: var(--netscli-accent);
-    background: rgba(var(--netscli-accent-rgb), 0.07);
-  }
 
   mobile-starlight-toc {
     display: block !important;
@@ -138,25 +109,16 @@
   }
 }
 
-@media (max-width: 49.99rem) {
-  .docs-mobile-section-nav {
-  }mobile-starlight-toc nav {
+@media (max-width: 49.99rem) {mobile-starlight-toc nav {
     position: fixed !important;
     inset-inline: 0 !important;
-    top: calc(var(--sl-nav-height) + var(--netscli-mobile-docs-nav-height)) !important;
-    transition: top 140ms linear;
-  }
-
-  html[data-mobile-scroll-direction='down'] mobile-starlight-toc nav {
     top: var(--sl-nav-height) !important;
   }}
 
-html[data-theme='light'] .docs-mobile-section-menu,
 html[data-theme='light'] mobile-starlight-toc .dropdown {
   background: var(--netscli-menu-bg) !important;
 }
 
-html[data-theme='light'] .docs-mobile-section-menu a[aria-current='page'],
 html[data-theme='light'] mobile-starlight-toc .dropdown a[aria-current='true'],
 html[data-theme='light'] mobile-starlight-toc .dropdown a[aria-current='true']:hover,
 html[data-theme='light'] mobile-starlight-toc .dropdown a[aria-current='true']:focus-visible {
@@ -166,7 +128,4 @@ html[data-theme='light'] mobile-starlight-toc .dropdown a[aria-current='true']:f
 }
 
 @media (min-width: 50rem) {
-  .docs-mobile-section-nav {
-    display: none !important;
-  }
 }

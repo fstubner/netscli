@@ -183,8 +183,13 @@
   }
 }
 
+/* Only the shadow. The `background: var(--netscli-menu-bg)` that used to sit
+   here was already dead -- 18-mobile-shell-closeout-b.css redeclares it, for
+   the same selector and the same value, and loads later. It was invisible to
+   the shadowing gate only because that rule's selector list also named the
+   mobile section menu, which no longer exists; removing that selector left
+   this provable. */
 html[data-theme='light'] mobile-starlight-toc .dropdown {
-  background: var(--netscli-menu-bg) !important;
   box-shadow: 0 14px 32px rgba(var(--netscli-hairline-rgb), 0.12) !important;
 }
 
