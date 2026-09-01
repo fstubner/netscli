@@ -22,7 +22,14 @@ export const faq: FaqItem[] = [
   {
     group: 'Install and updates',
     q: 'How do I install NetsCLI?',
-    a: 'Install the netscli package for the CLI, terminal UI, and MCP server. On Windows, run: winget install netscli (the full identifier fstubner.netscli also works). On Linux or macOS, run: ${INSTALL_SH_COMMAND}. For the Windows desktop app, run: winget install netscli-gui. With Rust installed you can also run: cargo install netscli. Prebuilt binaries and desktop installers are attached to GitHub releases when available for that platform.',
+    // Backticks, not quotes. This was a single-quoted string containing
+    // `${INSTALL_SH_COMMAND}`, so the placeholder never interpolated -- and
+    // because `a` is copied verbatim into the FAQPage JSON-LD, the literal
+    // text `${INSTALL_SH_COMMAND}` shipped in the structured data every
+    // search engine and answer engine reads. The visible `aHtml` below was
+    // already a template literal and rendered correctly, which is why the
+    // page looked fine.
+    a: `Install the netscli package for the CLI, terminal UI, and MCP server. On Windows, run: winget install netscli (the full identifier fstubner.netscli also works). On Linux or macOS, run: ${INSTALL_SH_COMMAND}. For the Windows desktop app, run: winget install netscli-gui. With Rust installed you can also run: cargo install netscli. Prebuilt binaries and desktop installers are attached to GitHub releases when available for that platform.`,
     aHtml: `
       <p>Install the <code>netscli</code> package for the CLI, terminal UI, and MCP server:</p>
       <div class="faq-command-list" aria-label="Install commands">

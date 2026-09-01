@@ -12,14 +12,20 @@ export const meta: Meta = {
   // also ran operations and interfaces through a single "for" series
   // ("a scanner for ... packet capture, and desktop, terminal, CLI, and MCP
   // workflows"), which does not parse cleanly.
+  // "inspect hosts", not "trace routes": the sentence attributes what it
+  // lists to all four interfaces, and the MCP server has no traceroute tool.
+  // `inspect_host` is a real MCP tool, so the swap keeps the claim true.
+  // Measured at 154 characters in the built page, one more than the 153 this
+  // replaced -- still inside the ~160 a search result shows, and the MCP
+  // mention this description was rewritten to protect is nowhere near the cut.
   description:
-    'Discover LAN devices, scan TCP ports, query DNS, and trace routes from a desktop app, terminal UI, CLI, or MCP server. One Rust core, consistent results.',
+    'Discover LAN devices, scan TCP ports, query DNS, and inspect hosts from a desktop app, terminal UI, CLI, or MCP server. One Rust core, consistent results.',
   // Same scoping as the hero subhead: capture is not in any published desktop
   // installer, so this must not imply it ships with the app. It is what search
   // results and link previews show, which is where an inaccurate claim travels
   // furthest.
   ogDescription:
-    'Discover LAN devices, scan TCP ports, query DNS, trace routes, and inspect hosts from the desktop app, terminal UI, CLI, or MCP server backed by one Rust core. Packet capture in capture-enabled CLI builds.',
+    'Discover LAN devices, scan TCP ports, query DNS, and inspect hosts from the desktop app, terminal UI, CLI, or MCP server backed by one Rust core. Packet capture in capture-enabled CLI builds.',
   siteName: 'NetsCLI',
   author: { name: 'Felix Stubner', url: 'https://github.com/fstubner' },
   ogImage: 'https://netscli.com/assets/tui-discover.png',
