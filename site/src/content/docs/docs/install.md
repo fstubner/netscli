@@ -174,7 +174,9 @@ first run.
 
 ## Packet capture
 
-**No install on this page includes packet capture.** It is a compile-time feature, and every published build — the desktop installers, the standard CLI release assets, and `cargo install netscli` — is built without it. That keeps the default install free of any libpcap/Npcap dependency and avoids redistributing Npcap.
+**None of the installs above include packet capture.** It is a compile-time feature, and the default builds — the desktop installers, the standard CLI release assets, and `cargo install netscli` — are built without it. That keeps the default install free of any libpcap/Npcap dependency and avoids redistributing Npcap.
+
+Getting it is a deliberate extra step, and the rest of this section is how.
 
 Normal scan, discovery, DNS, ARP, ping, trace, and interface workflows are unaffected and need none of this.
 
