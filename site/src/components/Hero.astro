@@ -42,6 +42,19 @@ const { hero, social } = site;
           href="https://github.com/fstubner/netscli/releases/latest/download/netscli-gui-windows-x86_64.msi"
         >
           <span class="hero-primary-label">Desktop app</span>
+          {/* What the button will download, said out loud, and inside the
+              button rather than under it.
+              Clicking starts a download immediately and nothing else on the
+              page names the file or the platform first, so the only way to
+              find out what you were getting was to get it. It used to sit
+              below as a sibling, which put it in row 2 column 1 of the CTA
+              grid -- hanging off the left column while the command chip
+              beside it had nothing underneath. Inside the button it is
+              attached to the thing it describes and the row is even again.
+              Server-rendered with the Windows default so it matches the href
+              before any script runs; scripts/landing/os-tabs.ts rewrites the
+              text and the href together. */}
+          <span class="hero-primary-cue" id="hero-desktop-cue">Windows &middot; .msi installer</span>
         </a>
         <button
           class="hero-primary-menu"
@@ -94,13 +107,6 @@ const { hero, social } = site;
           </a>
         </div>
       </div>
-      {/* What the button will download, said out loud.
-          Clicking it starts a download immediately, and nothing on the page
-          named the file or the platform first -- so the only way to find out
-          what you were getting was to get it. Server-rendered with the
-          Windows default so it matches the href beside it before any script
-          runs; scripts/landing/os-tabs.ts rewrites both together. */}
-      <p class="hero-primary-cue" id="hero-desktop-cue">Windows &middot; .msi installer</p>
       {/* The SCRIPT one-liner sits here, in the wide slot beside the button,
           and the package-manager command goes in the narrower row below.
 
@@ -288,7 +294,12 @@ const { hero, social } = site;
   border:0;
 }
 .hero-primary{
-  min-width:0;padding:8px 10px 8px 13px;border-radius:0;
+  /* Two stacked lines now -- the label and the download cue -- so this
+     overrides the row layout it shares with .hero-primary-menu above. */
+  flex-direction:column;
+  justify-content:center;
+  gap:0;
+  min-width:0;padding:6px 10px 7px 13px;border-radius:0;
   text-decoration:none;font-size:.82rem;font-weight:760;
   letter-spacing:.005em;
   font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;
@@ -422,19 +433,24 @@ const { hero, social } = site;
   color:var(--netscli-text);font-family:ui-monospace,"SF Mono",Menlo,monospace;
   font-size:.78rem;background:transparent;border:0;padding:0;
 }
-/* Under the button, not beside it.
+/* The button's second line. Stacked under the label inside the anchor, so it
+ * moves, wraps and hit-tests with the button rather than beside it.
  *
- * .hero-cta-main is a two-column grid and this is its second child, so
- * without an explicit placement it would take row 1 column 2 and push the
- * command bar down a row. Placed rather than reordered so the DOM order stays
- * button-then-caption, which is what a screen reader should hear. */
+ * translateX matches .hero-primary-label's: that 8px nudge optically centres
+ * the text against the caret column on its right, and both lines have to
+ * carry it or they sit on different centres.
+ *
+ * -webkit-text-fill-color is reset because the label above it paints itself
+ * with a gradient and `transparent` fill; without this the cue inherits the
+ * transparent fill and renders as nothing. */
 .hero-primary-cue{
-  grid-column:1;
-  grid-row:2;
-  margin:2px 0 0;
-  font-size:.7rem;
-  line-height:1.3;
+  transform:translateX(8px);
+  margin:1px 0 0;
+  font-size:.66rem;
+  font-weight:500;
+  line-height:1.25;
   color:var(--netscli-text-muted);
+  -webkit-text-fill-color:currentColor;
   text-align:center;
   white-space:nowrap;
 }
@@ -479,13 +495,8 @@ const { hero, social } = site;
     width:min(100%,400px);
     flex:0 1 min(100%,400px);
   }
-  .hero-primary-cue{
-    order:2;
-    grid-column:auto;
-    grid-row:auto;
-    flex:0 0 100%;
-    margin:0;
-  }
+  /* The cue used to be a sibling here and needed its own flex order; it is
+     inside the button now and moves with it. */
   .hero-command-wide{
     order:3;
     flex:0 1 min(100%,400px);
