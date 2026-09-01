@@ -191,8 +191,8 @@ html[data-theme='light'] .main-pane {
 
 .sl-markdown-content .expressive-code {
   --ec-brdCol: rgba(var(--netscli-hairline-rgb), 0.22);
-  --ec-codeBg: #10151b;
-  --ec-codeFg: #d7dce5;
+  --ec-codeBg: var(--netscli-code-bg);
+  --ec-codeFg: var(--netscli-code-fg);
   --ec-codeLineHt: 1.64;
   --ec-codePadBlk: 1rem;
   --ec-codePadInl: 1.15rem;
@@ -204,7 +204,7 @@ html[data-theme='light'] .main-pane {
   --ec-frm-trmTtbBrdBtmCol: rgba(var(--netscli-hairline-rgb), 0.2);
   --ec-frm-trmTtbDotsFg: #8c95a6;
   --ec-frm-trmTtbDotsOpa: 0.48;
-  --ec-frm-trmBg: #10151b;
+  --ec-frm-trmBg: var(--netscli-code-bg);
   --ec-frm-inlBtnFg: var(--netscli-accent-high);
   --ec-frm-inlBtnBg: var(--netscli-accent-high);
   --ec-frm-inlBtnBrd: var(--netscli-accent-high);
@@ -242,36 +242,33 @@ html[data-theme='light'] .main-pane {
   --0: #ff8d8d !important;
 }
 
-html[data-theme='light'] .sl-markdown-content .expressive-code .frame {
-  border-color: var(--sl-color-hairline-light);
-  box-shadow:
-    0 12px 34px rgba(var(--netscli-hairline-rgb), 0.11),
-    inset 0 1px 0 rgba(255, 255, 255, 0.78);
-}html[data-theme='light'] .sl-markdown-content .expressive-code {
-  --ec-brdCol: rgba(var(--netscli-hairline-rgb), 0.12);
-  --ec-codeBg: #f7faf9;
-  --ec-codeFg: #243044;
-  --ec-frm-trmTtbBg: #edf2f3;
-  --ec-frm-trmTtbBrdBtmCol: rgba(var(--netscli-hairline-rgb), 0.1);
-  --ec-frm-trmBg: #f7faf9;
-  --ec-frm-inlBtnFg: #146b2e;
-  --ec-frm-inlBtnBg: #146b2e;
-  --ec-frm-inlBtnBrd: #146b2e;
-}
-
-html[data-theme='light'] .sl-markdown-content .expressive-code pre {
-  background:
-    linear-gradient(180deg, rgba(var(--netscli-accent-rgb), 0.035), transparent 14rem),
-    #f7faf9 !important;
-}
-
-html[data-theme='light'] .sl-markdown-content .expressive-code .ec-line :where(span[style*='#953800']) {
-  --1: #8b5a00 !important;
-}
-
-html[data-theme='light'] .sl-markdown-content .expressive-code .ec-line :where(span[style*='#0A3069']),
-html[data-theme='light'] .sl-markdown-content .expressive-code .ec-line :where(span[style*='#0550AE']) {
-  --1: #146b2e !important;
+/* The light-theme frame treatment lives in 07-docs-interaction-b.css, which
+   loads later and now sets both border and shadow for this exact selector.
+   The copy that used to be here was dead. */
+/* Code blocks are dark in the light theme too -- see code-surface.css.
+ *
+ * Expressive Code renders BOTH themes into the markup: every token span
+ * carries the dark colour in `--0` and the light one in `--1`, and its own
+ * stylesheet defaults to `--1` unless the dark theme is selected. So giving
+ * the block a dark background was never enough on its own -- the syntax
+ * colours on top of it stayed the ones picked for white, and the whole block
+ * went dark-on-dark.
+ *
+ * This selects `--0` in BOTH themes -- which is what Starlight means by "you
+ * must manually add CSS to handle switching between multiple themes", and
+ * also the only way the two end up identical. Scoped to the light theme
+ * alone, the same token measured #818b9c on a light page and #c2cad8 on a
+ * dark one: same block, same background, two different syntax palettes.
+ * Setting `expressiveCode.themes` to a single theme would be tidier and does
+ * not work: the option is accepted and ignored -- a deliberately invalid
+ * theme name still builds clean, so it is not reaching the integration.
+ *
+ * The three `--1: ... !important` remaps that used to live here are gone with
+ * it. They existed to make github-light's token colours legible on a white
+ * block, and nothing renders that combination now. */
+.sl-markdown-content .expressive-code .ec-line span[style^='--'] {
+  color: var(--0, inherit);
+  background-color: var(--0bg, transparent);
 }
 
 .sl-markdown-content table {

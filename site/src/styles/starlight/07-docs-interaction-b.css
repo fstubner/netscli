@@ -11,9 +11,9 @@
 
 .sl-markdown-content .expressive-code {
   --ec-brdCol: rgba(var(--netscli-hairline-rgb), 0.2);
-  --ec-codeBg: #20242b;
-  --ec-codeFg: #d7dce5;
-  --ec-frm-trmBg: #20242b;
+  --ec-codeBg: var(--netscli-code-bg);
+  --ec-codeFg: var(--netscli-code-fg);
+  --ec-frm-trmBg: var(--netscli-code-bg);
   --ec-frm-inlBtnFg: var(--netscli-accent-high);
   --ec-frm-inlBtnBg: var(--netscli-accent-high);
   --ec-frm-inlBtnBrd: var(--netscli-accent-high);
@@ -26,7 +26,7 @@
   position: relative;
   overflow: hidden;
   border-color: rgba(var(--netscli-hairline-rgb), 0.2);
-  background: var(--netscli-panel-bg) !important;
+  background: var(--netscli-code-bg) !important;
   box-shadow:
     0 1px 0 rgba(var(--netscli-lift-rgb), 0.025) inset,
     0 12px 28px rgba(0, 0, 0, 0.2);
@@ -43,7 +43,7 @@
 }
 
 .sl-markdown-content .expressive-code pre {
-  background: var(--netscli-panel-bg) !important;
+  background: var(--netscli-code-bg) !important;
 }
 
 .sl-markdown-content .expressive-code code {
@@ -151,26 +151,29 @@ html[data-theme='light'] .pagination-links a > svg {
   color: var(--sl-color-accent);
 }
 
-html[data-theme='light'] #starlight__search .pagefind-ui__result-inner,
-html[data-theme='light'] .sl-markdown-content .expressive-code .frame {
-  background: var(--netscli-panel-bg) !important;
-  border-color: rgba(var(--netscli-hairline-rgb), 0.13);
+/* The search result card's light background and border are set in
+   08-search-modal.css, which loads later; only the shadow is still ours. */
+html[data-theme='light'] #starlight__search .pagefind-ui__result-inner {
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.8) inset,
     0 10px 24px rgba(var(--netscli-hairline-rgb), 0.07);
 }
 
+/* The code frame keeps its dark surface here; only its shadow softens for a
+   light page, the same way the two nav bars do. */
+html[data-theme='light'] .sl-markdown-content .expressive-code .frame {
+  border-color: rgba(var(--netscli-hairline-rgb), 0.13);
+  box-shadow:
+    0 1px 0 rgba(var(--netscli-lift-rgb), 0.025) inset,
+    0 10px 24px rgba(var(--netscli-hairline-rgb), 0.09);
+}
+
 html[data-theme='light'] #starlight__search .pagefind-ui__result-title:not(:where(.pagefind-ui__result-nested *)),
 html[data-theme='light'] #starlight__search .pagefind-ui__result-nested,
-html[data-theme='light'] #starlight__search .pagefind-ui__result-tags,
-html[data-theme='light'] .sl-markdown-content .expressive-code pre {
+html[data-theme='light'] #starlight__search .pagefind-ui__result-tags {
   background: var(--netscli-panel-bg) !important;
 }html[data-theme='light'] .sl-markdown-content .expressive-code .frame::before {
   background: rgba(var(--netscli-accent-rgb), 0.42);
-}html[data-theme='light'] .sl-markdown-content :not(pre) > code {
-  border-color: rgba(var(--netscli-hairline-rgb), 0.16);
-  background: #eef2f4;
-
 }
 
 /* Narrow screens: give the copy button its own band above the code.
