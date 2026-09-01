@@ -162,6 +162,20 @@ const groups = [
   background:var(--netscli-surface-raised);border:1px solid rgba(var(--netscli-lift-rgb),.08);border-radius:10px;
   padding:14px 18px;margin-bottom:16px;
 }
+/* On a white page the border is the whole card.
+ *
+ * The fill is rgb(242,245,250) and the page is rgb(251,251,251) -- 1.06:1,
+ * which is not a card, it is a rounding error. While this section sat on a
+ * tinted band that did not matter; with the band gone the border is the only
+ * thing left marking the card, and at .08 it composites to rgb(232,233,234),
+ * 1.17:1, which is barely more visible than the fill it is outlining.
+ *
+ * .20 gives rgb(204,206,209) -- 1.52:1, a hairline you can actually see. Only
+ * the light theme needs it: in dark the lift channel is white and the card
+ * reads against a near-black page already. */
+html[data-theme='light'] .reco{
+  border-color:rgba(var(--netscli-lift-rgb),.20);
+}
 .reco-meta{font-size:.85rem;font-weight:500;color:var(--netscli-text);margin-bottom:8px}
 .cmd.big{font-size:1.05rem;padding-right:74px}
 .alts{

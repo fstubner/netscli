@@ -120,43 +120,47 @@ section:nth-of-type(even){
     var(--netscli-surface);
   border-block:1px solid rgba(var(--netscli-lift-rgb),.045);
 }
-/* A band you can actually see, light theme only.
+/* No alternating band on a light page. The sections are the page colour and
+ * the structure comes from the content sitting on it.
  *
- * The tint above is drawn from --netscli-surface, and on a light page that is
- * barely a band at all: page rgb(251,251,251) against band rgb(238,241,247)
- * measures 1.09:1. The dark theme does not have this problem -- 1.12:1 reads
- * fine when the page is already dark -- so this is scoped to light and dark
- * mode is untouched.
+ * Three treatments were built and measured before this one:
  *
- * A DEEPER TINT, not an inversion. Painting #install dark navy was tried
- * first and measured worse where it counts: the .alt and .tryblock command
- * blocks are #10151b, so on a light band they separate at 16.21:1 and on a
- * navy one at 1.08:1. The commands a visitor came to copy disappeared into
- * the band while the container shouted -- contrast moved from inside the
- * section, where it was working, to around it, where it is decoration. It
- * also broke the alternation: #surfaces and #install share this one rule, and
- * inverting only one of them left two sections that look nothing alike.
+ *   1.09:1  the original tint (--netscli-surface). Invisible; not a band.
+ *  16.43:1  #install inverted to dark navy. Worse where it counts -- the .alt
+ *           and .tryblock command blocks are #10151b, so they went from
+ *           16.21:1 on a light band to 1.08:1 on a navy one. The commands a
+ *           visitor came to copy vanished into the band while the container
+ *           shouted.
+ *   1.27:1  a deeper tint, #dae1ee. Coherent and visible, and rejected on
+ *           looks: with #surfaces and #install adjacent it tinted 59.6% of
+ *           the page, which reads as a second background rather than as
+ *           punctuation.
  *
- * #dae1ee is 1.27:1 against the page -- visible as a band, and the command
- * blocks still clear 13.96:1 on it. It lifts the .reco card off the band as a
- * side effect, from 1.03:1 to 1.20:1, so the recommended install finally
- * reads as a card rather than as more band.
+ * White wins on the measurement too, not just on taste: the command blocks
+ * separate at 17.72:1 against the page, better than the 13.96:1 they managed
+ * on the deeper tint. The one thing it costs is the .reco card, which needs a
+ * real border to exist at all -- see Install.astro.
  *
- * A band-specific token rather than a deeper --netscli-surface: that token is
- * also the hero's chips, the surface cards, the changelog fade and the
- * lightbox, and none of those asked to get darker. */
-/* `.surfaces-section` is listed as well as the nth-of-type rule, and it has to
-   be: only #install is an even section here -- the hero is a div, so the
-   sections count surfaces(1), install(2), faq(3) -- and Surfaces.astro paints
-   its own band from --netscli-surface in a component style. Tinting one and
-   not the other is the mismatch this whole change exists to remove, and it is
-   invisible from either file alone. */
+ * `.surfaces-section` is listed as well as the nth-of-type rule, and has to
+ * be: only #install is an even section -- the hero is a div, so the sections
+ * count surfaces(1), install(2), faq(3) -- and Surfaces.astro paints its own
+ * band from --netscli-surface in a component style. Clearing one and not the
+ * other leaves two sections that should match looking nothing alike, and that
+ * is invisible from either file alone.
+ *
+ * Dark mode keeps its bands. 1.12:1 reads fine when the page is already dark,
+ * and none of the above applies there. */
 html[data-theme='light'] section:nth-of-type(even),
 html[data-theme='light'] .surfaces-section{
-  --netscli-band-tint:#dae1ee;
-  background:
-    linear-gradient(180deg,rgba(var(--netscli-lift-rgb),.018),rgba(var(--netscli-lift-rgb),.006)),
-    var(--netscli-band-tint);
+  background:var(--netscli-bg);
+}
+
+/* The accent wash went with the band it belonged to. It is a radial
+   rgba(accent,.055) in the corner of every even section -- part of the band
+   treatment, and on a white page with no band under it, a green smudge at
+   1.08:1 rather than depth. */
+html[data-theme='light'] section:nth-of-type(even)::before{
+  content:none;
 }
 
 /* The footer is the one dark anchor, and it is dark because it has nothing to
