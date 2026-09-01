@@ -40,6 +40,20 @@ export const navLinks: NavLink[] = [
   },
 ];
 
+/** Index of the first link that NAVIGATES rather than scrolling.
+ *
+ * The bar carries two different kinds of destination: Features/Install/FAQ
+ * jump within the landing page, Docs/Changelog/GitHub go somewhere else. Six
+ * links in one undifferentiated row made them look interchangeable, and they
+ * are not -- clicking "Features" from the docs leaves the docs entirely.
+ *
+ * Both bars draw a separator here rather than reordering or hiding anything,
+ * so every link stays reachable from every page and the grouping is the only
+ * thing that changes. Derived from the data, so adding an anchor or a page
+ * link moves the divider on its own.
+ */
+export const navGroupBreak = navLinks.findIndex((link) => Boolean(link.href));
+
 /** Resolve a link's href for the page currently being rendered. */
 export function hrefFor(link: NavLink, pathname: string): string {
   if (link.href) return link.href;

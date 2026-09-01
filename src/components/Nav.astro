@@ -1,9 +1,19 @@
 ---
 import { site } from '../data/site';
-import { hrefFor, isCurrent, navLinks } from '../data/site-content/nav';
+import { hrefFor, isCurrent, navGroupBreak, navLinks } from '../data/site-content/nav';
 const { branding } = site;
 const pathname = Astro.url.pathname;
 const onHome = pathname === '/';
+
+/* Built in the frontmatter, not inline in the template. The inline form mixed
+   `?:` with `||` and the Astro compiler rejects that outright -- and `astro
+   check` passed it, so only `astro build` caught it. */
+function linkClass(link: (typeof navLinks)[number], index: number): string | undefined {
+  const parts: string[] = [];
+  if (link.external) parts.push('external-link');
+  if (index === navGroupBreak) parts.push('nav-group-start');
+  return parts.length ? parts.join(' ') : undefined;
+}
 ---
 <nav data-site-nav data-open="false">
   <div class="nav-inner">
@@ -23,10 +33,10 @@ const onHome = pathname === '/';
       <span></span>
     </button>
     <div class="nlinks" id="site-nav-links" data-site-nav-links>
-      {navLinks.map((link) => (
+      {navLinks.map((link, i) => (
         <a
           href={hrefFor(link, pathname)}
-          class={link.external ? 'external-link' : undefined}
+          class={linkClass(link, i)}
           data-section={link.section}
           data-site-nav-link
           aria-current={isCurrent(link, pathname)}
@@ -138,6 +148,22 @@ body.nav-scrolled nav[data-site-nav]{
 body.nav-scrolled nav[data-site-nav]::after{
   opacity:1;
 }
+/* The scrolled shadow, softened for a light page.
+ *
+ * Both the drop shadow and the gradient beneath the bar were pure black --
+ * .28 and .42 -- which reads as depth on a near-black page and as a smudge on
+ * a white one. The DOCS header already had exactly this override; the landing
+ * bar never got one, which is why the seam only showed on the landing page and
+ * the changelog. Same values the docs use, so the two bars cast the same
+ * shadow. */
+html[data-theme='light'] body.nav-scrolled nav[data-site-nav]{
+  box-shadow:
+    0 12px 26px rgba(var(--netscli-hairline-rgb),.11),
+    0 1px 0 rgba(var(--netscli-accent-rgb),.12) !important;
+}
+html[data-theme='light'] nav[data-site-nav]::after{
+  background:linear-gradient(180deg,rgba(var(--netscli-hairline-rgb),.12),rgba(var(--netscli-hairline-rgb),0));
+}
 .nav-inner{
   /* Matches the docs top bar. Padding alone gave 12+32+12 plus the 1px
      border on <nav> = 57px against the docs' 60px, so the bar jumped every
@@ -205,6 +231,15 @@ body.nav-scrolled nav[data-site-nav]::after{
   height:calc(var(--netscli-nav-height) - 1px);
 }
 .nlinks a:hover{color:var(--netscli-text)}
+/* Separates the links that scroll from the links that navigate.
+   A rule, not a gap alone: at this size a gap on its own reads as an
+   accident. Purely decorative, so it is a border rather than an element --
+   nothing for a screen reader to announce between two links. */
+.nlinks a.nav-group-start{
+  margin-inline-start:12px;
+  padding-inline-start:20px;
+  border-inline-start:1px solid rgba(var(--netscli-hairline-rgb),.28);
+}
 
 /* Theme control.
  *
@@ -313,6 +348,14 @@ body.nav-scrolled nav[data-site-nav]::after{
        activated the one below it. Hence the explicit margin reset. */
     height:auto;
     margin-block:0;
+  }
+  .nlinks a.nav-group-start{
+    margin-inline-start:0;
+    padding-inline-start:10px;
+    border-inline-start:2px solid transparent;
+    margin-block-start:6px;
+    padding-block-start:6px;
+    border-block-start:1px solid rgba(var(--netscli-hairline-rgb),.28);
   }
   .nlinks a:hover,
   .nlinks a[aria-current]{

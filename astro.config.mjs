@@ -97,6 +97,7 @@ export default defineConfig({
         // definition rather than an override of one, and it has to outrank
         // Starlight's own scoped styles for that component. See the file.
         './src/styles/theme-control.css',
+        './src/styles/code-surface.css',
       ],
       social: [
         {

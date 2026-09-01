@@ -88,12 +88,10 @@ html[data-theme='light'] .main-pane > main > .content-panel:first-child::before 
     linear-gradient(128deg, rgba(var(--netscli-accent-rgb), 0.035), rgba(30, 220, 255, 0.024) 38%, transparent 72%);
 }
 
+/* One colour, both themes: the chip behind it is dark in both. See
+   src/styles/code-surface.css. */
 .sl-markdown-content :not(pre) > code {
-  color: var(--netscli-accent-bright) !important;
-}
-
-html[data-theme='light'] .sl-markdown-content :not(pre) > code {
-  color: var(--sl-color-accent) !important;
+  color: var(--netscli-code-inline-fg) !important;
 }
 
 .sl-markdown-content a,

@@ -410,7 +410,8 @@ const { hero, social } = site;
   position:relative;display:grid;grid-template-columns:minmax(0,1fr);
   align-items:center;gap:10px;min-height:36px;
   padding:8px 58px 8px 14px;border-radius:9px;
-  background:rgba(var(--netscli-lift-rgb),.04);border:1px solid rgba(var(--netscli-lift-rgb),.1);
+  /* Dark in both themes -- see the code-surface note in tokens.css. */
+  background:var(--netscli-code-bg);border:1px solid var(--netscli-code-border);
   box-shadow:0 0 0 1px rgba(var(--netscli-accent-rgb),.26),0 0 14px rgba(var(--netscli-accent-rgb),.08);
 }
 .hero-command.hero-copy .copy-btn{opacity:1}

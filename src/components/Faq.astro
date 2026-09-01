@@ -103,22 +103,27 @@ const faqGroups = grouped.sort(
   align-items:center;
   min-height:40px;
   padding:8px 48px 8px 12px;
-  border:1px solid rgba(var(--netscli-lift-rgb),.07);
+  /* Dark in both themes -- see the code-surface note in tokens.css. The
+     LABEL beside it stays on the card, so only the chip inverts. */
+  border:1px solid var(--netscli-code-border);
   border-radius:5px;
-  background:rgba(var(--netscli-lift-rgb),.045);
-  color:var(--netscli-text);
+  background:var(--netscli-code-bg);
+  color:var(--netscli-code-fg);
   white-space:pre;
   overflow-x:auto;
 }
 .faq .answer code{
   font-size:.8125rem;
-  color:var(--netscli-accent-bright);
+  /* The chip is dark in both themes now, so the ink has to be too --
+     --netscli-accent-bright flips to a dark green in the light theme and was
+     landing at 1.94:1 on it. See tokens.css. */
+  color:var(--netscli-code-inline-fg);
   white-space:nowrap;
   overflow-wrap:normal;
   word-break:normal;
 }
 .faq .answer .faq-command code{
-  color:var(--netscli-text);
+  color:var(--netscli-code-fg);
   white-space:pre;
   overflow-x:auto;
   overflow-wrap:normal;
