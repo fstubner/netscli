@@ -120,38 +120,56 @@ section:nth-of-type(even){
     var(--netscli-surface);
   border-block:1px solid rgba(var(--netscli-lift-rgb),.045);
 }
-/* No alternating band on a light page. The sections are the page colour and
- * the structure comes from the content sitting on it.
+/* Alternating bands on the light page, ODD sections tinted.
  *
- * Three treatments were built and measured before this one:
+ * The hero is a div, so the sections count surfaces(1), install(2), faq(3):
+ * odd tints surfaces and faq and leaves install white, and no two banded
+ * sections ever touch. That adjacency is the thing that matters here -- four
+ * treatments were built and measured before this one, and the two that failed
+ * failed for different reasons:
  *
  *   1.09:1  the original tint (--netscli-surface). Invisible; not a band.
  *  16.43:1  #install inverted to dark navy. Worse where it counts -- the .alt
  *           and .tryblock command blocks are #10151b, so they went from
  *           16.21:1 on a light band to 1.08:1 on a navy one. The commands a
  *           visitor came to copy vanished into the band while the container
- *           shouted.
- *   1.27:1  a deeper tint, #dae1ee. Coherent and visible, and rejected on
- *           looks: with #surfaces and #install adjacent it tinted 59.6% of
- *           the page, which reads as a second background rather than as
- *           punctuation.
+ *           shouted. Contrast had moved from inside the section, where it was
+ *           working, to around it, where it is decoration.
+ *   1.27:1  a deeper tint, #dae1ee, on BOTH surfaces and install. Coherent
+ *           and clearly visible, and rejected on looks: those two sections
+ *           are adjacent, so it tinted 59.6% of the page in one continuous
+ *           run and read as a second background rather than as punctuation.
+ *    1:1    no bands at all. Measurably the best for the content -- command
+ *           blocks separate at 17.72:1 on the page against 13.96:1 on the
+ *           deeper tint -- and too flat to give the page structure.
  *
- * White wins on the measurement too, not just on taste: the command blocks
- * separate at 17.72:1 against the page, better than the 13.96:1 they managed
- * on the deeper tint. The one thing it costs is the .reco card, which needs a
- * real border to exist at all -- see Install.astro.
+ * So the tint can be quiet, because alternation does the work the tint was
+ * being asked to do alone: #e9ecf3 is 1.143:1 against the page, and every
+ * banded section has a white one above and below it. Command blocks still
+ * clear 15.5:1 on it.
+ *
+ * This was only possible once .reco got a real border (see Install.astro).
+ * Before that, #install had to be tinted -- its cards are near-white and had
+ * nothing else to sit on -- which forced surfaces and install to share a
+ * treatment and made true alternation impossible.
  *
  * `.surfaces-section` is listed as well as the nth-of-type rule, and has to
- * be: only #install is an even section -- the hero is a div, so the sections
- * count surfaces(1), install(2), faq(3) -- and Surfaces.astro paints its own
- * band from --netscli-surface in a component style. Clearing one and not the
- * other leaves two sections that should match looking nothing alike, and that
- * is invisible from either file alone.
+ * be: Surfaces.astro paints its own band from --netscli-surface in a
+ * component style, so the nth-of-type rule alone does not reach it. An
+ * earlier build tinted one and not the other, which is invisible from either
+ * file alone.
  *
- * Dark mode keeps its bands. 1.12:1 reads fine when the page is already dark,
- * and none of the above applies there. */
-html[data-theme='light'] section:nth-of-type(even),
+ * NOTE: dark mode still bands the EVEN section (install) plus surfaces, so
+ * the two themes currently mark different sections. Left that way because
+ * only the light page was being reworked; making dark alternate is changing
+ * `odd` in one more rule. */
+html[data-theme='light'] section:nth-of-type(odd),
 html[data-theme='light'] .surfaces-section{
+  --netscli-band-tint:#e9ecf3;
+  background:var(--netscli-band-tint);
+}
+
+html[data-theme='light'] section:nth-of-type(even){
   background:var(--netscli-bg);
 }
 
