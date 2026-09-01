@@ -103,27 +103,6 @@
      which point it became near-black on a dark green button. */
   --netscli-on-accent: #06130f;
 
-  /* ---- Code sample colours -------------------------------------------
-   *
-   * The landing page's terminal and JSON samples are pre-highlighted HTML in
-   * src/data/site-content/, and their spans carried inline
-   * `style="color:#..."` literals -- four values, 32 uses, all picked for a
-   * near-black background. An inline style cannot be overridden by a
-   * stylesheet, so when the landing page gained a light theme these stayed
-   * mid-grey and pastel on white and were the bulk of its 23 contrast
-   * failures. They are var() references now, which inline styles DO resolve
-   * per theme.
-   *
-   * The blue and green are the original literals. The two neutrals are not:
-   * naming them made them reachable by scripts/design-tokens.mjs, which
-   * measured the punctuation grey at 4.46:1 on the page and 3.99:1 on a card
-   * -- below AA, and wrong since long before the light theme. They are also
-   * no longer #888888 beside #7b7b7b, a 3% difference no reader can see. */
-  --netscli-code-comment: #9a9a9a;
-  --netscli-code-punct: #8a8a8a;
-  --netscli-code-key: #7c9fc7;
-  --netscli-code-string: #8fbc7f;
-
   /* ---- Brand gradient -------------------------------------------------
    *
    * The "Desktop app" button fills its label with this and sets
@@ -254,14 +233,6 @@ html[data-theme='light'] {
      near-black would be 1.7:1. */
   --netscli-on-accent: #ffffff;
 
-  /* The code sample palette, re-picked for a white background. Same four
-     roles, same hue families -- neutral, neutral, blue, green -- at
-     5.22:1, 7.59:1, 6.38:1 and 6.21:1 against the page. */
-  --netscli-code-comment: #5f6b7d;
-  --netscli-code-punct: #4a5262;
-  --netscli-code-key: #2b5f96;
-  --netscli-code-string: #2f6b32;
-
   /* 0.1, not the dark theme's 0.08: --sl-color-hairline carried a different
      alpha per theme, and this reproduces it rather than rounding the two
      together. */
@@ -291,7 +262,13 @@ html[data-theme='light'] {
      the page in the dark theme and darker than it here -- which is why these
      are named for depth rather than for a colour. */
   --netscli-bg: #fbfbfb;
-  --netscli-surface: #f4f6f8;
-  --netscli-surface-raised: #f6f8fa;
+  /* Blue-grey, not neutral grey. The alternating band and the cards standing
+     on it were #f4f6f8/#f6f8fa, which is the page with the colour taken out
+     -- so the "Get started" section read as a slightly dirty white rather
+     than as its own surface. A navy cast gives it somewhere to be without
+     touching a single piece of text: the ramp measures 15.68 / 7.05 / 5.27
+     on the band and 16.23 / 7.30 / 5.46 on a card. */
+  --netscli-surface: #eef1f7;
+  --netscli-surface-raised: #f2f5fa;
   --netscli-bg-rgb: 251, 251, 251;
 }

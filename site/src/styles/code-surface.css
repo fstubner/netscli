@@ -1,0 +1,90 @@
+/* The code surface, and the ink that goes on it.
+ *
+ * Split out of tokens.css, which was at the 300-line guard, and split by
+ * ownership: these describe one thing -- how code is drawn -- and the rules
+ * that use them are here too rather than in global.css.
+ *
+ * Registered in astro.config.mjs's customCss and imported by Page.astro, so
+ * both halves of the site read the same values.
+ */
+:root {
+  /* ---- Code surfaces --------------------------------------------------
+   *
+   * Code stays dark in BOTH themes. That is a choice, not an oversight: a
+   * terminal sample and a JSON blob read as machine output, and inverting
+   * them on a light page makes them read as prose. The docs' own code blocks
+   * were already dark by literal (--ec-codeBg), so this makes the rest of the
+   * site agree with them rather than the other way round.
+   *
+   * It also means the syntax palette below is ONE set of colours instead of
+   * two. It briefly was two -- the four values were re-picked for a white
+   * background earlier the same day -- and those light variants are gone
+   * again, because nothing renders code on white any more.
+   *
+   * Contrast on #10151b: fg 13.32, comment 6.52, punct 5.31, key 6.67,
+   * string 8.44, inline accent 13.06. scripts/contrast-sweep.mjs measures
+   * these as rendered rather than trusting the numbers here. */
+  --netscli-code-bg: #10151b;
+  --netscli-code-fg: #d7dce5;
+  --netscli-code-border: rgba(255, 255, 255, 0.08);
+  /* Opaque, for the 1px gaps between stacked command rows. A translucent
+     white there would composite against the PAGE, not the panel, and render
+     as near-white lines across a dark block in the light theme. */
+  --netscli-code-divider: #232a34;
+  /* Inline `code` ink. The dark accent-bright in both themes, because the
+     chip behind it is dark in both. */
+  --netscli-code-inline-fg: #86efac;
+
+  /* ---- Code sample colours -------------------------------------------
+   *
+   * The landing page's terminal and JSON samples are pre-highlighted HTML in
+   * src/data/site-content/, and their spans carried inline
+   * `style="color:#..."` literals -- four values, 32 uses, all picked for a
+   * near-black background. An inline style cannot be overridden by a
+   * stylesheet, so when the landing page gained a light theme these stayed
+   * mid-grey and pastel on white and were the bulk of its 23 contrast
+   * failures. They are var() references now, which inline styles DO resolve
+   * per theme.
+   *
+   * The blue and green are the original literals. The two neutrals are not:
+   * naming them made them reachable by scripts/design-tokens.mjs, which
+   * measured the punctuation grey at 4.46:1 on the page and 3.99:1 on a card
+   * -- below AA, and wrong since long before the light theme. They are also
+   * no longer #888888 beside #7b7b7b, a 3% difference no reader can see. */
+  --netscli-code-comment: #9a9a9a;
+  --netscli-code-punct: #8a8a8a;
+  --netscli-code-key: #7c9fc7;
+  --netscli-code-string: #8fbc7f;
+
+}
+
+/* ─── INK ON THE DARK CODE SURFACE ───
+ *
+ * Every block below paints the dark code background in BOTH themes, so the
+ * text ramp inside them has to be the dark-theme ramp regardless of the page.
+ *
+ * Done by redefining the ramp tokens on the subtree rather than by restating
+ * `color:` on each descendant. The children already say
+ * `color: var(--netscli-text)` and friends -- about a dozen of them across the
+ * install section alone -- so re-pointing the token fixes all of them at once
+ * and, more usefully, cannot miss one that gets added later. The first attempt
+ * patched them individually and the contrast sweep found 52 it had not
+ * reached.
+ *
+ * .faq-command is NOT in this list, only its `code` child: that row is a label
+ * on the card beside a chip on the dark surface, and remapping the whole row
+ * lightened the label onto a light background. Same reason .reco and .try-cmd
+ * are absent -- see Install.astro.
+ */
+.cmd,
+.alt,
+.tryblock,
+.try,
+.hero-command,
+.codeblock,
+.faq-command code {
+  --netscli-text: var(--netscli-code-fg);
+  --netscli-text-strong: #f4f4f4;
+  --netscli-text-muted: #9a9a9a;
+  --netscli-accent-bright: var(--netscli-code-inline-fg);
+}
