@@ -2,105 +2,36 @@
 import MobileTableOfContents from 'virtual:starlight/components/MobileTableOfContents';
 import TableOfContents from 'virtual:starlight/components/TableOfContents';
 
-const { sidebar: routeSidebar, toc } = Astro.locals.starlightRoute;
-const sidebar = routeSidebar as SidebarEntry[];
-
-type SidebarEntry = {
-  type: 'link' | string;
-  label?: string;
-  href?: string;
-  isCurrent?: boolean;
-  entries?: SidebarEntry[];
-};
-
-type SidebarLink = {
-  type: 'link';
-  href: string;
-  label: string;
-  isCurrent?: boolean;
-};
-
-const collectLinks = (entry: SidebarEntry): SidebarLink[] => {
-  if (entry.type === 'link' && entry.href && entry.label) {
-    return [
-      {
-        type: 'link',
-        href: entry.href,
-        label: entry.label,
-        isCurrent: entry.isCurrent,
-      },
-    ];
-  }
-  return (entry.entries ?? []).flatMap(collectLinks);
-};
-
-const mobileGroups = (sidebar ?? [])
-  .map((entry) => {
-    if (entry.type === 'link') {
-      return { label: 'Docs', entries: [entry] };
-    }
-
-    return {
-      label: entry.label,
-      entries: (entry.entries ?? []).flatMap(collectLinks),
-    };
-  })
-  .filter((group) => group.entries.length > 0);
-
-const currentLink =
-  mobileGroups.flatMap((group) => group.entries).find((entry) => entry.isCurrent) ??
-  mobileGroups[0]?.entries[0];
-
-const currentGroup = mobileGroups.find((group) =>
-  group.entries.some((entry) => entry.href === currentLink?.href)
-);
-
-const formatCrumb = (label: string | undefined) => {
-  if (!label) return '';
-  return label === label.toUpperCase()
-    ? label.charAt(0).toUpperCase() + label.slice(1).toLowerCase()
-    : label;
-};
-
-const currentGroupLabel = formatCrumb(currentGroup?.label) || 'Start';
+const { toc } = Astro.locals.starlightRoute;
 ---
 
-{
-  mobileGroups.length > 0 && (
-    <div class="docs-mobile-section-nav print:hidden">
-      <details id="netscli-mobile-docs-nav">
-        <summary>
-          <span class="docs-mobile-section-label">Docs</span>
-          <span class="docs-mobile-section-separator" aria-hidden="true">›</span>
-          <span class="docs-mobile-section-group">{currentGroupLabel}</span>
-          <span class="docs-mobile-section-separator" aria-hidden="true">›</span>
-          <span class="docs-mobile-section-current">{currentLink?.label ?? 'Overview'}</span>
-          <span class="docs-mobile-section-caret" aria-hidden="true">›</span>
-        </summary>
-        <div class="docs-mobile-section-menu">
-          {
-            mobileGroups.map((group) => (
-              <section>
-                <h2>{group.label}</h2>
-                <ul>
-                  {
-                    group.entries.map((entry) => (
-                      <li>
-                        <a href={entry.href} aria-current={entry.isCurrent ? 'page' : undefined}>
-                          {entry.label}
-                        </a>
-                      </li>
-                    ))
-                  }
-                </ul>
-              </section>
-            ))
-          }
-        </div>
-      </details>
-    </div>
-  )
-}
+{/*
+  There is no mobile section-nav row here any more.
+
+  It rendered "Docs › <group> › <page>" under the header on narrow screens,
+  and its dropdown listed every docs page. Measured on /docs/cli/ at 390x844,
+  that dropdown and the header's hamburger sidebar opened the IDENTICAL set of
+  11 links -- not overlapping, identical -- so two controls 43px apart did the
+  same job, and the header is `fixed`, meaning the hamburger never scrolls
+  away and was always the shorter route.
+
+  What it cost: the row was 43px of a 145px permanently-pinned stack (header
+  60 + row 43 + contents bar 42) on an 844px viewport, 17.2% of the screen
+  before the phone's own browser chrome. Without it the stack is 102px, 12.1%.
+
+  What it uniquely gave was orientation -- which group the current page sits
+  in. That is the real loss, and it is a deliberate trade: the page title is
+  the next thing on screen, and the hamburger shows the group with the current
+  page marked.
+
+  Its styles are gone from 17, 18, 20, 21, 22, 23 and 28 with it, along with a
+  `--netscli-mobile-docs-nav-height` token that only existed to offset the
+  contents bar below it, and a half-built hide-on-scroll-down treatment: 17
+  declared `transform: translateY(0)` with a 140ms transition, 21 forced
+  `transform: none !important` in both scroll states, and nothing ever set the
+  `data-mobile-scroll-direction` attribute those rules keyed off. It had been
+  tried and switched off without being removed.
+*/}
 
 {
   toc && (
@@ -122,32 +53,6 @@ const currentGroupLabel = formatCrumb(currentGroup?.label) || 'Start';
     </>
   )
 }
-
-<script>
-  const docsNav = document.getElementById('netscli-mobile-docs-nav') as HTMLDetailsElement | null;
-
-  if (docsNav) {
-    const closeDocsNav = () => {
-      docsNav.open = false;
-    };
-
-    docsNav.querySelectorAll('a').forEach((link) => {
-      link.addEventListener('click', closeDocsNav);
-    });
-
-    window.addEventListener('click', (event) => {
-      if (event.target instanceof Node && !docsNav.contains(event.target)) closeDocsNav();
-    });
-
-    window.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && docsNav.open) {
-        const hasFocus = docsNav.contains(document.activeElement);
-        closeDocsNav();
-        if (hasFocus) docsNav.querySelector('summary')?.focus();
-      }
-    });
-  }
-</script>
 
 <style>
   @layer starlight.core {
@@ -177,10 +82,6 @@ const currentGroupLabel = formatCrumb(currentGroup?.label) || 'Start';
 
     .right-sidebar-panel :global(:where(a):hover) {
       color: var(--sl-color-white);
-    }
-
-    .docs-mobile-section-nav {
-      display: none;
     }
 
     @media (min-width: 72rem) {
