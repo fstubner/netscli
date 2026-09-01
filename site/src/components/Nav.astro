@@ -182,7 +182,12 @@ html[data-theme='light'] nav[data-site-nav]::after{
 }
 .mark{
   display:inline-block;line-height:0;text-decoration:none;
-  filter:brightness(1);transition:filter 200ms;
+  /* No transition and no hover rule. Both used to be here and both were
+     no-ops: the base and the hover state were each `brightness(1)`, so the
+     200ms transition had nothing to animate between. Left as they were, the
+     hover rule would now undo the light theme's darkening the moment the
+     pointer touched the logo. */
+  filter:var(--netscli-mark-filter);
   /* Cancels the wordmark asset's own transparent left margin, so the glyph
      starts on the gutter the nav links start on. See tokens.css. */
   transform:translateX(calc(var(--netscli-mark-width) * var(--netscli-mark-inset-ratio) * -1));
@@ -190,7 +195,7 @@ html[data-theme='light'] nav[data-site-nav]::after{
 .mark img{
   display:block;width:var(--netscli-mark-width);height:auto;image-rendering:auto;
 }
-.mark:hover{filter:brightness(1)}
+
 .nav-menu-toggle{
   display:none;
   width:2.45rem;

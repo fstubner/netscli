@@ -97,6 +97,9 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
       display: block;
       width: var(--netscli-mark-width);
       height: auto;
+      /* Same token as the landing bar's `.mark`, so both bars darken the
+         wordmark by the same amount on a light page. See tokens.css. */
+      filter: var(--netscli-mark-filter);
     }
 
     .docs-nav-links {
