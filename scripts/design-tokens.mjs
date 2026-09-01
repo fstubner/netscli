@@ -100,10 +100,20 @@ const TARGETS = [
       'netscli-accent',
       'netscli-accent-bright',
       'netscli-accent-high',
-      'netscli-code-comment',
-      'netscli-code-punct',
-      'netscli-code-key',
-      'netscli-code-string',
+      // The four code-sample colours are deliberately NOT here.
+      //
+      // They sit on --netscli-code-bg, which is dark in both themes, and this
+      // gate compares every foreground against every PAGE surface -- so it
+      // measured them against white and reported failures for a pairing that
+      // never renders. Adding the code background to `surfaces` instead would
+      // invert the problem: the light text ramp would then be checked against
+      // a dark panel it never touches.
+      //
+      // scripts/contrast-sweep.mjs covers them properly, because it measures
+      // the background actually behind each node rather than every
+      // combination of declared values. Strictly better for this case; the
+      // trade is that a bad code colour is caught at render time rather than
+      // at declaration time.
       // The three stops of the "Desktop app" button's gradient label.
       //
       // Gradient-filled text sets `-webkit-text-fill-color: transparent`, so

@@ -77,18 +77,18 @@ site-search dialog .dialog-frame {
 }
 
 .sl-markdown-content :not(pre) > code {
-  border-color: rgba(var(--netscli-hairline-rgb), 0.25);
-  background: var(--sl-color-bg-inline-code);
+  border-color: var(--netscli-code-border);
+  background: var(--netscli-code-bg);
 
 }.sl-markdown-content .expressive-code {
   --ec-brdCol: rgba(var(--netscli-hairline-rgb), 0.24);
-  --ec-codeBg: #171c23;
-  --ec-codeFg: #d7dce5;
+  --ec-codeBg: var(--netscli-code-bg);
+  --ec-codeFg: var(--netscli-code-fg);
   --ec-focusBrd: rgba(215, 220, 229, 0.8);
   --ec-sbThumbCol: rgba(var(--netscli-hairline-rgb), 0.24);
   --ec-sbThumbHoverCol: rgba(194, 202, 216, 0.42);
   --ec-frm-frameBoxShdCssVal: 0 16px 36px rgba(0, 0, 0, 0.3);
-  --ec-frm-trmBg: #171c23;
+  --ec-frm-trmBg: var(--netscli-code-bg);
   --ec-frm-inlBtnFg: #b9c2d2;
   --ec-frm-inlBtnBg: #b9c2d2;
   --ec-frm-inlBtnBrd: #b9c2d2;
@@ -145,20 +145,6 @@ site-search dialog .dialog-frame {
   --0: #cfa0a0 !important;
 }
 
-html[data-theme='light'] .sl-markdown-content .expressive-code {
-  --ec-brdCol: rgba(var(--netscli-hairline-rgb), 0.13);
-  --ec-codeBg: #f2f5f7;
-  --ec-codeFg: #243044;
-  --ec-frm-trmBg: #f2f5f7;
-  --ec-frm-inlBtnFg: #44516a;
-  --ec-frm-inlBtnBg: #44516a;
-  --ec-frm-inlBtnBrd: #44516a;
-}
-
-html[data-theme='light'] .sl-markdown-content .expressive-code .frame,
-html[data-theme='light'] .sl-markdown-content .expressive-code pre {
-  background: #f2f5f7 !important;
-}
 
 .sl-markdown-content table {
   border-color: rgba(var(--netscli-hairline-rgb), 0.2);

@@ -6,9 +6,17 @@ import ThemeSelect from 'virtual:starlight/components/ThemeSelect';
 const shouldRenderSearch =
   config.pagefind || config.components.Search !== '@astrojs/starlight/components/Search.astro';
 
-import { hrefFor, isCurrent, navLinks } from '../../data/site-content/nav';
+import { hrefFor, isCurrent, navGroupBreak, navLinks } from '../../data/site-content/nav';
 
 const pathname = Astro.url.pathname;
+
+/* See the note in components/Nav.astro. */
+function linkClass(link: (typeof navLinks)[number], index: number): string | undefined {
+  const parts: string[] = [];
+  if (link.external) parts.push('external-link');
+  if (index === navGroupBreak) parts.push('nav-group-start');
+  return parts.length ? parts.join(' ') : undefined;
+}
 ---
 
 <div class="docs-topbar">
@@ -22,10 +30,10 @@ const pathname = Astro.url.pathname;
 
   <nav class="docs-nav-links" aria-label="Site navigation">
     {
-      navLinks.map((link) => (
+      navLinks.map((link, i) => (
         <a
           href={hrefFor(link, pathname)}
-          class={link.external ? 'external-link' : undefined}
+          class={linkClass(link, i)}
           aria-current={isCurrent(link, pathname)}
           {...(link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
         >
@@ -118,6 +126,13 @@ const pathname = Astro.url.pathname;
     .docs-nav-links a:hover,
     .docs-nav-links a[aria-current] {
       color: var(--sl-color-white);
+    }
+
+    /* Same separator as the landing bar -- see Nav.astro. */
+    .docs-nav-links a.nav-group-start {
+      margin-inline-start: 0.35rem;
+      padding-inline-start: 0.95rem;
+      border-inline-start: 1px solid rgba(var(--netscli-hairline-rgb), 0.28);
     }
 
     .docs-nav-links a[aria-current] {
