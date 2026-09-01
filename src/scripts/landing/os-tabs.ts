@@ -8,6 +8,7 @@
  * derived from both.
  */
 import type { NavigatorWithUserAgentData, OperatingSystem } from './os-types';
+import { INSTALL_PS1_COMMAND, INSTALL_SH_COMMAND } from '../../data/site-content/install-urls';
 
 export function initOsTabs(): void {
   // OS tab swap. Keep visual state and ARIA state aligned so package
@@ -127,17 +128,17 @@ export function initOsTabs(): void {
         // canonical `fstubner.netscli`, so both resolve.
         packageManager: "winget install netscli",
         script:
-          "iwr -useb https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.ps1 | iex",
+          INSTALL_PS1_COMMAND,
       },
       macos: {
         packageManager: "brew tap fstubner/tap && brew install netscli",
         script:
-          "curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash",
+          INSTALL_SH_COMMAND,
       },
       linux: {
         packageManager: "yay -S netscli-bin",
         script:
-          "curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash",
+          INSTALL_SH_COMMAND,
       },
     };
 
@@ -174,6 +175,17 @@ export function initOsTabs(): void {
       };
       desktopDownload.href = desktopUrls[detected];
 
+      // Keep the caption and the href saying the same thing. They are set
+      // together on purpose: a cue that describes a different file from the
+      // one the button fetches is worse than no cue.
+      const cueText: Record<OperatingSystem, string> = {
+        windows: 'Windows · .msi installer',
+        macos: 'macOS · Intel .dmg',
+        linux: 'Linux · .AppImage',
+      };
+      const cue = document.getElementById('hero-desktop-cue');
+      if (cue) cue.textContent = cueText[detected];
+
       if (detected === "macos") {
         // High-entropy hints are async and Chromium-only; Safari never
         // resolves this, which is exactly why the default above has to
@@ -183,6 +195,10 @@ export function initOsTabs(): void {
           .then(({ architecture }) => {
             if (architecture === "arm") {
               desktopDownload.href = `${base}/netscli-gui-macos-aarch64.dmg`;
+              // The caption moves with the href. Without this the button
+              // would fetch the Apple Silicon build while the line under it
+              // still read "Intel .dmg".
+              if (cue) cue.textContent = 'macOS · Apple silicon .dmg';
             }
           })
           .catch(() => {
