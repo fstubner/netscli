@@ -410,8 +410,10 @@ const { hero, social } = site;
   position:relative;display:grid;grid-template-columns:minmax(0,1fr);
   align-items:center;gap:10px;min-height:36px;
   padding:8px 58px 8px 14px;border-radius:9px;
-  /* Dark in both themes -- see the code-surface note in tokens.css. */
-  background:var(--netscli-code-bg);border:1px solid var(--netscli-code-border);
+  /* A chip, not a code surface: dark in the dark theme, light in the light
+     one, so it carries the same weight as the Desktop app button beside it.
+     See the chip note in code-surface.css. */
+  background:var(--netscli-chip-bg);border:1px solid var(--netscli-chip-border);
   box-shadow:0 0 0 1px rgba(var(--netscli-accent-rgb),.26),0 0 14px rgba(var(--netscli-accent-rgb),.08);
 }
 .hero-command.hero-copy .copy-btn{opacity:1}

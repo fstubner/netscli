@@ -56,6 +56,41 @@
   --netscli-code-key: #7c9fc7;
   --netscli-code-string: #8fbc7f;
 
+  /* ---- Command chips ---------------------------------------------------
+   *
+   * A chip is a single command with a copy button: the two in the hero and
+   * every row in the install section. A code surface is something you read:
+   * the JSON and config samples, the terminal panel, the docs.
+   *
+   * The split exists because they are different objects. A chip sits next to
+   * the "Desktop app" button and behaves like it -- you click it -- so on a
+   * white page two solid #10151b bars beside an outlined button read as
+   * mismatched weights rather than as a set. A sample has no such neighbour
+   * and stays dark in both themes, which is the rule the rest of this file
+   * describes.
+   *
+   * Defaults are the code surface, so the dark theme is unchanged and the two
+   * kinds of thing look identical there -- on a dark page there is nothing to
+   * mismatch. Only the light theme pulls them apart. */
+  --netscli-chip-bg: var(--netscli-code-bg);
+  --netscli-chip-border: var(--netscli-code-border);
+  --netscli-chip-divider: var(--netscli-code-divider);
+  --netscli-chip-fg: var(--netscli-code-fg);
+  --netscli-chip-fg-muted: #9a9a9a;
+  --netscli-chip-raised: #20242b;
+  --netscli-chip-lift-rgb: 255, 255, 255;
+}
+
+html[data-theme='light'] {
+  /* Same surface and the same 1.52:1 edge as the .reco card, so a chip and a
+     card read as the same family of object. */
+  --netscli-chip-bg: #f2f5fa;
+  --netscli-chip-border: rgba(17, 24, 39, 0.2);
+  --netscli-chip-divider: rgba(17, 24, 39, 0.14);
+  --netscli-chip-fg: #44516a;
+  --netscli-chip-fg-muted: #596478;
+  --netscli-chip-raised: #f2f5fa;
+  --netscli-chip-lift-rgb: 17, 24, 39;
 }
 
 /* ─── INK ON THE DARK CODE SURFACE ───
@@ -76,11 +111,8 @@
  * lightened the label onto a light background. Same reason .reco and .try-cmd
  * are absent -- see Install.astro.
  */
-.cmd,
-.alt,
 .tryblock,
 .try,
-.hero-command,
 .codeblock,
 .faq-command code {
   --netscli-text: var(--netscli-code-fg);
@@ -103,4 +135,22 @@
    * on the chip, so it must keep the light surface. Only `.faq-command code`
    * is remapped, and that element has no button inside it. */
   --netscli-surface-raised: #20242b;
+}
+
+/* The same remap for chips, pointed at the chip tokens instead of the code
+ * ones. Identical in dark -- the chip tokens default to the code surface --
+ * and the light values in the block above take over on a light page.
+ *
+ * A token indirection rather than a light-theme rule restating the ramp: the
+ * navy footer already carries one copy of the light ink values and the .reco
+ * card another, and a third would be the point where they start to drift. */
+.cmd,
+.alt,
+.hero-command {
+  --netscli-text: var(--netscli-chip-fg);
+  --netscli-text-strong: var(--netscli-chip-fg);
+  --netscli-text-muted: var(--netscli-chip-fg-muted);
+  --netscli-surface-raised: var(--netscli-chip-raised);
+  --netscli-lift-rgb: var(--netscli-chip-lift-rgb);
+  color: var(--netscli-text);
 }
