@@ -99,6 +99,18 @@
      at 6.09:1. Not as dark as the code surface on purpose -- see the note on
      the card rule in Surfaces.astro for why that gap cannot do the work. */
   --netscli-band-dark: #1c2634;
+
+  /* The band's inner edge. A pair of inset shadows, top and bottom, with a
+     negative spread so each one stays a thin gradient at its own edge instead
+     of washing the whole band. Reads as the band being recessed into the page
+     rather than laid on top of it, and it gives the light/dark joins a soft
+     transition instead of a hard 1px switch.
+     One token because every band uses it -- the surface cards, the install
+     section and the footer -- and three hand-tuned copies is how they end up
+     with three different depths. */
+  --netscli-band-inset:
+    inset 0 11px 15px -11px rgba(0, 0, 0, 0.55),
+    inset 0 -11px 15px -11px rgba(0, 0, 0, 0.55);
 }
 
 html[data-theme='light'] {

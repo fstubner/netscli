@@ -92,7 +92,7 @@ const { surfaces, copy } = site;
  * light page and 1.24:1 against the dark one. On a dark page a band can only
  * ever be a lift, and 1.24:1 is about as far as one goes before it stops
  * looking like the same page. */
-.surface:nth-child(even)::before{
+.surface:nth-child(odd)::before{
   content:"";
   position:absolute;
   inset-block:-45px;
@@ -100,12 +100,16 @@ const { surfaces, copy } = site;
   z-index:0;
   pointer-events:none;
   background:var(--netscli-band-dark);
+  /* On the pseudo, not the card: this is the element that spans the full
+     viewport width, so the inner edge runs the whole band rather than
+     stopping at the reading column. */
+  box-shadow:var(--netscli-band-inset);
 }
 /* Above the band, and re-inked for it. The ink values are shared with the
    navy footer -- see the on-dark block in code-surface.css -- rather than
    copied, which is how the footer's copy and this one would have drifted. */
-.surface:nth-child(even)>*{position:relative;z-index:1}
-.surface:nth-child(even){
+.surface:nth-child(odd)>*{position:relative;z-index:1}
+.surface:nth-child(odd){
   /* The same colour on the element itself, not only on the ::before.
    *
    * The pseudo-element is what reaches the viewport edges; this covers the
@@ -134,7 +138,7 @@ const { surfaces, copy } = site;
  * reached 1.42:1 while costing contrast everywhere else. So the block is
  * delineated by its border instead, lifted from .08 to .18 on these cards,
  * and by its own dark fill against the lighter band around it. */
-.surface:nth-child(even) .codeblock{
+.surface:nth-child(odd) .codeblock{
   border-color:rgba(255,255,255,.18);
 }
 /* Grid children default to min-width:auto (content-based), which lets a

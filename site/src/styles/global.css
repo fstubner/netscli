@@ -167,9 +167,63 @@ html[data-theme='light'] section:nth-of-type(even)::before{
    code surfaces in code-surface.css. The rgb CHANNELS invert with it, not just
    the ink: the top border and any hairline here are rgba() call sites, and
    those channels are near-black in the light theme. */
+/* The install section is a band too, continuing the rhythm the surface cards
+ * start: Desktop app (band), Terminal UI, Command line (band), MCP server,
+ * Get started (band), FAQ, footer (band).
+ *
+ * This was built once before as dark navy and reverted, because the .alt and
+ * .cmd command blocks were #10151b and vanished into it at 1.08:1 -- the
+ * commands a visitor came to copy, lost in the container. That objection no
+ * longer holds: chips follow the theme now (see code-surface.css), so on a
+ * light page they are #f2f5fa and sit ON the band at high contrast rather
+ * than inside it. The band became possible because the chips changed, not
+ * because the earlier measurement was wrong.
+ *
+ * Both themes, like the surface cards, so the rhythm is not a light-mode-only
+ * device. */
+#install{
+  background:var(--netscli-band-dark);
+  box-shadow:var(--netscli-band-inset);
+  color:var(--netscli-ondark-text);
+  --netscli-text:var(--netscli-ondark-text);
+  --netscli-text-strong:var(--netscli-ondark-text-strong);
+  --netscli-text-muted:var(--netscli-ondark-text-muted);
+  --netscli-accent:var(--netscli-ondark-accent);
+  --netscli-accent-rgb:var(--netscli-ondark-accent-rgb);
+  --netscli-accent-bright:var(--netscli-ondark-accent-bright);
+  --netscli-hairline-rgb:255, 255, 255;
+  --netscli-lift-rgb:255, 255, 255;
+}
+
+/* The recommended-install card is a LIGHT card on the band in the light
+   theme, so the ink has to come back to the light ramp inside it. Not needed
+   in dark, where .reco is a dark card and the on-dark ramp above is already
+   right -- hence the theme scope. Same trap as .faq-command and the chips. */
+html[data-theme='light'] #install .reco{
+  color:var(--netscli-text);
+  --netscli-text:#44516a;
+  --netscli-text-strong:#111827;
+  --netscli-text-muted:#596478;
+  --netscli-accent:#146b2e;
+  --netscli-accent-rgb:20, 107, 46;
+  --netscli-accent-bright:#0e5122;
+  --netscli-hairline-rgb:17, 24, 39;
+  --netscli-lift-rgb:17, 24, 39;
+}
+
+/* The Try-it panel stays a dark code surface -- it is something you read, not
+   a chip you click -- so on the band it needs the same edge the surface cards
+   give their code samples: #10151b on #1c2634 is 1.20:1, and no fill fixes
+   that. */
+#install .tryblock,
+#install .try{
+  border-color:rgba(255,255,255,.18);
+}
+
 html[data-theme='light'] footer{
   --netscli-band-navy:#141c2e;
   background:var(--netscli-band-navy);
+  box-shadow:var(--netscli-band-inset);
   /* Explicit, not just the token. The element inherits `color` from <body>,
      where the token already resolved to the light ramp, so re-pointing the
      token alone leaves text that sets no colour of its own dark on navy.
