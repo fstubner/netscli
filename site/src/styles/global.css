@@ -120,34 +120,58 @@ section:nth-of-type(even){
     var(--netscli-surface);
   border-block:1px solid rgba(var(--netscli-lift-rgb),.045);
 }
-/* Dark navy bands, light theme only.
+/* A band you can actually see, light theme only.
  *
- * The alternating band above is a tint, and on a light page it is barely a
- * band at all: measured page rgb(251,251,251) against band rgb(238,241,247)
- * is 1.09:1, which no one can see. The dark theme does not have this problem
- * -- 1.12:1 reads fine when the page is already dark -- so this is scoped to
- * light and dark mode is left exactly as it was.
+ * The tint above is drawn from --netscli-surface, and on a light page that is
+ * barely a band at all: page rgb(251,251,251) against band rgb(238,241,247)
+ * measures 1.09:1. The dark theme does not have this problem -- 1.12:1 reads
+ * fine when the page is already dark -- so this is scoped to light and dark
+ * mode is untouched.
  *
- * Install and the footer, not install and surfaces: two bands running back to
- * back read as one heavy slab, and the FAQ between these two gives the page a
- * rhythm instead. It also puts the weight at the bottom, which is where the
- * install commands are.
+ * A DEEPER TINT, not an inversion. Painting #install dark navy was tried
+ * first and measured worse where it counts: the .alt and .tryblock command
+ * blocks are #10151b, so on a light band they separate at 16.21:1 and on a
+ * navy one at 1.08:1. The commands a visitor came to copy disappeared into
+ * the band while the container shouted -- contrast moved from inside the
+ * section, where it was working, to around it, where it is decoration. It
+ * also broke the alternation: #surfaces and #install share this one rule, and
+ * inverting only one of them left two sections that look nothing alike.
  *
- * The ramp is re-pointed on the subtree rather than restated per element --
- * the same technique as the code surfaces in code-surface.css, and for the
- * same reason: the children already read these tokens, so one rule fixes all
- * of them and cannot miss one added later. The rgb CHANNELS have to invert
- * too, not just the ink: hairlines, borders and the accent wash on ::before
- * are all rgba() call sites, and in the light theme those channels are
- * near-black. */
-html[data-theme='light'] #install,
+ * #dae1ee is 1.27:1 against the page -- visible as a band, and the command
+ * blocks still clear 13.96:1 on it. It lifts the .reco card off the band as a
+ * side effect, from 1.03:1 to 1.20:1, so the recommended install finally
+ * reads as a card rather than as more band.
+ *
+ * A band-specific token rather than a deeper --netscli-surface: that token is
+ * also the hero's chips, the surface cards, the changelog fade and the
+ * lightbox, and none of those asked to get darker. */
+/* `.surfaces-section` is listed as well as the nth-of-type rule, and it has to
+   be: only #install is an even section here -- the hero is a div, so the
+   sections count surfaces(1), install(2), faq(3) -- and Surfaces.astro paints
+   its own band from --netscli-surface in a component style. Tinting one and
+   not the other is the mismatch this whole change exists to remove, and it is
+   invisible from either file alone. */
+html[data-theme='light'] section:nth-of-type(even),
+html[data-theme='light'] .surfaces-section{
+  --netscli-band-tint:#dae1ee;
+  background:
+    linear-gradient(180deg,rgba(var(--netscli-lift-rgb),.018),rgba(var(--netscli-lift-rgb),.006)),
+    var(--netscli-band-tint);
+}
+
+/* The footer is the one dark anchor, and it is dark because it has nothing to
+   swallow: no code panels, no cards, one line of text. The ramp is re-pointed
+   on the subtree rather than restated per element -- the same technique as the
+   code surfaces in code-surface.css. The rgb CHANNELS invert with it, not just
+   the ink: the top border and any hairline here are rgba() call sites, and
+   those channels are near-black in the light theme. */
 html[data-theme='light'] footer{
   --netscli-band-navy:#141c2e;
   background:var(--netscli-band-navy);
-  /* Explicit, not just the token. The section inherits `color` from <body>,
+  /* Explicit, not just the token. The element inherits `color` from <body>,
      where the token already resolved to the light ramp, so re-pointing the
-     token alone leaves any text that does not set its own colour dark on
-     navy. Measured: #install computed rgb(68,81,106) until this line. */
+     token alone leaves text that sets no colour of its own dark on navy.
+     Measured rgb(68,81,106) until this line. */
   color:var(--netscli-text);
   --netscli-text:#d7dce5;
   --netscli-text-strong:#f4f4f4;
@@ -157,23 +181,6 @@ html[data-theme='light'] footer{
   --netscli-accent-bright:#86efac;
   --netscli-hairline-rgb:255, 255, 255;
   --netscli-lift-rgb:255, 255, 255;
-}
-
-/* The recommended-install card stays a LIGHT card on the navy band, so the
-   ramp has to come back to the light values inside it. Without this the card
-   keeps its near-white surface and inherits the band's near-white ink -- the
-   same trap `.faq-command` hit when the code surfaces went dark, and the one
-   `.reco` was pulled out of the code-surface remap for. */
-html[data-theme='light'] #install .reco{
-  color:var(--netscli-text);
-  --netscli-text:#44516a;
-  --netscli-text-strong:#111827;
-  --netscli-text-muted:#596478;
-  --netscli-accent:#146b2e;
-  --netscli-accent-rgb:20, 107, 46;
-  --netscli-accent-bright:#0e5122;
-  --netscli-hairline-rgb:17, 24, 39;
-  --netscli-lift-rgb:17, 24, 39;
 }
 
 section:nth-of-type(even)::before{
