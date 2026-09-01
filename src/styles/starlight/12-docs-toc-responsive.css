@@ -183,22 +183,8 @@ html[data-theme='light'] mobile-starlight-toc .display-current {
   mask-image: url("data:image/svg+xml,%3Csvg aria-hidden='true' viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 8.2 6.1 11 13 4'/%3E%3C/svg%3E") !important;
 }
 
-html[data-theme='light'] .sl-markdown-content .expressive-code .copy button[data-copied] {
-  border-color: rgba(var(--netscli-hairline-rgb), 0.14) !important;
-  background: #e9eef2 !important;
-  color: #536176 !important;
-}
-
-html[data-theme='light'] .sl-markdown-content .expressive-code .copy button[data-copied]::after {
-  background: #536176 !important;
-}
-
-html[data-theme='light'] .sl-markdown-content .expressive-code .copy:has(.feedback.show) button {
-  border-color: rgba(var(--netscli-accent-rgb), 0.3) !important;
-  background: #e5f3ef !important;
-  color: var(--sl-color-accent) !important;
-}
-
-html[data-theme='light'] .sl-markdown-content .expressive-code .copy:has(.feedback.show) button::after {
-  background: var(--sl-color-accent) !important;
-}
+/* The copied and confirmation states have no light-theme treatment either,
+ * for the same reason the base button lost its own in
+ * 09-search-table-fit.css: the block under them is dark in both themes, so a
+ * #e9eef2 chip and a #e5f3ef confirmation were light-on-dark. The dark rules
+ * directly above cover both themes now. */

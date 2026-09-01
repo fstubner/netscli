@@ -87,4 +87,20 @@
   --netscli-text-strong: #f4f4f4;
   --netscli-text-muted: #9a9a9a;
   --netscli-accent-bright: var(--netscli-code-inline-fg);
+  /* The copy button sits INSIDE these blocks, and global.css draws it with
+   * `background: var(--netscli-surface-raised)` -- a page surface, which is
+   * near-white in the light theme. Measured on the landing page before this
+   * line: rgb(242,245,250) on an rgb(16,21,27) block, a white chip on a dark
+   * sample. The ramp above fixed the button's ink and left its background
+   * behind, because the background is not part of the text ramp.
+   *
+   * Same reasoning as the ramp: re-point the token rather than restate
+   * `background:` on `.copy-btn`, so anything else in here that paints a
+   * raised surface follows too.
+   *
+   * .faq-command is still absent from this list, and it matters more here
+   * than for the ink: its copy button really does sit on the light card, not
+   * on the chip, so it must keep the light surface. Only `.faq-command code`
+   * is remapped, and that element has no button inside it. */
+  --netscli-surface-raised: #20242b;
 }
