@@ -14,15 +14,6 @@
  * header it had just scrolled past. The margin is the header plus a line of
  * air so the heading arrives with its content, not flush against the chrome.
  */
-html {
-  scroll-behavior: smooth;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-}
 
 .sl-markdown-content :is(h1, h2, h3, h4, h5, h6)[id],
 .sl-markdown-content :target {

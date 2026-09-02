@@ -11,108 +11,27 @@
    the link itself. A ::before implementation used to sit here and is gone:
    that file loads later and killed it with `content: none !important`, so it
    had been inert dead code that still looked like the source of truth. */
-@media (max-width: 71.99rem) {
-  .right-sidebar-container {
+@media (max-width: 71.99rem) {mobile-starlight-toc {
 
-
-
-
-
-    border-bottom: 1px solid var(--sl-color-hairline) !important;
-  }
-
-  mobile-starlight-toc {
-    display: block !important;
     position: relative !important;
-    width: 100% !important;
-    height: auto !important;
-  }
 
-  .right-sidebar {
-
-
-
-
+  }mobile-starlight-toc nav {
 
     border: 0 !important;
-  }
-
-  mobile-starlight-toc nav {
-    position: static !important;
-    inset: auto !important;
-    width: 100% !important;
-    border: 0 !important;
-    background: transparent !important;
 
   }
 
   mobile-starlight-toc summary {
-    height: 2.75rem !important;
+
     padding-block: 0 !important;
     padding-inline: clamp(1rem, 3.5vw, 1.75rem) !important;
-    gap: 0.8rem !important;
-    border: 0 !important;
+
   }
 
   mobile-starlight-toc summary:focus-visible {
     outline: 1px solid rgba(159, 248, 222, 0.58) !important;
     outline-offset: -3px !important;
-  }
-
-  mobile-starlight-toc .toggle {
-    min-width: auto !important;
-    min-height: 2rem !important;
-    padding: 0 !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    color: var(--sl-color-gray-1) !important;
-    font-weight: 720 !important;
-  }
-
-  mobile-starlight-toc details[open] .toggle,
-  mobile-starlight-toc details .toggle:hover,
-  mobile-starlight-toc summary:focus-visible .toggle {
-    border-color: transparent !important;
-    background: transparent !important;
-    color: var(--sl-color-white) !important;
-  }
-
-  mobile-starlight-toc .display-current {
-    color: var(--sl-color-gray-3) !important;
-    font-size: 0.84rem !important;
-  }
-
-  mobile-starlight-toc .dropdown {
-    margin: 0 !important;
-    max-height: min(48vh, 24rem) !important;
-    overflow-y: auto !important;
-    border-block: 1px solid var(--sl-color-hairline) !important;
-    border-inline: 0 !important;
-    background: var(--netscli-menu-bg) !important;
-    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.26) !important;
-  }
-
-  mobile-starlight-toc .dropdown ul {
-    padding-block: 0.35rem !important;
-  }
-
-  mobile-starlight-toc .dropdown a {
-    min-height: 2.45rem !important;
-    padding-block: 0.38rem !important;
-    padding-inline: clamp(1.15rem, 3.5vw, 1.75rem) !important;
-
-    color: var(--sl-color-gray-2) !important;
-    background: transparent !important;
-  }
-
-  mobile-starlight-toc .dropdown a:hover,
-  mobile-starlight-toc .dropdown a:focus-visible {
-
-    outline: 0 !important;
-  }
-
-  mobile-starlight-toc .dropdown a[aria-current='true'] {
+  }mobile-starlight-toc .dropdown a[aria-current='true'] {
     color: var(--netscli-accent-high) !important;
     border-inline-start-color: var(--netscli-accent) !important;
     background: rgba(var(--netscli-accent-rgb), 0.08) !important;

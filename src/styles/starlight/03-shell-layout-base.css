@@ -68,19 +68,11 @@
 }
 
 @media (min-width: 108rem) {
-  :root {
-    --netscli-docs-shell-gutter: 2.5rem;
-  }
 
   .main-frame {
     width: var(--netscli-docs-frame-width);
   }
 }
-
-@media (max-width: 71.99rem) {
-  html[data-has-toc] {
-    --sl-mobile-toc-height: 0rem;
-  }}
 
 @media (min-width: 72.01rem) {
   starlight-menu-button {
@@ -89,7 +81,6 @@
 }
 
 @media (min-width: 50rem) and (max-width: 71.99rem) {
-  :root,
   main {
     --sl-content-inline-start: 16rem;
     --sl-sidebar-width: 16rem;

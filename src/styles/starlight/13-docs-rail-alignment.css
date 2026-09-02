@@ -28,16 +28,7 @@
   }
 }
 
-@media (min-width: 72rem) {
-  html[data-has-sidebar] {
-    --sl-sidebar-width: var(--netscli-docs-sidebar-width) !important;
-  }
-}
-
 @media (min-width: 72rem) and (max-width: 86rem) {
-  html[data-has-sidebar] {
-    --sl-content-inline-start: var(--netscli-docs-sidebar-width) !important;
-  }
 
   /* No width/margin reset here any more. It used to force the frame
      full-bleed in this band only, which hid the sidebar misalignment at
@@ -49,9 +40,6 @@
 }
 
 @media (min-width: 86.01rem) {
-  html[data-has-sidebar] {
-    --sl-content-inline-start: var(--netscli-docs-sidebar-width) !important;
-  }
 
   .main-frame {
     padding-inline-start: var(--sl-content-inline-start) !important;

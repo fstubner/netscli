@@ -1,3 +1,8 @@
+/* Mobile shell close-out, part 2 of 2. The first block below used to be the
+   tail of part 1's `@media (max-width: 71.99rem)`: that file left the
+   block open and this one closed it, which only worked because the build
+   concatenates the stack into one bundle. Each file now stands alone. */
+@media (max-width: 71.99rem) {
 
 
   mobile-starlight-toc {
@@ -15,7 +20,7 @@
     border-top: 0 !important;
     border-bottom: 1px solid var(--sl-color-hairline) !important;
     background: var(--sl-color-bg-nav) !important;
-    box-shadow: none !important;
+
     backdrop-filter: blur(16px);
   }
 
@@ -83,27 +88,16 @@
     padding-block: 0.35rem !important;
     padding-inline: clamp(1rem, 3.4vw, 1.75rem) !important;
     border-top: 0 !important;
-    border-inline-start: 1px solid transparent !important;
+
     color: var(--sl-color-gray-2) !important;
     background: transparent !important;
   }
 
   mobile-starlight-toc .dropdown a:hover,
   mobile-starlight-toc .dropdown a:focus-visible {
-    color: var(--sl-color-white) !important;
-    background: transparent !important;
+
     outline: 0 !important;
-  }
-
-  mobile-starlight-toc .dropdown a[aria-current='true'],
-  mobile-starlight-toc .dropdown a[aria-current='true']:hover,
-  mobile-starlight-toc .dropdown a[aria-current='true']:focus-visible {
-    color: var(--netscli-accent-high) !important;
-    border-inline-start-color: var(--netscli-accent) !important;
-    background: rgba(var(--netscli-accent-rgb), 0.06) !important;
-  }
-
-  mobile-starlight-toc .isMobile a[aria-current='true']::after {
+  }mobile-starlight-toc .isMobile a[aria-current='true']::after {
     content: none !important;
     display: none !important;
   }
@@ -125,7 +119,4 @@ html[data-theme='light'] mobile-starlight-toc .dropdown a[aria-current='true']:f
   color: var(--sl-color-accent-high) !important;
   border-inline-start-color: var(--sl-color-accent) !important;
   background: rgba(var(--netscli-accent-rgb), 0.055) !important;
-}
-
-@media (min-width: 50rem) {
 }
