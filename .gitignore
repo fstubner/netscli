@@ -113,3 +113,5 @@ NEXT_GEN_NETWORKING_PLAN.md
 site/.visual-baseline/
 site/.visual-current/
 site/.visual-diff/
+# Captured runtime DOM for scripts/css-equivalence.mjs (capture-search).
+site/.css-equivalence/
