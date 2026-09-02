@@ -200,3 +200,28 @@ html[data-theme='light'] .netscli-theme-select label:hover,
 html[data-theme='light'] .netscli-theme-select label:focus-within {
   border-color: rgba(var(--netscli-accent-rgb), 0.34);
 }
+
+/* The landing bar's theme icon, one of three.
+ *
+ * The docs bar gets this from Starlight's ThemeProvider, which clones the
+ * matching glyph out of a `<template id="theme-icons">` and only looks for
+ * `starlight-theme-select`. Neither the template nor that element exists on
+ * the landing page, so its control sat on the laptop glyph no matter what was
+ * selected.
+ *
+ * Driven by data-theme-choice on <html>, which the pre-paint script in
+ * Page.astro sets before anything renders -- so the correct icon is right on
+ * first paint rather than swapped in afterwards. The :not() fallback covers
+ * the case where that script did not run at all (storage blocked and it threw
+ * before the assignment): auto is the honest default there, because auto is
+ * what an unset preference means. */
+.netscli-theme-select .label-icon {
+  display: none;
+}
+
+html:not([data-theme-choice]) .netscli-theme-select .label-icon[data-icon='auto'],
+html[data-theme-choice='auto'] .netscli-theme-select .label-icon[data-icon='auto'],
+html[data-theme-choice='light'] .netscli-theme-select .label-icon[data-icon='light'],
+html[data-theme-choice='dark'] .netscli-theme-select .label-icon[data-icon='dark'] {
+  display: block;
+}

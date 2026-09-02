@@ -131,11 +131,24 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
       color: var(--sl-color-white);
     }
 
-    /* Same separator as the landing bar -- see Nav.astro. */
+    /* Same separator as the landing bar -- see Nav.astro, including why it is
+       a short centred pseudo-element rather than a border: these links are the
+       full nav height, so a border ran floor to ceiling and split the bar. */
     .docs-nav-links a.nav-group-start {
+      position: relative;
       margin-inline-start: 0.35rem;
       padding-inline-start: 0.95rem;
-      border-inline-start: 1px solid rgba(var(--netscli-hairline-rgb), 0.28);
+    }
+
+    .docs-nav-links a.nav-group-start::before {
+      content: "";
+      position: absolute;
+      inset-inline-start: 0;
+      top: 50%;
+      width: 1px;
+      height: 18px;
+      margin-block-start: -9px;
+      background: rgba(var(--netscli-hairline-rgb), 0.28);
     }
 
     .docs-nav-links a[aria-current] {
