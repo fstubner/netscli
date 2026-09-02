@@ -112,6 +112,15 @@
      One token because every band uses it -- the surface cards, the install
      section and the footer -- and three hand-tuned copies is how they end up
      with three different depths. */
+  /* Cast at the band's own edges, outward onto the page above and below.
+     The inset pair below darkens the band's inner lip; this is the other
+     half -- the page picking up a little shade where the dark section meets
+     it, so the two do not simply abut. Small on purpose: the join should
+     read as a seam, not as a floating panel. */
+  --netscli-band-edge-shadow:
+    0 -6px 14px -6px rgba(17, 24, 39, 0.18),
+    0 6px 14px -6px rgba(17, 24, 39, 0.18);
+
   --netscli-band-inset:
     inset 0 11px 15px -11px rgba(0, 0, 0, 0.55),
     inset 0 -11px 15px -11px rgba(0, 0, 0, 0.55);

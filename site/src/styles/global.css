@@ -123,12 +123,12 @@ section:nth-of-type(even){
     var(--netscli-surface);
   border-block:1px solid rgba(var(--netscli-lift-rgb),.045);
 }
-/* No section-level band on a light page. The rhythm is inside the surfaces
- * section instead, where every other card gets a full-bleed dark band -- see
- * Surfaces.astro.
+/* No alternating band on a light page. Two dark moments carry the rhythm
+ * instead -- #install below and the footer -- and every other section is the
+ * page colour.
  *
- * Five treatments were built and measured getting here, and it is worth
- * knowing why each failed, because three of them failed for reasons a
+ * Six treatments were built and measured getting here, and it is worth
+ * knowing why each failed, because most of them failed for reasons a
  * screenshot does not show:
  *
  *   1.09:1  the original tint (--netscli-surface). Invisible; not a band.
@@ -145,12 +145,16 @@ section:nth-of-type(even){
  *  1.143:1  a quiet tint, alternating so no two banded sections touch. The
  *           structure was right and the colour was not: a pale blue-grey at
  *           that strength reads as washed out rather than as a band.
+ *  14.75:1  dark bands on alternating SURFACE CARDS. Correct per-band and
+ *           wrong as a page: it made the page invert seven times between the
+ *           hero and the footer. Gradient joins were tried to soften that and
+ *           were worse -- fading #1c2634 into #fbfbfb runs through a muddy
+ *           mid-grey. Spreading a 14.75:1 step does not shrink it.
  *
- * So the band went dark and moved down a level, to the thing it is actually
- * separating: the four surface cards. `.surfaces-section` is still listed
- * here because Surfaces.astro paints its own background in a component style
- * and the bare `section` selector does not reach it -- an earlier build
- * cleared one and not the other, which is invisible from either file alone. */
+ * So: two dark moments, not seven. `.surfaces-section` is still listed here
+ * because Surfaces.astro paints its own background in a component style and
+ * the bare `section` selector does not reach it -- an earlier build cleared
+ * one and not the other, which is invisible from either file alone. */
 html[data-theme='light'] section,
 html[data-theme='light'] .surfaces-section{
   background:var(--netscli-bg);
@@ -186,7 +190,7 @@ html[data-theme='light'] section:nth-of-type(even)::before{
  * device. */
 #install{
   background:var(--netscli-band-dark);
-  box-shadow:var(--netscli-band-inset);
+  box-shadow:var(--netscli-band-inset),var(--netscli-band-edge-shadow);
   color:var(--netscli-ondark-text);
   --netscli-text:var(--netscli-ondark-text);
   --netscli-text-strong:var(--netscli-ondark-text-strong);
@@ -226,7 +230,7 @@ html[data-theme='light'] #install .reco{
 html[data-theme='light'] footer{
   --netscli-band-navy:#141c2e;
   background:var(--netscli-band-navy);
-  box-shadow:var(--netscli-band-inset);
+  box-shadow:var(--netscli-band-inset),var(--netscli-band-edge-shadow);
   /* Explicit, not just the token. The element inherits `color` from <body>,
      where the token already resolved to the light ramp, so re-pointing the
      token alone leaves text that sets no colour of its own dark on navy.

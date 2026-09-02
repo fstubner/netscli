@@ -146,7 +146,14 @@ const groups = [
 }
 .os-tabs{
   grid-column:1;grid-row:1;display:flex;gap:0;
-  border-bottom:1px solid var(--netscli-surface-raised);margin-bottom:20px;
+  /* A hairline on the band, not a near-white bar.
+     --netscli-surface-raised is a PAGE surface: on a light page it resolves
+     to #f2f5fa, so against the navy band this drew a solid near-white 1px
+     line under the tabs -- brighter than the 2px accent underline it sits
+     level with, and a different kind of mark from every other divider in the
+     section. The hairline channel inverts with the band's ink, so this is a
+     faint light rule on navy and a faint dark one anywhere light. */
+  border-bottom:1px solid rgba(var(--netscli-hairline-rgb),.18);margin-bottom:20px;
 }
 .install-content{grid-column:1;grid-row:2}
 .try{grid-column:2;grid-row:2}
@@ -163,6 +170,14 @@ const groups = [
   background:var(--netscli-surface-raised);border:1px solid rgba(var(--netscli-lift-rgb),.08);border-radius:10px;
   padding:14px 18px;margin-bottom:16px;
 }
+/* A step above the band in the dark theme, not level with it.
+   --netscli-surface-raised is #20242b and the band is #1c2634: 1.02:1, so
+   once #install became a band the card stopped reading as a card at all in
+   dark. This is the same relationship the light theme gets from white on
+   navy, at the only strength a dark page allows. */
+#install .reco{
+  background:#26313f;
+}
 /* On a white page the border is the whole card.
  *
  * The fill is rgb(242,245,250) and the page is rgb(251,251,251) -- 1.06:1,
@@ -174,8 +189,25 @@ const groups = [
  * .20 gives rgb(204,206,209) -- 1.52:1, a hairline you can actually see. Only
  * the light theme needs it: in dark the lift channel is white and the card
  * reads against a near-black page already. */
-html[data-theme='light'] .reco{
-  border-color:rgba(var(--netscli-lift-rgb),.20);
+/* The card is a lifted white surface; the chip inside it is recessed.
+ *
+ * They were identical -- both rgb(242,245,250) with the same
+ * rgba(17,24,39,.2) border -- so the recommended command read as a box
+ * drawn inside an identical box rather than as a control on a card. Nothing
+ * separated the two objects because nothing about them differed.
+ *
+ * White for the card and a shadow to lift it off the navy band, leaving the
+ * chip on the #f2f5fa chip surface: card, then a step down to the control,
+ * then the band. The chip's own 1.52:1 border does the edge work, so the
+ * step between the two fills only has to be visible, not strong. */
+/* `#install .reco` in the selector, not just `.reco`: the dark-theme rule
+   above is id-scoped (1,0,1) and would otherwise outrank a plain
+   `html[data-theme='light'] .reco` (0,1,2) and paint the light card dark --
+   measured at 1.65:1 before this line was matched to it. */
+html[data-theme='light'] #install .reco{
+  background:#ffffff;
+  border-color:rgba(var(--netscli-lift-rgb),.14);
+  box-shadow:var(--netscli-lift-sm);
 }
 .reco-meta{font-size:.85rem;font-weight:500;color:var(--netscli-text);margin-bottom:8px}
 .cmd.big{font-size:1.05rem;padding-right:74px}
