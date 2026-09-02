@@ -98,8 +98,6 @@
    * It hid from earlier testing because touch emulation uses overlay
    * scrollbars, where `100vw` and the content box are the same width. Only a
    * real narrow desktop window shows it. */
-  html,
-  body,
   .page,
   .main-frame,
   .main-pane {

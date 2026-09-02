@@ -1,0 +1,177 @@
+/* Docs theme: every token the docs shell reads, both themes.
+ *
+ * Re-theming the docs for another project means editing this file. The
+ * brand palette itself (--netscli-accent and friends) lives in
+ * styles/tokens.css, which the landing page loads too; this file maps
+ * Starlight's own --sl-* tokens onto it and adds the docs-only surfaces.
+ *
+ * Starlight ships all of its CSS inside `@layer starlight.*`. Files listed in
+ * customCss load unlayered, so they outrank Starlight without `!important`
+ * -- which is why this file, and every other one under styles/docs/, has
+ * none.
+ */
+
+/* ---- Colour, dark ---------------------------------------------------- */
+html[data-theme='dark'],
+html[data-theme='dark'] ::backdrop {
+  --sl-color-accent-low: #0a2a13;
+  --sl-color-accent: var(--netscli-accent);
+  --sl-color-accent-high: var(--netscli-accent-high);
+  --sl-color-white: #f4f4f4;
+  --sl-color-gray-1: #e7edf6;
+  --sl-color-gray-2: #c2cad8;
+  --sl-color-gray-3: #8c95a6;
+  --sl-color-gray-4: #586174;
+  --sl-color-gray-5: #2b313d;
+  --sl-color-gray-6: #191d25;
+  --sl-color-black: #111111;
+  --sl-color-bg: #111111;
+  --sl-color-bg-nav: rgba(17, 17, 17, 0.92);
+  --sl-color-bg-sidebar: #111111;
+  /* Neutral, not green: inline code is dense and frequent, and a green wash
+     behind every identifier made the accent a fill colour instead of a
+     state colour. */
+  --sl-color-bg-inline-code: rgba(var(--netscli-hairline-rgb), 0.13);
+  --sl-color-hairline: rgba(255, 255, 255, 0.08);
+  --sl-color-hairline-light: rgba(255, 255, 255, 0.1);
+  --sl-color-hairline-shade: #070707;
+  --sl-content-width: 64rem;
+
+  /* Table surfaces. Three roles, and the striping is a real distinction --
+     odd and even rows differ on purpose, so these must not be collapsed into
+     one value however close they look. */
+  --netscli-table-bg: #20242b;
+  --netscli-table-stripe: #242932;
+  --netscli-table-head: #252b36;
+
+  /* The raised panel that content sits on: search results and their tag
+     rows, and the frame and body of a code block. */
+  --netscli-panel-bg: #20242b;
+
+  /* The floating menu surface: the mobile section menu and the mobile table
+     of contents dropdown, which are the same panel. */
+  --netscli-menu-bg: #1b2028;
+}
+
+/* ---- Colour, light --------------------------------------------------- */
+html[data-theme='light'],
+html[data-theme='light'] ::backdrop {
+  --sl-color-accent-low: #dcf8e4;
+  --sl-color-accent: #146b2e;
+  --sl-color-accent-high: #0b4a1f;
+  --sl-color-white: #111827;
+  --sl-color-gray-1: #243044;
+  --sl-color-gray-2: #44516a;
+  /* gray-3 is the secondary/small-text colour used by the docs footer,
+     built-with row, and mobile section labels -- much of it at 12px. It has
+     been re-picked three times, twice to a value that merely cleared 4.5:1
+     on a declared surface and then failed on a composite one (the
+     changelog's release header lays a 1.8% wash over a card that lays a
+     2.8% wash over the page). #596478 is chosen with margin instead: 5.77
+     on bg, 5.27 through both changelog washes. The contrast gate compares
+     declared colours and cannot see a composite, so the margin stands in
+     for the surfaces it will never enumerate. Do not lighten this. */
+  --sl-color-gray-3: #596478;
+  --sl-color-gray-4: #c6d0dd;
+  --sl-color-gray-5: #e3e8ef;
+  --sl-color-gray-6: #f4f6f8;
+  --sl-color-gray-7: #fbfbfb;
+  --sl-color-black: #ffffff;
+  --sl-color-bg: #fbfbfb;
+  --sl-color-bg-nav: rgba(251, 251, 251, 0.92);
+  --sl-color-bg-sidebar: #fbfbfb;
+  --sl-color-bg-inline-code: rgba(var(--netscli-hairline-rgb), 0.07);
+  --sl-color-hairline: rgba(17, 24, 39, 0.1);
+  --sl-color-hairline-light: rgba(17, 24, 39, 0.12);
+  --sl-color-hairline-shade: rgba(17, 24, 39, 0.04);
+  --sl-content-width: 64rem;
+
+  --netscli-table-bg: #f7faf9;
+  --netscli-table-stripe: #f6f8fa;
+  --netscli-table-head: #eef2f4;
+  --netscli-panel-bg: #f6f8fa;
+  /* Plain white, which this theme also calls --sl-color-black. Named for
+     the role so both themes read the same way at the call site. */
+  --netscli-menu-bg: #ffffff;
+}
+
+/* ---- Layout ---------------------------------------------------------- */
+:root {
+  --sl-nav-height: var(--netscli-nav-height);
+  --netscli-docs-sidebar-width: 16rem;
+  /* 15rem, not 13rem. The rail's text column is inset from the frame edge by
+     its own padding (--netscli-sidebar-rail-inset below), and this width
+     restores the text column the padding costs it, so the two rails put the
+     same air down each edge of the page. */
+  --netscli-docs-toc-width: 15rem;
+  --netscli-docs-shell-gutter: clamp(1.25rem, 2vw, 2.5rem);
+  /* How far a rail insets its text from the frame's outer edge. Both rails
+     read it; it was once declared twice with drifted values. */
+  --netscli-sidebar-rail-inset: clamp(2.2rem, 3vw, 3.15rem);
+  /* Height of the title band at the top of every docs page. The band's own
+     min-height and the offset that starts the contents rail below it both
+     read this, so they move together. Measured across all eleven docs pages
+     at five widths: no page's title wraps. */
+  --netscli-docs-hero-height: clamp(6.75rem, 9vw, 8.25rem);
+  --netscli-docs-frame-width: calc(
+    var(--netscli-shell-width) + var(--netscli-docs-sidebar-width) + var(--netscli-docs-toc-width)
+  );
+
+  /* Heading scale. Starlight's defaults put h1 at 42px and h2 at 35px
+     against 16px body text; a ~1.25 ratio keeps the levels distinguishable
+     at a size that suits a reference page rather than a poster. */
+  --sl-text-h1: 2.125rem;
+  --sl-text-h2: 1.625rem;
+  --sl-text-h3: 1.3125rem;
+  --sl-text-h4: 1.125rem;
+  --sl-text-h5: 1rem;
+
+  --netscli-panel-hover-border: color-mix(in srgb, var(--sl-color-accent) 34%, var(--sl-color-hairline));
+}
+
+@media (min-width: 108rem) {
+  :root {
+    --netscli-docs-shell-gutter: 2.5rem;
+  }
+}
+
+/* Starlight's own layout variables, re-pointed at the widths above so its
+   sticky rails and content offset agree with the frame this stack draws. */
+@media (min-width: 50rem) and (max-width: 71.99rem) {
+  :root {
+    --sl-content-inline-start: 16rem;
+    --sl-sidebar-width: 16rem;
+  }
+}
+
+@media (min-width: 72rem) {
+  html[data-has-sidebar] {
+    --sl-sidebar-width: var(--netscli-docs-sidebar-width);
+  }
+}
+
+@media (min-width: 72rem) and (max-width: 86rem) {
+  html[data-has-toc] {
+    --sl-mobile-toc-height: 0rem;
+  }
+
+  html[data-has-sidebar] {
+    --sl-content-inline-start: var(--netscli-docs-sidebar-width);
+  }
+}
+
+@media (min-width: 86.01rem) {
+  html[data-has-sidebar] {
+    --sl-content-inline-start: var(--netscli-docs-sidebar-width);
+  }
+}
+
+@media (max-width: 71.99rem) {
+  :root {
+    --netscli-mobile-toc-bar-height: 2.625rem;
+  }
+
+  html[data-has-toc] {
+    --sl-mobile-toc-height: var(--netscli-mobile-toc-bar-height);
+  }
+}

@@ -1,29 +1,8 @@
 /* Responsive docs close-out: keep the TOC available below desktop widths and
    make code-copy success match the landing page's green checkmark pattern. */
-@media (max-width: 71.99rem) {
-  html[data-has-toc] {
-    --sl-mobile-toc-height: 3rem;
-  }.right-sidebar {
-
-
-
-
-
-    border: 0 !important;
-  }
-
-  .right-sidebar-panel {
+@media (max-width: 71.99rem) {.right-sidebar-panel {
     display: none !important;
-  }
-
-  mobile-starlight-toc nav {
-    border-top: 0 !important;
-    border-bottom: 1px solid var(--sl-color-hairline-light) !important;
-
-
-  }
-
-  mobile-starlight-toc summary {
+  }mobile-starlight-toc summary {
 
 
 
@@ -38,18 +17,8 @@
 
 
 
-    font-weight: 720 !important;
-  }mobile-starlight-toc .caret {
-    color: var(--netscli-accent);
-  }
 
-  mobile-starlight-toc .display-current {
-    min-width: 0;
-
-
-  }
-
-  mobile-starlight-toc .dropdown {
+  }mobile-starlight-toc .dropdown {
 
     border-color: var(--sl-color-hairline-light) !important;
 
@@ -62,9 +31,6 @@
 }
 
 @media (min-width: 72rem) and (max-width: 86rem) {
-  html[data-has-sidebar] {
-    --sl-content-inline-start: var(--netscli-docs-sidebar-width);
-  }
 
   .right-sidebar-container,
   .right-sidebar-panel {

@@ -1,0 +1,118 @@
+/* Docs base: the document itself. Box model, body font, scrollbars, and the
+ * two scroll behaviours (smooth anchors, and the lock while the search
+ * dialog is open). Nothing here knows about a region of the page.
+ *
+ * Unlayered on purpose; see docs/theme.css.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+/* Anchors land under the sticky header without this. The docs never loaded
+   global.css, so `scroll-behavior` was `auto` here; the matching
+   scroll-margin on headings is in docs/content.css. */
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Two widths of the same containment, kept as measured: the stack declared
+   `width: 100%` from 52rem down and `max-width: 100vw` from 50rem down,
+   and this file preserves what rendered rather than guessing which of the
+   two was doing the work. */
+@media (max-width: 52rem) {
+  html,
+  body {
+    width: 100%;
+  }
+}
+
+@media (max-width: 49.99rem) {
+  html,
+  body {
+    max-width: 100vw;
+  }
+}
+
+html:has(body[data-search-modal-open]),
+body[data-search-modal-open] {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* ---- Scrollbars ------------------------------------------------------ */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--netscli-hairline-rgb), 0.5) rgba(17, 17, 17, 0.9);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--netscli-hairline-rgb), 0.42) rgba(var(--netscli-lift-rgb), 0.035);
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #151515;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(var(--netscli-hairline-rgb), 0.45);
+  border: 3px solid #151515;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(170, 178, 192, 0.62);
+}
+
+::-webkit-scrollbar-corner {
+  background: #151515;
+}
+
+html[data-theme='light'] {
+  scrollbar-color: rgba(68, 81, 106, 0.42) rgba(241, 245, 249, 0.92);
+}
+
+html[data-theme='light'] * {
+  scrollbar-color: rgba(68, 81, 106, 0.36) rgba(var(--netscli-hairline-rgb), 0.045);
+}
+
+html[data-theme='light'] ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+html[data-theme='light'] ::-webkit-scrollbar-thumb {
+  background: rgba(68, 81, 106, 0.36);
+  border-color: #f1f5f9;
+}
+
+html[data-theme='light'] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(68, 81, 106, 0.52);
+}
+
+html[data-theme='light'] ::-webkit-scrollbar-corner {
+  background: #f1f5f9;
+}

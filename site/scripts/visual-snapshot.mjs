@@ -57,7 +57,7 @@ if (!['record', 'check'].includes(mode)) {
  * use -- so these sit either side of both, plus one comfortably above. A
  * preset like "iPhone 12" would tie the baseline to a device list that has
  * nothing to do with where this CSS branches. */
-const WIDTHS = [1600, 1100, 700];
+const WIDTHS = [1800, 1600, 1250, 1100, 900, 815, 760, 640];
 
 /* Both themes, because they carry SEPARATE colour tokens: a check that ran
  * one would be blind to half the colour work, the same blind spot that once
@@ -76,18 +76,6 @@ const WIDTHS = [1600, 1100, 700];
  * `data-theme` on <html>, which is also the real user path, so this tests
  * what a visitor sees rather than what a browser flag improvises. */
 const THEMES = [{ name: 'light' }, { name: 'dark' }];
-
-const discovered = discoverRoutes(root);
-if (!discovered) {
-  console.error('No dist/ found. Run `npm run build` first — this checks the built site.');
-  process.exit(1);
-}
-// A subset for when you are iterating on one page and do not want to wait for
-// all 84 captures. Never set in a real check: a baseline recorded from a
-// subset silently compares nothing on every other route.
-const routes = process.env.VISUAL_ROUTES
-  ? process.env.VISUAL_ROUTES.split(/[\s,]+/).filter(Boolean)
-  : discovered;
 
 /* Build before capturing, from inside this process.
  *
@@ -113,6 +101,21 @@ if (process.env.VISUAL_SKIP_BUILD !== '1') {
     process.exit(1);
   }
 }
+
+/* Discovered AFTER the build on purpose. This used to run first, and a check
+   started after a failed build found an empty dist/, captured nothing, and
+   reported every baseline image as "missing" instead of comparing anything. */
+const discovered = discoverRoutes(root);
+if (!discovered) {
+  console.error('No dist/ found. Run `npm run build` first — this checks the built site.');
+  process.exit(1);
+}
+// A subset for when you are iterating on one page and do not want to wait for
+// all 84 captures. Never set in a real check: a baseline recorded from a
+// subset silently compares nothing on every other route.
+const routes = process.env.VISUAL_ROUTES
+  ? process.env.VISUAL_ROUTES.split(/[\s,]+/).filter(Boolean)
+  : discovered;
 
 function slug(route, theme, width) {
   const r = route.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'index';
