@@ -22,14 +22,28 @@ export const hero: Hero = {
     // find nothing. The capture-enabled CLI assets are real and published, so
     // the feature stays on the page; it just no longer implies the download
     // above it includes it.
-    // Traceroute is deliberately absent from this list. It used to be in it,
-    // and the sentence attributes every operation it names to all four
-    // interfaces -- but the MCP server has no traceroute tool at all (docs
-    // say so outright: /docs/interface-coverage/ "Trace route has no MCP
-    // tool"). The list was already illustrative rather than exhaustive; it
-    // omits ping, sweep, ARP and mDNS too. Dropping the one operation that
-    // does not hold for all four is cheaper than qualifying it.
-    'Discover LAN devices, scan TCP ports, query DNS, and inspect hosts from the desktop app, terminal UI, CLI, or MCP server — with packet capture in capture-enabled CLI builds. Each interface calls the same Rust core, so results stay consistent.',
+    // Two things are deliberately absent.
+    //
+    // TRACEROUTE. The sentence attributes every operation it names to all
+    // four interfaces, and the MCP server has no traceroute tool at all --
+    // /docs/interface-coverage/ says so outright. The list is illustrative
+    // rather than exhaustive (it omits ping, sweep, ARP and mDNS too), so
+    // dropping the one operation that does not hold for all four is cheaper
+    // than qualifying it.
+    //
+    // PACKET CAPTURE. This used to end "with packet capture in
+    // capture-enabled CLI builds", a clause added because an earlier version
+    // listed capture alongside the rest and so implied the desktop installer
+    // above it included capture, which no published one does. Saying nothing
+    // makes no claim at all, which is the same protection for a third of the
+    // length -- and capture is covered properly in the FAQ and the install
+    // guide, which is where someone looking for it will be.
+    //
+    // 242 characters and three lines before; the second sentence went with
+    // it. "All on one Rust core" carries the same point as "each interface
+    // calls the same Rust core, so results stay consistent" -- the reader who
+    // needs the longer version is already reading /docs/.
+    'Discover LAN devices, scan TCP ports, query DNS, and inspect hosts from the desktop app, terminal UI, CLI, or MCP server — all on one Rust core.',
   // `winget install netscli` leads, and the shell script follows.
   //
   // os-tabs.ts already swapped these per-OS at runtime -- Windows visitors
