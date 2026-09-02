@@ -46,7 +46,12 @@ are in `../code-surface.css` for the same reason.
    `.visual-baseline/`. Record a baseline from `main` first if you do not
    have one. A change you intended shows up as a diff pair in
    `.visual-diff/`; re-run `record` to accept it.
-3. `npm run check:css`, `npm run check:regions`, `npm run check:contrast`
+3. `node scripts/css-equivalence.mjs --old origin/main` compares, for every
+   element, property, width and state, which declaration wins under
+   `main`'s stylesheets and under yours. It sees hover, focus and the light
+   theme where a screenshot cannot; run `capture-search` once first so the
+   search dialog's DOM exists. Its header lists what it cannot model.
+4. `npm run check:css`, `npm run check:regions`, `npm run check:contrast`
    and `npm run test:a11y` are what CI runs.
 
 Hover, focus and the search dialog's empty and no-results states are not in
