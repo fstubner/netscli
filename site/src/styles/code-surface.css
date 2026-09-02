@@ -111,7 +111,25 @@
   --netscli-band-inset:
     inset 0 11px 15px -11px rgba(0, 0, 0, 0.55),
     inset 0 -11px 15px -11px rgba(0, 0, 0, 0.55);
+
+  /* ---- Elevation -------------------------------------------------------
+   *
+   * The lift under a screenshot, a code sample or the hero shot. These were
+   * hand-written rgba(0,0,0,.32-.6) blacks, tuned when the only page was
+   * near-black: on #111 a hard black shadow reads as depth, on #fbfbfb it
+   * reads as a heavy grey halo, and the two big ones (.42 and .6) are the
+   * most dated-looking thing on the light page.
+   *
+   * Three steps because the three call sites want different weights -- a
+   * 900px hero shot needs more lift than an inline code sample -- and one
+   * scale so they stay in proportion to each other when either theme
+   * changes. The light values use the hairline channel rather than black,
+   * which is the same thing the nav's scroll shadow was corrected to. */
+  --netscli-lift-sm: 0 12px 28px rgba(0, 0, 0, 0.32);
+  --netscli-lift-md: 0 12px 40px rgba(0, 0, 0, 0.4);
+  --netscli-lift-lg: 0 32px 80px rgba(0, 0, 0, 0.6);
 }
+
 
 html[data-theme='light'] {
   /* Same surface and the same 1.52:1 edge as the .reco card, so a chip and a
@@ -123,6 +141,12 @@ html[data-theme='light'] {
   --netscli-chip-fg-muted: #596478;
   --netscli-chip-raised: #f2f5fa;
   --netscli-chip-lift-rgb: 17, 24, 39;
+
+  /* Elevation on a light page: the hairline channel, not black, and much
+     shallower. See the scale above. */
+  --netscli-lift-sm: 0 6px 16px rgba(17, 24, 39, 0.07);
+  --netscli-lift-md: 0 10px 28px rgba(17, 24, 39, 0.1);
+  --netscli-lift-lg: 0 22px 56px rgba(17, 24, 39, 0.14);
 }
 
 /* ─── INK ON THE DARK CODE SURFACE ───

@@ -73,7 +73,13 @@ const { surfaces, copy } = site;
 }
 .surfaces{display:grid;gap:90px}
 .surface{
-  display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:start;
+  display:grid;grid-template-columns:1fr 1fr;gap:64px;
+  /* Centred, not top-aligned. Every text block in this section is 118px tall
+     and every visual beside it is 218-296px, so `start` left 100-178px of
+     empty column under each paragraph -- about 560px of void in a 1608px
+     section, which is what made the tour read as ragged rather than as four
+     matched rows. */
+  align-items:center;
 }
 /* No band on the surface cards.
  *
@@ -108,7 +114,7 @@ const { surfaces, copy } = site;
   display:block;
   width:100%;height:auto;border-radius:10px;
   border:1px solid rgba(var(--netscli-lift-rgb),.08);
-  box-shadow:0 12px 40px rgba(0,0,0,.4);
+  box-shadow:var(--netscli-lift-md);
 }
 .surface-visual img:focus-visible,
 .bigshot img:focus-visible{
@@ -121,7 +127,7 @@ const { surfaces, copy } = site;
   border-radius:10px;padding:16px 58px 16px 20px;
   font-family:ui-monospace,"SF Mono",Menlo,monospace;
   font-size:.75rem;line-height:1.7;white-space:pre;overflow-x:auto;color:var(--netscli-text);
-  box-shadow:0 12px 40px rgba(0,0,0,.4);
+  box-shadow:var(--netscli-lift-md);
   position:relative;
 }
 @media(max-width:720px){

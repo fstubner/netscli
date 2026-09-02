@@ -46,13 +46,26 @@ const faqGroups = grouped.sort(
 
 <style is:global>
 /* ─── FAQ ─── */
-.faq{display:grid;gap:22px;margin-top:14px}
+/* Five groups, not thirteen rows.
+ *
+ * The section is 1221px of near-identical closed pills -- roughly a quarter
+ * of the page, and the last thing before the footer. The grouping that would
+ * break it up already existed and was doing nothing: a .72rem muted label
+ * with 22px between groups and 8px between rows is a 14px difference, which
+ * nobody reads as a boundary.
+ *
+ * 40px between groups against 8px within one is a gap you can see, and the
+ * title takes the strong ink with a hairline under it so each group reads as
+ * a block with a heading rather than as more list. */
+.faq{display:grid;gap:40px;margin-top:18px}
 .faq-section{display:grid;gap:8px}
 .faq-section-title{
-  margin:0 0 2px;
-  color:var(--netscli-text-muted);
-  font-size:.72rem;
-  font-weight:600;
+  margin:0 0 6px;
+  padding-bottom:8px;
+  border-bottom:1px solid rgba(var(--netscli-hairline-rgb),.16);
+  color:var(--netscli-text-strong);
+  font-size:.78rem;
+  font-weight:700;
   letter-spacing:.08em;
   text-transform:uppercase;
 }
