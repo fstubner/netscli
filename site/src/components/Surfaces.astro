@@ -59,20 +59,6 @@ const { surfaces, copy } = site;
 .surfaces-section{
   background:var(--netscli-surface);
   border-block:1px solid rgba(var(--netscli-lift-rgb),.045);
-  /* Clips the band bleed, and `clip` rather than `hidden` on purpose.
-   *
-   * The bands below are full-bleed via `inset-inline: calc(50% - 50vw)`, and
-   * 100vw counts the classic scrollbar while the layout box does not. So each
-   * side overhangs by half a scrollbar and the right one produces a real
-   * horizontal scrollbar: measured 5px of overflow at 1280, 1440 and 1600,
-   * every width, with a 10px scrollbar.
-   *
-   * `overflow-x: hidden` would also stop it and would cost more than it
-   * fixes: on an element whose other axis is visible it computes to `auto`,
-   * making this a scroll container and capturing any `position: sticky`
-   * inside it -- the exact trap that broke the docs contents rail earlier.
-   * `clip` does not create a scroll container. */
-  overflow-x:clip;
 }
 .surfaces-section::before{
   content:none;
@@ -88,73 +74,22 @@ const { surfaces, copy } = site;
 .surfaces{display:grid;gap:90px}
 .surface{
   display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:start;
-  position:relative;
 }
-/* Every other card sits on a full-bleed dark band.
+/* No band on the surface cards.
  *
- * A pseudo-element rather than a background, because the card is inside `.w`,
- * which is width-capped and centred -- a background on the card itself would
- * stop at the reading column and read as a panel, not a band. `50% - 50vw`
- * pushes the edges back out to the viewport.
+ * They had one -- every other card on a full-bleed #1c2634 -- and it made
+ * the page invert seven times between the hero and the footer, each join a
+ * 14.75:1 step. That reads as stripes rather than as sections.
  *
- * `inset-block:-45px` is half the 90px gap between cards at each end, so
- * consecutive bands meet exactly rather than leaving a stripe of page colour
- * between them.
+ * Gradient joins were tried as a softener and were worse: fading #1c2634
+ * into #fbfbfb runs through a muddy mid-grey, so 64px of it at every edge
+ * looked like a blur artifact. Spreading a 14.75:1 step does not shrink it,
+ * which is the tell that the edge was never the problem.
  *
- * Both themes, so the rhythm is not a light-mode-only device. The two do not
- * carry equal weight and cannot: measured, the band is 14.75:1 against the
- * light page and 1.24:1 against the dark one. On a dark page a band can only
- * ever be a lift, and 1.24:1 is about as far as one goes before it stops
- * looking like the same page. */
-.surface:nth-child(odd)::before{
-  content:"";
-  position:absolute;
-  inset-block:-45px;
-  inset-inline:calc(50% - 50vw);
-  z-index:0;
-  pointer-events:none;
-  background:var(--netscli-band-dark);
-  /* On the pseudo, not the card: this is the element that spans the full
-     viewport width, so the inner edge runs the whole band rather than
-     stopping at the reading column. */
-  box-shadow:var(--netscli-band-inset);
-}
-/* Above the band, and re-inked for it. The ink values are shared with the
-   navy footer -- see the on-dark block in code-surface.css -- rather than
-   copied, which is how the footer's copy and this one would have drifted. */
-.surface:nth-child(odd)>*{position:relative;z-index:1}
-.surface:nth-child(odd){
-  /* The same colour on the element itself, not only on the ::before.
-   *
-   * The pseudo-element is what reaches the viewport edges; this covers the
-   * card's own box. They are the same value so the join is invisible, and
-   * carrying both means the ink is never relying on a decorative pseudo to be
-   * legible. scripts/contrast-sweep.mjs composites real ancestor backgrounds
-   * and cannot see a ::before, so with the pseudo alone it read this card's
-   * body text as rgb(154,164,184) on the white PAGE -- 2.42:1, a fail. It was
-   * right to: if the pseudo ever stops painting, that is exactly what a
-   * reader gets. */
-  background:var(--netscli-band-dark);
-  color:var(--netscli-ondark-text);
-  --netscli-text:var(--netscli-ondark-text);
-  --netscli-text-strong:var(--netscli-ondark-text-strong);
-  --netscli-text-muted:var(--netscli-ondark-text-muted);
-  --netscli-accent:var(--netscli-ondark-accent);
-  --netscli-accent-rgb:var(--netscli-ondark-accent-rgb);
-  --netscli-accent-bright:var(--netscli-ondark-accent-bright);
-  --netscli-hairline-rgb:255, 255, 255;
-  --netscli-lift-rgb:255, 255, 255;
-}
-/* The code sample needs an edge here, not a darker fill.
- *
- * `.codeblock` is #10151b and the band is #1c2634: 1.20:1. No navy that still
- * reads as dark gets that separation -- the lightest one tried, #273246, only
- * reached 1.42:1 while costing contrast everywhere else. So the block is
- * delineated by its border instead, lifted from .08 to .18 on these cards,
- * and by its own dark fill against the lighter band around it. */
-.surface:nth-child(odd) .codeblock{
-  border-color:rgba(255,255,255,.18);
-}
+ * The two dark moments that remain are the install section and the footer --
+ * see global.css. Three edges instead of seven, and the four cards read as
+ * one continuous tour rather than as alternating stripes. */
+
 /* Grid children default to min-width:auto (content-based), which lets a
    long <pre> codeblock force the grid wider than the viewport. Clamping
    to 0 lets the codeblock's own overflow-x:auto contain the overflow. */
