@@ -22,7 +22,7 @@ body {
 }
 
 /* Anchors land under the sticky header without this. The docs never loaded
-   global.css, so `scroll-behavior` was `auto` here; the matching
+   the landing page's base.css, so `scroll-behavior` was `auto` here; the matching
    scroll-margin on headings is in docs/content.css. */
 html {
   scroll-behavior: smooth;

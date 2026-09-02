@@ -1,13 +1,13 @@
-/* Values the landing page and the docs shell both need to agree on.
+/* The brand palette and the base ramp: values the landing page and the
+ * docs shell both need to agree on. Re-theme a project here first.
  *
- * These two stacks are otherwise separate: the landing page loads
- * global.css, the docs load the numbered starlight/ files, and neither sees
- * the other. Every value duplicated across that boundary is one that can
- * drift silently -- the nav height already had, leaving the landing bar 57px
- * against the docs' 60px, which is visible the moment you click "Docs".
- *
- * Registered first in astro.config.mjs's customCss and imported at the top of
- * global.css, so both stacks read the same declaration.
+ * The two stacks are otherwise separate: the landing page loads landing/*
+ * (its character), the docs load docs/* (their shell), and neither sees the
+ * other. Every value duplicated across that boundary is one that can drift
+ * silently -- the nav height already had, leaving the landing bar 57px
+ * against the docs' 60px, visible the moment you click "Docs".
+ * Registered first in astro.config.mjs's customCss and imported first in
+ * layouts/Page.astro, so both stacks read the same declaration.
  *
  * site/design-tokens.json is GENERATED from this file and from
  * starlight/00-theme-tokens.css -- do not edit it by hand. Run

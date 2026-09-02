@@ -168,6 +168,19 @@ for (const k of new Set([...I1.keys(), ...I2.keys()])) {
     }
   }
 }
+// A custom property nobody on these pages reads cannot render. Keep such
+// diffs out of the report. A token read only by a component's scoped style
+// still counts, so the components that render on this stack's pages are
+// searched too: Starlight's overrides for the docs, everything else for
+// the landing page.
+const componentDirs = STACK === 'landing' ? ['src/components', 'src/pages', 'src/layouts'] : ['src/components/starlight'];
+// The new stack's readers decide: a token only the old stack read, from a
+// rule that went with it, cannot matter; one the new stack still reads and
+// no longer receives is exactly what this should report.
+const readers = [...newStack, ...componentDirs.flatMap((d) => readAstro(join(root, d), STACK === 'landing'))].join(String.fromCharCode(10));
+const isRead = (name) => readers.includes(`var(${name}`);
+for (const [id, d] of diffs) if (d.key.startsWith('--') && !isRead(d.key)) { cells -= d.n; diffs.delete(id); }
+function readAstro(d, skipStarlight) { const out = []; for (const n of readdirSync(d)) { const f = join(d, n); if (statSync(f).isDirectory()) { if (!(skipStarlight && n === 'starlight')) out.push(...readAstro(f, skipStarlight)); } else if (/\.astro$/.test(n)) out.push(readFileSync(f, 'utf8')); } return out; }
 const fmt = (x) => (x ? `${x.sel} {${x.prop}: ${x.value}${x.important ? ' !important' : ''}} @${x.media || 'all'}` : '(nothing)');
 for (const { key, w, ctx, a, b, n } of diffs.values()) console.log(`${key} @${w}px [${ctx}] x${n}\n  OLD: ${fmt(a)}\n  NEW: ${fmt(b)}`);
 if (diffs.size) { console.log(`\n${diffs.size} distinct difference(s), ${cells} cells. Each is a place the new stylesheets render differently -- or a state this model cannot see; say which.`); process.exit(1); }
