@@ -129,8 +129,8 @@
     0 6px 14px -6px rgba(17, 24, 39, 0.18);
 
   --netscli-band-inset:
-    inset 0 11px 15px -11px rgba(0, 0, 0, 0.55),
-    inset 0 -11px 15px -11px rgba(0, 0, 0, 0.55);
+    inset 0 14px 18px -10px rgba(0, 0, 0, 0.7),
+    inset 0 -14px 18px -10px rgba(0, 0, 0, 0.7);
 
   /* ---- Elevation -------------------------------------------------------
    *
