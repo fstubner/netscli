@@ -1,36 +1,6 @@
-.sidebar-content :where(details > ul > li) {
-
-  border-inline-start: 0 !important;
-}.sidebar-content :where(details > ul a:hover),
-.sidebar-content :where(details > ul a:focus-visible) {
-  color: var(--sl-color-white) !important;
-  background: rgba(var(--netscli-lift-rgb), 0.045) !important;
-}
-
-.sidebar-content :where(details > ul a[aria-current='page']) {
-
-  background: rgba(var(--netscli-accent-rgb), 0.12) !important;
-  box-shadow: none !important;
-}
-
 .sl-markdown-content table.table-row-headers tbody td:first-child,
 .sl-markdown-content .netscli-table-scroll table.table-row-headers tbody td:first-child {
   color: inherit !important;
   font-weight: 400 !important;
   background: transparent !important;
-}
-
-@media (max-width: 49.99rem) {
-  .right-sidebar-container {
-    height: 0 !important;
-    min-height: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: 0 !important;
-    overflow: visible !important;
-  }
-
-  .content-panel:first-child {
-    margin-top: 0 !important;
-  }
 }

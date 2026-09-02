@@ -1,0 +1,124 @@
+/* Docs header controls: the search button and the mobile menu button, in
+ * every state and both themes. Their placement per width is in
+ * docs/header.css. Unlayered on purpose; see docs/theme.css.
+ */
+
+/* ---- Search button ------------------------------------------------- */
+header.header site-search button {
+  min-height: 2.35rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+site-search button[data-open-modal] {
+  border: 1px solid var(--sl-color-hairline-light);
+  border-radius: 6px;
+  background: rgba(var(--netscli-lift-rgb), 0.035);
+  color: var(--sl-color-gray-2);
+  box-shadow: inset 0 1px 0 rgba(var(--netscli-lift-rgb), 0.035);
+}
+
+site-search button[data-open-modal] svg {
+  color: #8792a4;
+}
+
+site-search button[data-open-modal] > kbd {
+  border: 1px solid rgba(var(--netscli-hairline-rgb), 0.24);
+  border-radius: 4px;
+  background: rgba(var(--netscli-lift-rgb), 0.04);
+  color: var(--sl-color-gray-3);
+}
+
+site-search button[data-open-modal]:hover,
+site-search button[data-open-modal]:focus-visible {
+  background: rgba(17, 22, 29, 0.9);
+  border-color: rgba(106, 240, 208, 0.65);
+}
+
+site-search button[data-open-modal]:hover {
+  color: var(--sl-color-white);
+  box-shadow:
+    0 0 0 1px rgba(var(--netscli-accent-rgb), 0.16),
+    inset 0 1px 0 rgba(var(--netscli-lift-rgb), 0.035);
+}
+
+site-search button[data-open-modal]:focus-visible {
+  outline: 0;
+  box-shadow:
+    0 0 0 2px rgba(var(--netscli-accent-rgb), 0.18),
+    inset 0 1px 0 rgba(var(--netscli-lift-rgb), 0.04);
+}
+
+site-search button[data-open-modal]:hover svg,
+site-search button[data-open-modal]:focus-visible svg {
+  color: var(--netscli-accent-high);
+}
+
+/* Light: the resting border stays the shared hairline-light (measured: the
+   old stack's lighter 0.14 border never won against it), and the hover
+   ring is the same as the dark theme's. */
+html[data-theme='light'] site-search button[data-open-modal] {
+  background: rgba(var(--netscli-hairline-rgb), 0.035);
+  box-shadow: 0 1px 2px rgba(var(--netscli-hairline-rgb), 0.04);
+}
+
+html[data-theme='light'] site-search button[data-open-modal]:hover,
+html[data-theme='light'] site-search button[data-open-modal]:focus-visible {
+  background: var(--sl-color-black);
+  border-color: rgba(var(--netscli-accent-rgb), 0.45);
+}
+
+/* The hover ring restated here because the light resting rule above outranks
+   the theme-neutral hover rule by the `html` in its selector. */
+html[data-theme='light'] site-search button[data-open-modal]:hover {
+  color: #172033;
+  box-shadow:
+    0 0 0 1px rgba(var(--netscli-accent-rgb), 0.16),
+    inset 0 1px 0 rgba(var(--netscli-lift-rgb), 0.035);
+}
+
+/* The dialog's close button also sits inside .docs-header-search. These
+   reach it and not the open button, which its own rules above outrank. */
+site-search button {
+  border-color: var(--sl-color-hairline-light);
+}
+
+.docs-header-search button {
+  background: transparent;
+  background-image: none;
+}
+
+.docs-header-search button:hover,
+.docs-header-search button:focus-visible {
+  border-color: var(--netscli-hover-border);
+}
+
+/* ---- Mobile menu button -------------------------------------------- */
+starlight-menu-button button {
+  border: 1px solid var(--sl-color-hairline-light);
+  border-radius: 6px;
+  background: rgba(var(--netscli-lift-rgb), 0.035);
+  color: var(--sl-color-gray-2);
+  box-shadow: none;
+}
+
+starlight-menu-button button:hover,
+starlight-menu-button button:focus-visible,
+starlight-menu-button[aria-expanded='true'] button {
+  background: rgba(var(--netscli-accent-rgb), 0.12);
+  border-color: rgba(var(--netscli-accent-rgb), 0.28);
+  color: var(--sl-color-white);
+}
+
+html[data-theme='light'] starlight-menu-button button {
+  background: rgba(var(--netscli-hairline-rgb), 0.035);
+}
+
+/* Restated for the light theme: the light resting rule above outranks the
+   theme-neutral state rule, so without this the light button never lit. */
+html[data-theme='light'] starlight-menu-button button:hover,
+html[data-theme='light'] starlight-menu-button button:focus-visible,
+html[data-theme='light'] starlight-menu-button[aria-expanded='true'] button {
+  background: rgba(var(--netscli-accent-rgb), 0.12);
+  color: var(--sl-color-white);
+}

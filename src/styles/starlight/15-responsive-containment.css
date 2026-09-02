@@ -2,10 +2,6 @@
    tablet and mobile, with their own horizontal scroll instead of widening the
    page or collapsing into unlabelled cards. */
 @media (max-width: 71.99rem) {
-  .main-frame,
-  .main-pane,
-  .content-panel,
-  .content-panel > .sl-container,
   .sl-markdown-content {
     max-width: 100% !important;
     min-width: 0 !important;

@@ -4,58 +4,9 @@
  * from the same customCss list. The name is kept because the numbered order is load
  * order and renaming would move the file in the cascade. */
 
-.page,
-.main-frame,
-.main-pane,
-main,
-.content-panel,
-.sl-container,
 .sl-markdown-content {
   min-width: 0;
   max-width: 100%;
-}
-
-header.header {
-  border-bottom: 1px solid var(--sl-color-hairline-light);
-  backdrop-filter: blur(12px);
-  height: var(--sl-nav-height);
-  min-height: var(--sl-nav-height);
-  background: var(--sl-color-bg-nav);
-  box-shadow: none;
-  display: flex;
-  align-items: center;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  transition: box-shadow 160ms ease, border-color 160ms ease;
-}
-
-header.header::after {
-  content: "";
-  position: absolute;
-  inset-inline: 0;
-  bottom: -28px;
-  height: 28px;
-  pointer-events: none;
-  opacity: 0;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.34), rgba(0, 0, 0, 0));
-  transition: opacity 160ms ease;
-}html[data-docs-scrolled='true'] header.header {
-
-  box-shadow:
-    0 14px 34px rgba(0, 0, 0, 0.28),
-    0 1px 0 rgba(var(--netscli-accent-rgb), 0.12) !important;
-}
-
-html[data-docs-scrolled='true'] header.header::after {
-  opacity: 1;
-}
-
-html[data-theme='light'][data-docs-scrolled='true'] header.header {
-
-  box-shadow:
-    0 14px 30px rgba(var(--netscli-hairline-rgb), 0.11),
-    0 1px 0 rgba(var(--netscli-accent-rgb), 0.12) !important;
 }
 
 /* One layer on a light page, not two. Same change as the landing bar's
@@ -64,74 +15,8 @@ html[data-theme='light'][data-docs-scrolled='true'] header.header {
    and took the page from rgb(251,251,251) to rgb(200,202,205) in a band
    directly under the bar. The gradient earns its place in the dark theme at
    rgba(0,0,0,.34); on white the blur alone is the whole effect. */
-html[data-theme='light'][data-docs-scrolled='true'] header.header::after {
-  opacity: 0;
-}
-
-header.header > .header {
-  width: 100%;
-  height: var(--sl-nav-height);
-  min-height: var(--sl-nav-height);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding-block: 0;
-  border-bottom: 0;
-  background: transparent;
-  backdrop-filter: none;
-}
-
-header.header > .header > * {
-  align-self: center;
-}
 
 /* The theme select's half of this moved to src/styles/theme-control.css.
    Its 2.35rem was the last thing keeping the two bars' controls different
    sizes -- 37.6px here against 17.2px on the landing bar, which had no
    equivalent rule to reach. */
-header.header site-search button {
-  min-height: 2.35rem;
-  display: inline-flex;
-  align-items: center;
-}
-
-starlight-menu-button button {
-  border: 1px solid var(--sl-color-hairline-light);
-  border-radius: 6px;
-  background: rgba(var(--netscli-lift-rgb), 0.035);
-  color: var(--sl-color-gray-2);
-  box-shadow: none;
-}
-
-starlight-menu-button button:hover,
-starlight-menu-button button:focus-visible,
-starlight-menu-button[aria-expanded='true'] button {
-  background: rgba(var(--netscli-accent-rgb), 0.12);
-  border-color: rgba(var(--netscli-accent-rgb), 0.28);
-  color: var(--sl-color-white);
-}
-
-site-search button[data-open-modal] {
-  border: 1px solid rgba(var(--netscli-hairline-rgb), 0.24);
-  border-radius: 6px;
-
-  color: var(--sl-color-gray-2);
-  box-shadow: inset 0 1px 0 rgba(var(--netscli-lift-rgb), 0.035);
-}
-
-site-search button[data-open-modal]:hover {
-
-  background:
-    linear-gradient(180deg, rgba(var(--netscli-lift-rgb), 0.04), rgba(var(--netscli-lift-rgb), 0.018)),
-    rgba(17, 22, 29, 0.96);
-  color: var(--sl-color-white);
-
-}
-
-site-search button[data-open-modal]:focus-visible {
-  outline: 0;
-  border-color: rgba(159, 248, 222, 0.62);
-  box-shadow:
-    0 0 0 2px rgba(var(--netscli-accent-rgb), 0.18),
-    inset 0 1px 0 rgba(var(--netscli-lift-rgb), 0.04);
-}

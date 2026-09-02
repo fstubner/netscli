@@ -1,23 +1,7 @@
 /* Final docs component polish: keep dense technical surfaces neutral and let
-   green act as a state/underline accent instead of a dominant fill color. */html[data-theme='light']:not([data-docs-scrolled='true']) header.header {
-  box-shadow: inset 0 -1px 0 rgba(var(--netscli-accent-rgb), 0.18) !important;
-}
-
-.content-panel > .sl-container {
-  margin-inline: auto;
-}
-
-@media (min-width: 72rem) and (max-width: 86rem) {
-
-  .right-sidebar-container {
-    display: none !important;
-  }
-}
+   green act as a state/underline accent instead of a dominant fill color. */
 
 @media (min-width: 72rem) {
-  .main-pane,
-  .content-panel,
-  .content-panel > .sl-container,
   .sl-markdown-content {
     min-width: 0;
   }

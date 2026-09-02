@@ -1,27 +1,4 @@
-.sidebar-content :where(details > ul a),
-.sidebar-content :where(details > ul a:hover),
-.sidebar-content :where(details > ul a[aria-current="page"]) {
-  margin-inline-start: -1px !important;
-}
-
-.sidebar-content :where(details > ul a:hover),
-.sidebar-content :where(details > ul a[aria-current="page"]) {
-  background-clip: border-box !important;
-}
-
-@media (max-width: 49.99rem) {.sidebar-content :where(details > ul) {
-    margin-inline-start: .5rem !important;
-  }
-
-  .sidebar-pane[aria-expanded="true"],
-  .sidebar-pane[open],
-  #starlight__sidebar {
-    box-shadow: 0 18px 44px rgba(0, 0, 0, .32) !important;
-  }
-
-  .docs-header-search {
-    margin-inline-end: .35rem !important;
-  }.content-panel thead th,
+@media (max-width: 49.99rem) {.content-panel thead th,
   .sl-markdown-content thead th {
     font-weight: 700 !important;
   }

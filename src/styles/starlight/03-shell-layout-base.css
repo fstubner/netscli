@@ -20,94 +20,6 @@
  * classic scrollbar and the frame's layout box does not, so measuring the two
  * differently left them 5px apart -- half a scrollbar -- even once the
  * formulas matched. */
-@media (min-width: 72rem) {
-  nav.sidebar {
-    left: max(var(--netscli-docs-shell-gutter), calc((100% - var(--netscli-docs-frame-width)) / 2));
-    inset-inline-start: max(var(--netscli-docs-shell-gutter), calc((100% - var(--netscli-docs-frame-width)) / 2));
-    width: calc(var(--netscli-docs-sidebar-width) + var(--netscli-docs-shell-gutter));
-  }
-
-  .main-frame {
-    width: min(calc(100% - (var(--netscli-docs-shell-gutter) * 2)), var(--netscli-docs-frame-width));
-    margin-inline: auto !important;
-  }
-
-  .sidebar-pane {
-    left: max(var(--netscli-docs-shell-gutter), calc((100% - var(--netscli-docs-frame-width)) / 2));
-    flex-basis: var(--netscli-docs-sidebar-width);
-    width: var(--netscli-docs-sidebar-width);
-    margin-inline-start: 0;
-  }
-
-  main[data-has-sidebar] {
-    --sl-content-inline-start: calc(var(--netscli-docs-sidebar-width) + var(--netscli-docs-shell-gutter));
-  }
-
-  .right-sidebar-panel {
-    flex-basis: var(--netscli-docs-toc-width);
-    width: var(--netscli-docs-toc-width);
-    /* Mirror the section rail's insets, outer edge to outer edge.
-     *
-     * The frame is centred exactly -- measured 25/25 at 1280 and 143/143 at
-     * 1920 -- so the asymmetry a reader sees is not the frame, it is what
-     * each rail does inside it. The section rail insets its text by a fluid
-     * `--netscli-sidebar-rail-inset` (35-50px); this one used a flat 16px, so
-     * the left text column started 84px from the viewport edge while the
-     * right one ended 40px from it. Same two values, mirrored: outer inset
-     * matches outer inset, inner matches inner. */
-    padding-inline: 1.85rem var(--netscli-sidebar-rail-inset, clamp(2.2rem, 3vw, 3.15rem));
-
-    /* The offset that starts this below the title band is padding on
-     * .right-sidebar, in 13-docs-rail-alignment.css -- as a margin here it
-     * collapsed out through the rail and overran the page. */
-  }
-
-  .content-panel {
-    padding-inline: clamp(1.75rem, 2.2vw, 2.5rem) !important;
-  }
-}
-
-@media (min-width: 108rem) {
-
-  .main-frame {
-    width: var(--netscli-docs-frame-width);
-  }
-}
-
-@media (min-width: 72.01rem) {
-  starlight-menu-button {
-    display: none !important;
-  }
-}
-
-@media (min-width: 50rem) and (max-width: 71.99rem) {
-  main {
-    --sl-content-inline-start: 16rem;
-    --sl-sidebar-width: 16rem;
-  }
-
-  .sidebar-pane {
-    width: 16rem;
-  }
-
-  .sidebar-content {
-    padding-inline: 1.35rem 1.15rem;
-  }
-}
-
-.main-pane {
-  background: var(--sl-color-bg);
-}
-
-.main-pane > .content-panel:first-of-type,
-.main-pane > .content-panel:first-child {
-  padding: 0 !important;
-  border-bottom: 1px solid var(--sl-color-hairline);
-  background: var(--sl-color-bg);
-  isolation: isolate;
-  overflow: hidden;
-  position: relative;
-}
 
 /* The hero band's corner wash is not declared here.
  *
@@ -117,25 +29,6 @@
  * loads later. Nothing here ever painted. Both copies had also drifted to
  * different opacities, angles and radii, so it was not even the same wash
  * twice. 11 is the only definition now. */
-
-.main-pane > .content-panel:first-of-type > .sl-container,
-.main-pane > .content-panel:first-child > .sl-container {
-  max-width: var(--sl-content-width);
-  margin-inline: 0;
-  padding-block: clamp(3.45rem, 5vw, 4.8rem) clamp(2.25rem, 4vw, 3.35rem);
-  padding-inline: clamp(2rem, 4vw, 4rem);
-  position: relative;
-  z-index: 1;
-}
-
-html[data-theme='light'] .main-pane > .content-panel:first-of-type,
-html[data-theme='light'] .main-pane > .content-panel:first-child {
-  background: var(--sl-color-bg);
-}
-
-html[data-theme='light'] .main-pane {
-  background: var(--sl-color-bg);
-}
 
 
 .sl-markdown-content a {

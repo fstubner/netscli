@@ -10,21 +10,6 @@
    rather than two different things. The current heading is marked by colour;
    see the note on the current-link rule below. */
 
-.right-sidebar-panel :where(a) {
-  display: block !important;
-  padding: 0.28rem 0.45rem 0.28rem 0.65rem !important;
-  color: var(--sl-color-gray-3) !important;
-  text-decoration: none !important;
-  border-radius: 0 !important;
-}
-
-.right-sidebar-panel :where(a):hover,
-.right-sidebar-panel :where(a):focus-visible {
-  color: var(--netscli-accent-high) !important;
-  background: transparent !important;
-  outline: 0 !important;
-}
-
 /* Colour only, no inline-start marker. The left nav's marker says "this is
    the page you are on", which is a fact about the whole document; a second
    marker in the rail beside it says the same thing about a heading, and two
@@ -33,24 +18,6 @@
    the weaker of the two and a colour change carries it.
 
    The rail on the <ul> above stays. That is a track, not a marker. */
-.right-sidebar-panel :where(a[aria-current='true']),
-.right-sidebar-panel :where(a[aria-current='page']),
-.right-sidebar-panel :where(a[aria-current='location']) {
-  color: var(--netscli-accent-high) !important;
-  background: transparent !important;
-}
-
-html[data-theme='light'] .right-sidebar-panel :where(a):hover,
-html[data-theme='light'] .right-sidebar-panel :where(a):focus-visible,
-html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='true']),
-html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='page']),
-html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location']) {
-  color: #0e7a33 !important;
-}.sidebar-content a[aria-current='page'] {
-  border-inline-start-color: var(--netscli-accent) !important;
-  background: rgba(var(--netscli-accent-rgb), 0.12) !important;
-  box-shadow: none !important;
-}
 
 /* The `.docs-nav-links { display: none !important }` that used to head this
    block is gone. It was a second copy of the collapse rule Header.astro
@@ -59,126 +26,8 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
    the docs bar kept collapsing 250px before the landing bar. Header.astro
    owns it now; nothing else on the page selects .docs-nav-links, so there is
    no layered-vs-unlayered fight left to have. */
-@media (max-width: 72rem) {
-  .docs-topbar {
-
-    gap: 0.45rem !important;
-  }
-
-  .docs-header-search {
-    display: flex !important;
-    flex: 0 0 2.5rem !important;
-    width: 2.5rem !important;
-    max-width: 2.5rem !important;
-    min-width: 2.5rem !important;
-
-  }
-
-  .docs-header-search site-search,
-  .docs-header-search site-search button[data-open-modal] {
-    width: 2.5rem !important;
-    min-width: 2.5rem !important;
-    max-width: 2.5rem !important;
-  }
-
-  .docs-header-search site-search button[data-open-modal] {
-    height: 2.5rem !important;
-    padding: 0 !important;
-    justify-content: center !important;
-    gap: 0 !important;
-  }
-
-  .docs-header-search site-search button[data-open-modal] span,
-  .docs-header-search site-search button[data-open-modal] kbd {
-    display: none !important;
-  }
-
-  starlight-menu-button button {
-    inset-inline-end: max(0.5rem, env(safe-area-inset-right)) !important;
-  }
-}
-
-@media (max-width: 71.99rem) {
-
-  mobile-starlight-toc nav {
-    box-shadow: none !important;
-  }
-
-  mobile-starlight-toc details[open] nav,
-  mobile-starlight-toc details[open] .dropdown {
-    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.34) !important;
-  }
-
-  mobile-starlight-toc .caret {
-    transform: none !important;
-    transition: none !important;
-  }
-
-  mobile-starlight-toc details[open] .caret {
-    transform: none !important;
-  }
-
-  mobile-starlight-toc .dropdown a {
-    border-inline-start: 1px solid transparent !important;
-  }
-
-  mobile-starlight-toc .dropdown a:hover,
-  mobile-starlight-toc .dropdown a:focus-visible {
-    color: var(--sl-color-white) !important;
-    background: rgba(var(--netscli-lift-rgb), 0.04) !important;
-  }
-
-  mobile-starlight-toc .dropdown a[aria-current='true'],
-  mobile-starlight-toc .dropdown a[aria-current='true']:hover,
-  mobile-starlight-toc .dropdown a[aria-current='true']:focus-visible {
-    color: var(--netscli-accent-high) !important;
-    background: rgba(var(--netscli-accent-rgb), 0.07) !important;
-    border-inline-start-color: var(--netscli-accent) !important;
-  }
-
-  mobile-starlight-toc .dropdown a[aria-current='true']::after,
-  mobile-starlight-toc .isMobile a[aria-current='true']::after {
-    content: none !important;
-    display: none !important;
-  }
-}
 
 @media (max-width: 49.99rem) {
-  .sidebar-pane[aria-hidden='false'],
-  .sidebar-pane:not([aria-hidden]) {
-    inset-block-start: calc(var(--sl-nav-height) + 0.65rem) !important;
-    inset-inline: max(0.75rem, env(safe-area-inset-left)) max(0.75rem, env(safe-area-inset-right)) !important;
-    width: auto !important;
-    height: auto !important;
-    max-height: calc(100dvh - var(--sl-nav-height) - 1.3rem) !important;
-    padding: 0 !important;
-    border: 1px solid rgba(var(--netscli-hairline-rgb), 0.22) !important;
-    border-radius: 8px !important;
-    /* Opaque, and theme-aware.
-     *
-     * This was a hard-coded `rgba(27, 32, 40, 0.96)`, which failed twice
-     * over. The 4% let the page read straight through the open menu -- the
-     * page heading and body text crossing the menu labels. And because the
-     * colour was hard-coded rather than tokenised, the panel stayed dark in
-     * light theme, so a dark drawer sat over a #fbfbfb page with white
-     * bleeding through it.
-     *
-     * `--sl-color-bg-sidebar` is #111 in dark and #fbfbfb in light, so the
-     * panel now follows the theme and hides what is behind it. The green
-     * wash stays; it is decorative and reads on both. */
-    background:
-      linear-gradient(180deg, rgba(var(--netscli-accent-rgb), 0.04), transparent 11rem),
-      var(--sl-color-bg-sidebar) !important;
-    box-shadow: 18px 0 46px rgba(0, 0, 0, 0.36) !important;
-    overflow: auto !important;
-    overscroll-behavior: contain !important;
-  }
-
-  .sidebar-pane[aria-hidden='false'] .sidebar-content,
-  .sidebar-pane:not([aria-hidden]) .sidebar-content {
-    padding: 0.75rem !important;
-    gap: 0 !important;
-  }
 
   site-search dialog {
     border-radius: 8px !important;

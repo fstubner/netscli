@@ -2,24 +2,6 @@
    allowing only explicit table/code wrappers to scroll horizontally. */
 @media (max-width: 49.99rem) {
 
-  .main-frame {
-    width: 100vw !important;
-    max-width: 100vw !important;
-    min-width: 0 !important;
-    padding-inline-start: 0 !important;
-    /* `clip`, not `hidden`. `overflow-x: hidden` makes this element a scroll
-       container -- the other axis computes to `auto` with it -- and the
-       document, not this box, is what actually scrolls. Any `position: sticky`
-       inside then has a scrollport that never moves, which is why the mobile
-       contents bar scrolled away with the page instead of pinning under the
-       header. `clip` contains the same horizontal overflow without creating a
-       scroll container. */
-    overflow-x: clip !important;
-  }
-
-  .main-pane,
-  .content-panel,
-  .content-panel > .sl-container,
   .sl-markdown-content {
     width: 100% !important;
     max-width: 100% !important;
@@ -28,48 +10,8 @@
     overflow-wrap: anywhere;
   }
 
-  .content-panel > .sl-container {
-    width: auto !important;
-    max-width: 100vw !important;
-    margin-inline: 0 !important;
-    padding-inline: clamp(1rem, 5vw, 1.5rem) !important;
-  }
-
   .sl-markdown-content > * {
     max-width: 100% !important;
-  }
-
-  starlight-menu-button {
-    display: block !important;
-    position: fixed !important;
-    inset-block-start: .625rem !important;
-    inset-inline-end: .75rem !important;
-    z-index: calc(var(--sl-z-index-navbar) + 2) !important;
-  }
-
-  starlight-menu-button button {
-    width: 2.5rem !important;
-    height: 2.5rem !important;
-    position: static !important;
-    inset: auto !important;
-  }
-
-  .docs-header-search {
-    position: fixed !important;
-    inset-block-start: .625rem !important;
-    inset-inline-end: 3.75rem !important;
-    /* see the 50-72rem block at the end of this file */
-    z-index: calc(var(--sl-z-index-navbar) + 2) !important;
-    width: 2.5rem !important;
-    max-width: 2.5rem !important;
-    min-width: 2.5rem !important;
-    /* Square, like the menu button beside it. Both are pinned to the same
-       inset-block-start, but this one kept the full-bar height it is given
-       at desktop widths, so the box ran from 10px to 70px -- past the 60px
-       bar -- and its 40px button sat at the bottom of it, 10px lower than
-       the menu button. */
-    height: 2.5rem !important;
-    min-height: 0 !important;
   }
 
   .sl-markdown-content .netscli-table-scroll,
@@ -110,8 +52,3 @@
  * spaced deliberately. Here the search stays in flow, so the topbar reserves
  * the width the fixed button occupies instead: 2.5rem for the button, 0.5rem
  * for its inset, 0.65rem of gap. */
-@media (min-width: 50rem) and (max-width: 72rem) {
-  .header .docs-topbar {
-    padding-inline-end: 2.25rem !important;
-  }
-}
