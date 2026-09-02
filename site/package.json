@@ -27,7 +27,7 @@
     "@astrojs/check": "^0.9.10",
     "@axe-core/cli": "^4.13.0",
     "linkedom": "^0.18.13",
-    "selenium-webdriver": "^4.44.0",
+    "selenium-webdriver": "^4.48.0",
     "typescript": "^5.5.0"
   }
 }
