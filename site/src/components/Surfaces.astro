@@ -59,6 +59,20 @@ const { surfaces, copy } = site;
 .surfaces-section{
   background:var(--netscli-surface);
   border-block:1px solid rgba(var(--netscli-lift-rgb),.045);
+  /* Clips the band bleed, and `clip` rather than `hidden` on purpose.
+   *
+   * The bands below are full-bleed via `inset-inline: calc(50% - 50vw)`, and
+   * 100vw counts the classic scrollbar while the layout box does not. So each
+   * side overhangs by half a scrollbar and the right one produces a real
+   * horizontal scrollbar: measured 5px of overflow at 1280, 1440 and 1600,
+   * every width, with a 10px scrollbar.
+   *
+   * `overflow-x: hidden` would also stop it and would cost more than it
+   * fixes: on an element whose other axis is visible it computes to `auto`,
+   * making this a scroll container and capturing any `position: sticky`
+   * inside it -- the exact trap that broke the docs contents rail earlier.
+   * `clip` does not create a scroll container. */
+  overflow-x:clip;
 }
 .surfaces-section::before{
   content:none;
