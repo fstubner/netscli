@@ -1,0 +1,218 @@
+/* Docs search: Pagefind's root, the input row with its clear button, and
+ * the drawer's empty and no-results states. The dialog is docs/search.css;
+ * the results are docs/search-results.css.
+ *
+ * Pagefind renders everything inside #starlight__search at runtime, so
+ * none of it exists in the built pages; the screenshot check opens the
+ * dialog with a query for the results state, and the empty and message
+ * states are verified only by reading.
+ *
+ * Unlayered on purpose; see docs/theme.css.
+ */
+
+/* ---- Pagefind root and input ----------------------------------------- */
+#starlight__search {
+  --pagefind-ui-primary: var(--sl-color-gray-1);
+  --pagefind-ui-text: var(--sl-color-gray-2);
+  --pagefind-ui-background: #171b22;
+  --pagefind-ui-border: rgba(var(--netscli-hairline-rgb), 0.28);
+  --pagefind-ui-border-width: 1px;
+  --pagefind-ui-tag: rgba(var(--netscli-accent-rgb), 0.12);
+  --sl-search-corners: 6px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: calc(100vh - 9.5rem);
+}
+
+html[data-theme='light'] #starlight__search {
+  --pagefind-ui-background: #ffffff;
+  --pagefind-ui-border: rgba(var(--netscli-hairline-rgb), 0.14);
+  --pagefind-ui-tag: rgba(var(--netscli-accent-rgb), 0.11);
+}
+
+#starlight__search .pagefind-ui,
+#starlight__search .pagefind-ui__form {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+}
+
+#starlight__search .pagefind-ui {
+  min-height: 0;
+}
+
+#starlight__search .pagefind-ui__form {
+  inset-block-start: 0;
+  position: relative;
+  z-index: 4;
+  height: auto;
+  min-height: 0;
+  padding-block-end: 0;
+  background: transparent;
+}
+
+/* The magnifier Pagefind draws before the input. */
+#starlight__search .pagefind-ui__form::before {
+  --pagefind-ui-text: #aeb8c8;
+  opacity: 0.82;
+}
+
+html[data-theme='light'] #starlight__search .pagefind-ui__form::before {
+  --pagefind-ui-text: #536176;
+  opacity: 1;
+}
+
+#starlight__search .pagefind-ui__search-input {
+  border-color: rgba(var(--netscli-hairline-rgb), 0.32);
+  border-radius: 6px;
+  color: var(--sl-color-gray-1);
+  height: 3rem;
+  min-height: 3rem;
+  line-height: 1.2;
+  background: #171b22;
+  box-shadow: inset 0 0 0 1px rgba(var(--netscli-lift-rgb), 0.015);
+}
+
+#starlight__search .pagefind-ui__search-input:focus {
+  outline: 0;
+  border-color: rgba(159, 248, 222, 0.72);
+  box-shadow:
+    0 0 0 2px rgba(var(--netscli-accent-rgb), 0.16),
+    inset 0 1px 0 rgba(var(--netscli-lift-rgb), 0.04);
+}
+
+html[data-theme='light'] #starlight__search .pagefind-ui__search-input {
+  border-color: rgba(var(--netscli-hairline-rgb), 0.24);
+  color: var(--sl-color-white);
+  background: #ffffff;
+  box-shadow: none;
+}
+
+html[data-theme='light'] #starlight__search .pagefind-ui__search-input::placeholder {
+  color: #5b667a;
+  opacity: 1;
+}
+
+/* The clear button: Pagefind's text label hidden, its icon recoloured. */
+#starlight__search .pagefind-ui__search-clear {
+  width: 2.65rem;
+  color: transparent;
+  font-size: 0;
+}
+
+#starlight__search .pagefind-ui__search-clear::before {
+  background-color: var(--netscli-accent-high);
+  opacity: 0.86;
+  -webkit-mask-size: 42%;
+  mask-size: 42%;
+}
+
+#starlight__search .pagefind-ui__search-clear:hover::before,
+#starlight__search .pagefind-ui__search-clear:focus-visible::before {
+  background-color: var(--sl-color-white);
+  opacity: 1;
+}
+
+html[data-theme='light'] #starlight__search .pagefind-ui__search-clear::before {
+  background-color: var(--sl-color-accent);
+}
+
+/* ---- Empty and message states --------------------------------------- */
+#starlight__search .pagefind-ui__message {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.42em;
+  color: var(--sl-color-gray-3);
+  font-size: 0.92rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  margin: 0 0 0.8rem;
+}
+
+#starlight__search .pagefind-ui__message .search-data {
+  display: inline-block;
+  color: var(--sl-color-gray-1);
+  font-weight: 760;
+}
+
+html[data-theme='light'] #starlight__search .pagefind-ui__message {
+  color: var(--sl-color-gray-2);
+}
+
+html[data-theme='light'] #starlight__search .pagefind-ui__message .search-data {
+  color: var(--sl-color-white);
+}
+
+/* Before a query: a dashed panel with a prompt. Pagefind hides its drawer
+   until there is something to show, so the prompt is drawn on the
+   container's ::after in that case and on the drawer's ::before once it
+   exists but is empty. */
+#starlight__search .pagefind-ui__drawer:not(:has(.pagefind-ui__result)):not(:has(.pagefind-ui__message)) {
+  display: grid;
+  place-items: center;
+  min-height: 10rem;
+  border: 1px dashed rgba(var(--netscli-hairline-rgb), 0.22);
+  border-radius: 8px;
+  background: rgba(32, 36, 43, 0.56);
+}
+
+#starlight__search .pagefind-ui__drawer.pagefind-ui__hidden:not(:has(.pagefind-ui__result)):not(:has(.pagefind-ui__message)) {
+  display: grid;
+}
+
+#starlight__search .pagefind-ui__drawer:not(:has(.pagefind-ui__result)):not(:has(.pagefind-ui__message))::before {
+  content: "Type a page, command, or network term";
+  max-width: 24rem;
+  color: var(--sl-color-gray-3);
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+site-search dialog .search-container:has(.pagefind-ui__drawer.pagefind-ui__hidden)::after {
+  content: "Type a page, command, or network term";
+  display: grid;
+  place-items: center;
+  min-height: 10rem;
+  margin-top: 1rem;
+  border: 1px dashed rgba(var(--netscli-hairline-rgb), 0.22);
+  border-radius: 8px;
+  background: rgba(32, 36, 43, 0.56);
+  color: var(--sl-color-gray-3);
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+/* No results: the message sits centred in the same dashed panel. */
+#starlight__search .pagefind-ui__drawer:has(.pagefind-ui__message):not(:has(.pagefind-ui__result)) {
+  display: grid;
+  align-content: center;
+  min-height: 10rem;
+  border: 1px dashed rgba(var(--netscli-hairline-rgb), 0.22);
+  border-radius: 8px;
+  background: rgba(32, 36, 43, 0.56);
+}
+
+#starlight__search .pagefind-ui__drawer:has(.pagefind-ui__message):not(:has(.pagefind-ui__result)) .pagefind-ui__message {
+  margin: 0;
+  padding: 1rem 1.25rem;
+  text-align: center;
+}
+
+html[data-theme='light'] #starlight__search .pagefind-ui__drawer:not(:has(.pagefind-ui__result)):not(:has(.pagefind-ui__message)),
+html[data-theme='light'] site-search dialog .search-container:has(.pagefind-ui__drawer.pagefind-ui__hidden)::after,
+html[data-theme='light'] #starlight__search .pagefind-ui__drawer:has(.pagefind-ui__message):not(:has(.pagefind-ui__result)) {
+  background: var(--sl-color-black);
+  border-color: rgba(var(--netscli-hairline-rgb), 0.18);
+  color: var(--sl-color-gray-2);
+}
+
+/* Injected by scripts/docs-search-keys.ts when Pagefind neither answers
+   nor errors; sized like the message it sits under. */
+#starlight__search .netscli-search-offline {
+  margin: 0.35rem 0 0;
+  color: var(--sl-color-gray-2);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
