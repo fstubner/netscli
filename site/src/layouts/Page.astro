@@ -1,11 +1,12 @@
 ---
+// Shared with the docs shell (astro.config.mjs customCss): the palette, the
+// code surface and the theme control. Then the landing page's own tier.
 import '../styles/tokens.css';
-import '../styles/global.css';
-// Shared with the docs shell, which registers it in astro.config.mjs. The two
-// bars draw the same theme control and it is defined once.
-import '../styles/theme-control.css';
 import '../styles/code-surface.css';
-import '../styles/lightbox.css';
+import '../styles/landing/tokens.css';
+import '../styles/landing/base.css';
+import '../styles/theme-control.css';
+import '../styles/landing/lightbox.css';
 import { site } from '../data/site';
 
 interface Props {

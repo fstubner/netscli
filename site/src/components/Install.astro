@@ -112,7 +112,7 @@ const groups = [
 .install-hint{font-size:.6875rem;color:var(--netscli-text-muted);margin:4px 0 0}
 .cmd{
   /* A chip, not a code surface: dark in the dark theme, light in the light
-     one. See the chip note in code-surface.css. */
+     one. See the chip note in landing/tokens.css. */
   background:var(--netscli-chip-bg);border:1px solid var(--netscli-chip-border);
   border-radius:8px;padding:12px 16px;
   font-family:ui-monospace,"SF Mono",Menlo,monospace;
@@ -382,7 +382,7 @@ a.install-download:focus-visible{
  *
  * The copy button carries the full command either way.
  *
- * Lives here rather than in global.css: global.css is imported before
+ * Lives here rather than in landing/base.css: that file is imported before
  * component styles, so an override there loses the cascade tie to the `.cmd`
  * rules above and silently does nothing.
  */
