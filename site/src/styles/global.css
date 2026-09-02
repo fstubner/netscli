@@ -127,29 +127,20 @@ section:nth-of-type(even){
  * instead -- #install below and the footer -- and every other section is the
  * page colour.
  *
- * Six treatments were built and measured getting here, and it is worth
- * knowing why each failed, because most of them failed for reasons a
- * screenshot does not show:
+ * Six treatments were measured getting here; most failed for reasons a
+ * screenshot does not show, so the numbers are kept:
  *
- *   1.09:1  the original tint (--netscli-surface). Invisible; not a band.
- *  16.43:1  #install inverted to dark navy. Worse where it counts -- the .alt
- *           and .tryblock command blocks were #10151b, so they went from
- *           16.21:1 on a light band to 1.08:1 on a navy one. The commands a
- *           visitor came to copy vanished into the band while the container
- *           shouted.
- *   1.27:1  a deeper tint on BOTH surfaces and install. Those two sections
- *           are adjacent, so it tinted 59.6% of the page in one run and read
- *           as a second background rather than as punctuation.
- *    1:1    no bands at all. Measurably the best for the content -- command
- *           blocks separate at 17.72:1 on the page -- and too flat.
- *  1.143:1  a quiet tint, alternating so no two banded sections touch. The
- *           structure was right and the colour was not: a pale blue-grey at
- *           that strength reads as washed out rather than as a band.
- *  14.75:1  dark bands on alternating SURFACE CARDS. Correct per-band and
- *           wrong as a page: it made the page invert seven times between the
- *           hero and the footer. Gradient joins were tried to soften that and
- *           were worse -- fading #1c2634 into #fbfbfb runs through a muddy
- *           mid-grey. Spreading a 14.75:1 step does not shrink it.
+ *   1.09:1  the original tint. Invisible; not a band.
+ *  16.43:1  #install inverted to navy. The .alt and .tryblock command blocks
+ *           are #10151b, so they went 16.21:1 -> 1.08:1: the commands a
+ *           visitor came to copy vanished into their own container.
+ *   1.27:1  a deeper tint on surfaces AND install -- adjacent sections, so it
+ *           tinted 59.6% of the page in one run and read as a background.
+ *    1:1    no bands. Best for the content (blocks at 17.72:1) and too flat.
+ *  1.143:1  a quiet alternating tint. Structure right, colour washed out.
+ *  14.75:1  dark bands on alternating CARDS -- seven inversions per page.
+ *           Gradient joins were tried and were worse: #1c2634 into #fbfbfb
+ *           runs through a muddy grey; spreading a step does not shrink it.
  *
  * So: two dark moments, not seven. `.surfaces-section` is still listed here
  * because Surfaces.astro paints its own background in a component style and
