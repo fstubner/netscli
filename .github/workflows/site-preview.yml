@@ -58,9 +58,15 @@ jobs:
     # A push to main is always same-repo, and `github.event.pull_request` is
     # null there -- so without the first clause this guard is false and the
     # main preview never runs.
+    #
+    # Dependabot PRs are same-repo but run with Dependabot's own secret
+    # store, not the repository's, so CLOUDFLARE_API_TOKEN is empty there
+    # too and "Check configuration" failed on all eleven of them (#311-#319,
+    # #334, #335). A dependency bump does not need a preview.
     if: >-
-      github.event_name == 'push' ||
-      github.event.pull_request.head.repo.full_name == github.repository
+      github.actor != 'dependabot[bot]' &&
+      (github.event_name == 'push' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
