@@ -93,7 +93,7 @@ const { surfaces, copy } = site;
  * which is the tell that the edge was never the problem.
  *
  * The two dark moments that remain are the install section and the footer --
- * see global.css. Three edges instead of seven, and the four cards read as
+ * see landing/base.css. Three edges instead of seven, and the four cards read as
  * one continuous tour rather than as alternating stripes. */
 
 /* Grid children default to min-width:auto (content-based), which lets a
@@ -115,6 +115,10 @@ const { surfaces, copy } = site;
   width:100%;height:auto;border-radius:10px;
   border:1px solid rgba(var(--netscli-lift-rgb),.08);
   box-shadow:var(--netscli-lift-md);
+  /* zoom-in: the lightbox opens it. Was in Hero.astro, which does not own
+     this class; every component's styles are global, so each keeps to its
+     own markup. */
+  cursor:zoom-in;
 }
 .surface-visual img:focus-visible,
 .bigshot img:focus-visible{

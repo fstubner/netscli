@@ -1,0 +1,195 @@
+/* The landing page's character: command chips, the dark bands, the ink
+ * that goes on them, and the elevation scale. Loaded by layouts/Page.astro
+ * only. The docs never read these, so a landing page with a different
+ * character is a change to this file and to the components, not to the
+ * shared palette in ../tokens.css or the code surface in ../code-surface.css.
+ *
+ * The two remap blocks at the end re-point the text ramp on a subtree
+ * instead of restating `color:` per child; see the notes on each.
+ */
+:root {
+  /* ---- Command chips ---------------------------------------------------
+   *
+   * A chip is a single command with a copy button: the two in the hero and
+   * every row in the install section. A code surface is something you read:
+   * the JSON and config samples, the terminal panel, the docs.
+   *
+   * The split exists because they are different objects. A chip sits next to
+   * the "Desktop app" button and behaves like it -- you click it -- so on a
+   * white page two solid #10151b bars beside an outlined button read as
+   * mismatched weights rather than as a set. A sample has no such neighbour
+   * and stays dark in both themes, which is the rule the rest of this file
+   * describes.
+   *
+   * Defaults are the code surface, so the dark theme is unchanged and the two
+   * kinds of thing look identical there -- on a dark page there is nothing to
+   * mismatch. Only the light theme pulls them apart. */
+  --netscli-chip-bg: var(--netscli-code-bg);
+  --netscli-chip-border: var(--netscli-code-border);
+  --netscli-chip-divider: var(--netscli-code-divider);
+  --netscli-chip-fg: var(--netscli-code-fg);
+  --netscli-chip-fg-muted: #9a9a9a;
+  --netscli-chip-raised: #20242b;
+  --netscli-chip-lift-rgb: 255, 255, 255;
+  /* Inline `code` in prose rides the chip too. A word inside a sentence is
+     neither a control nor a sample: on a white page a near-black chip mid-
+     paragraph reads as a hole punched in the text. */
+  --netscli-chip-code-fg: var(--netscli-code-inline-fg);
+  /* Accent INSIDE a chip. The install band re-points the accent to its
+     on-dark values, and a control sitting on a light chip on that band
+     inherited them -- the Download button's hover was #86efac on a light
+     row, 1.62:1. */
+  --netscli-chip-accent: var(--netscli-ondark-accent);
+  --netscli-chip-accent-rgb: var(--netscli-ondark-accent-rgb);
+  --netscli-chip-accent-bright: var(--netscli-ondark-accent-bright);
+
+  /* ---- Ink on a dark surface -------------------------------------------
+   *
+   * Anything that paints itself dark on a light page has to re-point the
+   * text ramp, and there are three such places now: the navy footer, the
+   * alternating dark surface cards, and any future one. Each was carrying
+   * its own copy of these six values, which is exactly how two of them
+   * would eventually disagree. One definition, referenced. */
+  --netscli-ondark-text: #d7dce5;
+  --netscli-ondark-text-strong: #f4f4f4;
+  --netscli-ondark-text-muted: #9aa4b8;
+  --netscli-ondark-accent: #22c55e;
+  --netscli-ondark-accent-rgb: 34, 197, 94;
+  --netscli-ondark-accent-bright: #86efac;
+
+  /* The dark band behind every other surface card. Measured against the
+     light page at 14.75:1, and it carries body ink at 11.09:1 and muted ink
+     at 6.09:1. Not as dark as the code surface on purpose -- see the note on
+     the card rule in Surfaces.astro for why that gap cannot do the work. */
+  --netscli-band-dark: #1c2634;
+
+  /* The band's inner edge. A pair of inset shadows, top and bottom, with a
+     negative spread so each one stays a thin gradient at its own edge instead
+     of washing the whole band. Reads as the band being recessed into the page
+     rather than laid on top of it, and it gives the light/dark joins a soft
+     transition instead of a hard 1px switch.
+     One token because every band uses it -- the surface cards, the install
+     section and the footer -- and three hand-tuned copies is how they end up
+     with three different depths. */
+  /* Cast at the band's own edges, outward onto the page above and below.
+     The inset pair below darkens the band's inner lip; this is the other
+     half -- the page picking up a little shade where the dark section meets
+     it, so the two do not simply abut. Small on purpose: the join should
+     read as a seam, not as a floating panel. */
+  --netscli-band-edge-shadow:
+    0 -6px 14px -6px rgba(17, 24, 39, 0.18),
+    0 6px 14px -6px rgba(17, 24, 39, 0.18);
+
+  --netscli-band-inset:
+    inset 0 14px 18px -10px rgba(0, 0, 0, 0.7),
+    inset 0 -14px 18px -10px rgba(0, 0, 0, 0.7);
+
+  /* ---- Elevation -------------------------------------------------------
+   *
+   * The lift under a screenshot, a code sample or the hero shot. These were
+   * hand-written rgba(0,0,0,.32-.6) blacks, tuned when the only page was
+   * near-black: on #111 a hard black shadow reads as depth, on #fbfbfb it
+   * reads as a heavy grey halo, and the two big ones (.42 and .6) are the
+   * most dated-looking thing on the light page.
+   *
+   * Three steps because the three call sites want different weights -- a
+   * 900px hero shot needs more lift than an inline code sample -- and one
+   * scale so they stay in proportion to each other when either theme
+   * changes. The light values use the hairline channel rather than black,
+   * which is the same thing the nav's scroll shadow was corrected to. */
+  --netscli-lift-sm: 0 12px 28px rgba(0, 0, 0, 0.32);
+  --netscli-lift-md: 0 12px 40px rgba(0, 0, 0, 0.4);
+  --netscli-lift-lg: 0 32px 80px rgba(0, 0, 0, 0.6);
+}
+
+html[data-theme='light'] {
+  /* Same surface and the same 1.52:1 edge as the .reco card, so a chip and a
+     card read as the same family of object. */
+  --netscli-chip-bg: #f2f5fa;
+  --netscli-chip-border: rgba(17, 24, 39, 0.2);
+  --netscli-chip-divider: rgba(17, 24, 39, 0.14);
+  --netscli-chip-fg: #44516a;
+  --netscli-chip-fg-muted: #596478;
+  --netscli-chip-raised: #f2f5fa;
+  --netscli-chip-lift-rgb: 17, 24, 39;
+  /* 8.66:1 on the light chip. The dark theme's #86efac is a light-on-dark
+     green and measures 1.5:1 there, so it cannot simply carry over. */
+  --netscli-chip-code-fg: #0e5122;
+  --netscli-chip-accent: #146b2e;
+  --netscli-chip-accent-rgb: 20, 107, 46;
+  --netscli-chip-accent-bright: #0e5122;
+
+  /* Elevation on a light page: the hairline channel, not black, and much
+     shallower. See the scale above. */
+  --netscli-lift-sm: 0 6px 16px rgba(17, 24, 39, 0.07);
+  --netscli-lift-md: 0 10px 28px rgba(17, 24, 39, 0.1);
+  --netscli-lift-lg: 0 22px 56px rgba(17, 24, 39, 0.14);
+}
+
+/* ─── INK ON THE DARK CODE SURFACE ───
+ *
+ * Every block below paints the dark code background in BOTH themes, so the
+ * text ramp inside them has to be the dark-theme ramp regardless of the page.
+ *
+ * Done by redefining the ramp tokens on the subtree rather than by restating
+ * `color:` on each descendant. The children already say
+ * `color: var(--netscli-text)` and friends -- about a dozen of them across the
+ * install section alone -- so re-pointing the token fixes all of them at once
+ * and, more usefully, cannot miss one that gets added later. The first attempt
+ * patched them individually and the contrast sweep found 52 it had not
+ * reached.
+ *
+ * .faq-command is NOT in this list, only its `code` child: that row is a label
+ * on the card beside a chip on the dark surface, and remapping the whole row
+ * lightened the label onto a light background. Same reason .reco and .try-cmd
+ * are absent -- see Install.astro.
+ */
+.tryblock,
+.try,
+.codeblock,
+.faq-command code {
+  --netscli-text: var(--netscli-code-fg);
+  --netscli-text-strong: #f4f4f4;
+  --netscli-text-muted: #9a9a9a;
+  --netscli-accent-bright: var(--netscli-code-inline-fg);
+  /* The copy button sits INSIDE these blocks, and global.css draws it with
+   * `background: var(--netscli-surface-raised)` -- a page surface, which is
+   * near-white in the light theme. Measured on the landing page before this
+   * line: rgb(242,245,250) on an rgb(16,21,27) block, a white chip on a dark
+   * sample. The ramp above fixed the button's ink and left its background
+   * behind, because the background is not part of the text ramp.
+   *
+   * Same reasoning as the ramp: re-point the token rather than restate
+   * `background:` on `.copy-btn`, so anything else in here that paints a
+   * raised surface follows too.
+   *
+   * .faq-command is still absent from this list, and it matters more here
+   * than for the ink: its copy button really does sit on the light card, not
+   * on the chip, so it must keep the light surface. Only `.faq-command code`
+   * is remapped, and that element has no button inside it. */
+  --netscli-surface-raised: #20242b;
+}
+
+/* The same remap for chips, pointed at the chip tokens instead of the code
+ * ones. Identical in dark -- the chip tokens default to the code surface --
+ * and the light values in the block above take over on a light page.
+ *
+ * A token indirection rather than a light-theme rule restating the ramp: the
+ * navy footer already carries one copy of the light ink values and the .reco
+ * card another, and a third would be the point where they start to drift. */
+.cmd,
+.alt,
+.hero-command {
+  --netscli-text: var(--netscli-chip-fg);
+  --netscli-text-strong: var(--netscli-chip-fg);
+  --netscli-text-muted: var(--netscli-chip-fg-muted);
+  --netscli-surface-raised: var(--netscli-chip-raised);
+  --netscli-lift-rgb: var(--netscli-chip-lift-rgb);
+  /* The accent too, not just the ink. A control sitting on a chip -- the
+     install rows' Download button -- otherwise inherits the band's on-dark
+     accent and hovers to #86efac on a light row: measured 1.19:1. */
+  --netscli-accent: var(--netscli-chip-accent);
+  --netscli-accent-rgb: var(--netscli-chip-accent-rgb);
+  --netscli-accent-bright: var(--netscli-chip-accent-bright);
+  color: var(--netscli-text);
+}
