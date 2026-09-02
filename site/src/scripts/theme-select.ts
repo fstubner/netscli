@@ -50,6 +50,10 @@ export function initThemeSelect(): void {
       // Storage blocked: the choice still applies to this page, it just will
       // not survive a navigation. Better than doing nothing.
     }
+    // The icon follows the CHOICE, not the applied theme: on "auto" the page
+    // may be dark while the control should still show the laptop. See the
+    // icon rules in styles/theme-control.css.
+    document.documentElement.dataset.themeChoice = choice;
     apply(choice === 'auto' ? systemTheme() : (choice as Theme));
   });
 

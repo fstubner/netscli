@@ -174,8 +174,14 @@ html[data-theme='light'][data-docs-scrolled='true'] header.header {
     0 1px 0 rgba(var(--netscli-accent-rgb), 0.12) !important;
 }
 
+/* One layer on a light page, not two. Same change as the landing bar's
+   `::after` -- see the note in components/Nav.astro. The bar already casts a
+   30px blurred box-shadow above; this 28px hard gradient stacked on top of it
+   and took the page from rgb(251,251,251) to rgb(200,202,205) in a band
+   directly under the bar. The gradient earns its place in the dark theme at
+   rgba(0,0,0,.34); on white the blur alone is the whole effect. */
 html[data-theme='light'][data-docs-scrolled='true'] header.header::after {
-  background: linear-gradient(180deg, rgba(var(--netscli-hairline-rgb), 0.12), rgba(var(--netscli-hairline-rgb), 0));
+  opacity: 0;
 }
 
 header.header > .header {
