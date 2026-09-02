@@ -89,17 +89,7 @@ html[data-theme='light'] .sl-markdown-content tbody tr:hover {
 
 html[data-theme='light'] .sl-markdown-content tbody tr:nth-child(even):hover {
   background: var(--netscli-table-stripe);
-}
-
-.sl-markdown-content a,
-.right-sidebar-panel :where(a):hover,
-.sl-markdown-content .sl-anchor-link,
-.sl-markdown-content .sl-anchor-link:focus,
-.sl-markdown-content .sl-heading-wrapper:hover .sl-anchor-link {
-  color: var(--netscli-accent) !important;
-}
-
-/* Square, and the size Starlight already reserved for it.
+}/* Square, and the size Starlight already reserved for it.
  *
  * Starlight sets only `width: var(--sl-anchor-icon-size)` here and leaves the
  * height to the SVG's own `height="16"` attribute. The result next to an h2

@@ -1,38 +1,4 @@
-.sidebar-content :where(details > ul a) {
-
-  width: calc(100% + 1px) !important;
-}
-
-.sidebar-content :where(details > ul a[aria-current='page']) {
-  border-inline-start-color: var(--netscli-accent) !important;
-}
-
-.netscli-mobile-toc-wrapper mobile-starlight-toc summary,
-.netscli-mobile-toc-wrapper mobile-starlight-toc .toggle,
-.netscli-mobile-toc-wrapper mobile-starlight-toc .display-current,
-.netscli-mobile-toc-wrapper mobile-starlight-toc .dropdown a {
-  cursor: pointer !important;
-}
-
 @media (max-width: 49.99rem) {
-  .docs-topbar {
-    gap: 0.2rem !important;
-  }
-
-  .docs-header-search {
-    display: flex !important;
-    margin-left: auto !important;
-    margin-right: 3rem !important;
-    flex: 0 0 2.75rem !important;
-  }
-
-  starlight-menu-button {
-    margin-left: 0 !important;
-  }
-
-  starlight-menu-button button {
-    inset-inline-end: max(0.65rem, env(safe-area-inset-right)) !important;
-  }
 
   site-search dialog {
 

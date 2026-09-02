@@ -98,41 +98,7 @@
    * It hid from earlier testing because touch emulation uses overlay
    * scrollbars, where `100vw` and the content box are the same width. Only a
    * real narrow desktop window shows it. */
-  .page,
-  .main-frame,
-  .main-pane {
-    width: 100% !important;
-    max-width: 100% !important;
-    overflow-x: clip;
-  }
 
-  .main-frame {
-    display: block !important;
-    min-width: 0 !important;
-    margin-inline: 0 !important;
-  }
-
-  .content-panel {
-    width: 100% !important;
-    max-width: 100% !important;
-    padding-inline: 1rem !important;
-  }
-
-  .main-pane > .content-panel:first-of-type,
-  .main-pane > .content-panel:first-child {
-    padding: 0 !important;
-  }
-
-  .main-pane > .content-panel:first-of-type > .sl-container,
-  .main-pane > .content-panel:first-child > .sl-container {
-    padding: 3rem 1rem 2rem !important;
-  }
-
-  .main-pane > .content-panel:first-of-type h1 {
-    font-size: clamp(2rem, 12vw, 3.2rem);
-  }
-
-  .sl-container,
   .sl-markdown-content {
     width: 100% !important;
     max-width: 100% !important;
@@ -184,6 +150,3 @@
 /* The theme select's appearance moved to src/styles/theme-control.css, which
    the landing bar loads too -- the two bars were drawing visibly different
    controls. Only the search button's border stays here. */
-site-search button {
-  border-color: var(--sl-color-hairline-light);
-}
