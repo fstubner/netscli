@@ -79,6 +79,10 @@
   --netscli-chip-fg-muted: #9a9a9a;
   --netscli-chip-raised: #20242b;
   --netscli-chip-lift-rgb: 255, 255, 255;
+  /* Inline `code` in prose rides the chip too. A word inside a sentence is
+     neither a control nor a sample: on a white page a near-black chip mid-
+     paragraph reads as a hole punched in the text. */
+  --netscli-chip-code-fg: var(--netscli-code-inline-fg);
 
   /* ---- Ink on a dark surface -------------------------------------------
    *
@@ -141,6 +145,9 @@ html[data-theme='light'] {
   --netscli-chip-fg-muted: #596478;
   --netscli-chip-raised: #f2f5fa;
   --netscli-chip-lift-rgb: 17, 24, 39;
+  /* 8.66:1 on the light chip. The dark theme's #86efac is a light-on-dark
+     green and measures 1.5:1 there, so it cannot simply carry over. */
+  --netscli-chip-code-fg: #0e5122;
 
   /* Elevation on a light page: the hairline channel, not black, and much
      shallower. See the scale above. */

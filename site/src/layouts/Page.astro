@@ -123,6 +123,12 @@ const shouldNoindex = noindex || isPreviewBuild;
             ? 'light'
             : 'dark';
       document.documentElement.dataset.theme = theme;
+      // What the reader CHOSE, as distinct from what is applied: 'auto'
+      // resolves to light or dark above, and the theme control has to show
+      // which of the three is selected. Set here rather than by the control's
+      // own script so the right icon is correct on first paint.
+      document.documentElement.dataset.themeChoice =
+        stored === 'light' || stored === 'dark' ? stored : 'auto';
     } catch {
       // Private mode, or storage blocked. Falling through leaves the dark
       // default, which is what an unthemed page has always rendered.
