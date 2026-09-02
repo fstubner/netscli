@@ -16,18 +16,7 @@
     padding-inline-start: max(0.65rem, env(safe-area-inset-left)) !important;
     padding-inline-end: max(0.5rem, env(safe-area-inset-right)) !important;
 
-  }
-
-  .docs-header-search {
-
-
-
-
-
-    margin-left: auto !important;
-  }
-
-  .docs-header-search site-search,
+  }.docs-header-search site-search,
   .docs-header-search site-search button[data-open-modal] {
     width: 2.5rem !important;
     max-width: 2.5rem !important;
@@ -42,16 +31,6 @@
   }.sidebar-pane {
     inset-block-start: var(--sl-nav-height) !important;
   }}@media (max-width: 71.99rem) {
-  :root {
-    /* --netscli-mobile-docs-nav-height is gone with the section-nav row it
-       measured; the contents bar and the main frame now offset from
-       --sl-nav-height alone. See PageSidebar.astro. */
-    --netscli-mobile-toc-bar-height: 2.625rem;
-  }
-
-  html[data-has-toc] {
-    --sl-mobile-toc-height: var(--netscli-mobile-toc-bar-height) !important;
-  }
 
   .right-sidebar-container {
     display: block !important;
@@ -72,3 +51,4 @@
     overflow: visible !important;
     border: 0 !important;
   }
+}

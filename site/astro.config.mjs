@@ -55,10 +55,6 @@ export default defineConfig({
       // rules' cascade dependency first.
       customCss: [
         './src/styles/tokens.css',
-        // The whole colour palette, both themes. First on purpose: everything
-        // after it reads these tokens, and re-theming for another project
-        // should be a change to this one file.
-        './src/styles/starlight/00-theme-tokens.css',
         './src/styles/starlight/01-tokens-and-header.css',
         './src/styles/starlight/02-search-and-sidebar-base.css',
         './src/styles/starlight/03-shell-layout-base.css',
@@ -92,6 +88,10 @@ export default defineConfig({
         // and `code`. See the file for why that is unavoidable today.
         './src/styles/starlight/29-callout-contrast.css',
         './src/styles/starlight/30-scroll-and-search-offline.css',
+        // The region files that replace the numbered stack above, one per
+        // part of the docs shell. See src/styles/docs/theme.css.
+        './src/styles/docs/theme.css',
+        './src/styles/docs/base.css',
         // The theme select, shared with the landing bar, which imports the
         // same file in Page.astro. Last on purpose: it is the control's
         // definition rather than an override of one, and it has to outrank

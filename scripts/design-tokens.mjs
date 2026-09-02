@@ -60,13 +60,11 @@ const TARGETS = [
     // tokens.css carries the brand accent under `:root`; the Starlight file
     // reaches it with `--sl-color-accent: var(--netscli-accent)`, which is why
     // values are resolved through one level of var() before use.
-    // 00-theme-tokens.css holds the per-theme palette; 01 keeps the layout
-    // tokens the shared `:root` block needs. Both are read because a value can
-    // resolve across them.
+    // docs/theme.css holds the per-theme palette and the docs layout tokens;
+    // both files are read because a value can resolve across them.
     css: [
       'site/src/styles/tokens.css',
-      'site/src/styles/starlight/00-theme-tokens.css',
-      'site/src/styles/starlight/01-tokens-and-header.css',
+      'site/src/styles/docs/theme.css',
     ],
     json: 'site/design-tokens.json',
     themes: { dark: "html[data-theme='dark']", light: "html[data-theme='light']" },

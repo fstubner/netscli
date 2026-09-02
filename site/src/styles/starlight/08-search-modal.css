@@ -1,14 +1,5 @@
 /* Final modal/accessibility adjustments. Keep the search dialog flat,
    contain wheel scrolling inside results, and preserve WCAG-minded contrast. */
-html:has(body[data-search-modal-open]) {
-  overflow: hidden;
-  overscroll-behavior: none;
-}
-
-body[data-search-modal-open] {
-  overflow: hidden;
-  overscroll-behavior: none;
-}
 
 site-search dialog {
   overflow: hidden !important;

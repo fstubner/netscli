@@ -46,21 +46,7 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='true']),
 html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='page']),
 html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location']) {
   color: #0e7a33 !important;
-}/* Every link's border track sits on the rail, and the active one lights up.
-   The rail is the <ul>'s inline-start border; the list item adds 0.5rem of
-   inline padding, so a border on the link landed 7.8px inside the rail --
-   the highlight floated in the gap instead of marking the rail. Pulling the
-   link back by that padding plus the rail's own width puts the two in the
-   same place, and the matching padding increase keeps the text still. */
-.sidebar-content :where(details > ul a) {
-
-
-
-
-  background-clip: border-box !important;
-}
-
-.sidebar-content a[aria-current='page'] {
+}.sidebar-content a[aria-current='page'] {
   border-inline-start-color: var(--netscli-accent) !important;
   background: rgba(var(--netscli-accent-rgb), 0.12) !important;
   box-shadow: none !important;
