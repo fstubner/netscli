@@ -300,9 +300,26 @@ const { hero, social } = site;
   box-shadow:0 0 12px rgba(var(--netscli-accent-rgb),.08);
   overflow:visible;
 }
+/* One control height for the whole CTA block.
+ *
+ * The button carries two lines and the command chips carry one, so left to
+ * their content they came out 50px against 38px -- three controls in a small
+ * area at two different heights, which reads as a mistake rather than as
+ * hierarchy. 44px fits the button's two lines (13px label + 11px cue plus
+ * padding) without inflating the chips much beyond the 38px they were.
+ *
+ * Set on the wrapper and the chips rather than on the inner anchor, and
+ * box-sizing is border-box globally, so the number is the outer height on
+ * both -- borders included, which is where the button's extra 2px lived. */
+.hero-cta{
+  --netscli-cta-height:44px;
+}
+.hero-primary-wrap{
+  min-height:var(--netscli-cta-height);
+}
 .hero-primary,
 .hero-primary-menu{
-  min-height:34px;
+  min-height:calc(var(--netscli-cta-height) - 2px);
   display:inline-flex;align-items:center;justify-content:center;
   background:transparent;
   background-image:none;
@@ -315,6 +332,10 @@ const { hero, social } = site;
   justify-content:center;
   gap:0;
   min-width:0;padding:6px 10px 7px 13px;border-radius:0;
+  /* The label inherits body's 1.6, which makes a 13px line 21px tall and
+     pushed the two-line button to 50px against the chips' 44. At 1.15 the
+     label is 15px and the button lands on the shared height. */
+  line-height:1.15;
   text-decoration:none;font-size:.82rem;font-weight:760;
   letter-spacing:.005em;
   font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;
@@ -434,7 +455,7 @@ const { hero, social } = site;
 .hero-desktop-menu a:hover{background:rgba(var(--netscli-accent-rgb),.12);color:#1ec88c}
 .hero-command{
   position:relative;display:grid;grid-template-columns:minmax(0,1fr);
-  align-items:center;gap:10px;min-height:36px;
+  align-items:center;gap:10px;min-height:var(--netscli-cta-height);
   padding:8px 58px 8px 14px;border-radius:9px;
   /* A chip, not a code surface: dark in the dark theme, light in the light
      one, so it carries the same weight as the Desktop app button beside it.
