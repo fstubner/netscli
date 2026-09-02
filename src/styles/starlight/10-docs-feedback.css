@@ -44,12 +44,6 @@
 }
 
 #starlight__search .pagefind-ui__button {
-}
-
-.sl-markdown-content .expressive-code {
-  --ec-codePadBlk: 0.62rem;
-  --netscli-code-copy-inset: 0.48rem;
-  margin-block: 0.9rem 1.2rem;
 }html[data-theme='light'] #starlight__search .pagefind-ui__search-input {
   background: #ffffff !important;
   box-shadow: none !important;

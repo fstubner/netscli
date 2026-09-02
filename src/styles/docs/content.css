@@ -1,0 +1,235 @@
+/* Docs content: the prose in .sl-markdown-content -- links, headings,
+ * inline code, callouts -- and the previous/next pagination under it.
+ * Code blocks are docs/code.css; tables are docs/tables.css.
+ *
+ * Unlayered on purpose; see docs/theme.css.
+ */
+
+.sl-markdown-content {
+  max-width: 100%;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.sl-markdown-content p,
+.sl-markdown-content li,
+.sl-markdown-content td,
+.sl-markdown-content th {
+  max-width: 100%;
+}
+
+.sl-markdown-content p,
+.sl-markdown-content li {
+  overflow-wrap: anywhere;
+}
+
+.sl-markdown-content h2,
+.sl-markdown-content h3 {
+  letter-spacing: 0;
+}
+
+/* Anchors land under the sticky header without this; the smooth scroll
+   it pairs with is in docs/base.css. */
+.sl-markdown-content :is(h1, h2, h3, h4, h5, h6)[id],
+.sl-markdown-content :target {
+  scroll-margin-top: calc(var(--sl-nav-height) + 1.25rem);
+}
+
+/* Markers the table script reads (src/scripts/docs-tables.ts); never shown. */
+.sl-markdown-content [data-netscli-table] {
+  display: none;
+}
+
+/* ---- Links ----------------------------------------------------------- */
+.sl-markdown-content a {
+  text-underline-offset: 3px;
+}
+
+.sl-markdown-content a,
+.sl-markdown-content .sl-anchor-link,
+.sl-markdown-content .sl-anchor-link:focus,
+.sl-markdown-content .sl-heading-wrapper:hover .sl-anchor-link {
+  color: var(--netscli-accent);
+}
+
+.sl-markdown-content a:hover {
+  color: var(--netscli-accent-bright);
+}
+
+.sl-markdown-content .sl-anchor-icon > svg {
+  color: var(--netscli-accent);
+  height: var(--sl-anchor-icon-size);
+}
+
+html[data-theme='light'] .sl-markdown-content a,
+html[data-theme='light'] .sl-markdown-content .sl-anchor-link,
+html[data-theme='light'] .sl-markdown-content .sl-anchor-link:focus,
+html[data-theme='light'] .sl-markdown-content .sl-heading-wrapper:hover .sl-anchor-link {
+  color: var(--sl-color-accent);
+}
+
+html[data-theme='light'] .sl-markdown-content a:hover {
+  color: #0e5a24;
+}
+
+/* External links carry an arrow instead of Starlight's masked icon. */
+.external-link,
+.sl-markdown-content a[href^='http'] {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+}
+
+.external-link::after,
+.sl-markdown-content a[href^='http']::after {
+  content: "↗";
+  width: auto;
+  height: auto;
+  background: none;
+  -webkit-mask: none;
+  mask: none;
+  color: var(--netscli-accent);
+  font-size: 0.92em;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.external-link:hover::after,
+.sl-markdown-content a[href^='http']:hover::after {
+  color: var(--netscli-accent-bright);
+}
+
+html[data-theme='light'] .external-link::after,
+html[data-theme='light'] .sl-markdown-content a[href^='http']::after {
+  color: var(--sl-color-accent);
+}
+
+html[data-theme='light'] .external-link:hover::after,
+html[data-theme='light'] .sl-markdown-content a[href^='http']:hover::after {
+  color: #0e5a24;
+}
+
+/* ---- Inline code ----------------------------------------------------- */
+.sl-markdown-content :not(pre) > code {
+  border: 1px solid var(--netscli-code-border);
+  border-radius: 0.24rem;
+  font-family: var(--__sl-font-mono);
+  font-size: 0.9em;
+  line-height: 1.45;
+  padding: 0.08em 0.34em;
+  white-space: nowrap;
+  background: var(--netscli-code-bg);
+  color: var(--netscli-code-inline-fg);
+}
+
+/* ---- Callouts -------------------------------------------------------- */
+/* Doubled class for specificity over the link and code rules above: a
+   callout's ink is its own, and a green link or a dark code chip inside a
+   caution box failed contrast. */
+.sl-markdown-content .starlight-aside.starlight-aside a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.sl-markdown-content .starlight-aside.starlight-aside :not(pre) > code {
+  color: inherit;
+  background: transparent;
+  border: 1px solid var(--sl-color-asides-border);
+}
+
+/* ---- Pagination ------------------------------------------------------ */
+.pagination-links a {
+  align-items: flex-start;
+  color: var(--sl-color-gray-2);
+  background: transparent;
+  background-image: none;
+  box-shadow: none;
+}
+
+.pagination-links a .link-title {
+  color: var(--sl-color-white);
+}
+
+.pagination-links a > svg {
+  margin-block-start: 0.12rem;
+}
+
+.pagination-links a[rel='prev'] > span {
+  order: 2;
+}
+
+.pagination-links a[rel='prev'] > svg {
+  order: 1;
+}
+
+.pagination-links a:hover,
+.pagination-links a:focus-visible {
+  color: var(--sl-color-white);
+  outline: 0;
+  background: transparent;
+  background-image: none;
+  box-shadow: none;
+  border-color: var(--netscli-panel-hover-border);
+}
+
+.pagination-links a:hover :where(.link-subtitle, span:not(.link-title)),
+.pagination-links a:focus-visible :where(.link-subtitle, span:not(.link-title)) {
+  color: inherit;
+}
+
+.pagination-links a :where(svg, .arrow),
+.pagination-links a:hover :where(svg, .arrow),
+.pagination-links a:focus-visible :where(svg, .arrow) {
+  color: var(--sl-color-accent);
+}
+
+html[data-theme='light'] .pagination-links a:hover,
+html[data-theme='light'] .pagination-links a:focus-visible {
+  color: var(--sl-color-white);
+  background: transparent;
+  background-image: none;
+  border-color: rgba(var(--netscli-accent-rgb), 0.22);
+  box-shadow: none;
+}
+
+/* ---- Responsive ------------------------------------------------------ */
+@media (min-width: 72rem) {
+  .sl-markdown-content {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 71.99rem) {
+  .sl-markdown-content {
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+}
+
+@media (max-width: 52rem) {
+  .sl-markdown-content {
+    width: 100%;
+  }
+}
+
+@media (max-width: 49.99rem) {
+  .main-pane .sl-markdown-content,
+  .main-pane .sl-markdown-content p,
+  .main-pane .sl-markdown-content li,
+  .main-pane .sl-heading-wrapper {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .sl-markdown-content {
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-wrap: anywhere;
+  }
+
+  .sl-markdown-content > * {
+    max-width: 100%;
+  }
+}

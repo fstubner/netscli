@@ -1,21 +1,5 @@
 /* Consistency pass: final interaction and responsive guardrails. */
 
-.pagination-links a,
-.pagination-links a:hover,
-.pagination-links a:focus-visible,
-.pagination-links a:active,
-.sl-markdown-content .pagination-links a,
-.sl-markdown-content .pagination-links a:hover {
-  background: transparent !important;
-  background-image: none !important;
-  box-shadow: none !important;
-}
-
-.pagination-links a:hover,
-.pagination-links a:focus-visible {
-  border-color: var(--netscli-panel-hover-border) !important;
-}
-
 /* `.link-title` is excluded on purpose.
  *
  * This existed to stop a child re-colouring itself on hover and breaking the
@@ -23,86 +7,6 @@
  * than the label at rest (see 07-docs-interaction-b.css), and `inherit` here
  * collapsed the two back together the moment the pointer touched the card --
  * so the distinction existed everywhere except where a reader was looking. */
-.pagination-links a:hover :where(.link-subtitle, span:not(.link-title)),
-.pagination-links a:focus-visible :where(.link-subtitle, span:not(.link-title)) {
-  color: inherit !important;
-}
-
-.pagination-links a :where(svg, .arrow),
-.pagination-links a:hover :where(svg, .arrow),
-.pagination-links a:focus-visible :where(svg, .arrow) {
-  color: var(--sl-color-accent) !important;
-}
-
-.download-count,
-.download-count:hover,
-.download-count:focus-visible,
-a.download-count,
-a.download-count:hover,
-a.download-count:focus-visible,
-[data-download-count],
-[data-download-count]:hover,
-[data-download-count]:focus-visible {
-  text-decoration: none !important;
-  border-bottom: 0 !important;
-}
-
-.download-count[title],
-[data-download-count][title] {
-  cursor: help !important;
-}
-
-.sl-markdown-content table th,
-.content-panel table th {
-  font-weight: 700 !important;
-}
-
-.sl-markdown-content table tbody th,
-.sl-markdown-content table tbody td:first-child,
-.content-panel table tbody th,
-.content-panel table tbody td:first-child {
-  font-weight: 400 !important;
-}
-
-@media (max-width: 42rem) {
-  .sl-markdown-content table,
-  .content-panel table {
-    display: table !important;
-    border: 1px solid rgba(var(--netscli-hairline-rgb), 0.18) !important;
-    background: var(--sl-color-bg-inline-code) !important;
-    overflow: visible !important;
-  }
-
-  .sl-markdown-content table thead,
-  .content-panel table thead {
-    display: table-header-group !important;
-  }
-
-  .sl-markdown-content table tbody,
-  .content-panel table tbody {
-    display: table-row-group !important;
-  }
-
-  .sl-markdown-content table tr,
-  .content-panel table tr {
-    display: table-row !important;
-    padding: 0 !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-  }
-
-  .sl-markdown-content table td,
-  .sl-markdown-content table th,
-  .content-panel table td,
-  .content-panel table th {
-    display: table-cell !important;
-    min-width: 10rem !important;
-    padding: 0.65rem 0.85rem !important;
-    border-bottom: 1px solid rgba(var(--netscli-hairline-rgb), 0.14) !important;
-    white-space: normal !important;
-  }
-}
 
 @media (max-width: 49.99rem) {
 
@@ -115,50 +19,6 @@ a.download-count:focus-visible,
      The exclusion list used to name `.docs-mobile-section-menu a` first, for
      the mobile section dropdown that lived in this component and had lost its
      marker the same way. That row is gone; see PageSidebar.astro. */
-
-  .sl-markdown-content .table-wrapper,
-  .content-panel .table-wrapper,
-  .sl-markdown-content :has(> table),
-  .content-panel :has(> table) {
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-  }
-
-  .sl-markdown-content table,
-  .content-panel table {
-    display: table !important;
-    min-width: 42rem !important;
-    width: max-content !important;
-  }
-
-  .sl-markdown-content thead,
-  .content-panel thead {
-    display: table-header-group !important;
-  }
-
-  .sl-markdown-content tbody,
-  .content-panel tbody {
-    display: table-row-group !important;
-  }
-
-  .sl-markdown-content tr,
-  .content-panel tr {
-    display: table-row !important;
-  }
-
-  .sl-markdown-content th,
-  .sl-markdown-content td,
-  .content-panel th,
-  .content-panel td {
-    display: table-cell !important;
-    white-space: normal !important;
-  }
-
-  .sl-markdown-content td::before,
-  .content-panel td::before {
-    content: none !important;
-    display: none !important;
-  }
 
   site-search dialog {
     width: min(100vw - 1rem, 44rem) !important;

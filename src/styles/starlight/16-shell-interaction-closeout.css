@@ -53,19 +53,6 @@ html[data-theme='light'] #starlight__search .pagefind-ui__drawer:has(.pagefind-u
     linear-gradient(0deg, rgba(209, 213, 219, 0.86), rgba(209, 213, 219, 0.32) 44%, rgba(209, 213, 219, 0)) !important;
 }
 
-.pagination-links a:hover,
-.pagination-links a:focus-visible {
-
-  color: var(--sl-color-white) !important;
-  outline: 0 !important;
-}
-
-html[data-theme='light'] .pagination-links a:hover,
-html[data-theme='light'] .pagination-links a:focus-visible {
-
-  color: var(--sl-color-white) !important;
-}
-
 #starlight__search .pagefind-ui__button {
   width: fit-content !important;
   max-width: max-content !important;
