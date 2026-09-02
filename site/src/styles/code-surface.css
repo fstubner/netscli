@@ -83,6 +83,13 @@
      neither a control nor a sample: on a white page a near-black chip mid-
      paragraph reads as a hole punched in the text. */
   --netscli-chip-code-fg: var(--netscli-code-inline-fg);
+  /* Accent INSIDE a chip. The install band re-points the accent to its
+     on-dark values, and a control sitting on a light chip on that band
+     inherited them -- the Download button's hover was #86efac on a light
+     row, 1.62:1. */
+  --netscli-chip-accent: var(--netscli-ondark-accent);
+  --netscli-chip-accent-rgb: var(--netscli-ondark-accent-rgb);
+  --netscli-chip-accent-bright: var(--netscli-ondark-accent-bright);
 
   /* ---- Ink on a dark surface -------------------------------------------
    *
@@ -157,6 +164,9 @@ html[data-theme='light'] {
   /* 8.66:1 on the light chip. The dark theme's #86efac is a light-on-dark
      green and measures 1.5:1 there, so it cannot simply carry over. */
   --netscli-chip-code-fg: #0e5122;
+  --netscli-chip-accent: #146b2e;
+  --netscli-chip-accent-rgb: 20, 107, 46;
+  --netscli-chip-accent-bright: #0e5122;
 
   /* Elevation on a light page: the hairline channel, not black, and much
      shallower. See the scale above. */
@@ -224,5 +234,11 @@ html[data-theme='light'] {
   --netscli-text-muted: var(--netscli-chip-fg-muted);
   --netscli-surface-raised: var(--netscli-chip-raised);
   --netscli-lift-rgb: var(--netscli-chip-lift-rgb);
+  /* The accent too, not just the ink. A control sitting on a chip -- the
+     install rows' Download button -- otherwise inherits the band's on-dark
+     accent and hovers to #86efac on a light row: measured 1.19:1. */
+  --netscli-accent: var(--netscli-chip-accent);
+  --netscli-accent-rgb: var(--netscli-chip-accent-rgb);
+  --netscli-accent-bright: var(--netscli-chip-accent-bright);
   color: var(--netscli-text);
 }

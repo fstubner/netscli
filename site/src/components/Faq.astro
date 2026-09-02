@@ -116,12 +116,14 @@ const faqGroups = grouped.sort(
   align-items:center;
   min-height:40px;
   padding:8px 48px 8px 12px;
-  /* Dark in both themes -- see the code-surface note in tokens.css. The
-     LABEL beside it stays on the card, so only the chip inverts. */
-  border:1px solid var(--netscli-code-border);
+  /* A chip, so it follows the theme like the hero and install ones. It was
+     pinned dark in both themes, which left black bars running down a light
+     FAQ answer once everything around them had gone light. The LABEL beside
+     it sits on the card either way. */
+  border:1px solid var(--netscli-chip-border);
   border-radius:5px;
-  background:var(--netscli-code-bg);
-  color:var(--netscli-code-fg);
+  background:var(--netscli-chip-bg);
+  color:var(--netscli-chip-fg);
   white-space:pre;
   overflow-x:auto;
 }
@@ -138,7 +140,7 @@ const faqGroups = grouped.sort(
   word-break:normal;
 }
 .faq .answer .faq-command code{
-  color:var(--netscli-code-fg);
+  color:var(--netscli-chip-fg);
   white-space:pre;
   overflow-x:auto;
   overflow-wrap:normal;
