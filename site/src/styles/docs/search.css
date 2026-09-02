@@ -1,0 +1,203 @@
+/* Docs search: the dialog itself, its close button, and how the two lay
+ * out per width. The input row and the empty/no-results states are
+ * docs/search-input.css; the results are docs/search-results.css.
+ *
+ * Pagefind renders everything inside #starlight__search at runtime, so
+ * none of it exists in the built pages; the screenshot check opens the
+ * dialog with a query for the results state, and the empty and message
+ * states are verified only by reading.
+ *
+ * Loads after docs/search-input.css on purpose: the phone-width block at
+ * the end restates a few of that file's properties and has to win them.
+ *
+ * Unlayered on purpose; see docs/theme.css.
+ */
+
+/* ---- Dialog ---------------------------------------------------------- */
+site-search dialog {
+  border: 1px solid rgba(var(--netscli-hairline-rgb), 0.34);
+  border-radius: 8px;
+  box-shadow:
+    0 34px 90px rgba(0, 0, 0, 0.62),
+    0 0 0 1px rgba(var(--netscli-lift-rgb), 0.02) inset;
+  overflow: hidden;
+  background: #252b36;
+}
+
+site-search dialog::backdrop {
+  background: rgba(5, 7, 11, 0.72);
+  -webkit-backdrop-filter: blur(7px) saturate(0.8);
+  backdrop-filter: blur(7px) saturate(0.8);
+}
+
+site-search dialog .dialog-frame {
+  gap: 0.9rem;
+  overflow: hidden;
+}
+
+site-search dialog .search-container {
+  min-height: 0;
+  overflow: hidden;
+}
+
+html[data-theme='light'] site-search dialog {
+  box-shadow:
+    0 30px 70px rgba(var(--netscli-hairline-rgb), 0.18),
+    0 0 0 1px rgba(255, 255, 255, 0.72) inset;
+  background: #f6f8fa;
+  border-color: rgba(var(--netscli-hairline-rgb), 0.24);
+}
+
+html[data-theme='light'] site-search dialog .dialog-frame {
+  background: #f6f8fa;
+}
+
+/* ---- Close button ---------------------------------------------------- */
+site-search button[data-close-modal] {
+  position: relative;
+  z-index: 8;
+  color: #bdfded;
+  border-radius: 4px;
+}
+
+site-search button[data-close-modal]:hover,
+site-search button[data-close-modal]:focus-visible {
+  outline: 0;
+  background: rgba(var(--netscli-accent-rgb), 0.12);
+  color: var(--sl-color-white);
+}
+
+html[data-theme='light'] site-search button[data-close-modal] {
+  color: #344054;
+}
+
+html[data-theme='light'] site-search button[data-close-modal]:hover,
+html[data-theme='light'] site-search button[data-close-modal]:focus-visible {
+  background: rgba(var(--netscli-accent-rgb), 0.1);
+  color: var(--sl-color-white);
+}
+
+/* ---- Responsive ------------------------------------------------------ */
+/* Phone: the dialog fills the viewport minus a gutter and the frame becomes
+   a grid with the close button beside the input. */
+@media (max-width: 49.99rem) {
+  site-search dialog {
+    border-radius: 8px;
+    max-width: calc(100vw - 1rem);
+    margin: 0.5rem auto;
+    width: min(100vw - 1rem, 44rem);
+    max-height: calc(100dvh - 1rem);
+    min-height: auto;
+    overflow: auto;
+  }
+
+  site-search dialog .dialog-frame {
+    align-content: stretch;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "search close"
+      "drawer drawer";
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+
+  site-search dialog .dialog-frame > * {
+    align-self: start;
+  }
+
+  site-search dialog .search-container,
+  #starlight__search {
+    max-height: 100%;
+    height: 100%;
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+    min-width: 0;
+  }
+
+  site-search dialog .search-container,
+  site-search dialog #starlight__search,
+  site-search dialog .pagefind-ui,
+  site-search dialog .pagefind-ui__form {
+    grid-area: search;
+    max-width: none;
+  }
+
+  site-search dialog :where(.search-container, #starlight__search, .pagefind-ui, .pagefind-ui__form) {
+    width: 100%;
+  }
+
+  #starlight__search .pagefind-ui__form {
+    width: 100%;
+  }
+
+  site-search dialog .pagefind-ui__search-input {
+    width: 100%;
+    max-width: none;
+  }
+
+  #starlight__search .pagefind-ui__search-input {
+    padding-inline-end: 4.75rem;
+  }
+
+  #starlight__search .pagefind-ui__search-clear {
+    position: absolute;
+    inset-inline-end: 0.35rem;
+    inset-block-start: 0.25rem;
+  }
+
+  site-search button[data-close-modal] {
+    inset-block-start: 1.15rem;
+    inset-inline-end: 1.15rem;
+    height: 2.5rem;
+    padding-inline: 0.55rem;
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  site-search dialog button[data-close-modal],
+  site-search dialog button[aria-label="Cancel"],
+  site-search dialog .search-cancel {
+    grid-area: close;
+    align-self: start;
+    justify-self: end;
+    margin: 0;
+    min-height: 2.75rem;
+  }
+}
+
+/* From 42rem the close button floats over the input's right end. Between
+   42 and 50rem both this block and the one above apply; this one is later
+   and wins the shared properties, as it did in the old stack. */
+@media (min-width: 42rem) {
+  site-search dialog .dialog-frame {
+    padding: 1rem;
+  }
+
+  site-search button[data-close-modal] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    inset-block-start: 1rem;
+    inset-inline-end: 1rem;
+    height: 3rem;
+    min-height: 3rem;
+    padding-inline: 0.72rem;
+    color: var(--sl-color-gray-2);
+    font-size: 0.9rem;
+    font-weight: 650;
+    line-height: 1;
+    z-index: 8;
+  }
+
+  #starlight__search {
+    --sl-search-cancel-space: 4.8rem;
+  }
+
+  #starlight__search .pagefind-ui__search-input {
+    width: calc(100% - var(--sl-search-cancel-space));
+  }
+}

@@ -1,0 +1,263 @@
+/* Docs search results: the scrolling drawer, each result card with its
+ * nested sub-results, the highlighted matches and the "load more" link.
+ * The dialog and input row are docs/search.css.
+ *
+ * Unlayered on purpose; see docs/theme.css.
+ */
+
+/* ---- Drawer ---------------------------------------------------------- */
+#starlight__search .pagefind-ui__results-area {
+  overscroll-behavior: contain;
+  flex: none;
+  margin-top: 1rem;
+}
+
+#starlight__search .pagefind-ui__drawer {
+  display: block;
+  gap: 0;
+  box-sizing: border-box;
+  width: 100%;
+  padding-inline: 0 0.65rem;
+  margin-block-start: 1rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  position: relative;
+}
+
+#starlight__search .pagefind-ui__results-area,
+#starlight__search .pagefind-ui__results,
+#starlight__search .pagefind-ui__result,
+#starlight__search .pagefind-ui__result-inner,
+#starlight__search .pagefind-ui__button {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+#starlight__search .pagefind-ui__results-area,
+#starlight__search .pagefind-ui__results,
+#starlight__search .pagefind-ui__result,
+#starlight__search .pagefind-ui__result-inner {
+  width: 100%;
+  max-width: 100%;
+}
+
+#starlight__search .pagefind-ui__message,
+#starlight__search .pagefind-ui__results {
+  margin-inline: 0;
+}
+
+/* Fades at the drawer's top and bottom edges while there is more to
+   scroll. The sticky pseudo-elements are always there; the overflow classes
+   (set by scripts/docs-search-keys.ts) switch their opacity. */
+#starlight__search .pagefind-ui__drawer:has(.pagefind-ui__result)::before,
+#starlight__search .pagefind-ui__drawer:has(.pagefind-ui__result)::after {
+  height: 1.35rem;
+  transition: opacity 120ms linear;
+}
+
+#starlight__search .pagefind-ui__drawer:has(.pagefind-ui__result)::before {
+  margin-block-end: -1.35rem;
+  background: linear-gradient(180deg, rgba(8, 12, 18, 0.58), rgba(8, 12, 18, 0.22) 44%, rgba(8, 12, 18, 0));
+}
+
+#starlight__search .pagefind-ui__drawer:has(.pagefind-ui__result)::after {
+  margin-block-start: -1.35rem;
+  background: linear-gradient(0deg, rgba(8, 12, 18, 0.54), rgba(8, 12, 18, 0.2) 44%, rgba(8, 12, 18, 0));
+}
+
+html[data-theme='light'] #starlight__search .pagefind-ui__drawer:has(.pagefind-ui__result)::before {
+  background: linear-gradient(180deg, rgba(209, 213, 219, 0.9), rgba(209, 213, 219, 0.36) 44%, rgba(209, 213, 219, 0));
+}
+
+html[data-theme='light'] #starlight__search .pagefind-ui__drawer:has(.pagefind-ui__result)::after {
+  background: linear-gradient(0deg, rgba(209, 213, 219, 0.86), rgba(209, 213, 219, 0.32) 44%, rgba(209, 213, 219, 0));
+}
+
+/* Both fades start hidden; the overflow classes below reveal them. The
+   heights and gradients here are the no-results fallback: with results
+   present the :has() rules above, more specific, replace them. */
+#starlight__search .pagefind-ui__drawer::before,
+#starlight__search .pagefind-ui__drawer::after {
+  content: "";
+  position: sticky;
+  z-index: 5;
+  display: block;
+  height: 1.15rem;
+  pointer-events: none;
+  opacity: 0;
+}
+
+#starlight__search .pagefind-ui__drawer::before {
+  top: 0;
+  margin-bottom: -1.15rem;
+  background: linear-gradient(180deg, rgba(17, 22, 29, 0.9), rgba(17, 22, 29, 0));
+}
+
+#starlight__search .pagefind-ui__drawer::after {
+  bottom: 0;
+  margin-top: -1.15rem;
+  background: linear-gradient(0deg, rgba(17, 22, 29, 0.9), rgba(17, 22, 29, 0));
+}
+
+html[data-theme='light'] #starlight__search .pagefind-ui__drawer::before {
+  background: linear-gradient(180deg, rgba(244, 246, 248, 0.94), rgba(244, 246, 248, 0));
+}
+
+html[data-theme='light'] #starlight__search .pagefind-ui__drawer::after {
+  background: linear-gradient(0deg, rgba(244, 246, 248, 0.94), rgba(244, 246, 248, 0));
+}
+
+#starlight__search .pagefind-ui__drawer.netscli-search-overflow-top::before,
+#starlight__search .pagefind-ui__drawer.netscli-search-overflow-bottom::after {
+  opacity: 1;
+}
+
+/* ---- Result cards ---------------------------------------------------- */
+#starlight__search .pagefind-ui__result {
+  display: block;
+  padding: 0;
+  border: 0;
+}
+
+#starlight__search .pagefind-ui__result + .pagefind-ui__result {
+  margin-top: 1rem;
+}
+
+#starlight__search .pagefind-ui__result-inner {
+  overflow: hidden;
+  border: 1px solid rgba(var(--netscli-hairline-rgb), 0.16);
+  border-radius: 8px;
+  background: var(--netscli-panel-bg);
+  box-shadow:
+    0 1px 0 rgba(var(--netscli-lift-rgb), 0.025) inset,
+    0 12px 26px rgba(0, 0, 0, 0.16);
+  margin-top: 0;
+}
+
+#starlight__search .pagefind-ui__result-title:not(:where(.pagefind-ui__result-nested *)),
+#starlight__search .pagefind-ui__result-nested,
+#starlight__search .pagefind-ui__result-tags {
+  border: 0;
+  border-radius: 0;
+  background: var(--netscli-panel-bg);
+}
+
+/* The page-title row is a shade lighter than the sub-results under it, with
+   a hairline between. */
+#starlight__search .pagefind-ui__result-title:not(:where(.pagefind-ui__result-nested *)) {
+  background: #252b36;
+  box-shadow: inset 0 -1px 0 rgba(var(--netscli-hairline-rgb), 0.13);
+}
+
+#starlight__search .pagefind-ui__result-nested {
+  box-shadow: inset 0 1px 0 rgba(var(--netscli-hairline-rgb), 0.1);
+}
+
+#starlight__search .pagefind-ui__result-title:not(:where(.pagefind-ui__result-nested *)):hover,
+#starlight__search .pagefind-ui__result-title:not(:where(.pagefind-ui__result-nested *)):focus-within,
+#starlight__search .pagefind-ui__result-nested:hover,
+#starlight__search .pagefind-ui__result-nested:focus-within {
+  outline: 0;
+  background: #2b313d;
+  box-shadow:
+    inset 2px 0 0 rgba(var(--netscli-accent-rgb), 0.74),
+    inset 0 -1px 0 rgba(var(--netscli-hairline-rgb), 0.13);
+}
+
+#starlight__search .pagefind-ui__result-tags {
+  background: var(--netscli-panel-bg);
+  box-shadow: inset 0 1px 0 rgba(var(--netscli-hairline-rgb), 0.1);
+}
+
+#starlight__search mark {
+  color: var(--netscli-accent-high);
+  background: rgba(var(--netscli-accent-rgb), 0.16);
+  border-radius: 3px;
+  padding-inline: 0.12em;
+}
+
+html[data-theme='light'] #starlight__search .pagefind-ui__result-inner {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.8) inset,
+    0 10px 24px rgba(var(--netscli-hairline-rgb), 0.07);
+  background: var(--sl-color-black);
+  border-color: rgba(var(--netscli-hairline-rgb), 0.14);
+}
+
+html[data-theme='light'] #starlight__search .pagefind-ui__result-title:not(:where(.pagefind-ui__result-nested *)) {
+  background: #eef2f4;
+}
+
+html[data-theme='light'] #starlight__search .pagefind-ui__result-nested,
+html[data-theme='light'] #starlight__search .pagefind-ui__result-tags {
+  background: var(--sl-color-black);
+}
+
+html[data-theme='light'] #starlight__search .pagefind-ui__result-link {
+  --pagefind-ui-text: #111827;
+  color: var(--sl-color-white);
+}
+
+html[data-theme='light'] #starlight__search .pagefind-ui__result-excerpt {
+  color: #334155;
+}
+
+html[data-theme='light'] #starlight__search mark {
+  color: var(--sl-color-accent-high);
+  background: var(--sl-color-accent-low);
+}
+
+/* ---- Load more ------------------------------------------------------- */
+#starlight__search .pagefind-ui__button {
+  width: fit-content;
+  max-width: max-content;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 1rem auto 0;
+  padding: 1px 0 2px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--netscli-accent);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: center;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+#starlight__search .pagefind-ui__button:hover,
+#starlight__search .pagefind-ui__button:focus-visible {
+  background: transparent;
+  box-shadow: none;
+  color: var(--netscli-accent-bright);
+  outline: 0;
+}
+
+#starlight__search .pagefind-ui__button.pagefind-ui__hidden {
+  display: none;
+}
+
+/* ---- Responsive ------------------------------------------------------ */
+@media (max-width: 49.99rem) {
+  #starlight__search .pagefind-ui__drawer {
+    grid-column: 1 / -1;
+    width: 100%;
+    max-width: 100%;
+    min-height: 9rem;
+  }
+
+  site-search dialog .pagefind-ui__drawer {
+    grid-area: drawer;
+  }
+}

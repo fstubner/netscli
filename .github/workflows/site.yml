@@ -92,6 +92,9 @@ jobs:
       - name: Dead CSS budget
         working-directory: site
         run: npm run check:css
+      - name: CSS region guard
+        working-directory: site
+        run: npm run check:regions
 
       # Reads the wordmark PNG and checks the token that cancels its
       # transparent left margin still matches it. Needs no build and no

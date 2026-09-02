@@ -47,33 +47,15 @@ export default defineConfig({
         MobileMenuFooter: './src/components/starlight/MobileMenuFooter.astro',
         PageSidebar: './src/components/starlight/PageSidebar.astro',
       },
-      // Split from a single 4,965-line starlight.css into ordered per-pass
-      // files (see docs/ARCHITECTURE.md). Order matters: several later
-      // files intentionally override earlier ones at equal specificity, so
-      // this array must stay in the same relative order as the original
-      // file — do not alphabetize or reorder without checking the affected
-      // rules' cascade dependency first.
+      // One file per region of the docs shell. None uses !important (the five
+      // token remaps in code.css excepted, for inline styles): Starlight's own
+      // CSS is in @layer, so plain rules outrank it. Order matters in two
+      // places only, and each file says so at the top: search-input.css
+      // before search.css, and tables.css before tables-narrow.css. To
+      // re-theme, edit docs/theme.css; to change a region, edit its file.
+      // scripts/css-regions.mjs and css-shadowing.mjs hold this shape.
       customCss: [
         './src/styles/tokens.css',
-        './src/styles/starlight/02-search-and-sidebar-base.css',
-        './src/styles/starlight/05-docs-surfaces.css',
-        './src/styles/starlight/06-docs-interaction-a.css',
-        './src/styles/starlight/07-docs-interaction-b.css',
-        './src/styles/starlight/08-search-modal.css',
-        './src/styles/starlight/09-search-table-fit.css',
-        './src/styles/starlight/10-docs-feedback.css',
-        './src/styles/starlight/16-shell-interaction-closeout.css',
-        './src/styles/starlight/20-docs-shell-closeout.css',
-        './src/styles/starlight/22-mobile-docs-correction.css',
-        './src/styles/starlight/23-regression-guardrails.css',
-        './src/styles/starlight/24-mobile-regression-guardrails.css',
-        './src/styles/starlight/28-final-interaction-guardrails.css',
-        // Loads last on purpose: it has to outrank the `!important` colour
-        // declarations several earlier files make on `.sl-markdown-content a`
-        // and `code`. See the file for why that is unavoidable today.
-        './src/styles/starlight/30-scroll-and-search-offline.css',
-        // The region files that replace the numbered stack above, one per
-        // part of the docs shell. See src/styles/docs/theme.css.
         './src/styles/docs/theme.css',
         './src/styles/docs/base.css',
         './src/styles/docs/shell.css',
@@ -86,6 +68,9 @@ export default defineConfig({
         './src/styles/docs/code.css',
         './src/styles/docs/tables.css',
         './src/styles/docs/tables-narrow.css',
+        './src/styles/docs/search-input.css',
+        './src/styles/docs/search.css',
+        './src/styles/docs/search-results.css',
         // The theme select, shared with the landing bar, which imports the
         // same file in Page.astro. Last on purpose: it is the control's
         // definition rather than an override of one, and it has to outrank
