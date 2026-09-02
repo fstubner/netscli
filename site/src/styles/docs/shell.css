@@ -1,0 +1,248 @@
+/* Docs shell: the frame that holds the two rails and the page, and the
+ * title band at the top of every page.
+ *
+ * The band is `.main-pane > main > .content-panel:first-of-type`. Two
+ * earlier files styled `.main-pane > .content-panel` -- no `main` -- which
+ * matches nothing in Starlight's markup and never rendered; those rules are
+ * not carried over. Unlayered on purpose; see docs/theme.css.
+ */
+
+.page,
+.main-frame,
+.main-pane,
+main,
+.content-panel,
+.sl-container {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.main-frame {
+  padding-top: 0;
+}
+
+.main-pane {
+  background: var(--sl-color-bg);
+}
+
+.content-panel > .sl-container {
+  margin-inline: auto;
+}
+
+/* ---- Title band ---------------------------------------------------- */
+.main-pane > main > .content-panel:first-of-type {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 0;
+  border-bottom: 1px solid var(--sl-color-hairline);
+  background: var(--sl-color-bg);
+}
+
+/* A faint accent wash in the band's top-left corner. */
+.main-pane > main > .content-panel:first-of-type::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 0 0, rgba(var(--netscli-accent-rgb), 0.11), transparent min(25rem, 70vw)),
+    linear-gradient(128deg, rgba(var(--netscli-accent-rgb), 0.045), rgba(30, 220, 255, 0.016) 38%, transparent 72%);
+}
+
+html[data-theme='light'] .main-pane > main > .content-panel:first-of-type::before {
+  background:
+    radial-gradient(circle at 0 0, rgba(var(--netscli-accent-rgb), 0.08), transparent min(24rem, 70vw)),
+    linear-gradient(128deg, rgba(var(--netscli-accent-rgb), 0.035), rgba(30, 220, 255, 0.024) 38%, transparent 72%);
+}
+
+.main-pane > main > .content-panel:first-of-type > .sl-container {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: var(--netscli-docs-hero-height);
+  padding-block: clamp(1.2rem, 2vw, 1.7rem);
+  padding-inline: clamp(1.75rem, 2.2vw, 2.5rem);
+}
+
+.main-pane > main > .content-panel:first-of-type h1 {
+  margin-block: 0;
+}
+
+/* ---- Frame widths -------------------------------------------------- */
+@media (min-width: 72rem) {
+  .main-frame {
+    width: min(calc(100% - (var(--netscli-docs-shell-gutter) * 2)), var(--netscli-docs-frame-width));
+    margin-inline: auto;
+  }
+
+  .content-panel {
+    padding-inline: clamp(1.75rem, 2.2vw, 2.5rem);
+  }
+}
+
+@media (min-width: 72rem) and (max-width: 86rem) {
+  :where([data-has-sidebar][data-has-toc]) .main-pane {
+    width: calc(100% - var(--netscli-docs-toc-width));
+  }
+
+  .content-panel {
+    padding-inline: clamp(1.35rem, 1.8vw, 2rem);
+  }
+
+  .main-frame {
+    padding-inline-start: var(--sl-content-inline-start);
+  }
+}
+
+@media (min-width: 86.01rem) {
+  .main-frame {
+    padding-inline-start: var(--sl-content-inline-start);
+  }
+}
+
+@media (min-width: 108rem) {
+  .main-frame {
+    width: var(--netscli-docs-frame-width);
+  }
+}
+
+@media (min-width: 50rem) and (max-width: 71.99rem) {
+  main {
+    --sl-content-inline-start: 16rem;
+    --sl-sidebar-width: 16rem;
+  }
+
+  .content-panel {
+    padding-inline: clamp(1.25rem, 2.2vw, 1.75rem);
+  }
+
+  .content-panel > .sl-container {
+    width: min(100%, 58rem);
+    margin-inline: auto;
+  }
+}
+
+/* ---- Narrow ---------------------------------------------------------- */
+@media (max-width: 71.99rem) {
+  .main-frame,
+  .main-pane,
+  .content-panel,
+  .content-panel > .sl-container {
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .main-frame,
+  .main-pane {
+    overflow-x: clip;
+  }
+
+  .main-pane > main > .content-panel:first-of-type {
+    min-height: clamp(8rem, 18vw, 10.5rem);
+    margin-top: 0;
+  }
+
+  .main-pane > main > .content-panel:first-of-type > .sl-container {
+    display: flex;
+    align-items: center;
+    min-height: clamp(8rem, 18vw, 10.5rem);
+    padding-block: 1.25rem;
+  }
+
+  .main-pane > main > .content-panel:first-of-type h1 {
+    margin: 0;
+  }
+}
+
+@media (max-width: 52rem) {
+  .page,
+  .main-frame,
+  .main-pane {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  .main-frame {
+    display: block;
+    min-width: 0;
+    margin-inline: 0;
+  }
+
+  /* No padding here: between 50 and 52rem the tablet clamp above wins, and
+     below 50rem the phone rule below does, so a 1rem value the old stack
+     declared at this width never rendered. */
+  .content-panel {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .sl-container {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+}
+
+/* Phone: the header is fixed (docs/header.css), so the frame starts below
+   it, and the page container is measured against the viewport. */
+@media (max-width: 49.99rem) {
+  .main-frame {
+    padding-top: var(--sl-nav-height);
+    width: 100vw;
+    max-width: 100vw;
+    min-width: 0;
+    padding-inline-start: 0;
+    overflow-x: clip;
+  }
+
+  .content-panel {
+    padding-inline: clamp(1rem, 4vw, 1.35rem);
+  }
+
+  .content-panel:first-child {
+    margin-top: 0;
+  }
+
+  .main-pane,
+  .content-panel,
+  .content-panel > .sl-container {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow-wrap: anywhere;
+  }
+
+  .content-panel > .sl-container {
+    padding-inline: clamp(1rem, 5vw, 1.5rem);
+  }
+
+  /* Outranks the rule above by the `div` and the extra ancestor, as it did
+     in the old stack: the container is viewport-wide minus a 1rem gutter
+     each side, centred. */
+  .main-pane main .content-panel > div.sl-container {
+    width: calc(100vw - 2rem);
+    max-width: calc(100vw - 2rem);
+    margin-inline: auto;
+  }
+
+  .main-pane > main > .content-panel:first-of-type {
+    min-height: 8.5rem;
+  }
+
+  .main-pane > main > .content-panel:first-of-type > .sl-container {
+    min-height: 8.5rem;
+    padding-inline: clamp(1.25rem, 6.4vw, 1.75rem);
+  }
+
+  .main-pane > main > .content-panel:first-of-type h1 {
+    font-size: clamp(2.35rem, 12vw, 3.25rem);
+    line-height: 1;
+  }
+}

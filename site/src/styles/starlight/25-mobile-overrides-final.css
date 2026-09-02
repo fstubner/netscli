@@ -2,21 +2,6 @@
    stylesheet has several legacy responsive passes above. */
 @media (max-width: 49.99rem) {
 
-  .main-frame {
-    /* `clip`, not `hidden`. `overflow-x: hidden` makes this element a scroll
-       container -- the other axis computes to `auto` with it -- and the
-       document, not this box, is what actually scrolls. Any `position: sticky`
-       inside then has a scrollport that never moves, which is why the mobile
-       contents bar scrolled away with the page instead of pinning under the
-       header. `clip` contains the same horizontal overflow without creating a
-       scroll container. */
-  }.main-pane .content-panel > div.sl-container,
-  .main-pane main .content-panel > div.sl-container {
-    width: calc(100vw - 2rem) !important;
-    max-width: calc(100vw - 2rem) !important;
-    margin-inline: auto !important;
-  }
-
   .main-pane .sl-markdown-content,
   .main-pane .sl-markdown-content p,
   .main-pane .sl-markdown-content li,

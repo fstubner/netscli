@@ -1,0 +1,103 @@
+/* Docs table of contents, wide: the right-hand rail. Below 72rem it
+ * collapses into the "On this page" bar, which is docs/toc-bar.css.
+ * Unlayered on purpose; see docs/theme.css.
+ */
+
+/* ---- Rail (wide) --------------------------------------------------- */
+.right-sidebar-panel {
+  overflow-x: hidden;
+}
+
+.right-sidebar-panel :where(a) {
+  display: block;
+  padding: 0.28rem 0.45rem 0.28rem 0.65rem;
+  color: var(--sl-color-gray-3);
+  text-decoration: none;
+  border-radius: 0;
+}
+
+.right-sidebar-panel :where(a):hover,
+.right-sidebar-panel :where(a):focus-visible,
+.right-sidebar-panel :where(a[aria-current='true']),
+.right-sidebar-panel :where(a[aria-current='page']),
+.right-sidebar-panel :where(a[aria-current='location']) {
+  color: var(--netscli-accent-high);
+  background: transparent;
+}
+
+.right-sidebar-panel :where(a):hover,
+.right-sidebar-panel :where(a):focus-visible {
+  outline: 0;
+}
+
+html[data-theme='light'] .right-sidebar-panel :where(a):hover,
+html[data-theme='light'] .right-sidebar-panel :where(a):focus-visible,
+html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='true']),
+html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='page']),
+html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location']) {
+  color: #0e7a33;
+}
+
+@media (min-width: 72rem) {
+  .right-sidebar-panel {
+    flex-basis: var(--netscli-docs-toc-width);
+    width: var(--netscli-docs-toc-width);
+    padding-inline: 1.85rem var(--netscli-sidebar-rail-inset, clamp(2.2rem, 3vw, 3.15rem));
+    position: sticky;
+    top: var(--sl-nav-height);
+    max-height: calc(100vh - var(--sl-nav-height));
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+
+  .right-sidebar {
+    border-inline-start: 0;
+    position: static;
+    height: 100%;
+    padding-top: calc(var(--netscli-docs-hero-height) + 1px);
+    overflow: visible;
+  }
+
+  /* The rail's own hairlines: one across at the title band's baseline, so
+     the contents list starts where the page content does, and one down its
+     left edge below that. */
+  .right-sidebar-container {
+    position: relative;
+  }
+
+  .right-sidebar-container::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: var(--netscli-docs-hero-height);
+    height: 1px;
+    background: var(--sl-color-hairline);
+    pointer-events: none;
+  }
+
+  .right-sidebar-container::after {
+    content: "";
+    position: absolute;
+    inset-inline-start: 0;
+    inset-block: calc(var(--netscli-docs-hero-height) + 1px) 0;
+    width: 1px;
+    background: var(--sl-color-hairline);
+    pointer-events: none;
+  }
+}
+
+@media (min-width: 72rem) and (max-width: 86rem) {
+  .right-sidebar-container,
+  .right-sidebar-panel {
+    display: block;
+  }
+
+  .right-sidebar-container {
+    flex: 0 0 var(--netscli-docs-toc-width);
+    width: var(--netscli-docs-toc-width);
+  }
+
+  .right-sidebar {
+    width: var(--netscli-docs-toc-width);
+  }
+}

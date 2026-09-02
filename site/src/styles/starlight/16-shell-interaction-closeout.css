@@ -18,14 +18,7 @@
  * other item drew a highlight visibly inset from the active one above it.
  *
  * Applying the same geometry to all of them means only the border colour
- * distinguishes the current page, which is what it was meant to do. */
-.sidebar-content :is(a, a:hover, a[aria-current='page']) {
-  margin-inline-start: calc(-1px - 0.5rem) !important;
-  /* Keeps the text where it was before the box moved: the original padding
-     plus the 9px the box was pulled back by. */
-  padding-inline-start: calc(0.85rem + 0.5rem + 2px) !important;
-  width: calc(100% + 1px + 0.5rem) !important;
-}/* The same surface as the menu toggle beside it.
+ * distinguishes the current page, which is what it was meant to do. *//* The same surface as the menu toggle beside it.
  *
  * These two controls sit next to each other in the narrow-screen header at
  * the same size and radius, and were painted differently: the search button
@@ -33,20 +26,7 @@
  * `rgba(140,149,166,.24)` border, the menu toggle a flat
  * `rgba(var(--netscli-lift-rgb), .035)` with `rgba(var(--netscli-lift-rgb), .1)`. One looked recessed
  * and the other flat. The toggle's values win because they are the ones
- * derived from the theme's hairline token. */
-site-search button[data-open-modal] {
-  background: rgba(var(--netscli-lift-rgb), 0.035) !important;
-  border-color: var(--sl-color-hairline-light) !important;
-}site-search button[data-open-modal]:hover {
-  border-color: rgba(var(--netscli-accent-rgb), 0.48) !important;
-  box-shadow:
-    0 0 0 1px rgba(var(--netscli-accent-rgb), 0.16),
-    inset 0 1px 0 rgba(var(--netscli-lift-rgb), 0.035) !important;
-}
-
-html[data-theme='light'] site-search button[data-open-modal] {
-  background: rgba(var(--netscli-hairline-rgb), 0.035) !important;
-}#starlight__search .pagefind-ui__drawer:has(.pagefind-ui__result)::before,
+ * derived from the theme's hairline token. */#starlight__search .pagefind-ui__drawer:has(.pagefind-ui__result)::before,
 #starlight__search .pagefind-ui__drawer:has(.pagefind-ui__result)::after {
   height: 1.35rem !important;
   opacity: 0;

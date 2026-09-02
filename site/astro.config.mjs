@@ -67,12 +67,9 @@ export default defineConfig({
         './src/styles/starlight/10-docs-feedback.css',
         './src/styles/starlight/11-docs-chrome-consistency.css',
         './src/styles/starlight/12-docs-toc-responsive.css',
-        './src/styles/starlight/13-docs-rail-alignment.css',
         './src/styles/starlight/14-docs-nav-table.css',
         './src/styles/starlight/15-responsive-containment.css',
         './src/styles/starlight/16-shell-interaction-closeout.css',
-        './src/styles/starlight/17-mobile-shell-closeout-a.css',
-        './src/styles/starlight/18-mobile-shell-closeout-b.css',
         './src/styles/starlight/19-markdown-tables.css',
         './src/styles/starlight/20-docs-shell-closeout.css',
         './src/styles/starlight/21-mobile-docs-shell-verified.css',
@@ -92,6 +89,12 @@ export default defineConfig({
         // part of the docs shell. See src/styles/docs/theme.css.
         './src/styles/docs/theme.css',
         './src/styles/docs/base.css',
+        './src/styles/docs/shell.css',
+        './src/styles/docs/header.css',
+        './src/styles/docs/header-controls.css',
+        './src/styles/docs/sidebar.css',
+        './src/styles/docs/toc.css',
+        './src/styles/docs/toc-bar.css',
         // The theme select, shared with the landing bar, which imports the
         // same file in Page.astro. Last on purpose: it is the control's
         // definition rather than an override of one, and it has to outrank

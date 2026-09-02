@@ -1,0 +1,239 @@
+/* Docs table of contents, narrow: the collapsed "On this page" bar below
+ * 72rem. The wide rail is docs/toc.css.
+ *
+ * The bar is always rendered inside .netscli-mobile-toc-wrapper (see
+ * components/starlight/PageSidebar.astro), and the wrapper is what is
+ * sticky; Starlight's own <nav> inside it is put back into normal flow. Four
+ * files in the old stack restyled this dropdown in turn -- 14, 18, 20 and
+ * 22 -- and 22's wrapper-scoped rules outranked the rest, so what follows is
+ * what 22 left standing plus whatever the others set that it did not touch.
+ * The light-theme rules, all of them !important in the old stack, outranked
+ * everything by their `html[data-theme]` prefix and come last here for the
+ * same reason.
+ *
+ * Unlayered on purpose; see docs/theme.css.
+ */
+
+/* ---- Bar (narrow) -------------------------------------------------- */
+.netscli-mobile-toc-wrapper mobile-starlight-toc summary,
+.netscli-mobile-toc-wrapper mobile-starlight-toc .toggle,
+.netscli-mobile-toc-wrapper mobile-starlight-toc .display-current,
+.netscli-mobile-toc-wrapper mobile-starlight-toc .dropdown a {
+  cursor: pointer;
+}
+
+@media (max-width: 71.99rem) {
+  .right-sidebar-panel {
+    display: none;
+  }
+
+  .right-sidebar-container {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    flex: 0 0 100%;
+    order: -1;
+    background: transparent;
+    border-bottom: 0;
+    overflow: visible;
+  }
+
+  .right-sidebar {
+    position: static;
+    width: 100%;
+    height: auto;
+    padding: 0;
+    border: 0;
+    overflow: visible;
+  }
+
+  .netscli-mobile-toc-wrapper {
+    display: block;
+    position: sticky;
+    top: var(--sl-nav-height);
+    z-index: calc(var(--sl-z-index-navbar) - 2);
+    width: 100%;
+    background: var(--sl-color-bg-nav);
+    border-bottom: 1px solid var(--sl-color-hairline);
+  }
+
+  mobile-starlight-toc {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: var(--netscli-mobile-toc-bar-height);
+  }
+
+  mobile-starlight-toc nav {
+    position: static;
+    inset: auto;
+    top: auto;
+    z-index: calc(var(--sl-z-index-navbar) - 2);
+    width: 100%;
+    border: 0;
+    background: transparent;
+    backdrop-filter: blur(16px);
+    box-shadow: none;
+  }
+
+  mobile-starlight-toc summary {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    height: var(--netscli-mobile-toc-bar-height);
+    padding: 0 clamp(1rem, 3.4vw, 1.75rem);
+    border: 0;
+  }
+
+  mobile-starlight-toc summary:focus-visible {
+    outline: 1px solid rgba(159, 248, 222, 0.58);
+    outline-offset: -3px;
+  }
+
+  mobile-starlight-toc .toggle {
+    gap: 0.65rem;
+    min-width: auto;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--sl-color-white);
+    font-size: 0.82rem;
+    font-weight: 720;
+    line-height: 1.2;
+  }
+
+  mobile-starlight-toc details[open] .toggle,
+  mobile-starlight-toc details .toggle:hover,
+  mobile-starlight-toc summary:focus-visible .toggle {
+    border-color: transparent;
+    background: transparent;
+    color: var(--sl-color-white);
+  }
+
+  mobile-starlight-toc .caret,
+  mobile-starlight-toc details[open] .caret {
+    color: var(--netscli-accent);
+    transform: none;
+    transition: none;
+  }
+
+  mobile-starlight-toc .display-current {
+    min-width: 0;
+    color: var(--sl-color-gray-3);
+    font-size: 0.84rem;
+    line-height: 1.2;
+  }
+
+  mobile-starlight-toc .dropdown {
+    margin: 0;
+    max-height: min(58vh, 30rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-block: 1px solid var(--sl-color-hairline);
+    border-inline: 0;
+    background: var(--netscli-menu-bg);
+    box-shadow: none;
+  }
+
+  mobile-starlight-toc details[open] .dropdown {
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.34);
+  }
+
+  mobile-starlight-toc .dropdown ul {
+    padding-block: 0.35rem;
+  }
+
+  mobile-starlight-toc .dropdown a {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 2.35rem;
+    padding-block: 0.35rem;
+    padding-inline: clamp(1rem, 3.4vw, 1.75rem);
+    border-top: 0;
+    border-inline-start: 1px solid transparent;
+    color: var(--sl-color-gray-2);
+    background: transparent;
+  }
+
+  mobile-starlight-toc .dropdown a:hover,
+  mobile-starlight-toc .dropdown a:focus-visible {
+    outline: 0;
+    color: var(--netscli-accent-high);
+  }
+
+  mobile-starlight-toc .dropdown a[aria-current='true'] {
+    color: var(--netscli-accent-high);
+    border-inline-start-color: var(--netscli-accent);
+    background: rgba(var(--netscli-accent-rgb), 0.07);
+  }
+
+  mobile-starlight-toc .dropdown a[aria-current='true']::after {
+    content: none;
+    display: none;
+  }
+
+  /* ---- Bar, light theme ---- */
+  html[data-theme='light'] mobile-starlight-toc .toggle {
+    border-color: rgba(var(--netscli-hairline-rgb), 0.14);
+    background: rgba(255, 255, 255, 0.72);
+    color: var(--sl-color-gray-1);
+  }
+
+  /* `background: transparent` is stated here because the old stack's
+     theme-neutral open/hover rule outranked the light resting rule by
+     order; the light rule above would otherwise win now. The caret keeps
+     the theme-neutral accent: the old light caret rule was the one rule in
+     this block without !important, and it never won. */
+  html[data-theme='light'] mobile-starlight-toc details[open] .toggle,
+  html[data-theme='light'] mobile-starlight-toc details .toggle:hover,
+  html[data-theme='light'] mobile-starlight-toc summary:focus-visible .toggle {
+    border-color: rgba(var(--netscli-accent-rgb), 0.36);
+    background: transparent;
+    color: var(--sl-color-white);
+  }
+
+  html[data-theme='light'] mobile-starlight-toc .display-current {
+    color: var(--sl-color-gray-2);
+  }
+
+  html[data-theme='light'] mobile-starlight-toc .dropdown {
+    box-shadow: 0 14px 32px rgba(var(--netscli-hairline-rgb), 0.12);
+    background: var(--netscli-menu-bg);
+  }
+
+  html[data-theme='light'] mobile-starlight-toc details[open] .dropdown {
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.34);
+  }
+
+  html[data-theme='light'] mobile-starlight-toc .dropdown a:hover,
+  html[data-theme='light'] mobile-starlight-toc .dropdown a:focus-visible {
+    color: var(--sl-color-white);
+    background: rgba(var(--netscli-hairline-rgb), 0.045);
+  }
+
+  html[data-theme='light'] mobile-starlight-toc .dropdown a[aria-current='true'],
+  html[data-theme='light'] mobile-starlight-toc .dropdown a[aria-current='true']:hover,
+  html[data-theme='light'] mobile-starlight-toc .dropdown a[aria-current='true']:focus-visible {
+    color: var(--sl-color-accent-high);
+    border-inline-start-color: var(--sl-color-accent);
+    background: rgba(var(--netscli-accent-rgb), 0.055);
+  }
+}
+
+@media (max-width: 49.99rem) {
+  .right-sidebar-container {
+    height: 0;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    overflow: visible;
+  }
+
+  .netscli-mobile-toc-wrapper {
+    margin-bottom: 1.15rem;
+  }
+}

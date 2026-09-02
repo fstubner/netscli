@@ -1,55 +1,10 @@
 /* Final docs navigation/table pass. Keep rail indicators aligned, make the
    mobile ToC behave like the desktop ToC, and preserve table headers on phones. */
-.sidebar-content {
-  padding-inline-start: var(--netscli-sidebar-rail-inset) !important;
-}.sidebar-content :where(a[aria-current='page']) {
-  position: relative;
-  box-shadow: none !important;
-}
 
 /* The active-item marker lives in 20-docs-shell-closeout.css, as a border on
    the link itself. A ::before implementation used to sit here and is gone:
    that file loads later and killed it with `content: none !important`, so it
    had been inert dead code that still looked like the source of truth. */
-@media (max-width: 71.99rem) {mobile-starlight-toc {
-
-    position: relative !important;
-
-  }mobile-starlight-toc nav {
-
-    border: 0 !important;
-
-  }
-
-  mobile-starlight-toc summary {
-
-    padding-block: 0 !important;
-    padding-inline: clamp(1rem, 3.5vw, 1.75rem) !important;
-
-  }
-
-  mobile-starlight-toc summary:focus-visible {
-    outline: 1px solid rgba(159, 248, 222, 0.58) !important;
-    outline-offset: -3px !important;
-  }mobile-starlight-toc .dropdown a[aria-current='true'] {
-    color: var(--netscli-accent-high) !important;
-    border-inline-start-color: var(--netscli-accent) !important;
-    background: rgba(var(--netscli-accent-rgb), 0.08) !important;
-  }
-}
-
-@media (max-width: 49.99rem) {
-  .sidebar-content {
-    --netscli-sidebar-rail-inset: 1.35rem;
-    padding-inline: var(--netscli-sidebar-rail-inset) 1.35rem !important;
-    gap: 0.95rem !important;
-  }
-
-  .sidebar-content a {
-    min-height: 2.25rem;
-    padding-block: 0.3rem;
-  }
-}
 
 @media (max-width: 42rem) {
   .sl-markdown-content table {
@@ -108,18 +63,3 @@
    the shadowing gate only because that rule's selector list also named the
    mobile section menu, which no longer exists; removing that selector left
    this provable. */
-html[data-theme='light'] mobile-starlight-toc .dropdown {
-  box-shadow: 0 14px 32px rgba(var(--netscli-hairline-rgb), 0.12) !important;
-}
-
-html[data-theme='light'] mobile-starlight-toc .dropdown a:hover,
-html[data-theme='light'] mobile-starlight-toc .dropdown a:focus-visible {
-  color: var(--sl-color-white) !important;
-  background: rgba(var(--netscli-hairline-rgb), 0.045) !important;
-}
-
-html[data-theme='light'] mobile-starlight-toc .dropdown a[aria-current='true'] {
-  color: var(--sl-color-accent-high) !important;
-  border-inline-start-color: var(--sl-color-accent) !important;
-  background: var(--sl-color-bg-inline-code) !important;
-}
