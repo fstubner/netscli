@@ -1,6 +1,0 @@
-.sl-markdown-content table.table-row-headers tbody td:first-child,
-.sl-markdown-content .netscli-table-scroll table.table-row-headers tbody td:first-child {
-  color: inherit !important;
-  font-weight: 400 !important;
-  background: transparent !important;
-}

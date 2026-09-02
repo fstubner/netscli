@@ -8,7 +8,8 @@
  * Starlight ships all of its CSS inside `@layer starlight.*`. Files listed in
  * customCss load unlayered, so they outrank Starlight without `!important`
  * -- which is why this file, and every other one under styles/docs/, has
- * none.
+ * none. The one exception is five token-colour remaps in docs/code.css,
+ * which override inline `style` attributes; nothing else can.
  */
 
 /* ---- Colour, dark ---------------------------------------------------- */

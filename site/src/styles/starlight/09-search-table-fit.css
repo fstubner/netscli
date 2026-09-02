@@ -38,36 +38,6 @@
   margin-top: 0;
 }
 
-.sl-markdown-content [data-netscli-table] {
-  display: none !important;
-}
-
-.sl-markdown-content table,
-html[data-theme='light'] .sl-markdown-content table,
-.sl-markdown-content .expressive-code .frame,
-html[data-theme='light'] .sl-markdown-content .expressive-code .frame {
-  box-shadow: none !important;
-}
-.sl-markdown-content tbody tr,
-.sl-markdown-content tbody tr:hover {
-  background: var(--netscli-table-bg) !important;
-}
-
-.sl-markdown-content tbody tr:nth-child(even),
-.sl-markdown-content tbody tr:nth-child(even):hover {
-  background: var(--netscli-table-stripe) !important;
-}
-
-html[data-theme='light'] .sl-markdown-content tbody tr,
-html[data-theme='light'] .sl-markdown-content tbody tr:hover {
-  background: var(--sl-color-black) !important;
-}
-
-html[data-theme='light'] .sl-markdown-content tbody tr:nth-child(even),
-html[data-theme='light'] .sl-markdown-content tbody tr:nth-child(even):hover {
-  background: var(--netscli-table-stripe) !important;
-}
-
 /* The copy button has no light-theme treatment any more.
  *
  * It used to have three rules here -- a #e9eef2 background, a #dde6ea hover,
@@ -88,7 +58,3 @@ html[data-theme='light'] .sl-markdown-content tbody tr:nth-child(even):hover {
  * on and sat over the first line of code -- the exact overlap that rule was
  * added to prevent, and which its own comment measured on 5 of 18 blocks on
  * /docs/install/. Dark got the reveal; light did not. Both do now. */
-
-.sl-markdown-content .expressive-code .copy button {
-  box-shadow: none !important;
-}
