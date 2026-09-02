@@ -1,14 +1,4 @@
-@media (max-width: 49.99rem) {.content-panel thead th,
-  .sl-markdown-content thead th {
-    font-weight: 700 !important;
-  }
-
-  .content-panel tbody th,
-  .content-panel tbody td:first-child,
-  .sl-markdown-content tbody th,
-  .sl-markdown-content tbody td:first-child {
-    font-weight: 400 !important;
-  }site-search dialog .search-container,
+@media (max-width: 49.99rem) {site-search dialog .search-container,
   site-search dialog #starlight__search,
   site-search dialog .pagefind-ui,
   site-search dialog .pagefind-ui__form {

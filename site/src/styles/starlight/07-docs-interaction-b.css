@@ -7,88 +7,6 @@
   box-shadow:
     inset 2px 0 0 rgba(var(--netscli-accent-rgb), 0.74),
     inset 0 -1px 0 rgba(var(--netscli-hairline-rgb), 0.13);
-}
-
-.sl-markdown-content .expressive-code {
-  --ec-brdCol: rgba(var(--netscli-hairline-rgb), 0.2);
-  --ec-codeBg: var(--netscli-code-bg);
-  --ec-codeFg: var(--netscli-code-fg);
-  --ec-frm-trmBg: var(--netscli-code-bg);
-  --ec-frm-inlBtnFg: var(--netscli-accent-high);
-  --ec-frm-inlBtnBg: var(--netscli-accent-high);
-  --ec-frm-inlBtnBrd: var(--netscli-accent-high);
-  --netscli-code-copy-inset: 0.65rem;
-  --netscli-code-copy-size: 1.85rem;
-  --netscli-code-copy-space: 3.2rem;
-}
-
-.sl-markdown-content .expressive-code .frame {
-  position: relative;
-  overflow: hidden;
-  border-color: rgba(var(--netscli-hairline-rgb), 0.2);
-  background: var(--netscli-code-bg) !important;
-  box-shadow:
-    0 1px 0 rgba(var(--netscli-lift-rgb), 0.025) inset,
-    0 12px 28px rgba(0, 0, 0, 0.2);
-}
-
-.sl-markdown-content .expressive-code .frame::before {
-  content: "";
-  position: absolute;
-  inset-block-start: 0;
-  inset-inline: 0;
-  z-index: 1;
-  height: 2px;
-  background: rgba(var(--netscli-accent-rgb), 0.55);
-}
-
-.sl-markdown-content .expressive-code pre {
-  background: var(--netscli-code-bg) !important;
-}
-
-.sl-markdown-content .expressive-code code {
-  padding-inline-end: var(--netscli-code-copy-space);
-}
-
-.sl-markdown-content .expressive-code .ec-line:first-child .code {
-  padding-inline-end: calc(var(--ec-codePadInl) + var(--netscli-code-copy-space)) !important;
-}
-
-.sl-markdown-content .expressive-code .copy {
-
-  inset-inline-end: calc(var(--ec-brdWd) + var(--netscli-code-copy-inset)) !important;
-}
-
-.sl-markdown-content .expressive-code .copy button {
-  width: var(--netscli-code-copy-size);
-  height: var(--netscli-code-copy-size);
-  border: 1px solid rgba(var(--netscli-hairline-rgb), 0.18);
-  border-radius: 5px;
-  background: #252b36;
-  opacity: 0.9;
-
-}
-
-.sl-markdown-content .expressive-code .copy button:hover,
-.sl-markdown-content .expressive-code .copy button:focus-visible {
-  border-color: rgba(var(--netscli-accent-rgb), 0.42);
-  background: #2b313d;
-}
-
-.sl-markdown-content tbody tr:hover {
-  background: var(--netscli-table-bg);
-}
-
-.sl-markdown-content tbody tr:nth-child(even):hover {
-  background: var(--netscli-table-stripe);
-}
-
-html[data-theme='light'] .sl-markdown-content tbody tr:hover {
-  background: var(--sl-color-black);
-}
-
-html[data-theme='light'] .sl-markdown-content tbody tr:nth-child(even):hover {
-  background: var(--netscli-table-stripe);
 }/* Square, and the size Starlight already reserved for it.
  *
  * Starlight sets only `width: var(--sl-anchor-icon-size)` here and leaves the
@@ -98,11 +16,7 @@ html[data-theme='light'] .sl-markdown-content tbody tr:nth-child(even):hover {
  * vertical centring Starlight applies is calculated from the icon size it
  * thinks is in effect. Setting the height to the same variable makes the box
  * square, fills it, and makes that centring correct. It stays in `em`, so it
- * still scales with the heading level. */
-.sl-markdown-content .sl-anchor-icon > svg {
-  color: var(--netscli-accent);
-  height: var(--sl-anchor-icon-size);
-}/* Two lines, two weights.
+ * still scales with the heading level. *//* Two lines, two weights.
  *
  * The card reads "Previous" over "Packet capture", and both were drawn at
  * effectively the same brightness -- gray-1 (#e7edf6) for the label against
@@ -111,35 +25,6 @@ html[data-theme='light'] .sl-markdown-content tbody tr:nth-child(even):hover {
  * drops to the body-text step. The hover rule in
  * 28-final-interaction-guardrails.css has to preserve this; see the note
  * there. */
-.pagination-links a {
-  align-items: flex-start;
-  color: var(--sl-color-gray-2) !important;
-}
-
-.pagination-links a .link-title {
-  color: var(--sl-color-white) !important;
-}
-
-.pagination-links a:hover {
-  background: rgba(var(--netscli-lift-rgb), 0.018) !important;
-  border-color: rgba(var(--netscli-hairline-rgb), 0.26) !important;
-  color: var(--sl-color-white) !important;
-}
-
-html[data-theme='light'] .pagination-links a:hover {
-  background: rgba(var(--netscli-hairline-rgb), 0.022) !important;
-  border-color: rgba(var(--netscli-hairline-rgb), 0.16) !important;
-  color: var(--sl-color-white) !important;
-}
-
-.pagination-links a > svg {
-  margin-block-start: 0.12rem;
-  color: var(--netscli-accent);
-}
-
-html[data-theme='light'] .pagination-links a > svg {
-  color: var(--sl-color-accent);
-}
 
 /* The search result card's light background and border are set in
    08-search-modal.css, which loads later; only the shadow is still ours. */
@@ -151,19 +36,11 @@ html[data-theme='light'] #starlight__search .pagefind-ui__result-inner {
 
 /* The code frame keeps its dark surface here; only its shadow softens for a
    light page, the same way the two nav bars do. */
-html[data-theme='light'] .sl-markdown-content .expressive-code .frame {
-  border-color: rgba(var(--netscli-hairline-rgb), 0.13);
-  box-shadow:
-    0 1px 0 rgba(var(--netscli-lift-rgb), 0.025) inset,
-    0 10px 24px rgba(var(--netscli-hairline-rgb), 0.09);
-}
 
 html[data-theme='light'] #starlight__search .pagefind-ui__result-title:not(:where(.pagefind-ui__result-nested *)),
 html[data-theme='light'] #starlight__search .pagefind-ui__result-nested,
 html[data-theme='light'] #starlight__search .pagefind-ui__result-tags {
   background: var(--netscli-panel-bg) !important;
-}html[data-theme='light'] .sl-markdown-content .expressive-code .frame::before {
-  background: rgba(var(--netscli-accent-rgb), 0.42);
 }
 
 /* Narrow screens: give the copy button its own band above the code.
@@ -188,11 +65,6 @@ html[data-theme='light'] #starlight__search .pagefind-ui__result-tags {
  * stack hides it (`display:none`, measured height 0), so on every code
  * block in these docs the button lands on line one.
  */
-@media (max-width: 700px) {
-  .sl-markdown-content .expressive-code .frame:not(.has-title) pre {
-    padding-block-start: calc(var(--netscli-code-copy-size) + 0.5rem);
-  }
-}
 
 /* Pointer devices: reveal the copy button on hover, not permanently.
  *
@@ -207,14 +79,3 @@ html[data-theme='light'] #starlight__search .pagefind-ui__result-tags {
  * Code's own default behaviour, and the widely-used pattern -- the button
  * appears when you reach for it, and only then can it overlap anything.
  */
-@media (hover: hover) and (min-width: 43.75rem) {
-  .sl-markdown-content .expressive-code .copy button {
-    opacity: 0;
-    transition: opacity 0.12s ease;
-  }
-  .sl-markdown-content .expressive-code .frame:hover .copy button,
-  .sl-markdown-content .expressive-code .frame:focus-within .copy button,
-  .sl-markdown-content .expressive-code .copy button:focus-visible {
-    opacity: 0.9;
-  }
-}

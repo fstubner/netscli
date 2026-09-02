@@ -128,7 +128,7 @@ function unslug(file) {
   if (parts.length !== 3) return null;
   const [, theme, widthPart] = parts;
   const width = Number(widthPart);
-  const route = routes.find((r) => slug(r, theme, width) === file);
+  const route = [...routes, SEARCH_SLUG].find((r) => slug(r, theme, width) === file);
   return route ? { route, theme, width } : null;
 }
 
@@ -209,6 +209,43 @@ async function settle(driver, { needed = 2, gapMs = 200, minMs = 500, attempts =
  *   Restrict to these captures. Used by the confirmation pass, which
  *   re-takes just the handful that differed rather than all 84.
  */
+/* The docs index carries the search capture; the slug is a route name that
+   cannot collide with a real one because no page is built there. */
+const SEARCH_ROUTE = '/docs/';
+const SEARCH_SLUG = '/docs-search/';
+const SEARCH_QUERY = 'scan';
+
+/**
+ * Open the search dialog, type a query, and wait for results. Returns the
+ * settled screenshot, or null if the dialog never produced results (logged;
+ * a missing capture is reported by the comparison as such).
+ */
+async function captureSearch(driver) {
+  await driver.executeScript(`document.querySelector('site-search button[data-open-modal]')?.click();`);
+  const deadline = Date.now() + 8000;
+  let ready = false;
+  while (Date.now() < deadline) {
+    ready = await driver.executeScript(`return !!document.querySelector('site-search dialog[open] .pagefind-ui__search-input');`);
+    if (ready) break;
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  if (!ready) { console.warn('  search dialog did not open; no search capture'); return null; }
+  await driver.executeScript(`
+    const input = document.querySelector('site-search dialog[open] .pagefind-ui__search-input');
+    input.focus(); input.value = arguments[0];
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  `, SEARCH_QUERY);
+  let results = 0;
+  while (Date.now() < deadline) {
+    results = await driver.executeScript(`return document.querySelectorAll('site-search dialog[open] .pagefind-ui__result').length;`);
+    if (results > 0) break;
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  if (!results) { console.warn('  search returned no results; no search capture'); return null; }
+  // The caret is hidden by the freeze style already injected for this page.
+  return settle(driver);
+}
+
 async function capture(outDir, only) {
   rmSync(outDir, { recursive: true, force: true });
   mkdirSync(outDir, { recursive: true });
@@ -278,7 +315,8 @@ async function capture(outDir, only) {
 
       for (const width of WIDTHS) {
         for (const route of routes) {
-          if (wanted && !wanted.has(slug(route, theme.name, width))) continue;
+          const wantSearch = route === SEARCH_ROUTE && wanted && wanted.has(slug(SEARCH_SLUG, theme.name, width));
+          if (wanted && !wanted.has(slug(route, theme.name, width)) && !wantSearch) continue;
           // Width FIRST, then navigate. Resizing after load means the page is
           // laid out at the previous capture's width and then reflowed, and a
           // reflow does not always land where a fresh layout would -- worst on
@@ -348,9 +386,23 @@ async function capture(outDir, only) {
           }
 
           const name = slug(route, theme.name, width);
-          writeFileSync(join(outDir, name), Buffer.from(png, 'base64'));
-          captured += 1;
-          if (process.env.VISUAL_VERBOSE) console.log(`  ${name}`);
+          if (!wanted || wanted.has(name)) {
+            writeFileSync(join(outDir, name), Buffer.from(png, 'base64'));
+            captured += 1;
+            if (process.env.VISUAL_VERBOSE) console.log(`  ${name}`);
+          }
+
+          // The search dialog, open and showing results, on the docs index.
+          // Nothing in the static pages reaches it -- Pagefind renders the
+          // whole panel at runtime -- so without this capture every rule
+          // under #starlight__search was invisible to this check.
+          if (route === SEARCH_ROUTE && (!wanted || wanted.has(slug(SEARCH_SLUG, theme.name, width)))) {
+            const searchPng = await captureSearch(driver);
+            if (searchPng) {
+              writeFileSync(join(outDir, slug(SEARCH_SLUG, theme.name, width)), Buffer.from(searchPng, 'base64'));
+              captured += 1;
+            }
+          }
         }
       }
     } finally {

@@ -79,27 +79,6 @@ site-search dialog .search-container:has(.pagefind-ui__drawer.pagefind-ui__hidde
   background: rgba(32, 36, 43, 0.56);
 }
 
-.sl-markdown-content .expressive-code {
-  --ec-codeLineHt: 1.52;
-  --ec-codePadBlk: 0.72rem;
-  --netscli-code-copy-inset: 0.52rem;
-  --netscli-code-copy-size: 1.75rem;
-  --netscli-code-copy-space: 3rem;
-
-}
-
-.sl-markdown-content .expressive-code .copy {
-  inset-block-start: calc(var(--ec-brdWd) + var(--netscli-code-copy-inset)) !important;
-}
-
-.pagination-links a[rel='prev'] > span {
-  order: 2;
-}
-
-.pagination-links a[rel='prev'] > svg {
-  order: 1;
-}
-
 html[data-theme='light'] site-search dialog {
   background: #f6f8fa !important;
   border-color: rgba(var(--netscli-hairline-rgb), 0.24) !important;
