@@ -58,14 +58,6 @@ const transitionExceptions = new Map([
         'search vs toc are the remaining two families.',
     },
   ],
-  [
-    'site/src/styles/starlight/20-docs-shell-closeout.css',
-    {
-      maxLines: 320,
-      reason:
-        'single cohesive docs shell close-out pass split from starlight.css; not further split to avoid fragmenting one cascade-ordered concern',
-    },
-  ],
 ]);
 const roots = [
   'apps/netscli-cli/src',

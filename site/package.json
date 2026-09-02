@@ -13,6 +13,7 @@
     "check": "astro check",
     "check:changelog": "node ./scripts/changelog-dates.mjs",
     "check:css": "node ./scripts/css-shadowing.mjs --max 0",
+    "check:regions": "node ./scripts/css-regions.mjs",
     "check:wordmark": "node ./scripts/wordmark-inset.mjs",
     "test:a11y": "npm run build && node ./scripts/a11y.mjs",
     "check:contrast": "node ./scripts/contrast-sweep.mjs",
