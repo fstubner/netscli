@@ -1,4 +1,4 @@
-import type { Hero } from './types';
+import type { Hero, HeroDownload } from './types';
 import { INSTALL_SH_COMMAND } from './install-urls';
 
 export const hero: Hero = {
@@ -65,4 +65,64 @@ export const hero: Hero = {
   heroImageWidth: 1640,
   heroImageHeight: 930,
   sourceUrl: 'https://github.com/fstubner/netscli',
+  downloadLabel: 'Desktop app',
+  downloadMenuLabel: 'Choose desktop installer',
 };
+
+const RELEASE_DOWNLOAD = 'https://github.com/fstubner/netscli/releases/latest/download';
+
+// The desktop installers, in menu order. The first entry is also what the
+// server renders into the button before any script runs, so it has to be a
+// file that exists rather than a placeholder.
+//
+// macOS ships two .dmgs and they are NOT interchangeable. The Intel build is
+// `preferred` because Rosetta 2 runs it on Apple silicon too -- an asymmetry
+// worth exploiting, since the wrong guess in that direction still works and
+// the reverse does not. `appleSilicon` upgrades to the native build only when
+// the browser will actually say so.
+export const heroDownloads: HeroDownload[] = [
+  {
+    os: 'windows',
+    name: 'Windows',
+    meta: 'AMD64',
+    ext: 'msi',
+    href: `${RELEASE_DOWNLOAD}/netscli-gui-windows-x86_64.msi`,
+    cue: 'Windows · .msi installer',
+    preferred: true,
+  },
+  {
+    os: 'macos',
+    name: 'macOS',
+    meta: 'Apple silicon',
+    ext: 'dmg',
+    href: `${RELEASE_DOWNLOAD}/netscli-gui-macos-aarch64.dmg`,
+    cue: 'macOS · Apple silicon .dmg',
+    appleSilicon: true,
+  },
+  {
+    os: 'macos',
+    name: 'macOS',
+    meta: 'Intel x86_64',
+    ext: 'dmg',
+    href: `${RELEASE_DOWNLOAD}/netscli-gui-macos-x86_64.dmg`,
+    cue: 'macOS · Intel .dmg',
+    preferred: true,
+  },
+  {
+    os: 'linux',
+    name: 'Linux',
+    meta: 'x86_64 portable',
+    ext: 'AppImage',
+    href: `${RELEASE_DOWNLOAD}/netscli-gui-linux-x86_64.AppImage`,
+    cue: 'Linux · .AppImage',
+    preferred: true,
+  },
+  {
+    os: 'linux',
+    name: 'Debian / Ubuntu',
+    meta: 'AMD64',
+    ext: 'deb',
+    href: `${RELEASE_DOWNLOAD}/netscli-gui-linux-x86_64.deb`,
+    cue: 'Linux · .deb package',
+  },
+];

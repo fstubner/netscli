@@ -1,5 +1,11 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import {
+  docsDescription,
+  docsLogo,
+  docsSidebar,
+  docsTitle,
+} from './src/data/site-content/docs';
 
 // Canonical site URL. Used by Astro for absolute URL generation in
 // sitemap/RSS integrations if we add them later, and surfaces in the
@@ -30,15 +36,13 @@ export default defineConfig({
           ? [{ tag: 'meta', attrs: { name: 'robots', content: 'noindex, nofollow' } }]
           : []),
       ],
-      title: 'NetsCLI docs',
-      // "network scanner", not "network scanner and diagnostics toolkit" --
-      // one name for the product, matching the title, H1 and description on
-      // the landing page.
-      description:
-        'Technical documentation for NetsCLI, a Rust-based network scanner with a desktop app, terminal UI, CLI, MCP server, and shared core library.',
+      // Title, description, logo and sidebar come from
+      // src/data/site-content/docs.ts with the rest of the site's content.
+      title: docsTitle,
+      description: docsDescription,
       disable404Route: true,
       logo: {
-        src: './public/assets/netscli-wordmark.png',
+        src: docsLogo,
         replacesTitle: true,
       },
       components: {
@@ -85,39 +89,7 @@ export default defineConfig({
           href: 'https://github.com/fstubner/netscli',
         },
       ],
-      sidebar: [
-        {
-          label: 'Start',
-          items: [
-            { label: 'Overview', link: '/docs/' },
-            { label: 'Installation', link: '/docs/install/' },
-            { label: 'Interface coverage', link: '/docs/interface-coverage/' },
-          ],
-        },
-        {
-          label: 'Interfaces',
-          items: [
-            { label: 'Desktop app', link: '/docs/desktop/' },
-            { label: 'Terminal UI', link: '/docs/tui/' },
-            { label: 'CLI', link: '/docs/cli/' },
-            { label: 'MCP server', link: '/docs/mcp/' },
-          ],
-        },
-        {
-          label: 'Operations',
-          items: [
-            { label: 'Operation guide', link: '/docs/operations/' },
-            { label: 'Packet capture', link: '/docs/packet-capture/' },
-          ],
-        },
-        {
-          label: 'Reference',
-          items: [
-            { label: 'Core library and crates', link: '/docs/core-library/' },
-            { label: 'Result model', link: '/docs/result-model/' },
-          ],
-        },
-      ],
+      sidebar: docsSidebar,
     }),
   ],
   build: {

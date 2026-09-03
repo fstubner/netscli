@@ -3,7 +3,7 @@
 // product. Every component reads the assembled `site` export from here.
 
 import { branding, meta } from './site-content/meta';
-import { hero } from './site-content/hero';
+import { hero, heroDownloads } from './site-content/hero';
 import { surfaces, surfacesCopy } from './site-content/surfaces';
 import {
   installBinariesNote,
@@ -22,6 +22,7 @@ export type {
   BuiltWithEntry,
   FaqItem,
   Hero,
+  HeroDownload,
   InstallEntry,
   Meta,
   Platform,
@@ -37,6 +38,7 @@ export const site: SiteData = {
   meta,
   branding,
   hero,
+  heroDownloads,
   copy: {
     surfaces: surfacesCopy,
     install: installCopy,
