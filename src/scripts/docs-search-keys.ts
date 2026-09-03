@@ -76,7 +76,7 @@ export function initDocsSearchKeys(): void {
  */
 const MESSAGE_SELECTOR = '.pagefind-ui__message';
 const SEARCH_TIMEOUT_MS = 8000;
-const OFFLINE_NOTE = 'netscli-search-offline';
+const OFFLINE_NOTE = 'ui-search-offline';
 
 export function initDocsSearchResilience(): void {
   let timer: ReturnType<typeof setTimeout> | undefined;

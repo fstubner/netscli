@@ -67,8 +67,8 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
       height: var(--sl-nav-height);
       min-height: var(--sl-nav-height);
       width: min(
-        calc(100vw - (var(--netscli-docs-shell-gutter, 1.5rem) * 2)),
-        var(--netscli-docs-frame-width, 1120px)
+        calc(100vw - (var(--ui-docs-shell-gutter, 1.5rem) * 2)),
+        var(--ui-docs-frame-width, 1120px)
       );
       max-width: calc(100vw - 2rem);
       margin-inline: auto;
@@ -90,16 +90,16 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
          flat -18px against a 12.4px margin, so the docs logo hung 5.5px
          further left than the identical logo on the landing bar. See
          tokens.css. */
-      transform: translateX(calc(var(--netscli-mark-width) * var(--netscli-mark-inset-ratio) * -1));
+      transform: translateX(calc(var(--ui-mark-width) * var(--ui-mark-inset-ratio) * -1));
     }
 
     .docs-mark img {
       display: block;
-      width: var(--netscli-mark-width);
+      width: var(--ui-mark-width);
       height: auto;
       /* Same token as the landing bar's `.mark`, so both bars darken the
          wordmark by the same amount on a light page. See tokens.css. */
-      filter: var(--netscli-mark-filter);
+      filter: var(--ui-mark-filter);
     }
 
     .docs-nav-links {
@@ -148,11 +148,11 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
       width: 1px;
       height: 18px;
       margin-block-start: -9px;
-      background: rgba(var(--netscli-hairline-rgb), 0.28);
+      background: rgba(var(--ui-hairline-rgb), 0.28);
     }
 
     .docs-nav-links a[aria-current] {
-      border-bottom-color: var(--netscli-accent);
+      border-bottom-color: var(--ui-accent);
     }
 
     .docs-header-search {

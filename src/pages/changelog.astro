@@ -120,22 +120,22 @@ const staticRelease = renderReleaseListHtml(fallbackReleases, hero.sourceUrl.spl
 <style is:global>
 /* ─── CHANGELOG ─── */
 .changelog-shell{
-  max-width:var(--netscli-shell-width);margin:0 auto;padding:64px var(--netscli-shell-gutter) 86px;
+  max-width:var(--ui-shell-width);margin:0 auto;padding:64px var(--ui-shell-gutter) 86px;
 }
 .changelog-hero{
-  border-bottom:1px solid rgba(var(--netscli-lift-rgb),.08);
+  border-bottom:1px solid rgba(var(--ui-lift-rgb),.08);
   padding-bottom:28px;margin-bottom:28px;
 }
 .changelog-kicker{
-  margin:0 0 8px;color:var(--netscli-accent);font-size:.75rem;font-weight:700;
+  margin:0 0 8px;color:var(--ui-accent);font-size:.75rem;font-weight:700;
   text-transform:uppercase;letter-spacing:.08em;
 }
 .changelog-hero h1{
-  margin:0;color:var(--netscli-text-strong);font-size:clamp(2rem,4vw,3rem);
+  margin:0;color:var(--ui-text-strong);font-size:clamp(2rem,4vw,3rem);
   line-height:1.1;letter-spacing:-.02em;
 }
 .changelog-hero p{
-  margin:12px 0 0;color:var(--netscli-text-muted);font-size:.95rem;max-width:680px;
+  margin:12px 0 0;color:var(--ui-text-muted);font-size:.95rem;max-width:680px;
 }
 /* A text link, not a button. Two bordered pills sat under the intro as if
    they were the page's primary actions; the only one worth keeping is a
@@ -146,11 +146,11 @@ const staticRelease = renderReleaseListHtml(fallbackReleases, hero.sourceUrl.spl
   font-size:.875rem;
 }
 .changelog-actions a{
-  color:var(--netscli-accent);
+  color:var(--ui-accent);
   text-decoration:underline;
   text-underline-offset:3px;
 }
-.changelog-actions a:hover{color:var(--netscli-accent-bright)}
+.changelog-actions a:hover{color:var(--ui-accent-bright)}
 .changelog-content{
   display:grid;
   grid-template-columns:minmax(0,1fr) 8.5rem;
@@ -162,10 +162,10 @@ const staticRelease = renderReleaseListHtml(fallbackReleases, hero.sourceUrl.spl
 .release-unreleased{
   margin-left:10px;
   padding:2px 8px;
-  border:1px solid rgba(var(--netscli-accent-rgb),.32);
+  border:1px solid rgba(var(--ui-accent-rgb),.32);
   border-radius:999px;
-  background:rgba(var(--netscli-accent-rgb),.06);
-  color:var(--netscli-accent);
+  background:rgba(var(--ui-accent-rgb),.06);
+  color:var(--ui-accent);
   font-size:.6875rem;
   font-weight:600;
   letter-spacing:.02em;
@@ -176,11 +176,11 @@ const staticRelease = renderReleaseListHtml(fallbackReleases, hero.sourceUrl.spl
   position:sticky;
   top:calc(var(--nav-height, 72px) + 22px);
   padding-left:18px;
-  border-left:1px solid rgba(var(--netscli-lift-rgb),.08);
+  border-left:1px solid rgba(var(--ui-lift-rgb),.08);
 }
 .release-timeline p{
   margin:0 0 11px;
-  color:var(--netscli-text-muted);
+  color:var(--ui-text-muted);
   font-size:.72rem;
   font-weight:700;
   letter-spacing:.08em;
@@ -196,7 +196,7 @@ const staticRelease = renderReleaseListHtml(fallbackReleases, hero.sourceUrl.spl
   gap:5px;
 }
 .release-timeline-year{
-  color:var(--netscli-text-strong);
+  color:var(--ui-text-strong);
   font-size:.82rem;
   line-height:1.2;
 }
@@ -208,7 +208,7 @@ const staticRelease = renderReleaseListHtml(fallbackReleases, hero.sourceUrl.spl
   gap:10px;
   min-height:24px;
   padding:3px 0 3px 10px;
-  color:var(--netscli-text-muted);
+  color:var(--ui-text-muted);
   font-size:.78rem;
   line-height:1.2;
   text-decoration:none;
@@ -225,27 +225,27 @@ const staticRelease = renderReleaseListHtml(fallbackReleases, hero.sourceUrl.spl
   transform:translateY(-50%);
 }
 .release-timeline-link small{
-  color:var(--netscli-text-muted);
+  color:var(--ui-text-muted);
   font-size:.68rem;
 }
 .release-timeline-link:hover,
 .release-timeline-link:focus-visible,
 .release-timeline-link.active{
-  color:var(--netscli-accent-bright);
+  color:var(--ui-accent-bright);
   outline:0;
 }
 .release-timeline-link:hover::before,
 .release-timeline-link:focus-visible::before,
 .release-timeline-link.active::before{
-  background:var(--netscli-accent);
+  background:var(--ui-accent);
 }
 .release-timeline-empty{
-  color:var(--netscli-text-muted);
+  color:var(--ui-text-muted);
   font-size:.78rem;
 }
 .release-item{
-  background:rgba(var(--netscli-lift-rgb),.028);
-  border:1px solid rgba(var(--netscli-lift-rgb),.085);
+  background:rgba(var(--ui-lift-rgb),.028);
+  border:1px solid rgba(var(--ui-lift-rgb),.085);
   border-radius:8px;overflow:hidden;
   max-width:100%;
   min-width:0;
@@ -254,20 +254,20 @@ const staticRelease = renderReleaseListHtml(fallbackReleases, hero.sourceUrl.spl
 }
 .release-head{
   display:flex;align-items:center;justify-content:space-between;gap:16px;
-  padding:10px 20px;border-bottom:1px solid rgba(var(--netscli-lift-rgb),.07);
-  background:rgba(var(--netscli-lift-rgb),.018);
+  padding:10px 20px;border-bottom:1px solid rgba(var(--ui-lift-rgb),.07);
+  background:rgba(var(--ui-lift-rgb),.018);
 }
 .release-title-group{min-width:0}
-.release-item h2{margin:0;font-size:1.08rem;color:var(--netscli-text-strong);line-height:1.35;min-width:0;overflow-wrap:anywhere}
+.release-item h2{margin:0;font-size:1.08rem;color:var(--ui-text-strong);line-height:1.35;min-width:0;overflow-wrap:anywhere}
 .release-item h2 a{color:inherit;text-decoration:none;min-width:0;overflow-wrap:anywhere}
 .release-item h2 a:hover .external-link-label{text-decoration:underline;text-underline-offset:3px}
 .release-meta{
-  flex:0 0 auto;margin:0;color:var(--netscli-text-muted);font-size:.76rem;
+  flex:0 0 auto;margin:0;color:var(--ui-text-muted);font-size:.76rem;
   line-height:1.4;white-space:nowrap;text-align:right;
 }
 .release-body{
   position:relative;
-  padding:20px 20px 22px;color:var(--netscli-text);font-size:.9rem;line-height:1.65;
+  padding:20px 20px 22px;color:var(--ui-text);font-size:.9rem;line-height:1.65;
   width:100%;min-width:0;max-width:100%;box-sizing:border-box;
   overflow-wrap:anywhere;word-break:normal;
 }
@@ -299,13 +299,13 @@ html[data-js] .release-collapsible:not(.release-expanded) .release-body::after{
   content:"";
   position:absolute;left:0;right:0;bottom:0;height:84px;
   pointer-events:none;
-  background:linear-gradient(180deg,rgba(var(--netscli-bg-rgb), 0),rgba(var(--netscli-bg-rgb), .95) 70%,var(--netscli-surface));
+  background:linear-gradient(180deg,rgba(var(--ui-bg-rgb), 0),rgba(var(--ui-bg-rgb), .95) 70%,var(--ui-surface));
 }
 .release-body>*+*{margin-top:14px}
 .release-summary{
   margin:0;
   max-width:none;
-  color:var(--netscli-text);
+  color:var(--ui-text);
   font-size:.94rem;
   line-height:1.65;
   padding:0;
@@ -319,7 +319,7 @@ html[data-js] .release-collapsible:not(.release-expanded) .release-body::after{
  * introduces. More space above than below now, which is the relationship a
  * section heading is supposed to have. */
 .release-body .release-heading{
-  color:var(--netscli-text);font-size:.96rem;line-height:1.35;
+  color:var(--ui-text);font-size:.96rem;line-height:1.35;
   margin:26px 0 9px;
 }
 .release-body .release-heading:first-child{margin-top:0}
@@ -337,40 +337,40 @@ html[data-js] .release-collapsible:not(.release-expanded) .release-body::after{
 .release-body :not(pre)>code{
   font-family:ui-monospace,"SF Mono",Menlo,monospace;
   font-size:.86em;line-height:1.45;
-  background:rgba(var(--netscli-accent-rgb),.09);color:var(--netscli-accent-bright);
-  border:1px solid rgba(var(--netscli-accent-rgb),.18);border-radius:4px;
+  background:rgba(var(--ui-accent-rgb),.09);color:var(--ui-accent-bright);
+  border:1px solid rgba(var(--ui-accent-rgb),.18);border-radius:4px;
   padding:.08em .34em;white-space:normal;overflow-wrap:anywhere;word-break:break-word;
 }
 .release-body .release-code{
   position:relative;margin:0;max-width:100%;overflow-x:auto;
-  background:var(--netscli-surface-raised);border:1px solid rgba(140,149,166,.2);
-  border-radius:8px;padding:.82rem 1rem;color:var(--netscli-text);
+  background:var(--ui-surface-raised);border:1px solid rgba(140,149,166,.2);
+  border-radius:8px;padding:.82rem 1rem;color:var(--ui-text);
   box-shadow:none;
 }
 .release-body .release-code::before{
   content:"";position:absolute;inset-block-start:0;inset-inline:0;
-  height:2px;background:rgba(var(--netscli-accent-rgb),.55);
+  height:2px;background:rgba(var(--ui-accent-rgb),.55);
 }
 .release-body .release-code-content{
   display:block;background:transparent;border:0;border-radius:0;
   color:inherit;font-size:.82rem;line-height:1.64;padding:0;
   white-space:pre;
 }
-.release-body a{color:var(--netscli-accent);text-decoration:none}
+.release-body a{color:var(--ui-accent);text-decoration:none}
 .release-body a,
 .release-body a .external-link-label{
   min-width:0;overflow-wrap:anywhere;word-break:break-word;
 }
 .release-body a .external-link-label{text-decoration:underline;text-underline-offset:3px}
-.release-body a:hover{color:var(--netscli-accent-bright)}
-.release-body a:hover .external-link-label{text-decoration-color:var(--netscli-accent-bright)}
+.release-body a:hover{color:var(--ui-accent-bright)}
+.release-body a:hover .external-link-label{text-decoration-color:var(--ui-accent-bright)}
 .release-quote{
-  margin:0;max-width:none;border-left:3px solid rgba(var(--netscli-accent-rgb),.55);
-  padding:8px 12px;background:rgba(var(--netscli-accent-rgb),.065);color:var(--netscli-text);
+  margin:0;max-width:none;border-left:3px solid rgba(var(--ui-accent-rgb),.55);
+  padding:8px 12px;background:rgba(var(--ui-accent-rgb),.065);color:var(--ui-text);
 }
 .release-empty{
-  color:var(--netscli-text-muted);background:rgba(var(--netscli-lift-rgb),.03);
-  border:1px dashed rgba(var(--netscli-lift-rgb),.12);border-radius:10px;padding:16px;
+  color:var(--ui-text-muted);background:rgba(var(--ui-lift-rgb),.03);
+  border:1px dashed rgba(var(--ui-lift-rgb),.12);border-radius:10px;padding:16px;
 }
 .release-disclosure{
   /* `display` is set above, gated on data-js. */
@@ -385,7 +385,7 @@ html[data-js] .release-collapsible:not(.release-expanded) .release-body::after{
   border:0;
   border-radius:0;
   background:transparent;
-  color:var(--netscli-accent);
+  color:var(--ui-accent);
   font:inherit;
   font-size:.8rem;
   font-weight:400;
@@ -397,11 +397,11 @@ html[data-js] .release-collapsible:not(.release-expanded) .release-body::after{
 }
 .release-toggle::after{
   content:"";
-  color:var(--netscli-accent-bright);
+  color:var(--ui-accent-bright);
 }
 .release-toggle:hover,
 .release-toggle:focus-visible{
-  color:var(--netscli-accent-bright);
+  color:var(--ui-accent-bright);
   background:transparent;
   outline:0;
 }

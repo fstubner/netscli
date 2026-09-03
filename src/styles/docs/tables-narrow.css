@@ -4,7 +4,7 @@
  */
 
 @media (min-width: 72rem) {
-  .sl-markdown-content .netscli-table-scroll table {
+  .sl-markdown-content .ui-table-scroll table {
     min-width: 100%;
   }
 }
@@ -24,7 +24,7 @@
   .sl-markdown-content table th {
     width: auto;
     padding: 0.68rem 0.85rem;
-    border-bottom: 1px solid rgba(var(--netscli-hairline-rgb), 0.11);
+    border-bottom: 1px solid rgba(var(--ui-hairline-rgb), 0.11);
   }
 
   .sl-markdown-content table td:first-child,
@@ -42,29 +42,29 @@
 
   .sl-markdown-content table td + td,
   .sl-markdown-content table th + th {
-    border-inline-start: 1px solid rgba(var(--netscli-hairline-rgb), 0.11);
+    border-inline-start: 1px solid rgba(var(--ui-hairline-rgb), 0.11);
   }
 }
 
 @media (max-width: 49.99rem) {
-  .sl-markdown-content .netscli-table-scroll {
+  .sl-markdown-content .ui-table-scroll {
     display: block;
     width: 100%;
     max-width: 100%;
     margin-block: 1rem 1.35rem;
     overflow-x: auto;
     overflow-y: hidden;
-    border: 1px solid rgba(var(--netscli-hairline-rgb), 0.2);
+    border: 1px solid rgba(var(--ui-hairline-rgb), 0.2);
     border-radius: 8px;
-    background: var(--netscli-table-bg);
+    background: var(--ui-table-bg);
     -webkit-overflow-scrolling: touch;
   }
 
-  html[data-theme='light'] .sl-markdown-content .netscli-table-scroll {
+  html[data-theme='light'] .sl-markdown-content .ui-table-scroll {
     background: #f7faf9;
   }
 
-  .sl-markdown-content .netscli-table-scroll table {
+  .sl-markdown-content .ui-table-scroll table {
     display: table;
     table-layout: fixed;
     width: max-content;
@@ -74,16 +74,16 @@
     background: transparent;
   }
 
-  .sl-markdown-content .netscli-table-scroll thead {
+  .sl-markdown-content .ui-table-scroll thead {
     display: table-header-group;
   }
 
-  .sl-markdown-content .netscli-table-scroll tbody {
+  .sl-markdown-content .ui-table-scroll tbody {
     gap: 0.75rem;
     display: table-row-group;
   }
 
-  .sl-markdown-content .netscli-table-scroll tr {
+  .sl-markdown-content .ui-table-scroll tr {
     gap: 0.75rem;
     display: table-row;
     padding: 0;
@@ -92,30 +92,30 @@
     background: transparent;
   }
 
-  html[data-theme='light'] .sl-markdown-content .netscli-table-scroll tr {
+  html[data-theme='light'] .sl-markdown-content .ui-table-scroll tr {
     background: #eef3f2;
   }
 
-  .sl-markdown-content .netscli-table-scroll th,
-  .sl-markdown-content .netscli-table-scroll td {
+  .sl-markdown-content .ui-table-scroll th,
+  .sl-markdown-content .ui-table-scroll td {
     display: table-cell;
     width: auto;
     min-width: 0;
     padding: 0.85rem 1rem;
     border: 0;
-    border-bottom: 1px solid rgba(var(--netscli-hairline-rgb), 0.11);
+    border-bottom: 1px solid rgba(var(--ui-hairline-rgb), 0.11);
     line-height: 1.42;
     white-space: normal;
     overflow-wrap: normal;
     word-break: normal;
   }
 
-  .sl-markdown-content .netscli-table-scroll td:last-child,
-  .sl-markdown-content .netscli-table-scroll th:last-child {
+  .sl-markdown-content .ui-table-scroll td:last-child,
+  .sl-markdown-content .ui-table-scroll th:last-child {
     padding-inline-end: 1rem;
   }
 
-  .sl-markdown-content .netscli-table-scroll td::before {
+  .sl-markdown-content .ui-table-scroll td::before {
     margin-bottom: 0.32rem;
     color: var(--sl-color-gray-3);
     font-size: 0.72rem;
@@ -125,26 +125,26 @@
     display: none;
   }
 
-  .sl-markdown-content .netscli-table-scroll td,
-  .sl-markdown-content .netscli-table-scroll tbody th {
+  .sl-markdown-content .ui-table-scroll td,
+  .sl-markdown-content .ui-table-scroll tbody th {
     font-weight: 400;
   }
 
-  .sl-markdown-content .netscli-table-scroll thead th,
-  .sl-markdown-content .netscli-table-scroll thead th:first-child {
+  .sl-markdown-content .ui-table-scroll thead th,
+  .sl-markdown-content .ui-table-scroll thead th:first-child {
     font-weight: 720;
   }
 
-  .sl-markdown-content .netscli-table-scroll th:first-child,
-  .sl-markdown-content .netscli-table-scroll td:first-child,
-  .sl-markdown-content .netscli-table-scroll table.table-row-headers tbody td:first-child {
+  .sl-markdown-content .ui-table-scroll th:first-child,
+  .sl-markdown-content .ui-table-scroll td:first-child,
+  .sl-markdown-content .ui-table-scroll table.table-row-headers tbody td:first-child {
     width: 11rem;
     color: inherit;
     background: transparent;
   }
 
-  .sl-markdown-content .netscli-table-scroll td:first-child,
-  .sl-markdown-content .netscli-table-scroll table.table-row-headers tbody td:first-child {
+  .sl-markdown-content .ui-table-scroll td:first-child,
+  .sl-markdown-content .ui-table-scroll table.table-row-headers tbody td:first-child {
     font-weight: 400;
   }
 }

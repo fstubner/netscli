@@ -20,7 +20,7 @@ server does not expose it as a tool.
 
 ## Coverage matrix
 
-<div data-netscli-table="row-headers"></div>
+<div data-ui-table="row-headers"></div>
 
 | Capability | Desktop app | CLI | TUI | MCP |
 | --- | --- | --- | --- | --- |

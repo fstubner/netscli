@@ -30,8 +30,8 @@
   /* Total height of the top bar including its bottom border, on both the
      landing page and the docs. Starlight's own --sl-nav-height is set from
      this in starlight/01-tokens-and-header.css. */
-  --netscli-nav-height: 3.75rem;
-  --netscli-shell-width: 72rem;
+  --ui-nav-height: 3.75rem;
+  --ui-shell-width: 72rem;
 
   /* ---- Wordmark ------------------------------------------------------
    *
@@ -49,7 +49,7 @@
    *
    * A ratio rather than a length because the transparent margin scales with
    * the rendered width, so the compensation has to as well: a breakpoint
-   * that narrows the wordmark sets --netscli-mark-width and the inset
+   * that narrows the wordmark sets --ui-mark-width and the inset
    * follows. Do not pre-compose the two into a single length token -- a
    * var() inside a custom property resolves where it is DECLARED, so the
    * composed value would freeze at whatever :root said and quietly ignore
@@ -57,15 +57,15 @@
    *
    * scripts/wordmark-inset.mjs re-derives the ratio from the PNG itself and
    * fails if this value has drifted from it. */
-  --netscli-mark-width: 160px;
+  --ui-mark-width: 160px;
 
   /* Both bars filter the wordmark through this. Dark leaves it alone; the
      light theme darkens it -- see the override below for why. A token rather
      than a rule on `.mark`, because the landing bar and the docs bar are
      different components with their own scoped styles, and this is one
      decision, not two. */
-  --netscli-mark-filter: none;
-  --netscli-mark-inset-ratio: 0.0778;
+  --ui-mark-filter: none;
+  --ui-mark-inset-ratio: 0.0778;
 
   /* Tells the browser which way to draw the controls it renders itself: the
    * <select> popup in the theme control, native focus rings, and form
@@ -87,28 +87,28 @@
    * sites that need an alpha. There were 108 hard-coded copies of the old
    * value across 20 files before this; changing it should be one edit here.
    * The light theme's darker accent is in the light block below. */
-  --netscli-accent: #22c55e;
-  --netscli-accent-rgb: 34, 197, 94;
+  --ui-accent: #22c55e;
+  --ui-accent-rgb: 34, 197, 94;
   /* Hover and other lifted states.
    *
    * #4ade80 was only a 1.31x luminance step up from the accent, against the
    * 1.52x the old teal pair had, so hovering a link looked like nothing
    * happened. #86efac restores a visible step at 1.63x. */
-  --netscli-accent-bright: #86efac;
+  --ui-accent-bright: #86efac;
   /* Pale tint for active text on dark surfaces. */
-  --netscli-accent-high: #a7f3c6;
+  --ui-accent-high: #a7f3c6;
   /* Hover border for interactive chrome: the theme control in both bars, and
      the pagination links in the docs. Was declared only in
      starlight/28-final-interaction-guardrails.css, so the landing bar's copy
      of the same control could not reach it and hovered a different colour.
      The expression is unchanged -- --sl-color-accent and --sl-color-hairline
      were aliases of these two netscli values. */
-  --netscli-hover-border: color-mix(in srgb, var(--netscli-accent) 42%, rgba(var(--netscli-lift-rgb), 0.08));
+  --ui-hover-border: color-mix(in srgb, var(--ui-accent) 42%, rgba(var(--ui-lift-rgb), 0.08));
 
   /* Text drawn ON the accent, where the accent is a fill rather than ink.
      A literal near-black in 404.astro until the light theme existed, at
      which point it became near-black on a dark green button. */
-  --netscli-on-accent: #06130f;
+  --ui-on-accent: #06130f;
 
   /* ---- Brand gradient -------------------------------------------------
    *
@@ -125,9 +125,9 @@
    *
    * Every stop now clears 4.5:1 on its own theme's page: 5.73 / 8.29 / 11.45
    * dark, 8.18 / 6.40 / 7.02 light. scripts/design-tokens.mjs checks them. */
-  --netscli-brand-gradient-from: #16a34a;
-  --netscli-brand-gradient-via: #22c55e;
-  --netscli-brand-gradient-to: #1edcff;
+  --ui-brand-gradient-from: #16a34a;
+  --ui-brand-gradient-via: #22c55e;
+  --ui-brand-gradient-to: #1edcff;
 
   /* ---- Cross-stack role channels -------------------------------------
    *
@@ -143,9 +143,9 @@
    * its own alpha. */
 
   /* Hairlines, dividers, and the neutral washes drawn from them. */
-  --netscli-hairline-rgb: 140, 149, 166;
+  --ui-hairline-rgb: 140, 149, 166;
   /* The direction "raised" points: white on a dark surface. */
-  --netscli-lift-rgb: 255, 255, 255;
+  --ui-lift-rgb: 255, 255, 255;
 
   /* ---- Text ramp ------------------------------------------------------
    *
@@ -164,10 +164,10 @@
    * There is no fourth, dimmer step. One was tried, borrowing Starlight's
    * gray-4, and axe caught it on both themes at 3.04:1 and 3.50:1 against a
    * 4.5 floor -- gray-4 is a BORDER colour there, and using it for text was
-   * the mistake. The dimmest text this site draws is --netscli-text-muted. */
-  --netscli-text-strong: #f4f4f4;
-  --netscli-text: #c2cad8;
-  --netscli-text-muted: #8c95a6;
+   * the mistake. The dimmest text this site draws is --ui-text-muted. */
+  --ui-text-strong: #f4f4f4;
+  --ui-text: #c2cad8;
+  --ui-text-muted: #8c95a6;
 
   /* ---- Surfaces -------------------------------------------------------
    *
@@ -181,14 +181,14 @@
    * Values are the docs' --sl-color-bg, gray-6 and the panel surface, so a
    * card on the landing page and a card in the docs are finally the same
    * colour. */
-  --netscli-bg: #111111;
-  --netscli-surface: #191d25;
-  --netscli-surface-raised: #20242b;
+  --ui-bg: #111111;
+  --ui-surface: #191d25;
+  --ui-surface-raised: #20242b;
   /* The page background as channels, for the translucent bars drawn over
      content: the sticky nav, the mobile menu, the lightbox scrim. Those were
      four slightly different near-black rgba() values -- 17/17/17, 22/24/26,
      25/25/25, 8/8/8 -- none of which could follow a theme. */
-  --netscli-bg-rgb: 17, 17, 17;
+  --ui-bg-rgb: 17, 17, 17;
 }
 
 /* The wordmark's one size step, for both bars.
@@ -208,7 +208,7 @@
  * custom property resolving where it is declared. */
 @media (max-width: 600px) {
   :root {
-    --netscli-mark-width: 132px;
+    --ui-mark-width: 132px;
   }
 }
 
@@ -236,12 +236,12 @@ html[data-theme='light'] {
    * would also be a second file to keep in step with this one and with
    * scripts/wordmark-inset.mjs. One declaration, reversible, until the hue
    * shift bothers someone. */
-  --netscli-mark-filter: brightness(0.62);
+  --ui-mark-filter: brightness(0.62);
 
   /* The accent, as a colour and as channels.
    *
    * Only the -rgb form was overridden here until now, so every
-   * `color: var(--netscli-accent)` call site kept rendering the DARK #22c55e
+   * `color: var(--ui-accent)` call site kept rendering the DARK #22c55e
    * on a white page -- 2.0:1, and the single largest source of the light
    * theme's contrast failures. It went unnoticed because the a11y check's
    * light pass was passing no colour-scheme flag and so tested dark twice on
@@ -250,50 +250,50 @@ html[data-theme='light'] {
    * Depth inverts with the theme here as it does for surfaces: "bright" is a
    * hover state, which means further from the page, so on white it is DARKER
    * than the base accent rather than lighter. */
-  --netscli-accent: #146b2e;
-  --netscli-accent-rgb: 20, 107, 46;
-  --netscli-accent-bright: #0e5122;
-  --netscli-accent-high: #0a3d19;
+  --ui-accent: #146b2e;
+  --ui-accent-rgb: 20, 107, 46;
+  --ui-accent-bright: #0e5122;
+  --ui-accent-high: #0a3d19;
   /* White on the accent fill: 6.62:1 against #146b2e, where the dark theme's
      near-black would be 1.7:1. */
-  --netscli-on-accent: #ffffff;
+  --ui-on-accent: #ffffff;
 
   /* 0.1, not the dark theme's 0.08: --sl-color-hairline carried a different
      alpha per theme, and this reproduces it rather than rounding the two
      together. */
-  --netscli-hover-border: color-mix(in srgb, var(--netscli-accent) 42%, rgba(var(--netscli-lift-rgb), 0.1));
+  --ui-hover-border: color-mix(in srgb, var(--ui-accent) 42%, rgba(var(--ui-lift-rgb), 0.1));
   /* The same arc, walked in the direction that stays legible on white. */
-  --netscli-brand-gradient-from: #005a1e;
-  --netscli-brand-gradient-via: #146b2e;
-  --netscli-brand-gradient-to: #155e75;
+  --ui-brand-gradient-from: #005a1e;
+  --ui-brand-gradient-via: #146b2e;
+  --ui-brand-gradient-to: #155e75;
 
-  --netscli-hairline-rgb: 17, 24, 39;
+  --ui-hairline-rgb: 17, 24, 39;
   /* On a light surface, raised is DARKER. See the note in the docs' token
      file for the 27 rules that had this backwards. */
-  --netscli-lift-rgb: 17, 24, 39;
+  --ui-lift-rgb: 17, 24, 39;
 
   /* The light ramp, again matching the docs. Starlight inverts its own
      naming here -- --sl-color-white is #111827 in the light theme -- which is
      why "strong" is the darkest of these rather than the lightest.
      --sl-color-gray-3 carries a note about not lightening it; the same
-     applies to --netscli-text-muted, which is the same value and is checked
+     applies to --ui-text-muted, which is the same value and is checked
      against every surface by scripts/design-tokens.mjs. */
-  --netscli-text-strong: #111827;
-  --netscli-text: #44516a;
-  --netscli-text-muted: #596478;
+  --ui-text-strong: #111827;
+  --ui-text: #44516a;
+  --ui-text-muted: #596478;
 
   /* Light surfaces, again the docs' own: --sl-color-bg, gray-6, and the
      panel. Depth inverts with the theme -- a raised surface is lighter than
      the page in the dark theme and darker than it here -- which is why these
      are named for depth rather than for a colour. */
-  --netscli-bg: #fbfbfb;
+  --ui-bg: #fbfbfb;
   /* Blue-grey, not neutral grey. The alternating band and the cards standing
      on it were #f4f6f8/#f6f8fa, which is the page with the colour taken out
      -- so the "Get started" section read as a slightly dirty white rather
      than as its own surface. A navy cast gives it somewhere to be without
      touching a single piece of text: the ramp measures 15.68 / 7.05 / 5.27
      on the band and 16.23 / 7.30 / 5.46 on a card. */
-  --netscli-surface: #eef1f7;
-  --netscli-surface-raised: #f2f5fa;
-  --netscli-bg-rgb: 251, 251, 251;
+  --ui-surface: #eef1f7;
+  --ui-surface-raised: #f2f5fa;
+  --ui-bg-rgb: 251, 251, 251;
 }

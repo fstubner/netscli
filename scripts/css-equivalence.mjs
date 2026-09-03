@@ -83,7 +83,7 @@ const docs = pages
 for (const { document } of docs) {
   const content = document.querySelector('.sl-markdown-content');
   if (!content) continue;
-  const opts = { 'netscli-table: row-headers': 'table-row-headers', 'netscli-table: plain-first-column': 'table-plain-first-column' };
+  const opts = { 'ui-table: row-headers': 'table-row-headers', 'ui-table: plain-first-column': 'table-plain-first-column' };
   const walk = (node) => {
     for (const n of node.childNodes) {
       if (n.nodeType === 8) {
@@ -94,8 +94,8 @@ for (const { document } of docs) {
   };
   walk(content);
   for (const table of content.querySelectorAll('table')) {
-    if (table.parentElement && table.parentElement.classList.contains('netscli-table-scroll')) continue;
-    const w = document.createElement('div'); w.className = 'netscli-table-scroll'; table.before(w); w.append(table);
+    if (table.parentElement && table.parentElement.classList.contains('ui-table-scroll')) continue;
+    const w = document.createElement('div'); w.className = 'ui-table-scroll'; table.before(w); w.append(table);
   }
 }
 
@@ -115,7 +115,7 @@ function elems(sel) {
 }
 const subject = (sel) => sel.trim().split(/[\s>+~]+/).pop().replace(/\[[^\]]*\]/g, '').replace(/::?[a-z-]+(\([^)]*\))?/g, '');
 // Selectors for DOM that only exists at runtime fall back to a name bucket.
-const RUNTIME = /pagefind|dialog|site-search|feedback|aria-hidden|isMobile|sl-sidebar-state|search-offline|data-search-modal|::backdrop|data-copied|\.show|netscli-table-scroll/;
+const RUNTIME = /pagefind|dialog|site-search|feedback|aria-hidden|isMobile|sl-sidebar-state|search-offline|data-search-modal|::backdrop|data-copied|\.show|ui-table-scroll/;
 
 /* ---- Index a stack ------------------------------------------------------- */
 function index(sources) {
