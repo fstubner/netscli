@@ -153,6 +153,27 @@ export async function startPreview({ baseUrl, host, port, astroCli, allowReuse, 
     process.exit(1);
   }
 
+  // Something can hold the port without answering on ours.
+  //
+  // `astro preview` run by hand daemonises and binds `localhost`, which
+  // resolves to ::1 first on Windows; these checks wait on 127.0.0.1. So the
+  // probe above says "free", the spawn below cannot bind, and the run ends
+  // 30 seconds later with a timeout that names the wrong problem -- it looks
+  // like a broken build rather than a stray server. That cost three
+  // debugging detours in one afternoon before it was written down.
+  const squatters = listenersOnPort(port);
+  if (squatters.length) {
+    console.error(
+      `Port ${port} is taken by another process (pid ${squatters.join(', ')}), ` +
+        `but it is not answering on ${baseUrl}.\n\n` +
+        'A hand-started `astro preview` binds localhost (::1) rather than\n' +
+        '127.0.0.1, which looks exactly like this. Stop it with\n' +
+        '`npx astro preview stop`, or free the port some other way, then run\n' +
+        'this again.',
+    );
+    process.exit(1);
+  }
+
   console.log(`Starting Astro preview at ${baseUrl}`);
   preview = spawn(process.execPath, [astroCli, 'preview', '--host', host, '--port', port], {
     env: { ...process.env, ASTRO_TELEMETRY_DISABLED: '1' },
