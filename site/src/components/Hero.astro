@@ -38,7 +38,12 @@ const defaultDownload = heroDownloads[0];
   </div>
 
   <div class="hero-cta">
-    <div class="hero-cta-main">
+    {/* Two columns when there is a desktop button to put in the first one.
+        A product with no desktop build leaves `heroDownloads` empty, and
+        the wide command was then laid into the 200px column meant for the
+        button -- `iwr -useb https:/…` truncated mid-URL with the rest of
+        the row empty beside it. */}
+    <div class:list={['hero-cta-main', heroDownloads.length === 0 && 'hero-cta-main-solo']}>
       {heroDownloads.length > 0 && (
         <div class="hero-primary-wrap">
           <a class="hero-primary" id="hero-desktop-download" href={defaultDownload.href}>
@@ -254,6 +259,7 @@ const defaultDownload = heroDownloads[0];
   gap:9px;
 }
 .hero-cta-main{grid-template-columns:200px minmax(0,1fr)}
+.hero-cta-main-solo{grid-template-columns:minmax(0,1fr)}
 .hero-cta-sub{
   grid-template-columns:minmax(0,1fr) auto;
   width:78%;
