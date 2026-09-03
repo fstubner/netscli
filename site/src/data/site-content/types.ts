@@ -17,6 +17,9 @@ export interface Meta {
   author: { name: string; url: string };
   /** Absolute URL to the OG/Twitter share image. */
   ogImage: string;
+  /** What the share image shows, for the `twitter:image:alt` tag. Every
+   *  page's card uses the same asset, so one description covers them all. */
+  ogImageAlt: string;
   /** Favicon + apple-touch-icon. */
   faviconPath: string;
   themeColor: string;
