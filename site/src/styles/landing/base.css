@@ -77,8 +77,8 @@ body.not-found-page .not-found{
 a{color:inherit}
 /* Inline code follows the theme, like the command chips and unlike the block
    samples. It was `--ui-code-bg`, so a near-black chip landed mid-
-   sentence on a white page -- `netscli`, `--json`, `netscli serve` punching
-   holes through the surfaces prose. See the chip note in code-surface.css. */
+   sentence on a white page -- every inline `--flag` and command name
+   punching holes through the surfaces prose. See the chip note in code-surface.css. */
 code{
   font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.85em;
   background:var(--ui-chip-bg);padding:2px 6px;border-radius:4px;
