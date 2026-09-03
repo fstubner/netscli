@@ -1,6 +1,6 @@
 *,*::before,*::after{box-sizing:border-box}
 :root{
-  --netscli-shell-gutter:24px;
+  --ui-shell-gutter:24px;
 }
 html{
   scroll-behavior:smooth;
@@ -9,17 +9,17 @@ html{
 }
 *{
   scrollbar-width:thin;
-  scrollbar-color:rgba(140,149,166,.42) rgba(var(--netscli-lift-rgb),.035);
+  scrollbar-color:rgba(140,149,166,.42) rgba(var(--ui-lift-rgb),.035);
 }
 ::-webkit-scrollbar{width:12px;height:12px}
-::-webkit-scrollbar-track{background:var(--netscli-bg)}
+::-webkit-scrollbar-track{background:var(--ui-bg)}
 ::-webkit-scrollbar-thumb{
   background:rgba(140,149,166,.45);
-  border:3px solid var(--netscli-bg);
+  border:3px solid var(--ui-bg);
   border-radius:999px;
 }
 ::-webkit-scrollbar-thumb:hover{background:rgba(170,178,192,.62)}
-::-webkit-scrollbar-corner{background:var(--netscli-bg)}
+::-webkit-scrollbar-corner{background:var(--ui-bg)}
 html[data-theme='light']{
   scrollbar-color:rgba(68,81,106,.42) rgba(241,245,249,.92);
 }
@@ -36,7 +36,7 @@ html[data-theme='light'] ::-webkit-scrollbar-corner{background:#f1f5f9}
 body{
   margin:0;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
-  background:var(--netscli-bg);color:var(--netscli-text);line-height:1.6;
+  background:var(--ui-bg);color:var(--ui-text);line-height:1.6;
   -webkit-font-smoothing:antialiased;
 }
 .skip-link{
@@ -47,8 +47,8 @@ body{
   padding:8px 12px;
   border:1px solid #2dd4bf;
   border-radius:6px;
-  background:var(--netscli-bg);
-  color:var(--netscli-text-strong);
+  background:var(--ui-bg);
+  color:var(--ui-text-strong);
   transform:translateY(calc(-100% - 16px));
   transition:transform .15s ease;
 }
@@ -76,17 +76,17 @@ body.not-found-page .not-found{
 }
 a{color:inherit}
 /* Inline code follows the theme, like the command chips and unlike the block
-   samples. It was `--netscli-code-bg`, so a near-black chip landed mid-
+   samples. It was `--ui-code-bg`, so a near-black chip landed mid-
    sentence on a white page -- `netscli`, `--json`, `netscli serve` punching
    holes through the surfaces prose. See the chip note in code-surface.css. */
 code{
   font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.85em;
-  background:var(--netscli-chip-bg);padding:2px 6px;border-radius:4px;
-  color:var(--netscli-chip-code-fg);
+  background:var(--ui-chip-bg);padding:2px 6px;border-radius:4px;
+  color:var(--ui-chip-code-fg);
 }
 
 /* layout */
-.w{max-width:var(--netscli-shell-width);margin:0 auto;padding:0 var(--netscli-shell-gutter)}
+.w{max-width:var(--ui-shell-width);margin:0 auto;padding:0 var(--ui-shell-gutter)}
 
 /* buttons */
 .btn{
@@ -94,10 +94,10 @@ code{
   padding:10px 20px;border-radius:8px;font-size:.875rem;font-weight:600;
   text-decoration:none;transition:all 120ms;
 }
-.btn-w{background:#e5e5e5;color:var(--netscli-bg);border:1px solid #e5e5e5}
+.btn-w{background:#e5e5e5;color:var(--ui-bg);border:1px solid #e5e5e5}
 .btn-w:hover{background:#fff;border-color:#fff}
-.btn-o{background:transparent;color:var(--netscli-text-muted);border:1px solid rgba(var(--netscli-lift-rgb),.15)}
-.btn-o:hover{color:var(--netscli-text);border-color:rgba(255,255,255,.3);text-decoration:none}
+.btn-o{background:transparent;color:var(--ui-text-muted);border:1px solid rgba(var(--ui-lift-rgb),.15)}
+.btn-o:hover{color:var(--ui-text);border-color:rgba(255,255,255,.3);text-decoration:none}
 .gh-icon{width:16px;height:16px;fill:currentColor;flex-shrink:0}
 
 
@@ -119,9 +119,9 @@ section{
  * what axe does with text over a gradient. */
 section:nth-of-type(even){
   background:
-    linear-gradient(180deg,rgba(var(--netscli-lift-rgb),.018),rgba(var(--netscli-lift-rgb),.006)),
-    var(--netscli-surface);
-  border-block:1px solid rgba(var(--netscli-lift-rgb),.045);
+    linear-gradient(180deg,rgba(var(--ui-lift-rgb),.018),rgba(var(--ui-lift-rgb),.006)),
+    var(--ui-surface);
+  border-block:1px solid rgba(var(--ui-lift-rgb),.045);
 }
 /* No alternating band on a light page. Two dark moments carry the rhythm
  * instead -- #install below and the footer -- and every other section is the
@@ -148,7 +148,7 @@ section:nth-of-type(even){
  * one and not the other, which is invisible from either file alone. */
 html[data-theme='light'] section,
 html[data-theme='light'] .surfaces-section{
-  background:var(--netscli-bg);
+  background:var(--ui-bg);
 }
 
 /* The accent wash went with the band it belonged to. It is a radial
@@ -180,17 +180,17 @@ html[data-theme='light'] section:nth-of-type(even)::before{
  * Both themes, like the surface cards, so the rhythm is not a light-mode-only
  * device. */
 #install{
-  background:var(--netscli-band-dark);
-  box-shadow:var(--netscli-band-inset),var(--netscli-band-edge-shadow);
-  color:var(--netscli-ondark-text);
-  --netscli-text:var(--netscli-ondark-text);
-  --netscli-text-strong:var(--netscli-ondark-text-strong);
-  --netscli-text-muted:var(--netscli-ondark-text-muted);
-  --netscli-accent:var(--netscli-ondark-accent);
-  --netscli-accent-rgb:var(--netscli-ondark-accent-rgb);
-  --netscli-accent-bright:var(--netscli-ondark-accent-bright);
-  --netscli-hairline-rgb:255, 255, 255;
-  --netscli-lift-rgb:255, 255, 255;
+  background:var(--ui-band-dark);
+  box-shadow:var(--ui-band-inset),var(--ui-band-edge-shadow);
+  color:var(--ui-ondark-text);
+  --ui-text:var(--ui-ondark-text);
+  --ui-text-strong:var(--ui-ondark-text-strong);
+  --ui-text-muted:var(--ui-ondark-text-muted);
+  --ui-accent:var(--ui-ondark-accent);
+  --ui-accent-rgb:var(--ui-ondark-accent-rgb);
+  --ui-accent-bright:var(--ui-ondark-accent-bright);
+  --ui-hairline-rgb:255, 255, 255;
+  --ui-lift-rgb:255, 255, 255;
 }
 
 /* The recommended-install card is a LIGHT card on the band in the light
@@ -198,15 +198,15 @@ html[data-theme='light'] section:nth-of-type(even)::before{
    in dark, where .reco is a dark card and the on-dark ramp above is already
    right -- hence the theme scope. Same trap as .faq-command and the chips. */
 html[data-theme='light'] #install .reco{
-  color:var(--netscli-text);
-  --netscli-text:#44516a;
-  --netscli-text-strong:#111827;
-  --netscli-text-muted:#596478;
-  --netscli-accent:#146b2e;
-  --netscli-accent-rgb:20, 107, 46;
-  --netscli-accent-bright:#0e5122;
-  --netscli-hairline-rgb:17, 24, 39;
-  --netscli-lift-rgb:17, 24, 39;
+  color:var(--ui-text);
+  --ui-text:#44516a;
+  --ui-text-strong:#111827;
+  --ui-text-muted:#596478;
+  --ui-accent:#146b2e;
+  --ui-accent-rgb:20, 107, 46;
+  --ui-accent-bright:#0e5122;
+  --ui-hairline-rgb:17, 24, 39;
+  --ui-lift-rgb:17, 24, 39;
 }
 
 /* The Try-it panel stays a dark code surface -- it is something you read, not
@@ -219,22 +219,22 @@ html[data-theme='light'] #install .reco{
 }
 
 html[data-theme='light'] footer{
-  --netscli-band-navy:#141c2e;
-  background:var(--netscli-band-navy);
-  box-shadow:var(--netscli-band-inset),var(--netscli-band-edge-shadow);
+  --ui-band-navy:#141c2e;
+  background:var(--ui-band-navy);
+  box-shadow:var(--ui-band-inset),var(--ui-band-edge-shadow);
   /* Explicit, not just the token. The element inherits `color` from <body>,
      where the token already resolved to the light ramp, so re-pointing the
      token alone leaves text that sets no colour of its own dark on navy.
      Measured rgb(68,81,106) until this line. */
-  color:var(--netscli-text);
-  --netscli-text:var(--netscli-ondark-text);
-  --netscli-text-strong:var(--netscli-ondark-text-strong);
-  --netscli-text-muted:var(--netscli-ondark-text-muted);
-  --netscli-accent:var(--netscli-ondark-accent);
-  --netscli-accent-rgb:var(--netscli-ondark-accent-rgb);
-  --netscli-accent-bright:var(--netscli-ondark-accent-bright);
-  --netscli-hairline-rgb:255, 255, 255;
-  --netscli-lift-rgb:255, 255, 255;
+  color:var(--ui-text);
+  --ui-text:var(--ui-ondark-text);
+  --ui-text-strong:var(--ui-ondark-text-strong);
+  --ui-text-muted:var(--ui-ondark-text-muted);
+  --ui-accent:var(--ui-ondark-accent);
+  --ui-accent-rgb:var(--ui-ondark-accent-rgb);
+  --ui-accent-bright:var(--ui-ondark-accent-bright);
+  --ui-hairline-rgb:255, 255, 255;
+  --ui-lift-rgb:255, 255, 255;
 }
 
 section:nth-of-type(even)::before{
@@ -242,13 +242,13 @@ section:nth-of-type(even)::before{
   position:absolute;inset:0;
   pointer-events:none;
   z-index:0;
-  background:radial-gradient(circle at 18% 0%,rgba(var(--netscli-accent-rgb),.055),transparent 34rem);
+  background:radial-gradient(circle at 18% 0%,rgba(var(--ui-accent-rgb),.055),transparent 34rem);
 }
 section>.w{position:relative;z-index:1}
-section h2{font-size:1.5rem;font-weight:700;color:var(--netscli-text-strong);margin:0 0 6px}
-section .lead{color:var(--netscli-text-muted);font-size:.9375rem;margin:0 0 28px}
-section .lead a{color:var(--netscli-accent);text-decoration:underline;text-underline-offset:3px}
-section .lead a:hover{color:var(--netscli-accent-bright)}
+section h2{font-size:1.5rem;font-weight:700;color:var(--ui-text-strong);margin:0 0 6px}
+section .lead{color:var(--ui-text-muted);font-size:.9375rem;margin:0 0 28px}
+section .lead a{color:var(--ui-accent);text-decoration:underline;text-underline-offset:3px}
+section .lead a:hover{color:var(--ui-accent-bright)}
 
 
 /* ─── COPY BUTTON ─── */
@@ -256,16 +256,16 @@ section .lead a:hover{color:var(--netscli-accent-bright)}
 .copy-btn{
   position:absolute;top:50%;right:5px;transform:translateY(-50%);
   /* Opaque background so text behind the button isn't visible through it */
-  background:var(--netscli-surface-raised);border:1px solid rgba(var(--netscli-lift-rgb),.12);
+  background:var(--ui-surface-raised);border:1px solid rgba(var(--ui-lift-rgb),.12);
   border-radius:6px;
   /* Themed, not a literal white. The icon is an inline SVG stroked with
      `currentColor`, so `rgba(255,255,255,.34)` drew it white on white in the
      light theme -- every copy button rendered as an empty square. The button's
      own background and border already used the lift channel; only the ink did
-     not. --netscli-text-muted rather than a lift alpha because it is the same
+     not. --ui-text-muted rather than a lift alpha because it is the same
      ink the rest of the page uses for secondary marks, and it is contrast
      checked. */
-  color:var(--netscli-text-muted);
+  color:var(--ui-text-muted);
   width:27px;height:27px;padding:0;
   display:inline-flex;align-items:center;justify-content:center;
   cursor:pointer;opacity:0;
@@ -275,7 +275,7 @@ section .lead a:hover{color:var(--netscli-accent-bright)}
 .has-copy:hover .copy-btn,.has-copy:focus-within .copy-btn{opacity:1}
 .faq-command:hover .copy-btn,.faq-command:focus-within .copy-btn{opacity:1}
 .faq-command .copy-btn{right:10px}
-.copy-btn:hover{background:var(--netscli-surface-raised);border-color:rgba(var(--netscli-lift-rgb),.18);color:var(--netscli-text-strong)}
+.copy-btn:hover{background:var(--ui-surface-raised);border-color:rgba(var(--ui-lift-rgb),.18);color:var(--ui-text-strong)}
 .copy-btn.copied{color:#3fb950;border-color:rgba(63,185,80,.4)}
 .surface-visual .codeblock .copy-btn,
 .tryblock .copy-btn{

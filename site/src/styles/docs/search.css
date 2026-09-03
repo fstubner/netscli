@@ -15,11 +15,11 @@
 
 /* ---- Dialog ---------------------------------------------------------- */
 site-search dialog {
-  border: 1px solid rgba(var(--netscli-hairline-rgb), 0.34);
+  border: 1px solid rgba(var(--ui-hairline-rgb), 0.34);
   border-radius: 8px;
   box-shadow:
     0 34px 90px rgba(0, 0, 0, 0.62),
-    0 0 0 1px rgba(var(--netscli-lift-rgb), 0.02) inset;
+    0 0 0 1px rgba(var(--ui-lift-rgb), 0.02) inset;
   overflow: hidden;
   background: #252b36;
 }
@@ -42,10 +42,10 @@ site-search dialog .search-container {
 
 html[data-theme='light'] site-search dialog {
   box-shadow:
-    0 30px 70px rgba(var(--netscli-hairline-rgb), 0.18),
+    0 30px 70px rgba(var(--ui-hairline-rgb), 0.18),
     0 0 0 1px rgba(255, 255, 255, 0.72) inset;
   background: #f6f8fa;
-  border-color: rgba(var(--netscli-hairline-rgb), 0.24);
+  border-color: rgba(var(--ui-hairline-rgb), 0.24);
 }
 
 html[data-theme='light'] site-search dialog .dialog-frame {
@@ -63,7 +63,7 @@ site-search button[data-close-modal] {
 site-search button[data-close-modal]:hover,
 site-search button[data-close-modal]:focus-visible {
   outline: 0;
-  background: rgba(var(--netscli-accent-rgb), 0.12);
+  background: rgba(var(--ui-accent-rgb), 0.12);
   color: var(--sl-color-white);
 }
 
@@ -73,7 +73,7 @@ html[data-theme='light'] site-search button[data-close-modal] {
 
 html[data-theme='light'] site-search button[data-close-modal]:hover,
 html[data-theme='light'] site-search button[data-close-modal]:focus-visible {
-  background: rgba(var(--netscli-accent-rgb), 0.1);
+  background: rgba(var(--ui-accent-rgb), 0.1);
   color: var(--sl-color-white);
 }
 

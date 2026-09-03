@@ -1,6 +1,6 @@
 /* Docs tables, the base rules. Below 72rem docs/tables-narrow.css takes
  * over. Every table in .sl-markdown-content is wrapped at runtime in
- * div.netscli-table-scroll by src/scripts/docs-tables.ts, which is the
+ * div.ui-table-scroll by src/scripts/docs-tables.ts, which is the
  * horizontally scrolling region; the table inside keeps a minimum width so
  * columns never crush. Markers in the markdown add `table-row-headers`.
  *
@@ -33,16 +33,16 @@
   padding: 0.76rem 1rem;
   text-align: left;
   vertical-align: middle;
-  border-color: rgba(var(--netscli-hairline-rgb), 0.13);
+  border-color: rgba(var(--ui-hairline-rgb), 0.13);
 }
 
 .sl-markdown-content tbody td {
-  border-bottom: 1px solid rgba(var(--netscli-hairline-rgb), 0.11);
+  border-bottom: 1px solid rgba(var(--ui-hairline-rgb), 0.11);
 }
 
 .sl-markdown-content td + td,
 .sl-markdown-content th + th {
-  border-inline-start: 1px solid rgba(var(--netscli-hairline-rgb), 0.11);
+  border-inline-start: 1px solid rgba(var(--ui-hairline-rgb), 0.11);
 }
 
 .sl-markdown-content td:first-child,
@@ -78,7 +78,7 @@
 
 /* Weights: bold header row, regular body -- including the first column,
    which an earlier design set bold and a later one took back. */
-.sl-markdown-content .netscli-table-scroll th {
+.sl-markdown-content .ui-table-scroll th {
   font-weight: 720;
 }
 
@@ -89,36 +89,36 @@
 }
 
 .sl-markdown-content table:not(.table-row-headers) tbody td:first-child,
-.sl-markdown-content .netscli-table-scroll table.table-row-headers tbody td:first-child {
+.sl-markdown-content .ui-table-scroll table.table-row-headers tbody td:first-child {
   color: inherit;
   background: transparent;
 }
 
-.sl-markdown-content .netscli-table-scroll table.table-row-headers tbody td:first-child {
+.sl-markdown-content .ui-table-scroll table.table-row-headers tbody td:first-child {
   font-weight: 400;
 }
 
 /* ---- Surfaces -------------------------------------------------------- */
 .sl-markdown-content thead tr {
-  box-shadow: inset 0 -2px 0 rgba(var(--netscli-accent-rgb), 0.55);
+  box-shadow: inset 0 -2px 0 rgba(var(--ui-accent-rgb), 0.55);
 }
 
 .sl-markdown-content tbody tr:hover {
-  background: var(--netscli-table-bg);
+  background: var(--ui-table-bg);
 }
 
 .sl-markdown-content tbody tr:nth-child(even),
 .sl-markdown-content tbody tr:nth-child(even):hover {
-  background: var(--netscli-table-stripe);
+  background: var(--ui-table-stripe);
 }
 
 html[data-theme='light'] .sl-markdown-content table {
-  background: var(--netscli-table-bg);
+  background: var(--ui-table-bg);
   box-shadow: none;
 }
 
 html[data-theme='light'] .sl-markdown-content thead tr {
-  box-shadow: inset 0 -2px 0 rgba(var(--netscli-accent-rgb), 0.42);
+  box-shadow: inset 0 -2px 0 rgba(var(--ui-accent-rgb), 0.42);
 }
 
 html[data-theme='light'] .sl-markdown-content th {
@@ -132,26 +132,26 @@ html[data-theme='light'] .sl-markdown-content tbody tr:hover {
 
 html[data-theme='light'] .sl-markdown-content tbody tr:nth-child(even),
 html[data-theme='light'] .sl-markdown-content tbody tr:nth-child(even):hover {
-  background: var(--netscli-table-stripe);
+  background: var(--ui-table-stripe);
 }
 
 /* ---- Scroll wrapper -------------------------------------------------- */
-.sl-markdown-content .netscli-table-scroll {
+.sl-markdown-content .ui-table-scroll {
   max-width: 100%;
   margin-block: 1.2rem;
   overflow-x: auto;
   overflow-y: hidden;
-  border: 1px solid rgba(var(--netscli-hairline-rgb), 0.2);
+  border: 1px solid rgba(var(--ui-hairline-rgb), 0.2);
   border-radius: 8px;
-  background: var(--netscli-table-bg);
+  background: var(--ui-table-bg);
   -webkit-overflow-scrolling: touch;
 }
 
-html[data-theme='light'] .sl-markdown-content .netscli-table-scroll {
-  background: var(--netscli-table-bg);
+html[data-theme='light'] .sl-markdown-content .ui-table-scroll {
+  background: var(--ui-table-bg);
 }
 
-.sl-markdown-content .netscli-table-scroll table {
+.sl-markdown-content .ui-table-scroll table {
   display: table;
   width: 100%;
   min-width: 42rem;
@@ -163,21 +163,21 @@ html[data-theme='light'] .sl-markdown-content .netscli-table-scroll {
   background: transparent;
 }
 
-.sl-markdown-content .netscli-table-scroll thead {
+.sl-markdown-content .ui-table-scroll thead {
   display: table-header-group;
 }
 
-.sl-markdown-content .netscli-table-scroll tbody {
+.sl-markdown-content .ui-table-scroll tbody {
   display: table-row-group;
 }
 
-.sl-markdown-content .netscli-table-scroll tr {
+.sl-markdown-content .ui-table-scroll tr {
   display: table-row;
   background: transparent;
 }
 
-.sl-markdown-content .netscli-table-scroll th,
-.sl-markdown-content .netscli-table-scroll td {
+.sl-markdown-content .ui-table-scroll th,
+.sl-markdown-content .ui-table-scroll td {
   display: table-cell;
   min-width: 0;
   white-space: normal;

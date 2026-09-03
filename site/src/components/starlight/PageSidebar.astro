@@ -25,7 +25,7 @@ const { toc } = Astro.locals.starlightRoute;
   page marked.
 
   Its styles are gone from 17, 18, 20, 21, 22, 23 and 28 with it, along with a
-  `--netscli-mobile-docs-nav-height` token that only existed to offset the
+  `--ui-mobile-docs-nav-height` token that only existed to offset the
   contents bar below it, and a half-built hide-on-scroll-down treatment: 17
   declared `transform: translateY(0)` with a 140ms transition, 21 forced
   `transform: none !important` in both scroll states, and nothing ever set the
@@ -47,7 +47,7 @@ const { toc } = Astro.locals.starlightRoute;
         </div>
       </div>
       {/* Narrow screens keep the collapsed dropdown. */}
-      <div class="netscli-mobile-toc-wrapper lg:sl-hidden">
+      <div class="ui-mobile-toc-wrapper lg:sl-hidden">
         <MobileTableOfContents />
       </div>
     </>

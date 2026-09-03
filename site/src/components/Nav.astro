@@ -57,7 +57,7 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
         labels match upstream too, so the list reads identically in both
         bars.
       */}
-      <div class="netscli-theme-select">
+      <div class="ui-theme-select">
         <label>
           <span class="sr-only">Select theme</span>
           {/* All three icons, one shown at a time.
@@ -131,9 +131,9 @@ nav[data-site-nav]{
      header sets the same value the same way. Sizing it from the inner box
      plus a border instead left the landing bar 0.2px shorter, because a 1px
      border renders as 0.8 at this device pixel ratio. */
-  min-height:var(--netscli-nav-height);
-  background:rgba(var(--netscli-bg-rgb), .85);backdrop-filter:blur(12px);
-  border-bottom:1px solid rgba(var(--netscli-lift-rgb),.06);
+  min-height:var(--ui-nav-height);
+  background:rgba(var(--ui-bg-rgb), .85);backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(var(--ui-lift-rgb),.06);
   box-shadow:none;
   transition:box-shadow 160ms ease,border-color 160ms ease;
 }
@@ -157,10 +157,10 @@ nav[data-site-nav]::after{
   transition:opacity 160ms ease;
 }
 body.nav-scrolled nav[data-site-nav]{
-  border-bottom-color:rgba(var(--netscli-accent-rgb),.12);
+  border-bottom-color:rgba(var(--ui-accent-rgb),.12);
   box-shadow:
     0 12px 28px rgba(0,0,0,.28),
-    0 1px 0 rgba(var(--netscli-accent-rgb),.08) !important;
+    0 1px 0 rgba(var(--ui-accent-rgb),.08) !important;
 }
 body.nav-scrolled nav[data-site-nav]::after{
   opacity:1;
@@ -175,8 +175,8 @@ body.nav-scrolled nav[data-site-nav]::after{
  * shadow. */
 html[data-theme='light'] body.nav-scrolled nav[data-site-nav]{
   box-shadow:
-    0 12px 26px rgba(var(--netscli-hairline-rgb),.11),
-    0 1px 0 rgba(var(--netscli-accent-rgb),.12) !important;
+    0 12px 26px rgba(var(--ui-hairline-rgb),.11),
+    0 1px 0 rgba(var(--ui-accent-rgb),.12) !important;
 }
 /* No second layer on a light page.
  *
@@ -200,12 +200,12 @@ html[data-theme='light'] nav[data-site-nav]::after{
      time you crossed between the landing page and the docs. The border is
      on the parent, hence the -1px. Still a min, so the mobile wrapped state
      grows past it as before. */
-  min-height:calc(var(--netscli-nav-height) - 1px);
+  min-height:calc(var(--ui-nav-height) - 1px);
   /* No block padding: the links are the full bar height so their underline
      reaches the bottom border, and padding here would push them past it.
      min-height holds the bar open instead. The narrow-screen rule below
      restores padding, where the links go back to auto height. */
-  max-width:var(--netscli-shell-width);margin:0 auto;padding:0 var(--netscli-shell-gutter);
+  max-width:var(--ui-shell-width);margin:0 auto;padding:0 var(--ui-shell-gutter);
   display:flex;align-items:center;justify-content:space-between;gap:18px;
   flex-wrap:wrap;
   position:relative;
@@ -217,13 +217,13 @@ html[data-theme='light'] nav[data-site-nav]::after{
      200ms transition had nothing to animate between. Left as they were, the
      hover rule would now undo the light theme's darkening the moment the
      pointer touched the logo. */
-  filter:var(--netscli-mark-filter);
+  filter:var(--ui-mark-filter);
   /* Cancels the wordmark asset's own transparent left margin, so the glyph
      starts on the gutter the nav links start on. See tokens.css. */
-  transform:translateX(calc(var(--netscli-mark-width) * var(--netscli-mark-inset-ratio) * -1));
+  transform:translateX(calc(var(--ui-mark-width) * var(--ui-mark-inset-ratio) * -1));
 }
 .mark img{
-  display:block;width:var(--netscli-mark-width);height:auto;image-rendering:auto;
+  display:block;width:var(--ui-mark-width);height:auto;image-rendering:auto;
 }
 
 .nav-menu-toggle{
@@ -234,10 +234,10 @@ html[data-theme='light'] nav[data-site-nav]::after{
   justify-content:center;
   flex-direction:column;
   gap:4px;
-  border:1px solid rgba(var(--netscli-lift-rgb),.1);
+  border:1px solid rgba(var(--ui-lift-rgb),.1);
   border-radius:7px;
-  color:var(--netscli-text);
-  background:rgba(var(--netscli-lift-rgb),.035);
+  color:var(--ui-text);
+  background:rgba(var(--ui-lift-rgb),.035);
   cursor:pointer;
 }
 .nav-menu-toggle span{
@@ -248,13 +248,13 @@ html[data-theme='light'] nav[data-site-nav]::after{
 }
 .nav-menu-toggle:hover,
 .nav-menu-toggle:focus-visible{
-  color:var(--netscli-text-strong);
-  border-color:rgba(var(--netscli-accent-rgb),.35);
+  color:var(--ui-text-strong);
+  border-color:rgba(var(--ui-accent-rgb),.35);
   outline:none;
 }
 .nlinks{display:flex;gap:20px;font-size:.8125rem;flex-wrap:wrap;justify-content:flex-end}
 .nlinks a{
-  color:var(--netscli-text-muted);text-decoration:none;
+  color:var(--ui-text-muted);text-decoration:none;
   display:inline-flex;align-items:center;
   border-bottom:2px solid transparent;
   /* Full bar height, so the underline lands on the bar's bottom edge the way
@@ -263,9 +263,9 @@ html[data-theme='light'] nav[data-site-nav]::after{
      percentage had nothing to resolve against and the link collapsed to its
      32px content box. The underline then floated 14px above the bar's
      border. Minus 1px for the border on <nav>. */
-  height:calc(var(--netscli-nav-height) - 1px);
+  height:calc(var(--ui-nav-height) - 1px);
 }
-.nlinks a:hover{color:var(--netscli-text)}
+.nlinks a:hover{color:var(--ui-text)}
 /* Separates the links that scroll from the links that navigate.
    A rule, not a gap alone: at this size a gap on its own reads as an
    accident. Purely decorative, so it is drawn rather than announced --
@@ -289,7 +289,7 @@ html[data-theme='light'] nav[data-site-nav]::after{
   width:1px;
   height:18px;
   margin-block-start:-9px;
-  background:rgba(var(--netscli-hairline-rgb),.28);
+  background:rgba(var(--ui-hairline-rgb),.28);
 }
 
 /* Theme control.
@@ -311,7 +311,7 @@ html[data-theme='light'] nav[data-site-nav]::after{
  * already dark while this one was drawn white over a near-black bar. That is
  * as far as it is worth going: a bespoke listbox for three options would have
  * to re-implement the keyboard and screen reader behaviour this gets free. */
-.netscli-theme-select{display:inline-flex;align-items:center;height:calc(var(--netscli-nav-height) - 1px)}
+.ui-theme-select{display:inline-flex;align-items:center;height:calc(var(--ui-nav-height) - 1px)}
 
 /* Visually hidden, still announced. The control needs a name and the bar has
    no room for a visible one. */
@@ -332,8 +332,8 @@ html[data-theme='light'] nav[data-site-nav]::after{
    contains it, `location` the scroll-spy section on the landing page --
    all three should look current. */
 .nlinks a[aria-current]{
-  color:var(--netscli-text);
-  border-bottom-color:var(--netscli-accent);
+  color:var(--ui-text);
+  border-bottom-color:var(--ui-accent);
 }
 .external-link{
   display:inline-flex;
@@ -345,7 +345,7 @@ html[data-theme='light'] nav[data-site-nav]::after{
 .external-link::after{
   content:"↗";
   flex:0 0 auto;
-  color:var(--netscli-accent);
+  color:var(--ui-accent);
   font-size:.92em;
   font-weight:700;
   line-height:1;
@@ -353,7 +353,7 @@ html[data-theme='light'] nav[data-site-nav]::after{
   text-decoration:none;
 }
 .external-link:hover::after{
-  color:var(--netscli-accent-bright);
+  color:var(--ui-accent-bright);
   opacity:1;
 }
 @media(max-width:600px){
@@ -378,8 +378,8 @@ html[data-theme='light'] nav[data-site-nav]::after{
     justify-content:flex-start;
     gap:2px;
     padding:8px;
-    background:rgba(var(--netscli-bg-rgb), .98);
-    border:1px solid rgba(var(--netscli-lift-rgb),.1);
+    background:rgba(var(--ui-bg-rgb), .98);
+    border:1px solid rgba(var(--ui-lift-rgb),.1);
     border-radius:8px;
     box-shadow:0 14px 34px rgba(0,0,0,.36);
     backdrop-filter:blur(12px);
@@ -406,7 +406,7 @@ html[data-theme='light'] nav[data-site-nav]::after{
     border-inline-start:2px solid transparent;
     margin-block-start:6px;
     padding-block-start:6px;
-    border-block-start:1px solid rgba(var(--netscli-hairline-rgb),.28);
+    border-block-start:1px solid rgba(var(--ui-hairline-rgb),.28);
   }
   /* The stacked menu divides the two groups with the horizontal rule above,
      so the vertical one has nothing to do here. */
@@ -415,9 +415,9 @@ html[data-theme='light'] nav[data-site-nav]::after{
   }
   .nlinks a:hover,
   .nlinks a[aria-current]{
-    border-left-color:var(--netscli-accent);
+    border-left-color:var(--ui-accent);
     border-bottom-color:transparent;
-    background:rgba(var(--netscli-accent-rgb),.1);
+    background:rgba(var(--ui-accent-rgb),.1);
   }
 }
 
