@@ -14,6 +14,8 @@
  * form.
  */
 
+import { sections } from './sections';
+
 export interface NavLink {
   label: string;
   /** Set for links to another page. Mutually exclusive with `section`. */
@@ -26,7 +28,7 @@ export interface NavLink {
   mobileGroup: 'site' | 'project';
 }
 
-export const navLinks: NavLink[] = [
+const allLinks: NavLink[] = [
   { label: 'Features', section: 'surfaces', mobileGroup: 'site' },
   { label: 'Install', section: 'install', mobileGroup: 'site' },
   { label: 'FAQ', section: 'faq', mobileGroup: 'site' },
@@ -39,6 +41,18 @@ export const navLinks: NavLink[] = [
     mobileGroup: 'project',
   },
 ];
+
+/** The links this site actually has.
+ *
+ * An anchor link is only reachable if the landing page renders the section it
+ * points at, and site-content/sections.ts decides that. Without this filter a
+ * product that dropped a section kept a bar link that scrolled nowhere -- the
+ * same defect as a docs sidebar entry whose page was deleted, in the one
+ * component every page renders.
+ */
+export const navLinks: NavLink[] = allLinks.filter(
+  (link) => !link.section || (sections as readonly string[]).includes(link.section)
+);
 
 /** Index of the first link that NAVIGATES rather than scrolling.
  *

@@ -1,6 +1,11 @@
 ---
 import { site } from '../data/site';
+import { sections } from '../data/site-content/sections';
 const { hero, heroDownloads, social } = site;
+// The jump link only exists if there is an install section to jump to.
+// sections.ts can drop one, and a link to a section the page does not render
+// scrolls nowhere.
+const hasInstall = (sections as readonly string[]).includes('install');
 // What the button points at before any script runs, and what a crawler
 // reads. The list's first entry, so the markup can never name a file the
 // content file does not list.
@@ -112,7 +117,7 @@ const defaultDownload = heroDownloads[0];
       <div class="hero-command has-copy hero-copy" id="hero-package-install" data-copy={hero.quickInstall}>
         <code>{hero.quickInstall}</code>
       </div>
-      <a class="hero-install-link" href="#install">{hero.installLinkLabel}</a>
+      {hasInstall && <a class="hero-install-link" href="#install">{hero.installLinkLabel}</a>}
     </div>
   </div>
 </div>
