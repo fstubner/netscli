@@ -240,9 +240,10 @@ const defaultDownload = heroDownloads[0];
 .hero .social-proof .sep{color:var(--ui-text-muted)}
 .hero-cta{
   /* 610, not 560, and sized off the viewport rather than a vw fraction.
-     At 560 the wide command slot was 351px against 397px of text, so
-     `iwr -useb https://netscli.com/install.ps1 | iex` was still clipped by
-     46px even after the URL was shortened -- measured, not estimated. The
+     At 560 the wide command slot was 351px against 397px of text, so a
+     47-character install one-liner -- `iwr -useb https://<domain>/install.ps1
+     | iex` -- was still clipped by 46px even after the URL was shortened,
+     measured rather than estimated. The
      62vw term also made the width non-monotonic: it governed between 900 and
      984px and put the CTA back under 560 there, so a cap alone would have
      fixed only the widest screens. Below 820px the CTA switches to a wrapped

@@ -27,8 +27,8 @@ import { fileURLToPath } from 'node:url';
 
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // Which file, from the same place the bars read it: site-content/meta.ts.
-// Hard-coding the name here meant a fork that swapped in its own wordmark
-// still had this guard measuring netscli's.
+// Hard-coding the name here meant a site that swapped in its own wordmark
+// still had this guard measuring the one it replaced.
 const metaSource = fs.readFileSync(path.join(siteRoot, 'src', 'data', 'site-content', 'meta.ts'), 'utf8');
 const wordmark = metaSource.match(/wordmark:\s*'([^']+)'/);
 if (!wordmark) {
