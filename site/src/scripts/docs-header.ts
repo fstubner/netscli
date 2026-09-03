@@ -42,7 +42,7 @@ export function initDocsHeader(): void {
   window.addEventListener('resize', updateMobileScrollDirection);
 
   const placeMobileTableOfContents = () => {
-    const wrapper = document.querySelector('.netscli-mobile-toc-wrapper');
+    const wrapper = document.querySelector('.ui-mobile-toc-wrapper');
     const titlePanel = document.querySelector(
       '.main-pane .content-panel:first-of-type, .content-panel:first-of-type'
     );
@@ -155,8 +155,8 @@ export function initDocsHeader(): void {
     if (!drawer) return;
 
     const maxScroll = drawer.scrollHeight - drawer.clientHeight;
-    drawer.classList.toggle('netscli-search-overflow-top', drawer.scrollTop > 2);
-    drawer.classList.toggle('netscli-search-overflow-bottom', maxScroll - drawer.scrollTop > 2);
+    drawer.classList.toggle('ui-search-overflow-top', drawer.scrollTop > 2);
+    drawer.classList.toggle('ui-search-overflow-bottom', maxScroll - drawer.scrollTop > 2);
   };
 
   let searchOverflowFrame = 0;

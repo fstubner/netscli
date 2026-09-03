@@ -9,35 +9,35 @@
   --ec-codePadInl: 1.15rem;
   --ec-codePadBlk: 0.62rem;
   --ec-codeLineHt: 1.52;
-  --ec-codeBg: var(--netscli-code-bg);
-  --ec-codeFg: var(--netscli-code-fg);
-  --ec-brdCol: rgba(var(--netscli-hairline-rgb), 0.2);
+  --ec-codeBg: var(--ui-code-bg);
+  --ec-codeFg: var(--ui-code-fg);
+  --ec-brdCol: rgba(var(--ui-hairline-rgb), 0.2);
   --ec-focusBrd: rgba(215, 220, 229, 0.8);
-  --ec-sbThumbCol: rgba(var(--netscli-hairline-rgb), 0.24);
+  --ec-sbThumbCol: rgba(var(--ui-hairline-rgb), 0.24);
   --ec-sbThumbHoverCol: rgba(194, 202, 216, 0.42);
   --ec-frm-frameBoxShdCssVal: 0 16px 36px rgba(0, 0, 0, 0.3);
-  --ec-frm-trmBg: var(--netscli-code-bg);
+  --ec-frm-trmBg: var(--ui-code-bg);
   --ec-frm-trmTtbBg: #202733;
-  --ec-frm-trmTtbBrdBtmCol: rgba(var(--netscli-hairline-rgb), 0.2);
+  --ec-frm-trmTtbBrdBtmCol: rgba(var(--ui-hairline-rgb), 0.2);
   --ec-frm-trmTtbDotsFg: #8c95a6;
   --ec-frm-trmTtbDotsOpa: 0.48;
-  --ec-frm-inlBtnFg: var(--netscli-accent-high);
-  --ec-frm-inlBtnBg: var(--netscli-accent-high);
-  --ec-frm-inlBtnBrd: var(--netscli-accent-high);
+  --ec-frm-inlBtnFg: var(--ui-accent-high);
+  --ec-frm-inlBtnBg: var(--ui-accent-high);
+  --ec-frm-inlBtnBrd: var(--ui-accent-high);
   --ec-frm-tooltipSuccessBg: #2b313d;
   /* The copy button's size, and the room the code keeps clear for it. */
-  --netscli-code-copy-size: 1.75rem;
-  --netscli-code-copy-space: 3rem;
-  --netscli-code-copy-inset: 0.48rem;
+  --ui-code-copy-size: 1.75rem;
+  --ui-code-copy-space: 3rem;
+  --ui-code-copy-inset: 0.48rem;
   margin-block: 0.9rem 1.2rem;
 }
 
 .sl-markdown-content .expressive-code .frame {
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(var(--netscli-hairline-rgb), 0.2);
+  border: 1px solid rgba(var(--ui-hairline-rgb), 0.2);
   border-radius: 8px;
-  background: var(--netscli-code-bg);
+  background: var(--ui-code-bg);
   box-shadow: none;
 }
 
@@ -49,28 +49,28 @@
   inset-inline: 0;
   z-index: 1;
   height: 2px;
-  background: rgba(var(--netscli-accent-rgb), 0.55);
+  background: rgba(var(--ui-accent-rgb), 0.55);
 }
 
 html[data-theme='light'] .sl-markdown-content .expressive-code .frame {
-  border-color: rgba(var(--netscli-hairline-rgb), 0.13);
+  border-color: rgba(var(--ui-hairline-rgb), 0.13);
   box-shadow: none;
 }
 
 html[data-theme='light'] .sl-markdown-content .expressive-code .frame::before {
-  background: rgba(var(--netscli-accent-rgb), 0.42);
+  background: rgba(var(--ui-accent-rgb), 0.42);
 }
 
 .sl-markdown-content .expressive-code pre {
-  background: var(--netscli-code-bg);
+  background: var(--ui-code-bg);
 }
 
 .sl-markdown-content .expressive-code code {
-  padding-inline-end: var(--netscli-code-copy-space);
+  padding-inline-end: var(--ui-code-copy-space);
 }
 
 .sl-markdown-content .expressive-code .ec-line:first-child .code {
-  padding-inline-end: calc(var(--ec-codePadInl) + var(--netscli-code-copy-space));
+  padding-inline-end: calc(var(--ec-codePadInl) + var(--ui-code-copy-space));
 }
 
 /* Terminal frames: no title bar, the top border moves onto the code. */
@@ -122,14 +122,14 @@ html[data-theme='light'] .sl-markdown-content .expressive-code .frame::before {
 
 /* ---- Copy button ------------------------------------------------------ */
 .sl-markdown-content .expressive-code .copy {
-  inset-inline-end: calc(var(--ec-brdWd) + var(--netscli-code-copy-inset));
-  inset-block-start: calc(var(--ec-brdWd) + var(--netscli-code-copy-inset));
+  inset-inline-end: calc(var(--ec-brdWd) + var(--ui-code-copy-inset));
+  inset-block-start: calc(var(--ec-brdWd) + var(--ui-code-copy-inset));
 }
 
 .sl-markdown-content .expressive-code .copy button {
-  width: var(--netscli-code-copy-size);
-  height: var(--netscli-code-copy-size);
-  border: 1px solid rgba(var(--netscli-hairline-rgb), 0.18);
+  width: var(--ui-code-copy-size);
+  height: var(--ui-code-copy-size);
+  border: 1px solid rgba(var(--ui-hairline-rgb), 0.18);
   border-radius: 5px;
   background: #252b36;
   opacity: 0.9;
@@ -137,7 +137,7 @@ html[data-theme='light'] .sl-markdown-content .expressive-code .frame::before {
 }
 
 .sl-markdown-content .expressive-code .copy button::before {
-  border-color: rgba(var(--netscli-hairline-rgb), 0.38);
+  border-color: rgba(var(--ui-hairline-rgb), 0.38);
 }
 
 .sl-markdown-content .expressive-code .copy button::after {
@@ -147,7 +147,7 @@ html[data-theme='light'] .sl-markdown-content .expressive-code .frame::before {
 .sl-markdown-content .expressive-code .copy button:hover,
 .sl-markdown-content .expressive-code .copy button:focus-visible {
   opacity: 1;
-  border-color: rgba(var(--netscli-accent-rgb), 0.42);
+  border-color: rgba(var(--ui-accent-rgb), 0.42);
   background: #2b313d;
 }
 
@@ -179,7 +179,7 @@ html[data-theme='light'] .sl-markdown-content .expressive-code .frame::before {
 }
 
 .sl-markdown-content .expressive-code .copy button[data-copied] {
-  border-color: rgba(var(--netscli-hairline-rgb), 0.18);
+  border-color: rgba(var(--ui-hairline-rgb), 0.18);
   background: #252b36;
   color: rgba(216, 222, 232, 0.46);
 }
@@ -225,6 +225,6 @@ html[data-theme='light'] .sl-markdown-content .expressive-code .frame::before {
    untitled blocks keep a line of air above the code for it. */
 @media (max-width: 700px) {
   .sl-markdown-content .expressive-code .frame:not(.has-title) pre {
-    padding-block-start: calc(var(--netscli-code-copy-size) + 0.5rem);
+    padding-block-start: calc(var(--ui-code-copy-size) + 0.5rem);
   }
 }

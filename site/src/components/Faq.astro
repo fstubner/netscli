@@ -62,33 +62,33 @@ const faqGroups = grouped.sort(
 .faq-section-title{
   margin:0 0 6px;
   padding-bottom:8px;
-  border-bottom:1px solid rgba(var(--netscli-hairline-rgb),.16);
-  color:var(--netscli-text-strong);
+  border-bottom:1px solid rgba(var(--ui-hairline-rgb),.16);
+  color:var(--ui-text-strong);
   font-size:.78rem;
   font-weight:700;
   letter-spacing:.08em;
   text-transform:uppercase;
 }
 .faq details{
-  background:rgba(var(--netscli-lift-rgb),.025);
-  border:1px solid rgba(var(--netscli-lift-rgb),.08);
+  background:rgba(var(--ui-lift-rgb),.025);
+  border:1px solid rgba(var(--ui-lift-rgb),.08);
   border-radius:10px;padding:14px 18px;
   transition:background 150ms,border-color 150ms;
 }
-.faq details[open]{background:rgba(var(--netscli-lift-rgb),.04);border-color:rgba(var(--netscli-lift-rgb),.14)}
+.faq details[open]{background:rgba(var(--ui-lift-rgb),.04);border-color:rgba(var(--ui-lift-rgb),.14)}
 .faq summary{
-  cursor:pointer;font-size:.9375rem;font-weight:600;color:var(--netscli-text);
+  cursor:pointer;font-size:.9375rem;font-weight:600;color:var(--ui-text);
   list-style:none;display:flex;align-items:center;gap:10px;
 }
 .faq summary::-webkit-details-marker{display:none}
 .faq summary::before{
   content:"+";font-family:ui-monospace,"SF Mono",Menlo,monospace;
-  color:var(--netscli-accent);font-weight:700;width:14px;flex-shrink:0;
+  color:var(--ui-accent);font-weight:700;width:14px;flex-shrink:0;
   transition:transform 150ms;
 }
 .faq details[open] summary::before{content:"−"}
 .faq .answer{
-  color:var(--netscli-text-muted);font-size:.875rem;line-height:1.65;margin-top:12px;
+  color:var(--ui-text-muted);font-size:.875rem;line-height:1.65;margin-top:12px;
   padding-left:24px;
   /* Long URLs inside <code> spans don't break by default and force the
      details card wider than the viewport. Allow breaks at any char so
@@ -107,7 +107,7 @@ const faqGroups = grouped.sort(
   position:relative;
 }
 .faq-command span{
-  color:var(--netscli-text-muted);
+  color:var(--ui-text-muted);
   font-size:.78rem;
   line-height:1.7;
 }
@@ -120,34 +120,34 @@ const faqGroups = grouped.sort(
      pinned dark in both themes, which left black bars running down a light
      FAQ answer once everything around them had gone light. The LABEL beside
      it sits on the card either way. */
-  border:1px solid var(--netscli-chip-border);
+  border:1px solid var(--ui-chip-border);
   border-radius:5px;
-  background:var(--netscli-chip-bg);
-  color:var(--netscli-chip-fg);
+  background:var(--ui-chip-bg);
+  color:var(--ui-chip-fg);
   white-space:pre;
   overflow-x:auto;
 }
 .faq .answer code{
   font-size:.8125rem;
   /* The chip follows the theme now, so the ink has to as well. This was
-     pinned to --netscli-code-inline-fg back when the chip was dark in both
+     pinned to --ui-code-inline-fg back when the chip was dark in both
      themes; left pinned, that light-on-dark green landed on the new light
-     chip at 1.28:1. --netscli-chip-code-fg is the pair that moves with the
+     chip at 1.28:1. --ui-chip-code-fg is the pair that moves with the
      surface: 13.06:1 dark, 8.66:1 light. */
-  color:var(--netscli-chip-code-fg);
+  color:var(--ui-chip-code-fg);
   white-space:nowrap;
   overflow-wrap:normal;
   word-break:normal;
 }
 .faq .answer .faq-command code{
-  color:var(--netscli-chip-fg);
+  color:var(--ui-chip-fg);
   white-space:pre;
   overflow-x:auto;
   overflow-wrap:normal;
   word-break:normal;
 }
-.faq .answer a{color:var(--netscli-accent);text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere}
-.faq .answer a:hover{color:var(--netscli-accent-bright)}
+.faq .answer a{color:var(--ui-accent);text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere}
+.faq .answer a:hover{color:var(--ui-accent-bright)}
 
 
 @media(max-width:600px){

@@ -61,12 +61,12 @@ body[data-search-modal-open] {
 /* ---- Scrollbars ------------------------------------------------------ */
 html {
   scrollbar-width: thin;
-  scrollbar-color: rgba(var(--netscli-hairline-rgb), 0.5) rgba(17, 17, 17, 0.9);
+  scrollbar-color: rgba(var(--ui-hairline-rgb), 0.5) rgba(17, 17, 17, 0.9);
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(var(--netscli-hairline-rgb), 0.42) rgba(var(--netscli-lift-rgb), 0.035);
+  scrollbar-color: rgba(var(--ui-hairline-rgb), 0.42) rgba(var(--ui-lift-rgb), 0.035);
 }
 
 ::-webkit-scrollbar {
@@ -79,7 +79,7 @@ html {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(var(--netscli-hairline-rgb), 0.45);
+  background: rgba(var(--ui-hairline-rgb), 0.45);
   border: 3px solid #151515;
   border-radius: 999px;
 }
@@ -97,7 +97,7 @@ html[data-theme='light'] {
 }
 
 html[data-theme='light'] * {
-  scrollbar-color: rgba(68, 81, 106, 0.36) rgba(var(--netscli-hairline-rgb), 0.045);
+  scrollbar-color: rgba(68, 81, 106, 0.36) rgba(var(--ui-hairline-rgb), 0.045);
 }
 
 html[data-theme='light'] ::-webkit-scrollbar-track {

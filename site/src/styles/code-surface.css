@@ -23,16 +23,16 @@
    * Contrast on #10151b: fg 13.32, comment 6.52, punct 5.31, key 6.67,
    * string 8.44, inline accent 13.06. scripts/contrast-sweep.mjs measures
    * these as rendered rather than trusting the numbers here. */
-  --netscli-code-bg: #10151b;
-  --netscli-code-fg: #d7dce5;
-  --netscli-code-border: rgba(255, 255, 255, 0.08);
+  --ui-code-bg: #10151b;
+  --ui-code-fg: #d7dce5;
+  --ui-code-border: rgba(255, 255, 255, 0.08);
   /* Opaque, for the 1px gaps between stacked command rows. A translucent
      white there would composite against the PAGE, not the panel, and render
      as near-white lines across a dark block in the light theme. */
-  --netscli-code-divider: #232a34;
+  --ui-code-divider: #232a34;
   /* Inline `code` ink. The dark accent-bright in both themes, because the
      chip behind it is dark in both. */
-  --netscli-code-inline-fg: #86efac;
+  --ui-code-inline-fg: #86efac;
 
   /* ---- Code sample colours -------------------------------------------
    *
@@ -50,8 +50,8 @@
    * measured the punctuation grey at 4.46:1 on the page and 3.99:1 on a card
    * -- below AA, and wrong since long before the light theme. They are also
    * no longer #888888 beside #7b7b7b, a 3% difference no reader can see. */
-  --netscli-code-comment: #9a9a9a;
-  --netscli-code-punct: #8a8a8a;
-  --netscli-code-key: #7c9fc7;
-  --netscli-code-string: #8fbc7f;
+  --ui-code-comment: #9a9a9a;
+  --ui-code-punct: #8a8a8a;
+  --ui-code-key: #7c9fc7;
+  --ui-code-string: #8fbc7f;
 }

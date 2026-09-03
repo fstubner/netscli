@@ -42,7 +42,7 @@ netscli scan 192.168.1.1 -p 22,80,443
 
 Port statuses are:
 
-<div data-netscli-table="row-headers"></div>
+<div data-ui-table="row-headers"></div>
 
 | Status | Meaning |
 | --- | --- |

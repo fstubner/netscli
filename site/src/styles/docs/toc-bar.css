@@ -1,7 +1,7 @@
 /* Docs table of contents, narrow: the collapsed "On this page" bar below
  * 72rem. The wide rail is docs/toc.css.
  *
- * The bar is always rendered inside .netscli-mobile-toc-wrapper (see
+ * The bar is always rendered inside .ui-mobile-toc-wrapper (see
  * components/starlight/PageSidebar.astro), and the wrapper is what is
  * sticky; Starlight's own <nav> inside it is put back into normal flow. Four
  * files in the old stack restyled this dropdown in turn -- 14, 18, 20 and
@@ -15,10 +15,10 @@
  */
 
 /* ---- Bar (narrow) -------------------------------------------------- */
-.netscli-mobile-toc-wrapper mobile-starlight-toc summary,
-.netscli-mobile-toc-wrapper mobile-starlight-toc .toggle,
-.netscli-mobile-toc-wrapper mobile-starlight-toc .display-current,
-.netscli-mobile-toc-wrapper mobile-starlight-toc .dropdown a {
+.ui-mobile-toc-wrapper mobile-starlight-toc summary,
+.ui-mobile-toc-wrapper mobile-starlight-toc .toggle,
+.ui-mobile-toc-wrapper mobile-starlight-toc .display-current,
+.ui-mobile-toc-wrapper mobile-starlight-toc .dropdown a {
   cursor: pointer;
 }
 
@@ -47,7 +47,7 @@
     overflow: visible;
   }
 
-  .netscli-mobile-toc-wrapper {
+  .ui-mobile-toc-wrapper {
     display: block;
     position: sticky;
     top: var(--sl-nav-height);
@@ -61,7 +61,7 @@
     position: relative;
     display: block;
     width: 100%;
-    height: var(--netscli-mobile-toc-bar-height);
+    height: var(--ui-mobile-toc-bar-height);
   }
 
   mobile-starlight-toc nav {
@@ -80,7 +80,7 @@
     display: flex;
     align-items: center;
     gap: 0.65rem;
-    height: var(--netscli-mobile-toc-bar-height);
+    height: var(--ui-mobile-toc-bar-height);
     padding: 0 clamp(1rem, 3.4vw, 1.75rem);
     border: 0;
   }
@@ -114,7 +114,7 @@
 
   mobile-starlight-toc .caret,
   mobile-starlight-toc details[open] .caret {
-    color: var(--netscli-accent);
+    color: var(--ui-accent);
     transform: none;
     transition: none;
   }
@@ -133,7 +133,7 @@
     overscroll-behavior: contain;
     border-block: 1px solid var(--sl-color-hairline);
     border-inline: 0;
-    background: var(--netscli-menu-bg);
+    background: var(--ui-menu-bg);
     box-shadow: none;
   }
 
@@ -161,13 +161,13 @@
   mobile-starlight-toc .dropdown a:hover,
   mobile-starlight-toc .dropdown a:focus-visible {
     outline: 0;
-    color: var(--netscli-accent-high);
+    color: var(--ui-accent-high);
   }
 
   mobile-starlight-toc .dropdown a[aria-current='true'] {
-    color: var(--netscli-accent-high);
-    border-inline-start-color: var(--netscli-accent);
-    background: rgba(var(--netscli-accent-rgb), 0.07);
+    color: var(--ui-accent-high);
+    border-inline-start-color: var(--ui-accent);
+    background: rgba(var(--ui-accent-rgb), 0.07);
   }
 
   mobile-starlight-toc .dropdown a[aria-current='true']::after {
@@ -177,7 +177,7 @@
 
   /* ---- Bar, light theme ---- */
   html[data-theme='light'] mobile-starlight-toc .toggle {
-    border-color: rgba(var(--netscli-hairline-rgb), 0.14);
+    border-color: rgba(var(--ui-hairline-rgb), 0.14);
     background: rgba(255, 255, 255, 0.72);
     color: var(--sl-color-gray-1);
   }
@@ -190,7 +190,7 @@
   html[data-theme='light'] mobile-starlight-toc details[open] .toggle,
   html[data-theme='light'] mobile-starlight-toc details .toggle:hover,
   html[data-theme='light'] mobile-starlight-toc summary:focus-visible .toggle {
-    border-color: rgba(var(--netscli-accent-rgb), 0.36);
+    border-color: rgba(var(--ui-accent-rgb), 0.36);
     background: transparent;
     color: var(--sl-color-white);
   }
@@ -200,8 +200,8 @@
   }
 
   html[data-theme='light'] mobile-starlight-toc .dropdown {
-    box-shadow: 0 14px 32px rgba(var(--netscli-hairline-rgb), 0.12);
-    background: var(--netscli-menu-bg);
+    box-shadow: 0 14px 32px rgba(var(--ui-hairline-rgb), 0.12);
+    background: var(--ui-menu-bg);
   }
 
   html[data-theme='light'] mobile-starlight-toc details[open] .dropdown {
@@ -211,7 +211,7 @@
   html[data-theme='light'] mobile-starlight-toc .dropdown a:hover,
   html[data-theme='light'] mobile-starlight-toc .dropdown a:focus-visible {
     color: var(--sl-color-white);
-    background: rgba(var(--netscli-hairline-rgb), 0.045);
+    background: rgba(var(--ui-hairline-rgb), 0.045);
   }
 
   html[data-theme='light'] mobile-starlight-toc .dropdown a[aria-current='true'],
@@ -219,7 +219,7 @@
   html[data-theme='light'] mobile-starlight-toc .dropdown a[aria-current='true']:focus-visible {
     color: var(--sl-color-accent-high);
     border-inline-start-color: var(--sl-color-accent);
-    background: rgba(var(--netscli-accent-rgb), 0.055);
+    background: rgba(var(--ui-accent-rgb), 0.055);
   }
 }
 
@@ -233,7 +233,7 @@
     overflow: visible;
   }
 
-  .netscli-mobile-toc-wrapper {
+  .ui-mobile-toc-wrapper {
     margin-bottom: 1.15rem;
   }
 }

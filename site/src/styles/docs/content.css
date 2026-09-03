@@ -36,7 +36,7 @@
 }
 
 /* Markers the table script reads (src/scripts/docs-tables.ts); never shown. */
-.sl-markdown-content [data-netscli-table] {
+.sl-markdown-content [data-ui-table] {
   display: none;
 }
 
@@ -49,15 +49,15 @@
 .sl-markdown-content .sl-anchor-link,
 .sl-markdown-content .sl-anchor-link:focus,
 .sl-markdown-content .sl-heading-wrapper:hover .sl-anchor-link {
-  color: var(--netscli-accent);
+  color: var(--ui-accent);
 }
 
 .sl-markdown-content a:hover {
-  color: var(--netscli-accent-bright);
+  color: var(--ui-accent-bright);
 }
 
 .sl-markdown-content .sl-anchor-icon > svg {
-  color: var(--netscli-accent);
+  color: var(--ui-accent);
   height: var(--sl-anchor-icon-size);
 }
 
@@ -88,7 +88,7 @@ html[data-theme='light'] .sl-markdown-content a:hover {
   background: none;
   -webkit-mask: none;
   mask: none;
-  color: var(--netscli-accent);
+  color: var(--ui-accent);
   font-size: 0.92em;
   font-weight: 700;
   line-height: 1;
@@ -96,7 +96,7 @@ html[data-theme='light'] .sl-markdown-content a:hover {
 
 .external-link:hover::after,
 .sl-markdown-content a[href^='http']:hover::after {
-  color: var(--netscli-accent-bright);
+  color: var(--ui-accent-bright);
 }
 
 html[data-theme='light'] .external-link::after,
@@ -111,15 +111,15 @@ html[data-theme='light'] .sl-markdown-content a[href^='http']:hover::after {
 
 /* ---- Inline code ----------------------------------------------------- */
 .sl-markdown-content :not(pre) > code {
-  border: 1px solid var(--netscli-code-border);
+  border: 1px solid var(--ui-code-border);
   border-radius: 0.24rem;
   font-family: var(--__sl-font-mono);
   font-size: 0.9em;
   line-height: 1.45;
   padding: 0.08em 0.34em;
   white-space: nowrap;
-  background: var(--netscli-code-bg);
-  color: var(--netscli-code-inline-fg);
+  background: var(--ui-code-bg);
+  color: var(--ui-code-inline-fg);
 }
 
 /* ---- Callouts -------------------------------------------------------- */
@@ -170,7 +170,7 @@ html[data-theme='light'] .sl-markdown-content a[href^='http']:hover::after {
   background: transparent;
   background-image: none;
   box-shadow: none;
-  border-color: var(--netscli-panel-hover-border);
+  border-color: var(--ui-panel-hover-border);
 }
 
 .pagination-links a:hover :where(.link-subtitle, span:not(.link-title)),
@@ -189,7 +189,7 @@ html[data-theme='light'] .pagination-links a:focus-visible {
   color: var(--sl-color-white);
   background: transparent;
   background-image: none;
-  border-color: rgba(var(--netscli-accent-rgb), 0.22);
+  border-color: rgba(var(--ui-accent-rgb), 0.22);
   box-shadow: none;
 }
 

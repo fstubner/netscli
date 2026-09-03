@@ -58,7 +58,7 @@ const TARGETS = [
   {
     name: 'site',
     // tokens.css carries the brand accent under `:root`; the Starlight file
-    // reaches it with `--sl-color-accent: var(--netscli-accent)`, which is why
+    // reaches it with `--sl-color-accent: var(--ui-accent)`, which is why
     // values are resolved through one level of var() before use.
     // docs/theme.css holds the per-theme palette and the docs layout tokens;
     // both files are read because a value can resolve across them.
@@ -72,7 +72,7 @@ const TARGETS = [
     // Starlight inverts its own naming in the light theme -- `--sl-color-white`
     // is #111827 there -- so white/gray-1..3 are the text ramp in both themes
     // and black/bg/gray-6 are the surfaces in both.
-    // netscli-text-* are the landing page's ramp and share values with the
+    // ui-text-* are the landing page's ramp and share values with the
     // sl-color-* entries beside them. Listed anyway: they are what the landing
     // stack actually names, and a future change to one of them has to be
     // checked here rather than rely on a reader noticing the values match.
@@ -83,24 +83,24 @@ const TARGETS = [
       'sl-color-gray-2',
       'sl-color-gray-3',
       'sl-color-accent',
-      'netscli-text-strong',
-      'netscli-text',
-      'netscli-text-muted',
+      'ui-text-strong',
+      'ui-text',
+      'ui-text-muted',
       // The accent as ink, and the four code-sample colours.
       //
-      // Added after the light theme shipped with --netscli-accent left at the
+      // Added after the light theme shipped with --ui-accent left at the
       // dark #22c55e -- 2.0:1 on a white page, across every accent-coloured
       // link on the landing page and the changelog -- and the code samples
       // still carrying a palette picked for a near-black background. Neither
       // was reachable from this list, so the gate reported a pass on both.
-      // --netscli-accent is the one to watch: only its -rgb twin was
+      // --ui-accent is the one to watch: only its -rgb twin was
       // overridden per theme, and channels are invisible to a contrast check.
-      'netscli-accent',
-      'netscli-accent-bright',
-      'netscli-accent-high',
+      'ui-accent',
+      'ui-accent-bright',
+      'ui-accent-high',
       // The four code-sample colours are deliberately NOT here.
       //
-      // They sit on --netscli-code-bg, which is dark in both themes, and this
+      // They sit on --ui-code-bg, which is dark in both themes, and this
       // gate compares every foreground against every PAGE surface -- so it
       // measured them against white and reported failures for a pairing that
       // never renders. Adding the code background to `surfaces` instead would
@@ -120,9 +120,9 @@ const TARGETS = [
       // 1.59:1 on the light one -- one end of the word near-invisible in each
       // theme, for as long as the button has existed. Nothing else can see
       // these: a running browser reports the fill, not the paint.
-      'netscli-brand-gradient-from',
-      'netscli-brand-gradient-via',
-      'netscli-brand-gradient-to',
+      'ui-brand-gradient-from',
+      'ui-brand-gradient-via',
+      'ui-brand-gradient-to',
     ],
     surfaces: ['sl-color-bg', 'sl-color-bg-sidebar', 'sl-color-black', 'sl-color-gray-6'],
     keys: {

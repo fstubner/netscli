@@ -13,7 +13,7 @@ Run `netscli doctor` to check which build you have. It works on every build, unl
 
 ## Requirements
 
-<div data-netscli-table="row-headers"></div>
+<div data-ui-table="row-headers"></div>
 
 | Platform | Runtime requirement |
 | --- | --- |
@@ -45,7 +45,7 @@ netscli pcap --read capture.pcap --max-packets 100
 
 Important options:
 
-<div data-netscli-table="row-headers"></div>
+<div data-ui-table="row-headers"></div>
 
 | Option | Purpose |
 | --- | --- |

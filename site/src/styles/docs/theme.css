@@ -1,7 +1,7 @@
 /* Docs theme: every token the docs shell reads, both themes.
  *
  * Re-theming the docs for another project means editing this file. The
- * brand palette itself (--netscli-accent and friends) lives in
+ * brand palette itself (--ui-accent and friends) lives in
  * styles/tokens.css, which the landing page loads too; this file maps
  * Starlight's own --sl-* tokens onto it and adds the docs-only surfaces.
  *
@@ -16,8 +16,8 @@
 html[data-theme='dark'],
 html[data-theme='dark'] ::backdrop {
   --sl-color-accent-low: #0a2a13;
-  --sl-color-accent: var(--netscli-accent);
-  --sl-color-accent-high: var(--netscli-accent-high);
+  --sl-color-accent: var(--ui-accent);
+  --sl-color-accent-high: var(--ui-accent-high);
   --sl-color-white: #f4f4f4;
   --sl-color-gray-1: #e7edf6;
   --sl-color-gray-2: #c2cad8;
@@ -32,7 +32,7 @@ html[data-theme='dark'] ::backdrop {
   /* Neutral, not green: inline code is dense and frequent, and a green wash
      behind every identifier made the accent a fill colour instead of a
      state colour. */
-  --sl-color-bg-inline-code: rgba(var(--netscli-hairline-rgb), 0.13);
+  --sl-color-bg-inline-code: rgba(var(--ui-hairline-rgb), 0.13);
   --sl-color-hairline: rgba(255, 255, 255, 0.08);
   --sl-color-hairline-light: rgba(255, 255, 255, 0.1);
   --sl-color-hairline-shade: #070707;
@@ -41,17 +41,17 @@ html[data-theme='dark'] ::backdrop {
   /* Table surfaces. Three roles, and the striping is a real distinction --
      odd and even rows differ on purpose, so these must not be collapsed into
      one value however close they look. */
-  --netscli-table-bg: #20242b;
-  --netscli-table-stripe: #242932;
-  --netscli-table-head: #252b36;
+  --ui-table-bg: #20242b;
+  --ui-table-stripe: #242932;
+  --ui-table-head: #252b36;
 
   /* The raised panel that content sits on: search results and their tag
      rows, and the frame and body of a code block. */
-  --netscli-panel-bg: #20242b;
+  --ui-panel-bg: #20242b;
 
   /* The floating menu surface: the mobile section menu and the mobile table
      of contents dropdown, which are the same panel. */
-  --netscli-menu-bg: #1b2028;
+  --ui-menu-bg: #1b2028;
 }
 
 /* ---- Colour, light --------------------------------------------------- */
@@ -81,41 +81,41 @@ html[data-theme='light'] ::backdrop {
   --sl-color-bg: #fbfbfb;
   --sl-color-bg-nav: rgba(251, 251, 251, 0.92);
   --sl-color-bg-sidebar: #fbfbfb;
-  --sl-color-bg-inline-code: rgba(var(--netscli-hairline-rgb), 0.07);
+  --sl-color-bg-inline-code: rgba(var(--ui-hairline-rgb), 0.07);
   --sl-color-hairline: rgba(17, 24, 39, 0.1);
   --sl-color-hairline-light: rgba(17, 24, 39, 0.12);
   --sl-color-hairline-shade: rgba(17, 24, 39, 0.04);
   --sl-content-width: 64rem;
 
-  --netscli-table-bg: #f7faf9;
-  --netscli-table-stripe: #f6f8fa;
-  --netscli-table-head: #eef2f4;
-  --netscli-panel-bg: #f6f8fa;
+  --ui-table-bg: #f7faf9;
+  --ui-table-stripe: #f6f8fa;
+  --ui-table-head: #eef2f4;
+  --ui-panel-bg: #f6f8fa;
   /* Plain white, which this theme also calls --sl-color-black. Named for
      the role so both themes read the same way at the call site. */
-  --netscli-menu-bg: #ffffff;
+  --ui-menu-bg: #ffffff;
 }
 
 /* ---- Layout ---------------------------------------------------------- */
 :root {
-  --sl-nav-height: var(--netscli-nav-height);
-  --netscli-docs-sidebar-width: 16rem;
+  --sl-nav-height: var(--ui-nav-height);
+  --ui-docs-sidebar-width: 16rem;
   /* 15rem, not 13rem. The rail's text column is inset from the frame edge by
-     its own padding (--netscli-sidebar-rail-inset below), and this width
+     its own padding (--ui-sidebar-rail-inset below), and this width
      restores the text column the padding costs it, so the two rails put the
      same air down each edge of the page. */
-  --netscli-docs-toc-width: 15rem;
-  --netscli-docs-shell-gutter: clamp(1.25rem, 2vw, 2.5rem);
+  --ui-docs-toc-width: 15rem;
+  --ui-docs-shell-gutter: clamp(1.25rem, 2vw, 2.5rem);
   /* How far a rail insets its text from the frame's outer edge. Both rails
      read it; it was once declared twice with drifted values. */
-  --netscli-sidebar-rail-inset: clamp(2.2rem, 3vw, 3.15rem);
+  --ui-sidebar-rail-inset: clamp(2.2rem, 3vw, 3.15rem);
   /* Height of the title band at the top of every docs page. The band's own
      min-height and the offset that starts the contents rail below it both
      read this, so they move together. Measured across all eleven docs pages
      at five widths: no page's title wraps. */
-  --netscli-docs-hero-height: clamp(6.75rem, 9vw, 8.25rem);
-  --netscli-docs-frame-width: calc(
-    var(--netscli-shell-width) + var(--netscli-docs-sidebar-width) + var(--netscli-docs-toc-width)
+  --ui-docs-hero-height: clamp(6.75rem, 9vw, 8.25rem);
+  --ui-docs-frame-width: calc(
+    var(--ui-shell-width) + var(--ui-docs-sidebar-width) + var(--ui-docs-toc-width)
   );
 
   /* Heading scale. Starlight's defaults put h1 at 42px and h2 at 35px
@@ -127,12 +127,12 @@ html[data-theme='light'] ::backdrop {
   --sl-text-h4: 1.125rem;
   --sl-text-h5: 1rem;
 
-  --netscli-panel-hover-border: color-mix(in srgb, var(--sl-color-accent) 34%, var(--sl-color-hairline));
+  --ui-panel-hover-border: color-mix(in srgb, var(--sl-color-accent) 34%, var(--sl-color-hairline));
 }
 
 @media (min-width: 108rem) {
   :root {
-    --netscli-docs-shell-gutter: 2.5rem;
+    --ui-docs-shell-gutter: 2.5rem;
   }
 }
 
@@ -147,7 +147,7 @@ html[data-theme='light'] ::backdrop {
 
 @media (min-width: 72rem) {
   html[data-has-sidebar] {
-    --sl-sidebar-width: var(--netscli-docs-sidebar-width);
+    --sl-sidebar-width: var(--ui-docs-sidebar-width);
   }
 }
 
@@ -157,22 +157,22 @@ html[data-theme='light'] ::backdrop {
   }
 
   html[data-has-sidebar] {
-    --sl-content-inline-start: var(--netscli-docs-sidebar-width);
+    --sl-content-inline-start: var(--ui-docs-sidebar-width);
   }
 }
 
 @media (min-width: 86.01rem) {
   html[data-has-sidebar] {
-    --sl-content-inline-start: var(--netscli-docs-sidebar-width);
+    --sl-content-inline-start: var(--ui-docs-sidebar-width);
   }
 }
 
 @media (max-width: 71.99rem) {
   :root {
-    --netscli-mobile-toc-bar-height: 2.625rem;
+    --ui-mobile-toc-bar-height: 2.625rem;
   }
 
   html[data-has-toc] {
-    --sl-mobile-toc-height: var(--netscli-mobile-toc-bar-height);
+    --sl-mobile-toc-height: var(--ui-mobile-toc-bar-height);
   }
 }
