@@ -167,9 +167,10 @@ export interface InstallEntry {
  *  alternative rows in array order.
  */
 export interface PlatformInstall {
-  /** CLI + terminal UI (the `netscli` binary). */
+  /** Command-line routes: the binary itself, however it is installed. */
   cli: InstallEntry[];
-  /** Desktop GUI application. */
+  /** Desktop application routes. Leave empty for a product with no
+   *  desktop build; the section renders without that column. */
   desktop: InstallEntry[];
 }
 
