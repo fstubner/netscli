@@ -1,7 +1,7 @@
 ---
 import { site } from '../data/site';
 import { hrefFor, isCurrent, navGroupBreak, navLinks } from '../data/site-content/nav';
-const { branding } = site;
+const { branding, meta } = site;
 const pathname = Astro.url.pathname;
 const onHome = pathname === '/';
 
@@ -17,7 +17,7 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
 ---
 <nav data-site-nav data-open="false">
   <div class="nav-inner">
-    <a class="mark" href="/" aria-label="NetsCLI home">
+    <a class="mark" href="/" aria-label={`${meta.siteName} home`}>
       <img src={branding.wordmark} alt="" width="160" height="32" />
     </a>
     <button
