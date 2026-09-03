@@ -79,7 +79,7 @@ export const STATE_DIMS = [
   { key: 'current', values: [false, true], mentions: /aria-current/, applies: (sel, v) => !(/\[aria-current/.test(sel) && !v) },
   { key: 'expanded', values: [false, true], mentions: /aria-expanded|\[open\]/, applies: (sel, v) => !(/\[aria-expanded='true'\]|\[open\]/.test(sel) && !v) },
   { key: 'copied', values: [false, true], mentions: /data-copied|feedback\.show/, applies: (sel, v) => !(/\[data-copied\]|feedback\.show/.test(sel) && !v) },
-  { key: 'overflow', values: [false, true], mentions: /netscli-search-overflow/, applies: (sel, v) => !(/netscli-search-overflow/.test(sel) && !v) },
+  { key: 'overflow', values: [false, true], mentions: /ui-search-overflow/, applies: (sel, v) => !(/ui-search-overflow/.test(sel) && !v) },
 ];
 
 /** Every combination of the dimensions some selector in `sels` depends on. */
@@ -104,7 +104,7 @@ export function structural(sel) {
     .replace(/::?(before|after|placeholder|backdrop|marker|selection|-webkit-[a-z-]+)(?![a-z-])/g, '')
     .replace(/\[aria-current(=[^\]]*)?\]|\[aria-expanded=[^\]]*\]|\[open\]|\[data-search-modal-open\]|\[data-copied\]/g, '')
     .replace(/:has\(\.feedback\.show\)/g, '')
-    .replace(/\.netscli-search-overflow-(top|bottom)/g, '')
+    .replace(/\.ui-search-overflow-(top|bottom)/g, '')
     .replace(/^html(\[[^\]]*\])*$/, 'html')
     .trim();
 }

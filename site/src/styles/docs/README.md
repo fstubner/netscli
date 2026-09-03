@@ -19,7 +19,7 @@ way are short.
 | `tables.css`, `tables-narrow.css` | Tables; what changes below 72rem. |
 | `search.css`, `search-input.css`, `search-results.css` | The search dialog, its input row and states, its results. |
 
-The brand palette itself (`--netscli-accent` and friends) is in
+The brand palette itself (`--ui-accent` and friends) is in
 `../tokens.css`, which the landing page loads too. The code surface tokens
 are in `../code-surface.css` for the same reason.
 

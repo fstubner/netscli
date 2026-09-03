@@ -21,7 +21,7 @@
 .right-sidebar-panel :where(a[aria-current='true']),
 .right-sidebar-panel :where(a[aria-current='page']),
 .right-sidebar-panel :where(a[aria-current='location']) {
-  color: var(--netscli-accent-high);
+  color: var(--ui-accent-high);
   background: transparent;
 }
 
@@ -40,9 +40,9 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
 
 @media (min-width: 72rem) {
   .right-sidebar-panel {
-    flex-basis: var(--netscli-docs-toc-width);
-    width: var(--netscli-docs-toc-width);
-    padding-inline: 1.85rem var(--netscli-sidebar-rail-inset, clamp(2.2rem, 3vw, 3.15rem));
+    flex-basis: var(--ui-docs-toc-width);
+    width: var(--ui-docs-toc-width);
+    padding-inline: 1.85rem var(--ui-sidebar-rail-inset, clamp(2.2rem, 3vw, 3.15rem));
     position: sticky;
     top: var(--sl-nav-height);
     max-height: calc(100vh - var(--sl-nav-height));
@@ -54,7 +54,7 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
     border-inline-start: 0;
     position: static;
     height: 100%;
-    padding-top: calc(var(--netscli-docs-hero-height) + 1px);
+    padding-top: calc(var(--ui-docs-hero-height) + 1px);
     overflow: visible;
   }
 
@@ -69,7 +69,7 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
     content: "";
     position: absolute;
     inset-inline: 0;
-    inset-block-start: var(--netscli-docs-hero-height);
+    inset-block-start: var(--ui-docs-hero-height);
     height: 1px;
     background: var(--sl-color-hairline);
     pointer-events: none;
@@ -79,7 +79,7 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
     content: "";
     position: absolute;
     inset-inline-start: 0;
-    inset-block: calc(var(--netscli-docs-hero-height) + 1px) 0;
+    inset-block: calc(var(--ui-docs-hero-height) + 1px) 0;
     width: 1px;
     background: var(--sl-color-hairline);
     pointer-events: none;
@@ -93,11 +93,11 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
   }
 
   .right-sidebar-container {
-    flex: 0 0 var(--netscli-docs-toc-width);
-    width: var(--netscli-docs-toc-width);
+    flex: 0 0 var(--ui-docs-toc-width);
+    width: var(--ui-docs-toc-width);
   }
 
   .right-sidebar {
-    width: var(--netscli-docs-toc-width);
+    width: var(--ui-docs-toc-width);
   }
 }

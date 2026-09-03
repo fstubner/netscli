@@ -54,17 +54,17 @@ export function applyDocsTableBehaviour(): void {
   };
 
   const tableOptionClasses = new Map([
-    ['netscli-table: row-headers', 'table-row-headers'],
-    ['netscli-table: plain-first-column', 'table-plain-first-column'],
+    ['ui-table: row-headers', 'table-row-headers'],
+    ['ui-table: plain-first-column', 'table-plain-first-column'],
   ]);
 
   const applyTableOptions = () => {
     const content = document.querySelector('.sl-markdown-content');
     if (!content) return;
 
-    content.querySelectorAll('[data-netscli-table]').forEach((marker) => {
-      const markerValue = marker.getAttribute('data-netscli-table')?.trim().toLowerCase();
-      const option = tableOptionClasses.get(`netscli-table: ${markerValue}`);
+    content.querySelectorAll('[data-ui-table]').forEach((marker) => {
+      const markerValue = marker.getAttribute('data-ui-table')?.trim().toLowerCase();
+      const option = tableOptionClasses.get(`ui-table: ${markerValue}`);
       if (!option) return;
 
       tagNextTableElement(marker, option);
@@ -81,10 +81,10 @@ export function applyDocsTableBehaviour(): void {
     content.querySelectorAll('table').forEach((table) => {
       labelCellsWithTheirColumn(table);
 
-      if (table.parentElement?.classList.contains('netscli-table-scroll')) return;
+      if (table.parentElement?.classList.contains('ui-table-scroll')) return;
 
       const wrapper = document.createElement('div');
-      wrapper.className = 'netscli-table-scroll';
+      wrapper.className = 'ui-table-scroll';
       // The wrapper is the horizontally-scrollable region; make it reachable
       // by keyboard (axe scrollable-region-focusable) since the table inside
       // it isn't otherwise a focusable element.

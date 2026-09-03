@@ -18,7 +18,7 @@ Structured output is designed to be additive:
 
 Port scans include the existing compatibility fields plus richer status data.
 
-<div data-netscli-table="row-headers"></div>
+<div data-ui-table="row-headers"></div>
 
 | Field | Meaning |
 | --- | --- |
@@ -41,7 +41,7 @@ Banner, HTTP, TLS, and raw preview data are probe results. They are useful diagn
 
 Discovery and sweep results describe hosts.
 
-<div data-netscli-table="row-headers"></div>
+<div data-ui-table="row-headers"></div>
 
 | Field | Meaning |
 | --- | --- |
@@ -58,7 +58,7 @@ Discovery prioritizes inventory. Sweep adds exposed-service data by scanning sel
 
 DNS records expose type and value first, then additive metadata when the resolver provides it.
 
-<div data-netscli-table="row-headers"></div>
+<div data-ui-table="row-headers"></div>
 
 | Field | Meaning |
 | --- | --- |
@@ -74,7 +74,7 @@ When `ALL` records are requested, some record families can fail while others suc
 
 Inspect is a host profile. It combines host-level data with optional port scan data.
 
-<div data-netscli-table="row-headers"></div>
+<div data-ui-table="row-headers"></div>
 
 | Field | Meaning |
 | --- | --- |
@@ -89,7 +89,7 @@ Inspect is a host profile. It combines host-level data with optional port scan d
 
 mDNS/DNS-SD returns service announcements rather than generic host rows. A single device can announce multiple services.
 
-<div data-netscli-table="row-headers"></div>
+<div data-ui-table="row-headers"></div>
 
 | Field | Meaning |
 | --- | --- |
@@ -104,7 +104,7 @@ mDNS/DNS-SD returns service announcements rather than generic host rows. A singl
 
 Interface rows describe local network interfaces. ARP rows describe the local neighbor cache.
 
-<div data-netscli-table="row-headers"></div>
+<div data-ui-table="row-headers"></div>
 
 | Field | Meaning |
 | --- | --- |
@@ -121,7 +121,7 @@ ARP is not full discovery. It reports entries already known to the operating sys
 
 Packet capture results are available only in builds compiled with packet-capture support.
 
-<div data-netscli-table="row-headers"></div>
+<div data-ui-table="row-headers"></div>
 
 | Field | Meaning |
 | --- | --- |

@@ -1,4 +1,4 @@
-// Does --netscli-mark-inset-ratio still match the wordmark asset?
+// Does --ui-mark-inset-ratio still match the wordmark asset?
 //
 // netscli-wordmark.png carries transparent columns down its left edge, so a
 // bar that renders it flush against the gutter shows the logo indented while
@@ -110,10 +110,10 @@ while (left < width) {
 const measured = left / width;
 
 const css = fs.readFileSync(tokens, 'utf8');
-const declared = css.match(/--netscli-mark-inset-ratio:\s*([\d.]+)\s*;/);
+const declared = css.match(/--ui-mark-inset-ratio:\s*([\d.]+)\s*;/);
 if (!declared) {
   console.error(
-    `No --netscli-mark-inset-ratio declaration in ${path.relative(siteRoot, tokens)}.\n` +
+    `No --ui-mark-inset-ratio declaration in ${path.relative(siteRoot, tokens)}.\n` +
       `The wordmark's own left margin is ${measured.toFixed(4)} of its width ` +
       `(${left} of ${width} columns); declare that.`
   );
@@ -126,7 +126,7 @@ const drift = Math.abs(ratio - measured);
 if (drift > TOLERANCE) {
   console.error(
     'Wordmark inset has drifted from the asset.\n' +
-      `  declared  --netscli-mark-inset-ratio: ${ratio}\n` +
+      `  declared  --ui-mark-inset-ratio: ${ratio}\n` +
       `  measured  ${measured.toFixed(4)} (${left} transparent columns of ${width})\n` +
       `  drift     ${(drift * 160).toFixed(2)}px at a 160px wordmark, tolerance 0.50px\n` +
       `Set the token to ${measured.toFixed(4)} in ${path.relative(siteRoot, tokens)}, ` +

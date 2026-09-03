@@ -57,8 +57,8 @@ const { surfaces, copy } = site;
 <style is:global>
 /* ─── SURFACE CARDS ─── */
 .surfaces-section{
-  background:var(--netscli-surface);
-  border-block:1px solid rgba(var(--netscli-lift-rgb),.045);
+  background:var(--ui-surface);
+  border-block:1px solid rgba(var(--ui-lift-rgb),.045);
 }
 .surfaces-section::before{
   content:none;
@@ -103,8 +103,8 @@ const { surfaces, copy } = site;
 .surface.flip{direction:rtl}
 .surface.flip>*{direction:ltr;min-width:0}
 .surface-text{padding-top:0}
-.surface-text h3{font-size:1.125rem;font-weight:700;color:var(--netscli-text-strong);margin:0 0 22px}
-.surface-text p{font-size:.875rem;color:var(--netscli-text-muted);margin:0;line-height:1.6}
+.surface-text h3{font-size:1.125rem;font-weight:700;color:var(--ui-text-strong);margin:0 0 22px}
+.surface-text p{font-size:.875rem;color:var(--ui-text-muted);margin:0;line-height:1.6}
 .surface-text code{font-size:.75rem}
 .surface-visual picture{
   display:block;
@@ -113,8 +113,8 @@ const { surfaces, copy } = site;
 .surface-visual img{
   display:block;
   width:100%;height:auto;border-radius:10px;
-  border:1px solid rgba(var(--netscli-lift-rgb),.08);
-  box-shadow:var(--netscli-lift-md);
+  border:1px solid rgba(var(--ui-lift-rgb),.08);
+  box-shadow:var(--ui-lift-md);
   /* zoom-in: the lightbox opens it. Was in Hero.astro, which does not own
      this class; every component's styles are global, so each keeps to its
      own markup. */
@@ -127,11 +127,11 @@ const { surfaces, copy } = site;
 }
 .surface-visual .codeblock{
   /* Dark in both themes -- see the code-surface note in tokens.css. */
-  background:var(--netscli-code-bg);border:1px solid var(--netscli-code-border);
+  background:var(--ui-code-bg);border:1px solid var(--ui-code-border);
   border-radius:10px;padding:16px 58px 16px 20px;
   font-family:ui-monospace,"SF Mono",Menlo,monospace;
-  font-size:.75rem;line-height:1.7;white-space:pre;overflow-x:auto;color:var(--netscli-text);
-  box-shadow:var(--netscli-lift-md);
+  font-size:.75rem;line-height:1.7;white-space:pre;overflow-x:auto;color:var(--ui-text);
+  box-shadow:var(--ui-lift-md);
   position:relative;
 }
 @media(max-width:720px){

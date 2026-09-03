@@ -23,7 +23,7 @@
   inset:0;
   z-index:1200; /* above .skip-link's 1000 */
   padding:32px;
-  background:rgba(var(--netscli-bg-rgb), .86);
+  background:rgba(var(--ui-bg-rgb), .86);
   backdrop-filter:blur(3px);
 }
 .image-lightbox.open{
@@ -44,9 +44,9 @@ body.lightbox-open{overflow:hidden}
 }
 .image-lightbox-frame{
   min-height:0; /* lets the image shrink inside the flex column */
-  border:1px solid rgba(var(--netscli-lift-rgb),.14);
+  border:1px solid rgba(var(--ui-lift-rgb),.14);
   border-radius:10px;
-  background:var(--netscli-bg);
+  background:var(--ui-bg);
   overflow:hidden;
 }
 .image-lightbox-frame img{
@@ -65,7 +65,7 @@ body.lightbox-open{overflow:hidden}
   font-size:.85rem;
   /* Deliberately not a dim grey: this sits on the overlay's near-black
      backdrop, where the site's muted greys fall under 4.5:1. */
-  color:var(--netscli-text);
+  color:var(--ui-text);
 }
 .image-lightbox-caption:empty{display:none}
 
@@ -84,15 +84,15 @@ body.lightbox-open{overflow:hidden}
   height:36px;
   display:grid;
   place-items:center;
-  border:1px solid rgba(var(--netscli-lift-rgb),.18);
+  border:1px solid rgba(var(--ui-lift-rgb),.18);
   border-radius:999px;
-  background:var(--netscli-surface);
-  color:var(--netscli-text-strong);
+  background:var(--ui-surface);
+  color:var(--ui-text-strong);
   font-size:1.25rem;
   line-height:1;
   cursor:pointer;
 }
-.image-lightbox-close:hover{background:var(--netscli-surface-raised);border-color:rgba(255,255,255,.32)}
+.image-lightbox-close:hover{background:var(--ui-surface-raised);border-color:rgba(255,255,255,.32)}
 .image-lightbox-close:focus-visible{outline:2px solid #2dd4bf;outline-offset:2px}
 
 /* No light-theme overrides here on purpose. The lightbox only runs on the
