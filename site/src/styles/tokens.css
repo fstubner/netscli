@@ -35,8 +35,11 @@
 
   /* ---- Wordmark ------------------------------------------------------
    *
-   * netscli-wordmark.png is 720px wide and its first 56 columns are fully
-   * transparent, so the glyph starts 7.78% of the rendered width in. Every
+   * The wordmark this site ships is 720px wide and its first 56 columns are
+   * fully transparent, so the glyph starts 7.78% of the rendered width in.
+   * scripts/wordmark-inset.mjs measures the asset site-content/meta.ts names
+   * and fails if this ratio drifts from it, so a replacement wordmark is
+   * caught rather than quietly indented. Every
    * bar that shows it has to pull it back by that much, or the logo sits
    * indented while the nav links beside it start at the gutter.
    *
@@ -102,7 +105,7 @@
      starlight/28-final-interaction-guardrails.css, so the landing bar's copy
      of the same control could not reach it and hovered a different colour.
      The expression is unchanged -- --sl-color-accent and --sl-color-hairline
-     were aliases of these two netscli values. */
+     were aliases of these two values. */
   --ui-hover-border: color-mix(in srgb, var(--ui-accent) 42%, rgba(var(--ui-lift-rgb), 0.08));
 
   /* Text drawn ON the accent, where the accent is a fill rather than ink.
@@ -221,8 +224,10 @@ html[data-theme='light'] {
   color-scheme: light;
 
   /* The wordmark is a dark-theme asset and there is only one of it.
-   * netscli-wordmark.png runs green -> cyan and the cyan half is picked for a
+   * This site's runs green -> cyan and the cyan half is picked for a
    * near-black bar, so on white the right side of the logo barely separates.
+   * The numbers below are measurements OF THAT ASSET: a site that ships a
+   * different wordmark has to re-measure them, and nothing checks that.
    * Measured over its 34,754 opaque pixels: mean ink rgb(12,167,132) is
    * 6.18:1 on #111 against 3.05:1 on white, and the cyan end rgb(27,213,235)
    * is 1.79:1 on white. brightness(.62) takes the mean to 6.84:1 and the
