@@ -215,5 +215,5 @@ async function captureSearch() {
       writeFileSync(join(CAPTURE_DIR, 'docs-search', 'index.html'), html);
       console.log(`Saved the open search dialog (${n} results) to .css-equivalence/docs-search/index.html`);
     } finally { await driver.quit(); }
-  } finally { await cleanup(); }
+  } finally { cleanup(); }
 }
