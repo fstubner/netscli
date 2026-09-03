@@ -7,7 +7,7 @@ import Install from '../components/Install.astro';
 import Faq from '../components/Faq.astro';
 import Footer from '../components/Footer.astro';
 import { site } from '../data/site';
-import { sections } from '../data/site-content/sections';
+import { landingLayout, sections } from '../data/site-content/sections';
 
 const githubRepo = site.social.repo;
 
@@ -18,7 +18,7 @@ const COMPONENTS = { hero: Hero, surfaces: Surfaces, install: Install, faq: Faq 
 ---
 <Page>
   <Nav />
-  <main id="main" data-github-repo={githubRepo}>
+  <main id="main" class={landingLayout === 'split' ? 'landing-split' : undefined} data-github-repo={githubRepo}>
     {sections.map((name) => {
       const Section = COMPONENTS[name];
       return <Section />;

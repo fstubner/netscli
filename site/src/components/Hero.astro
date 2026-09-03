@@ -11,6 +11,7 @@ const hasInstall = (sections as readonly string[]).includes('install');
 // content file does not list.
 const defaultDownload = heroDownloads[0];
 ---
+<div class="hero-frame">
 <div class="hero">
   <p class="badge">{hero.badge}</p>
   <h1>{hero.heading}</h1>
@@ -123,7 +124,7 @@ const defaultDownload = heroDownloads[0];
 </div>
 
 <!-- Big hero screenshot -->
-<div class="w">
+<div class="w hero-shot">
   <div class="bigshot">
     <picture>
       {hero.heroImageWebp && (
@@ -138,6 +139,7 @@ const defaultDownload = heroDownloads[0];
       />
     </picture>
   </div>
+</div>
 </div>
 
 <style is:global>
@@ -602,4 +604,50 @@ const defaultDownload = heroDownloads[0];
  * command means copying something you have not fully read. The copy button
  * is the intended path and the full command is in the install guide.
  */
+
+/* ─── SPLIT LAYOUT ───────────────────────────────────────────────────────
+ *
+ * The second arrangement site-content/sections.ts can ask for: copy on the
+ * left, screenshot on the right, and the sections below closer together.
+ * Everything here is additive and scoped to `main.landing-split`, so the
+ * centred page renders exactly as it did before this existed.
+ *
+ * `.hero-frame` wraps the two blocks -- the copy and the screenshot are
+ * separate siblings -- and is `display:contents` by default, so in the
+ * centred layout it is not there at all. The grid goes on the frame rather
+ * than on `main`, because a max-width on `main` would stop the alternating
+ * section bands reaching the edges of the window, which is most of what
+ * makes them read as bands.
+ *
+ * Below 900px none of it applies. A headline and a picture have one sensible
+ * arrangement on a phone, and it is the stacked one both layouts produce. */
+.hero-frame{display:contents}
+
+@media (min-width:900px){
+  .landing-split .hero-frame{
+    display:grid;
+    grid-template-columns:minmax(0,46%) minmax(0,1fr);
+    column-gap:40px;
+    align-items:center;
+    max-width:var(--ui-shell-width);
+    margin:0 auto;
+    padding:0 var(--ui-shell-gutter);
+  }
+  .landing-split .hero{
+    text-align:left;
+    padding:56px 0 40px;
+  }
+  .landing-split .hero-shot{padding:0}
+  /* Left-aligned means undoing every centring margin the centred layout
+     sets, not only the text-align. Each of these answers a rule above. */
+  .landing-split .hero h1{margin-inline:0;max-width:none}
+  .landing-split .hero .sub{margin-inline:0;max-width:46ch}
+  .landing-split .hero .social-proof{justify-content:flex-start}
+  .landing-split .hero-cta{margin-inline:0;width:100%}
+  .landing-split .hero-cta-sub{width:100%;justify-self:start}
+  .landing-split .bigshot{margin:0;max-width:none}
+  /* The sections sit closer together: the hero no longer fills a screen on
+     its own, so the old 64px gap reads as a gap rather than as rhythm. */
+  .landing-split section{padding:48px 0}
+}
 </style>

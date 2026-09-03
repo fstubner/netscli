@@ -211,6 +211,9 @@ export interface SectionCopy {
   leadHtml: string;
 }
 
+/** How the landing page arranges its hero and the rhythm below it. */
+export type LandingLayout = 'centered' | 'split';
+
 /** A section the landing page can render. Adding one here means adding a
  *  component for it in src/pages/index.astro's map. */
 export type LandingSection = 'hero' | 'surfaces' | 'install' | 'faq';
