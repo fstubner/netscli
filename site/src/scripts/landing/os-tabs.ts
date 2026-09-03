@@ -9,6 +9,7 @@
  */
 import type { NavigatorWithUserAgentData, OperatingSystem } from './os-types';
 import { INSTALL_PS1_COMMAND, INSTALL_SH_COMMAND } from '../../data/site-content/install-urls';
+import { heroDownloads } from '../../data/site-content/hero';
 
 export function initOsTabs(): void {
   // OS tab swap. Keep visual state and ARIA state aligned so package
@@ -158,51 +159,35 @@ export function initOsTabs(): void {
 
     const desktopDownload = document.querySelector<HTMLAnchorElement>("#hero-desktop-download");
     if (desktopDownload) {
-      const base = "https://github.com/fstubner/netscli/releases/latest/download";
-      // macOS ships two .dmgs and they are NOT interchangeable. This
-      // button used to hand every Mac visitor the Apple Silicon build,
-      // so Intel users downloaded something that would not run.
-      //
-      // Default to the Intel build, because Rosetta 2 runs it on Apple
-      // Silicon too — an asymmetry worth exploiting, since the wrong
-      // guess in that direction still works and the reverse does not.
-      // Then upgrade to the native arm64 build if the browser will
-      // actually tell us the architecture.
-      const desktopUrls: Record<OperatingSystem, string> = {
-        windows: `${base}/netscli-gui-windows-x86_64.msi`,
-        macos: `${base}/netscli-gui-macos-x86_64.dmg`,
-        linux: `${base}/netscli-gui-linux-x86_64.AppImage`,
-      };
-      desktopDownload.href = desktopUrls[detected];
-
+      // Which installer a visitor on this OS is offered. The content file
+      // marks one entry per OS `preferred`; the first entry for that OS is
+      // the fallback, so a list that forgets the flag still offers something
+      // for the right platform rather than nothing.
+      const forOs = heroDownloads.filter((d) => d.os === detected);
+      const chosen = forOs.find((d) => d.preferred) ?? forOs[0];
+      const cue = document.getElementById("hero-desktop-cue");
       // Keep the caption and the href saying the same thing. They are set
       // together on purpose: a cue that describes a different file from the
       // one the button fetches is worse than no cue.
-      const cueText: Record<OperatingSystem, string> = {
-        windows: 'Windows · .msi installer',
-        macos: 'macOS · Intel .dmg',
-        linux: 'Linux · .AppImage',
+      const offer = (download: (typeof heroDownloads)[number]) => {
+        desktopDownload.href = download.href;
+        if (cue) cue.textContent = download.cue;
       };
-      const cue = document.getElementById('hero-desktop-cue');
-      if (cue) cue.textContent = cueText[detected];
+      if (chosen) offer(chosen);
 
-      if (detected === "macos") {
+      const armBuild = forOs.find((d) => d.appleSilicon);
+      if (armBuild) {
         // High-entropy hints are async and Chromium-only; Safari never
-        // resolves this, which is exactly why the default above has to
-        // be the one that runs everywhere.
+        // resolves this, which is why the entry chosen above has to be one
+        // that runs everywhere -- on macOS that is the Intel build, which
+        // Rosetta 2 also runs on Apple silicon.
         navigatorWithUaData.userAgentData
           ?.getHighEntropyValues?.(["architecture"])
           .then(({ architecture }) => {
-            if (architecture === "arm") {
-              desktopDownload.href = `${base}/netscli-gui-macos-aarch64.dmg`;
-              // The caption moves with the href. Without this the button
-              // would fetch the Apple Silicon build while the line under it
-              // still read "Intel .dmg".
-              if (cue) cue.textContent = 'macOS · Apple silicon .dmg';
-            }
+            if (architecture === "arm") offer(armBuild);
           })
           .catch(() => {
-            /* keep the Intel default */
+            /* keep the entry chosen above */
           });
       }
     }

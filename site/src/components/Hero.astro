@@ -1,6 +1,10 @@
 ---
 import { site } from '../data/site';
-const { hero, social } = site;
+const { hero, heroDownloads, social } = site;
+// What the button points at before any script runs, and what a crawler
+// reads. The list's first entry, so the markup can never name a file the
+// content file does not list.
+const defaultDownload = heroDownloads[0];
 ---
 <div class="hero">
   <p class="badge">{hero.badge}</p>
@@ -35,78 +39,52 @@ const { hero, social } = site;
 
   <div class="hero-cta">
     <div class="hero-cta-main">
-      <div class="hero-primary-wrap">
-        <a
-          class="hero-primary"
-          id="hero-desktop-download"
-          href="https://github.com/fstubner/netscli/releases/latest/download/netscli-gui-windows-x86_64.msi"
-        >
-          <span class="hero-primary-label">Desktop app</span>
-          {/* What the button will download, said out loud, and inside the
-              button rather than under it.
-              Clicking starts a download immediately and nothing else on the
-              page names the file or the platform first, so the only way to
-              find out what you were getting was to get it. It used to sit
-              below as a sibling, which put it in row 2 column 1 of the CTA
-              grid -- hanging off the left column while the command chip
-              beside it had nothing underneath. Inside the button it is
-              attached to the thing it describes and the row is even again.
-              Server-rendered with the Windows default so it matches the href
-              before any script runs; scripts/landing/os-tabs.ts rewrites the
-              text and the href together. */}
-          <span class="hero-primary-cue" id="hero-desktop-cue">Windows &middot; .msi installer</span>
-        </a>
-        <button
-          class="hero-primary-menu"
-          id="hero-desktop-menu-button"
-          type="button"
-          aria-label="Choose desktop installer"
-          aria-expanded="false"
-          aria-controls="hero-desktop-menu"
-        ></button>
-        <div class="hero-desktop-menu" id="hero-desktop-menu" hidden>
-          <a href="https://github.com/fstubner/netscli/releases/latest/download/netscli-gui-windows-x86_64.msi">
-            <span class="platform-mark platform-windows" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
-            <span class="installer-copy">
-              <span class="installer-name">Windows</span>
-              <span class="installer-meta">AMD64</span>
-            </span>
-            <span class="installer-ext">msi</span>
+      {heroDownloads.length > 0 && (
+        <div class="hero-primary-wrap">
+          <a class="hero-primary" id="hero-desktop-download" href={defaultDownload.href}>
+            <span class="hero-primary-label">{hero.downloadLabel}</span>
+            {/* What the button will download, said out loud, and inside the
+                button rather than under it.
+                Clicking starts a download immediately and nothing else on the
+                page names the file or the platform first, so the only way to
+                find out what you were getting was to get it. It used to sit
+                below as a sibling, which put it in row 2 column 1 of the CTA
+                grid -- hanging off the left column while the command chip
+                beside it had nothing underneath. Inside the button it is
+                attached to the thing it describes and the row is even again.
+                Server-rendered with the first entry so it matches the href
+                before any script runs; scripts/landing/os-tabs.ts rewrites the
+                text and the href together. */}
+            <span class="hero-primary-cue" id="hero-desktop-cue">{defaultDownload.cue}</span>
           </a>
-          <a href="https://github.com/fstubner/netscli/releases/latest/download/netscli-gui-macos-aarch64.dmg">
-            <span class="platform-mark platform-macos" aria-hidden="true"></span>
-            <span class="installer-copy">
-              <span class="installer-name">macOS</span>
-              <span class="installer-meta">Apple silicon</span>
-            </span>
-            <span class="installer-ext">dmg</span>
-          </a>
-          <a href="https://github.com/fstubner/netscli/releases/latest/download/netscli-gui-macos-x86_64.dmg">
-            <span class="platform-mark platform-macos" aria-hidden="true"></span>
-            <span class="installer-copy">
-              <span class="installer-name">macOS</span>
-              <span class="installer-meta">Intel x86_64</span>
-            </span>
-            <span class="installer-ext">dmg</span>
-          </a>
-          <a href="https://github.com/fstubner/netscli/releases/latest/download/netscli-gui-linux-x86_64.AppImage">
-            <span class="platform-mark platform-linux" aria-hidden="true"></span>
-            <span class="installer-copy">
-              <span class="installer-name">Linux</span>
-              <span class="installer-meta">x86_64 portable</span>
-            </span>
-            <span class="installer-ext">AppImage</span>
-          </a>
-          <a href="https://github.com/fstubner/netscli/releases/latest/download/netscli-gui-linux-x86_64.deb">
-            <span class="platform-mark platform-linux" aria-hidden="true"></span>
-            <span class="installer-copy">
-              <span class="installer-name">Debian / Ubuntu</span>
-              <span class="installer-meta">AMD64</span>
-            </span>
-            <span class="installer-ext">deb</span>
-          </a>
+          <button
+            class="hero-primary-menu"
+            id="hero-desktop-menu-button"
+            type="button"
+            aria-label={hero.downloadMenuLabel}
+            aria-expanded="false"
+            aria-controls="hero-desktop-menu"
+          ></button>
+          <div class="hero-desktop-menu" id="hero-desktop-menu" hidden>
+            {heroDownloads.map((download) => (
+              <a href={download.href}>
+                <span class={`platform-mark platform-${download.os}`} aria-hidden="true">
+                  {/* The Windows glyph is four panes; the other two are a
+                      single shape drawn in CSS. */}
+                  {download.os === 'windows' && (
+                    <Fragment><span></span><span></span><span></span><span></span></Fragment>
+                  )}
+                </span>
+                <span class="installer-copy">
+                  <span class="installer-name">{download.name}</span>
+                  <span class="installer-meta">{download.meta}</span>
+                </span>
+                <span class="installer-ext">{download.ext}</span>
+              </a>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
       {/* The SCRIPT one-liner sits here, in the wide slot beside the button,
           and the package-manager command goes in the narrower row below.
 
