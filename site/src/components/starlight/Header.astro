@@ -7,6 +7,7 @@ const shouldRenderSearch =
   config.pagefind || config.components.Search !== '@astrojs/starlight/components/Search.astro';
 
 import { hrefFor, isCurrent, navGroupBreak, navLinks } from '../../data/site-content/nav';
+import { branding } from '../../data/site-content/meta';
 
 const pathname = Astro.url.pathname;
 
@@ -21,7 +22,7 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
 
 <div class="docs-topbar">
   <a class="docs-mark" href="/" aria-label="NetsCLI home">
-    <img src="/assets/netscli-wordmark.png" alt="NetsCLI" width="160" height="32" />
+    <img src={branding.wordmark} alt={branding.wordmarkAlt} width="160" height="32" />
   </a>
 
   <div class="docs-header-search print:hidden">

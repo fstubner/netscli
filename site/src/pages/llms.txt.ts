@@ -41,7 +41,7 @@ export async function GET() {
   });
 
   const lines = [
-    '# NetsCLI',
+    `# ${meta.siteName}`,
     '',
     `> ${hero.subhead}`,
     '',
@@ -50,11 +50,9 @@ export async function GET() {
     '## Install',
     '',
     ...quickstart,
-    `- **From source**: \`cargo install netscli\``,
+    `- **From source**: \`${install.fromSource}\``,
     '',
-    'Packet capture is a compile-time feature. No published desktop installer',
-    'includes it; capture-enabled CLI assets are published separately and also',
-    'need a system capture library (libpcap or Npcap).',
+    ...install.notes,
     '',
     '## Documentation',
     '',

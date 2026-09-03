@@ -1,5 +1,5 @@
-import type { Hero, HeroDownload } from './types';
-import { INSTALL_SH_COMMAND } from './install-urls';
+import type { Hero, HeroCommands, HeroDownload } from './types';
+import { INSTALL_PS1_COMMAND, INSTALL_SH_COMMAND } from './install-urls';
 
 export const hero: Hero = {
   // Platforms only. "Open source" and "MIT" repeat in the footer and the
@@ -126,3 +126,32 @@ export const heroDownloads: HeroDownload[] = [
     cue: 'Linux · .deb package',
   },
 ];
+
+// What the hero's two command rows say once the visitor's platform is known.
+// `quickInstall` and `quickInstallAlt` above are the server-rendered defaults
+// for the same two rows; these replace them per platform.
+//
+// Keyed by ROUTE, not by rank: `packageManager` is the package-manager line
+// and `script` the one-liner, and the hero puts each in the row that fits it
+// -- the wide row beside the button takes the script, the narrower row below
+// takes the package manager. They were once named `primary`/`secondary`,
+// which described rank rather than route, and Linux had the two the other way
+// round, so the wide row got a 90-character URL on one platform and a short
+// package command on the others.
+export const heroCommands: HeroCommands = {
+  windows: {
+    // Moniker, matching the hero's server-rendered default. `Moniker:
+    // netscli` is published in the winget catalog alongside the canonical
+    // `fstubner.netscli`, so both resolve.
+    packageManager: 'winget install netscli',
+    script: INSTALL_PS1_COMMAND,
+  },
+  macos: {
+    packageManager: 'brew tap fstubner/tap && brew install netscli',
+    script: INSTALL_SH_COMMAND,
+  },
+  linux: {
+    packageManager: 'yay -S netscli-bin',
+    script: INSTALL_SH_COMMAND,
+  },
+};

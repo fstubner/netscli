@@ -8,8 +8,7 @@
  * derived from both.
  */
 import type { NavigatorWithUserAgentData, OperatingSystem } from './os-types';
-import { INSTALL_PS1_COMMAND, INSTALL_SH_COMMAND } from '../../data/site-content/install-urls';
-import { heroDownloads } from '../../data/site-content/hero';
+import { heroCommands, heroDownloads } from '../../data/site-content/hero';
 
 export function initOsTabs(): void {
   // OS tab swap. Keep visual state and ARIA state aligned so package
@@ -19,7 +18,7 @@ export function initOsTabs(): void {
   // A chosen tab outlives the page. Detection is a guess -- someone on a
   // Windows machine installing on a Linux box was re-guessed back to
   // Windows on every reload, losing the choice they had just made.
-  const OS_KEY = "netscli:install-os";
+  const OS_KEY = "site:install-os";
   const remember = (os: OperatingSystem) => {
     try {
       localStorage.setItem(OS_KEY, os);
@@ -110,38 +109,10 @@ export function initOsTabs(): void {
     //   pipeline that does not run there, with the correct `winget` line
     //   demoted to the smaller box below it.
     //
-    //   Linux: `packageCommands.linux` was byte-identical to
+    //   Linux: the package command was byte-identical to
     //   `hero.quickInstall`, so the hero printed the same command twice.
     //
-    // Keyed by ROUTE, not by rank.
-    //
-    // These were `primary` and `secondary`, meaning "what the install section
-    // recommends" and "a genuinely different route" -- but the two rows the
-    // hero puts them in are different SIZES, not different ranks, and Linux
-    // had the script under `primary` while Windows and macOS had it under
-    // `secondary`. So the wide row got a package-manager command on two
-    // platforms and a 90-character URL on the third. Naming them for what
-    // they are lets each row take the one that fits it.
-    const heroCommands: Record<OperatingSystem, { packageManager: string; script: string }> = {
-      windows: {
-        // Moniker, matching the hero's server-rendered default. `Moniker:
-        // netscli` is published in the winget catalog alongside the
-        // canonical `fstubner.netscli`, so both resolve.
-        packageManager: "winget install netscli",
-        script:
-          INSTALL_PS1_COMMAND,
-      },
-      macos: {
-        packageManager: "brew tap fstubner/tap && brew install netscli",
-        script:
-          INSTALL_SH_COMMAND,
-      },
-      linux: {
-        packageManager: "yay -S netscli-bin",
-        script:
-          INSTALL_SH_COMMAND,
-      },
-    };
+    // The pairs themselves are content, in site-content/hero.ts.
 
     const setHeroCommand = (id: string, command: string) => {
       const host = document.getElementById(id);

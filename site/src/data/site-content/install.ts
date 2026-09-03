@@ -178,3 +178,16 @@ export const tryCommands: TryCommand[] = [
  * rather than a choice. */
 export const installBinariesNote =
   'Rust users can <code>cargo install netscli</code>. Every asset is checksummed and signed with <a href="https://docs.sigstore.dev/cosign/overview/">Sigstore cosign</a> — see <a href="/docs/install/#verifying-a-download">how to verify a download</a>, plus standalone binaries and packet-capture builds.';
+
+// Two things /llms.txt says that no page does: a build-from-source route,
+// listed after the per-platform quickstart, and any caveat a reader acting
+// on that list needs. They live here because they are claims about the
+// product, and a claim kept in the route file is one nobody edits when it
+// stops being true.
+export const installFromSource = 'cargo install netscli';
+
+export const installNotes = [
+  'Packet capture is a compile-time feature. No published desktop installer',
+  'includes it; capture-enabled CLI assets are published separately and also',
+  'need a system capture library (libpcap or Npcap).',
+];

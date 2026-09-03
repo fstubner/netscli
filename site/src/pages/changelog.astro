@@ -108,11 +108,11 @@ const staticRelease = renderReleaseListHtml(fallbackReleases, hero.sourceUrl.spl
     // define:vars scripts aren't run through Vite's import resolution, so a
     // relative `import` here 404s at runtime. Stash the server-computed data
     // on window and import the real module from a plain script below instead.
-    window.__netscliChangelogData = { repo, fallbackReleases, releaseSummaries };
+    window.__siteChangelogData = { repo, fallbackReleases, releaseSummaries };
   </script>
   <script>
     import { initChangelogPage } from '../scripts/changelog-page';
-    const { repo, fallbackReleases, releaseSummaries } = window.__netscliChangelogData;
+    const { repo, fallbackReleases, releaseSummaries } = window.__siteChangelogData;
     initChangelogPage(repo, fallbackReleases, releaseSummaries);
   </script>
 </Page>
