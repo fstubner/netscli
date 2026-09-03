@@ -1,6 +1,6 @@
 // Does --ui-mark-inset-ratio still match the wordmark asset?
 //
-// netscli-wordmark.png carries transparent columns down its left edge, so a
+// The wordmark asset carries transparent columns down its left edge, so a
 // bar that renders it flush against the gutter shows the logo indented while
 // the links beside it are not. Both bars cancel that with a negative
 // translate sized from the asset's own margin.
@@ -26,7 +26,20 @@ import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const asset = path.join(siteRoot, 'public', 'assets', 'netscli-wordmark.png');
+// Which file, from the same place the bars read it: site-content/meta.ts.
+// Hard-coding the name here meant a fork that swapped in its own wordmark
+// still had this guard measuring netscli's.
+const metaSource = fs.readFileSync(path.join(siteRoot, 'src', 'data', 'site-content', 'meta.ts'), 'utf8');
+const wordmark = metaSource.match(/wordmark:\s*'([^']+)'/);
+if (!wordmark) {
+  console.error("No `wordmark:` entry in src/data/site-content/meta.ts.");
+  process.exit(1);
+}
+const asset = path.join(siteRoot, 'public', wordmark[1].replace(/^\//, ''));
+if (!fs.existsSync(asset)) {
+  console.error(`meta.ts names ${wordmark[1]} as the wordmark, and public${wordmark[1]} does not exist.`);
+  process.exit(1);
+}
 const tokens = path.join(siteRoot, 'src', 'styles', 'tokens.css');
 
 // Half a pixel at the widest rendered width the site uses (160px). Below that
