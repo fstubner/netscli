@@ -96,7 +96,7 @@ export function initDocsHeader(): void {
       const text = message.textContent?.trim().replace(/\s+/g, ' ');
       if (
         !text ||
-        ((message as HTMLElement).dataset.netscliMessageText === text &&
+        ((message as HTMLElement).dataset.uiMessageText === text &&
           message.querySelector('.search-data'))
       ) {
         return;
@@ -109,14 +109,14 @@ export function initDocsHeader(): void {
           `${results[2].toLowerCase()} for`,
           { value: results[3] },
         ]);
-        (message as HTMLElement).dataset.netscliMessageText = text;
+        (message as HTMLElement).dataset.uiMessageText = text;
         return;
       }
 
       const zeroResults = text.match(/^No results for\s+(.+)$/i);
       if (zeroResults) {
         setSearchMessage(message, ['No results for', { value: zeroResults[1] }]);
-        (message as HTMLElement).dataset.netscliMessageText = text;
+        (message as HTMLElement).dataset.uiMessageText = text;
       }
     });
   };

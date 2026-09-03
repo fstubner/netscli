@@ -9,6 +9,8 @@ import {
   installBinariesNote,
   installByPlatform,
   installCopy,
+  installFromSource,
+  installNotes,
   tryCommands,
 } from './site-content/install';
 import { faq, faqCopy } from './site-content/faq';
@@ -49,6 +51,8 @@ export const site: SiteData = {
     byPlatform: installByPlatform,
     tryCommands,
     binariesNote: installBinariesNote,
+    fromSource: installFromSource,
+    notes: installNotes,
   },
   faq,
   builtWith,

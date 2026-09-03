@@ -38,6 +38,17 @@ export interface Branding {
   fg: string;
 }
 
+/** The hero's two command rows, per platform. */
+export type HeroCommands = Record<
+  Platform,
+  {
+    /** Package-manager line, for the narrower row. */
+    packageManager: string;
+    /** Install one-liner, for the wide row beside the download button. */
+    script: string;
+  }
+>;
+
 /** One installer in the hero's Desktop app menu.
  *
  *  The list is content, not markup: a product with no desktop build leaves
@@ -224,6 +235,10 @@ export interface SiteData {
     byPlatform: Record<Platform, PlatformInstall>;
     tryCommands: TryCommand[];
     binariesNote: string;
+    /** Build-from-source command, listed in /llms.txt after the quickstart. */
+    fromSource: string;
+    /** Caveats /llms.txt prints under the install list, one line each. */
+    notes: string[];
   };
   faq: FaqItem[];
   builtWith: BuiltWithEntry[];
