@@ -2,11 +2,14 @@
 import Page from '../layouts/Page.astro';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
+import { site } from '../data/site';
+
+const { meta } = site;
 ---
 
 <Page
-  title="Page not found | NetsCLI"
-  description="The requested NetsCLI page could not be found."
+  title={`Page not found | ${meta.siteName}`}
+  description={`The requested ${meta.siteName} page could not be found.`}
   canonicalPath="/404.html"
   includeFaqSchema={false}
   bodyClass="not-found-page"

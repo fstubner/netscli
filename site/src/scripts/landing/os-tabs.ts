@@ -87,8 +87,8 @@ export function initOsTabs(): void {
     // Confirmed on a Pixel 8 UA, where `platform` is exactly "Android".
     //
     // Apple's mobile platforms group with macOS, and Android/Chrome OS
-    // with Linux. Neither can actually run NetsCLI, so the goal is only to
-    // show the least wrong thing to someone browsing on a phone and to
+    // with Linux. Neither runs a desktop binary at all, so the goal is only
+    // to show the least wrong thing to someone browsing on a phone and to
     // stop claiming a Mac is involved when it is not.
     //
     // `cros` is matched before `linux` deliberately: Chrome OS is
