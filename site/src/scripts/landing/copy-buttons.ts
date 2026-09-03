@@ -37,12 +37,13 @@ export function initCopyButtons(): void {
         // Copy the commands, not the sample output shown beneath them.
         //
         // Every non-empty line used to be kept, `$` stripped, and the lot
-        // joined. On the CLI example that meant a button labelled "Copy
-        // command" produced the two commands *plus* the JSON they print:
+        // joined. On a block that shows a command and its output, that meant
+        // a button labelled "Copy command" produced the command *plus* the
+        // JSON it prints:
         //
-        //     netscli scan demo.local -p 80,443 --json
+        //     some-tool run --json
         //     [
-        //       { "port": 80,  "open": true, "service": "http"  },
+        //       { "ok": true },
         //     ...
         //
         // Pasted into a shell that runs the scan, then tries to execute
