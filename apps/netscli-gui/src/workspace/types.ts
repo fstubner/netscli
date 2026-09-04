@@ -53,10 +53,10 @@ export interface WorkspaceModel {
   exportSelectedCsv: () => void;
   saveResultBundle: () => Promise<void>;
   openResultBundle: () => Promise<void>;
-  copyCellValue: (label: string, value: string) => Promise<void>;
+  copyCellValue: (label: string, value: string) => Promise<boolean>;
   openCaptureFile: (path: string) => Promise<void>;
   revealCaptureFile: (path: string) => Promise<void>;
-  copyCommand: () => Promise<void>;
+  copyCommand: () => Promise<boolean>;
   copySelectedDetails: () => Promise<void>;
   copySelectedRaw: () => Promise<void>;
   sortBy: (column: ResultColumn) => void;

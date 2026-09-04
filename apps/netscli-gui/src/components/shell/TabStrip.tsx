@@ -17,6 +17,7 @@ interface TabStripProps {
   activeTabId: string;
   openMenu: string | null;
   toolCapabilities: ToolCapabilityMap;
+  toolDisabledReasons?: Partial<Record<ToolKind, string>>;
   onAddScanTab: () => void;
   onAddToolTab: (kind: ToolKind) => void;
   onCloseTab: (tabId: string) => void;
@@ -33,6 +34,7 @@ export function TabStrip({
   activeTabId,
   openMenu,
   toolCapabilities,
+  toolDisabledReasons,
   onAddScanTab,
   onAddToolTab,
   onCloseTab,
@@ -246,6 +248,7 @@ export function TabStrip({
           position={toolMenuPosition}
           setOpenMenu={setOpenMenu}
           toolCapabilities={toolCapabilities}
+          toolDisabledReasons={toolDisabledReasons}
           triggerRef={chevronRef}
         />
       )}

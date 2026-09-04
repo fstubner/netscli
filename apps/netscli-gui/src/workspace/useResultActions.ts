@@ -127,28 +127,33 @@ export function useResultActions({
    * and a missing `navigator.clipboard` (the optional chain made it a silent
    * no-op). The export path already reports its failures; this matches it.
    */
-  async function copyToClipboard(label: string, text: string) {
+  /** True when the text reached the clipboard. Callers with a control of
+   *  their own use it to show that it did; the toast is opt-in and off by
+   *  default, so it cannot be the only signal. */
+  async function copyToClipboard(label: string, text: string): Promise<boolean> {
     if (!navigator.clipboard) {
       reportActionFailure(`${label} failed: clipboard unavailable`);
-      return;
+      return false;
     }
     try {
       await navigator.clipboard.writeText(text);
       showToast({ message: `${label} copied`, kind: 'interaction' });
+      return true;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       reportActionFailure(`${label} copy failed: ${message}`);
+      return false;
     }
   }
 
-  async function copyCommand() {
-    if (!commandPreview) return;
-    await copyToClipboard('Command', commandPreview);
+  async function copyCommand(): Promise<boolean> {
+    if (!commandPreview) return false;
+    return copyToClipboard('Command', commandPreview);
   }
 
-  async function copyCellValue(label: string, value: string) {
-    if (!value) return;
-    await copyToClipboard(label, value);
+  async function copyCellValue(label: string, value: string): Promise<boolean> {
+    if (!value) return false;
+    return copyToClipboard(label, value);
   }
 
   async function openCaptureFile(path: string) {

@@ -47,6 +47,25 @@
   border-color: var(--border-subtle);
 }
 
+/* The copy button keeps a frame while it says "Copied".
+ *
+ * These buttons carry `border: 1px solid transparent` and only show it on
+ * hover, which is right for a row of quiet icons -- but the copied state
+ * outlives the pointer. Clicking and moving away left a tick floating with
+ * no frame around it, reading as a glyph that had changed rather than a
+ * control reporting back.
+ *
+ * It borrows the HOVER frame rather than inventing one. An accent-tinted
+ * border was the first attempt and it read as a third state the button never
+ * has otherwise; matching hover means the only thing that changes on copy is
+ * the icon, which is the thing with something to say. */
+.command-strip button.copied,
+.command-strip button.copied:hover {
+  color: var(--mint);
+  background: var(--bg-elevated);
+  border-color: var(--border-subtle);
+}
+
 .icon-button.strong {
   color: var(--mint);
 }

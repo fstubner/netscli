@@ -170,6 +170,18 @@ its entries are here. There is no 0.3.0 release to look for.
 
 ### Fixed
 
+- **Copying the CLI command says that it did.** The button reported success
+  through an `interaction` toast, and those are off by default -- so at stock
+  settings the one action whose whole result is invisible, putting text on the
+  clipboard, gave no sign at all. The button now shows a tick for a moment,
+  borrowing the frame it already uses on hover so the only thing that changes
+  is the icon.
+- **Packet capture is greyed everywhere it is offered, not just in the menu
+  bar.** The menu bar greyed it and said why on a build that cannot capture;
+  the tab menu beside the tabs, and the picker on the empty workspace, offered
+  it as an ordinary item. Whichever one you happened to open decided whether
+  you were told. Two signals were in play -- a capability that removes an entry
+  and a reason that greys it -- and only the menu bar read the second.
 - **Stop actually stops a run now, and progress shows real counts.** Every
   command argument was sent under its Rust name (`op_id`, `max_concurrent`)
   where Tauri expects the camelCase form, so the keys never matched. Stop

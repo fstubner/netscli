@@ -10,10 +10,23 @@ interface TabToolMenuProps {
   position: PopoverPosition;
   setOpenMenu: (menu: string | null) => void;
   toolCapabilities: ToolCapabilityMap;
+  /** Why a tool cannot run, per kind. Greys the entry and explains it, the
+   *  same way the menu bar does -- see menuItems.ts for why these are greyed
+   *  rather than removed. Without it this menu offered packet capture as an
+   *  ordinary item on a build that cannot do it, while the menu bar three
+   *  inches away greyed the very same entry. */
+  toolDisabledReasons?: Partial<Record<ToolKind, string>>;
   triggerRef: RefObject<HTMLButtonElement | null>;
 }
 
-export function TabToolMenu({ onAddToolTab, position, setOpenMenu, toolCapabilities, triggerRef }: TabToolMenuProps) {
+export function TabToolMenu({
+  onAddToolTab,
+  position,
+  setOpenMenu,
+  toolCapabilities,
+  toolDisabledReasons,
+  triggerRef,
+}: TabToolMenuProps) {
   const menuRef = useRef<HTMLDivElement | null>(null);
   const closeMenu = () => setOpenMenu(null);
   const onKeyDown = useRovingFocus({
@@ -41,12 +54,14 @@ export function TabToolMenu({ onAddToolTab, position, setOpenMenu, toolCapabilit
       <ToolMenuSection
         kinds={SCAN_TOOL_KINDS}
         label="Scan operations"
+        reasons={toolDisabledReasons}
         onAddToolTab={onAddToolTab}
         setOpenMenu={setOpenMenu}
       />
       <ToolMenuSection
         kinds={availableToolKinds(LOOKUP_TOOL_KINDS, toolCapabilities)}
         label="Lookups and inventory"
+        reasons={toolDisabledReasons}
         onAddToolTab={onAddToolTab}
         setOpenMenu={setOpenMenu}
       />
@@ -57,11 +72,13 @@ export function TabToolMenu({ onAddToolTab, position, setOpenMenu, toolCapabilit
 function ToolMenuSection({
   kinds,
   label,
+  reasons,
   onAddToolTab,
   setOpenMenu,
 }: {
   kinds: ToolKind[];
   label: string;
+  reasons?: Partial<Record<ToolKind, string>>;
   onAddToolTab: (kind: ToolKind) => void;
   setOpenMenu: (menu: string | null) => void;
 }) {
@@ -71,9 +88,12 @@ function ToolMenuSection({
       {kinds.map((kind) => {
         const config = TOOL_CONFIG[kind];
         const Icon = config.Icon;
+        const reason = reasons?.[kind];
         return (
           <button
             key={kind}
+            className={reason ? 'muted' : undefined}
+            data-tooltip={reason ? `${reason} Open for setup instructions.` : undefined}
             role="menuitem"
             onClick={() => {
               onAddToolTab(kind);

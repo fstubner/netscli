@@ -8,12 +8,15 @@ import { useOverlayDismiss } from '../primitives/overlay';
 
 interface EmptyWorkspaceProps {
   toolCapabilities: ToolCapabilityMap;
+  /** Why a tool cannot run, per kind: greys it and says so, the same as the
+   *  menu bar and the tab menu. */
+  toolDisabledReasons?: Partial<Record<ToolKind, string>>;
   onAddToolTab: (kind: ToolKind) => void;
 }
 
 type PickerKind = 'scan' | 'tool';
 
-export function EmptyWorkspace({ onAddToolTab, toolCapabilities }: EmptyWorkspaceProps) {
+export function EmptyWorkspace({ onAddToolTab, toolCapabilities, toolDisabledReasons }: EmptyWorkspaceProps) {
   const [pickerKind, setPickerKind] = useState<PickerKind | null>(null);
   const pickerRef = useRef<HTMLDivElement | null>(null);
   const pickerPanelRef = useRef<HTMLDivElement | null>(null);
@@ -80,6 +83,7 @@ export function EmptyWorkspace({ onAddToolTab, toolCapabilities }: EmptyWorkspac
             <ToolPickerSection
               kinds={pickerConfig.kinds}
               label={pickerConfig.label}
+              reasons={toolDisabledReasons}
               onAddToolTab={onAddToolTab}
               onClose={() => setPickerKind(null)}
             />
@@ -93,11 +97,13 @@ export function EmptyWorkspace({ onAddToolTab, toolCapabilities }: EmptyWorkspac
 function ToolPickerSection({
   kinds,
   label,
+  reasons,
   onAddToolTab,
   onClose,
 }: {
   kinds: ToolKind[];
   label: string;
+  reasons?: Partial<Record<ToolKind, string>>;
   onAddToolTab: (kind: ToolKind) => void;
   onClose: () => void;
 }) {
@@ -107,9 +113,12 @@ function ToolPickerSection({
       {kinds.map((kind) => {
         const config = TOOL_CONFIG[kind];
         const Icon = config.Icon;
+        const reason = reasons?.[kind];
         return (
           <button
             key={kind}
+            className={reason ? 'muted' : undefined}
+            data-tooltip={reason ? `${reason} Open for setup instructions.` : undefined}
             type="button"
             role="menuitem"
             onClick={() => {
