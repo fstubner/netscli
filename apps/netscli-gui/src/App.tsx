@@ -219,6 +219,7 @@ function App() {
         openMenu={openMenu}
         tabs={workspace.tabs}
         toolCapabilities={toolCapabilities}
+        toolDisabledReasons={packetCaptureUnavailable ? { pcap: packetCaptureUnavailable } : undefined}
         onAddScanTab={() => workspace.addTab('scan')}
         onAddToolTab={workspace.addTab}
         onCloseTab={workspace.closeTab}
@@ -234,6 +235,7 @@ function App() {
         commandBarVisible={commandBarVisible}
         pcapCapability={pcapCapability}
         toolCapabilities={toolCapabilities}
+        toolDisabledReasons={packetCaptureUnavailable ? { pcap: packetCaptureUnavailable } : undefined}
         workspace={workspace}
         onContentContextMenu={openContentContextMenu}
         onRequestRun={requestRun}

@@ -7,7 +7,7 @@ import { ResultTable } from '../results/ResultTable';
 import { WarningStrip, warningMessageFor } from '../results/WarningStrip';
 import { ToolForm } from '../tools/ToolForm';
 import { CommandStrip } from './CommandStrip';
-import type { ResultCellContext, ToolCapabilityMap } from '../../tools/types';
+import type { ResultCellContext, ToolCapabilityMap, ToolKind } from '../../tools/types';
 import type { PcapCapability } from '../../types/netscli';
 import type { WorkspaceModel } from '../../workspace/types';
 
@@ -15,6 +15,7 @@ interface WorkspaceViewProps {
   commandBarVisible: boolean;
   pcapCapability: PcapCapability;
   toolCapabilities: ToolCapabilityMap;
+  toolDisabledReasons?: Partial<Record<ToolKind, string>>;
   workspace: WorkspaceModel;
   onContentContextMenu: (event: MouseEvent<HTMLElement>, cell?: ResultCellContext) => void;
   onRequestRun: (tabId: string) => void;
@@ -24,6 +25,7 @@ export function WorkspaceView({
   commandBarVisible,
   pcapCapability,
   toolCapabilities,
+  toolDisabledReasons,
   workspace,
   onContentContextMenu,
   onRequestRun,
@@ -79,12 +81,13 @@ export function WorkspaceView({
           />
 
           {commandBarVisible && (
-            <CommandStrip command={workspace.commandPreview} onCopy={() => void workspace.copyCommand()} />
+            <CommandStrip command={workspace.commandPreview} onCopy={() => workspace.copyCommand()} />
           )}
         </>
       ) : (
         <EmptyWorkspace
           toolCapabilities={toolCapabilities}
+          toolDisabledReasons={toolDisabledReasons}
           onAddToolTab={workspace.addTab}
         />
       )}
