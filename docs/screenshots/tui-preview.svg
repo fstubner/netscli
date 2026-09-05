@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="680" viewBox="0 0 1200 680" role="img" aria-label="NETSCLI TUI preview (idle)">
   <defs>
-    <linearGradient id="netscliGradient" x1="0" y1="0" x2="1200" y2="0" gradientUnits="userSpaceOnUse">
+    <!-- Spans each element it fills, not the canvas. Same change, and the
+         same reasoning, as tui-discover.svg: userSpaceOnUse across x=0..1200
+         left the logo sampling only the teal middle of the ramp, because the
+         word occupies the middle ~636px of that span. Per-element is also
+         what the TUI does -- gradient_text_line_with_left_pad and
+         draw_gradient_rounded_border in
+         apps/netscli-cli/src/tui/widgets/gradient.rs both walk t from 0 to 1
+         across the element's own width. -->
+    <linearGradient id="netscliGradient" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0%" stop-color="#005a1e"/>
       <stop offset="45%" stop-color="#0aae7a"/>
       <stop offset="100%" stop-color="#1edcff"/>
