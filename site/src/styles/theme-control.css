@@ -1,25 +1,28 @@
-/* The theme select, for both top bars.
+/* The theme control, for both top bars.
  *
- * There are two of these controls on the site and there is no way to make it
- * one: the docs bar renders Starlight's <starlight-theme-select>, which owns
- * the localStorage key and the pre-paint provider, and the landing bar
- * renders its own markup because it does not load Starlight at all. Before
- * this file they also LOOKED like two controls -- the docs one an icon and a
- * caret in a bordered pill, the landing one a bare <select> with the
- * platform's own arrow -- so crossing between the two halves of the site
- * swapped the control in the corner of the bar.
+ * ONE control now, rendered by components/ThemeControl.astro in the landing
+ * nav and by components/starlight/ThemeSelect.astro in the docs bar. Before
+ * this it was two: Starlight's <starlight-theme-select> on one side and our
+ * own markup on the other, styled from one rule set that named both so they
+ * could not drift. That worked for everything except the part no CSS can
+ * reach.
  *
- * The markup is now the same shape on both sides (label > icon + select +
- * caret) and every rule below names both, so the two cannot drift apart
- * without someone editing a selector list that has the other one sitting
- * next to it.
+ * WHY IT IS NOT A <select>. The list a select drops down is drawn by the
+ * operating system. On Windows it is white rows with black text, positioned
+ * by the platform rather than under the trigger, and `option { background }`
+ * -- which this file used to set -- is honoured on some platforms and
+ * ignored there. So the control looked considered on the machine it was
+ * written on and unstyled on the next one. A button and a menu are ordinary
+ * elements and answer to ordinary rules.
  *
- * Registered last in astro.config.mjs's customCss and imported by
- * Page.astro. Last on purpose: this file is the control's definition, not an
- * override of one, and nothing later should be quietly re-styling it. The
- * docs half still inherits Starlight's own scoped layer underneath, which is
- * why several rules here restate a property that looks like it should
- * already be correct -- they are cancelling upstream, not decorating.
+ * The menu matches the hero's installer menu: a panel under its trigger,
+ * hidden until asked for. Two dropdowns on the site, one behaviour.
+ *
+ * Registered last in astro.config.mjs's customCss and imported by Page.astro.
+ * Last on purpose: this file is the control's definition, not an override of
+ * one. The docs half still has Starlight's own scoped layer underneath, which
+ * is why a few rules restate what looks like it should already be true --
+ * they are cancelling upstream, not decorating.
  */
 
 /* The control's own colours.
@@ -28,186 +31,169 @@
  * nothing else reads them -- and because tokens.css is at the 300-line guard,
  * where the answer is to split by ownership rather than to raise the limit.
  * The cross-stack values the control also uses (the accent, the text ramp,
- * --ui-hover-border, --ui-lift-rgb) stay there: those are shared.
- *
- * The option colours are stated opaquely and per theme on purpose. The
- * dropdown list is drawn by the platform, which will not use a translucent
- * colour: --sl-color-bg-nav is rgba(17,17,17,.92), and given that, the option
- * rows fell back to the browser default -- white rows with black text hanging
- * off a dark header, which is what "the dropdown is unstyled" looks like. */
+ * --ui-hover-border, --ui-lift-rgb) stay there: those are shared. */
 :root {
   --ui-control-border: rgba(var(--ui-lift-rgb), 0.1);
   --ui-control-bg: rgba(var(--ui-lift-rgb), 0.03);
-  --ui-control-option-fg: #f4f4f4;
-  --ui-control-option-bg: #1a1f27;
+  /* Declared once. --ui-surface-raised is already per-theme in tokens.css, so
+     restating this under html[data-theme='light'] would be a second copy that
+     can only drift from the first. */
+  --ui-control-menu-bg: var(--ui-surface-raised);
 }
 
 html[data-theme='light'] {
-  /* Not the lift channel at a different alpha, unlike the dark pair above: a
-     wash of the light theme's near-black reads grey-blue and heavy on a white
-     bar, so these keep the hand-picked values the docs control already used. */
-  --ui-control-border: rgba(70, 89, 120, 0.24);
-  --ui-control-bg: rgba(255, 255, 255, 0.58);
-  --ui-control-option-fg: #132033;
-  --ui-control-option-bg: #f4f7fb;
+  --ui-control-border: rgba(var(--ui-lift-rgb), 0.12);
+  --ui-control-bg: rgba(var(--ui-lift-rgb), 0.04);
 }
 
-/* Structure. Starlight's Select.astro supplies this for the docs control
-   through its own scoped styles; the landing control has no such source, so
-   it is stated here for both rather than left to one side's component. */
-starlight-theme-select label,
-.ui-theme-select label {
-  --sl-label-icon-size: 0.875rem;
-  --sl-caret-size: 1.25rem;
-  --sl-inline-padding: 0.5rem;
-  --sl-select-width: 6.25em;
+.ui-theme-select {
   position: relative;
+  color: var(--ui-text);
+}
+
+/* The trigger.
+ *
+ * Sized to the search button beside it in the docs bar: 2.35rem tall and
+ * 0.875rem text, which is the other bordered control on that row. The nav
+ * links are 13px; this is deliberately the button's size, not the links'. */
+.ui-theme-trigger {
   display: flex;
   align-items: center;
   gap: 0.45rem;
-  /* Matches the search button beside it in the docs bar. The <select> inside
-     has its block padding zeroed (below), so without this the label collapses
-     to its 17.2px line box -- which is what the landing control did, having no
-     equivalent of the docs-only rule this came from. */
   min-height: 2.35rem;
   min-width: 5.35rem;
   padding-inline: 0.65rem;
   border: 1px solid var(--ui-control-border);
   border-radius: 6px;
   background: var(--ui-control-bg);
-  color: var(--ui-text);
+  color: inherit;
+  font: inherit;
+  font-size: 0.875rem;
+  line-height: 1.2;
+  cursor: pointer;
 }
 
-starlight-theme-select,
-.ui-theme-select {
-  color: var(--ui-text);
-}
-
-starlight-theme-select label .icon,
-.ui-theme-select label .icon {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
+.ui-theme-trigger .icon {
   width: 1em;
   height: 1em;
+  flex: 0 0 auto;
 }
 
-/* Upstream pins the leading icon at `inset-inline-start: 0`, which is the
-   label's PADDING box -- so it ignored the 0.65rem inline padding and sat 1px
-   from the border, visibly crowding the edge. Pin it to the same inset as the
-   padding instead. The <select> keeps its own left padding, so its text still
-   clears the icon. */
-starlight-theme-select label .label-icon,
-.ui-theme-select label .label-icon {
-  font-size: var(--sl-label-icon-size);
-  inset-inline-start: 0.65rem;
-}
-
-/* Same 0.65rem inset as the leading icon above, for the same reason.
-   Upstream pins both against the padding box, and the rule above had already
-   moved the leading one in to clear the border -- leaving the caret alone at
-   0. Measured: the icon sat 11.2px from the label's left edge and the caret
-   0.8px from its right, inside 10.4px of padding on both sides. */
-starlight-theme-select label .caret,
-.ui-theme-select label .caret {
-  font-size: var(--sl-caret-size);
-  inset-inline-end: 0.65rem;
-}
-
-starlight-theme-select select,
-.ui-theme-select select {
-  border: 0;
-  color: inherit;
-  background: transparent;
-  font: inherit;
-  /* 14px, and stated because `font: inherit` above is a shorthand that resets
-     font-size along with everything else.
-
-     That is how the docs control ended up at 16px: Starlight sets
-     `font-size: var(--sl-text-sm)` (0.875rem) on this select, our override
-     stack set `font: inherit` afterwards, and unlayered beats layered -- so
-     the size upstream chose was silently replaced by the inherited body size,
-     leaving the control's text visibly larger than everything around it.
-
-     0.875rem restores that and matches the search button beside it in the
-     docs bar, which is the other bordered control on the row and the same
-     37.6px tall. The nav links are 13px; this is deliberately the button's
-     size rather than the links'. */
+.ui-theme-trigger .label-icon {
   font-size: 0.875rem;
-  cursor: pointer;
-  appearance: none;
-  text-overflow: ellipsis;
-  width: calc(var(--sl-select-width) + var(--sl-inline-padding) * 2);
-  margin-inline: calc(var(--sl-inline-padding) * -1);
-  /* Upstream pads the <select> 10px top and bottom, which forced the label
-     that wraps it to 60px -- against the 37.6px search button beside it, so
-     the bordered box looked oversized and misaligned in the header. The
-     label's own min-height sets the height now. */
-  padding-block: 0;
-  line-height: 1.2;
-  /* Upstream's inline padding assumes the icon is pinned at inset 0. Having
-     moved it in by the label's 0.65rem padding, the text needs the same
-     shift or it ends up 4px from the icon. */
-  padding-inline-start: calc(1.625rem + 0.65rem);
-  padding-inline-end: calc(var(--sl-caret-size) + var(--sl-inline-padding) + 0.25rem);
 }
 
-starlight-theme-select label:hover,
-.ui-theme-select label:hover {
+.ui-theme-trigger .caret {
+  font-size: 1.25rem;
+  margin-inline-start: auto;
+}
+
+.ui-theme-label {
+  white-space: nowrap;
+}
+
+.ui-theme-trigger:hover {
   color: var(--ui-text-strong);
   border-color: var(--ui-hover-border);
-  background: transparent;
 }
 
 /* Keyboard focus needs a ring, not a border tint.
  *
- * `:focus-within` was once grouped with `:hover`, so tabbing to the control
- * produced the hover treatment: a slightly different border colour and the
- * background *removed*. That is not a focus indicator -- it is barely a
- * change, it disappears against the header, and it is the one state a
- * keyboard user has nothing else to go on. The <select> inside has
- * `appearance: none` and no border of its own, so its own ring has nothing
- * to draw around.
- *
- * One ring, at the same alpha the search button beside it uses. An earlier
- * version stacked a solid 2px outline AND an accent border AND a 10% accent
- * background, which is three signals for one state and read as an error
- * rather than a cursor position. */
-starlight-theme-select label:focus-within,
-.ui-theme-select label:focus-within {
+ * An earlier version gave focus the hover treatment -- a slightly different
+ * border colour -- which is barely a change, disappears against the header,
+ * and is the one state a keyboard user has nothing else to go on. One ring,
+ * at the alpha the search button beside it uses. */
+.ui-theme-trigger:focus-visible {
   color: var(--ui-text-strong);
   border-color: rgba(var(--ui-accent-rgb), 0.45);
   box-shadow: 0 0 0 2px rgba(var(--ui-accent-rgb), 0.22);
   outline: 0;
 }
 
-starlight-theme-select select:focus-visible,
-.ui-theme-select select:focus-visible {
-  outline: 0;
-}
-
-/* Opaque, per theme -- see the note on the tokens at the top of this file. */
-starlight-theme-select option,
-.ui-theme-select option {
-  color: var(--ui-control-option-fg);
-  background-color: var(--ui-control-option-bg);
-}
-
-html[data-theme='light'] starlight-theme-select label:hover,
-html[data-theme='light'] starlight-theme-select label:focus-within,
-html[data-theme='light'] .ui-theme-select label:hover,
-html[data-theme='light'] .ui-theme-select label:focus-within {
+html[data-theme='light'] .ui-theme-trigger:hover,
+html[data-theme='light'] .ui-theme-trigger:focus-visible {
   border-color: rgba(var(--ui-accent-rgb), 0.34);
 }
 
-/* The landing bar's theme icon, one of three.
+/* The menu.
  *
- * The docs bar gets this from Starlight's ThemeProvider, which clones the
- * matching glyph out of a `<template id="theme-icons">` and only looks for
- * `starlight-theme-select`. Neither the template nor that element exists on
- * the landing page, so its control sat on the laptop glyph no matter what was
- * selected.
+ * Right-aligned to the trigger because the control sits at the end of both
+ * bars, where a left-aligned panel would hang off the edge on a narrow
+ * window. Opaque, not translucent: it overlaps page content, and the bar
+ * behind it is already semi-transparent. */
+.ui-theme-menu {
+  position: absolute;
+  inset-inline-end: 0;
+  top: calc(100% + 6px);
+  z-index: 60;
+  min-width: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  border: 1px solid var(--ui-control-border);
+  border-radius: 8px;
+  background: var(--ui-control-menu-bg);
+  box-shadow: var(--ui-lift-md);
+}
+
+/* `hidden` has to be restated, or the menu is permanently open.
+ *
+ * The attribute's `display: none` lives in the browser's own stylesheet, and
+ * ANY author rule beats that -- so the `display: flex` above silently
+ * cancelled it and the panel rendered on every page load. The script was
+ * setting `menu.hidden` correctly the whole time; nothing was listening. */
+.ui-theme-menu[hidden] {
+  display: none;
+}
+
+.ui-theme-option {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.55rem;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--ui-text);
+  font: inherit;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  text-align: start;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ui-theme-option:hover {
+  background: rgba(var(--ui-lift-rgb), 0.06);
+  color: var(--ui-text-strong);
+}
+
+.ui-theme-option:focus-visible {
+  outline: 0;
+  background: rgba(var(--ui-lift-rgb), 0.08);
+  color: var(--ui-text-strong);
+  box-shadow: inset 0 0 0 1px rgba(var(--ui-accent-rgb), 0.45);
+}
+
+/* The chosen row keeps the tick and the accent; the others reserve the tick's
+   width so the labels line up in a column rather than shifting as the choice
+   moves. */
+.ui-theme-tick {
+  display: inline-flex;
+  width: 14px;
+  flex: 0 0 14px;
+  opacity: 0;
+}
+
+.ui-theme-option[aria-checked='true'] {
+  color: var(--ui-accent);
+}
+
+.ui-theme-option[aria-checked='true'] .ui-theme-tick {
+  opacity: 1;
+}
+
+/* The trigger's icon, one of three.
  *
  * Driven by data-theme-choice on <html>, which the pre-paint script in
  * Page.astro sets before anything renders -- so the correct icon is right on
@@ -215,13 +201,13 @@ html[data-theme='light'] .ui-theme-select label:focus-within {
  * the case where that script did not run at all (storage blocked and it threw
  * before the assignment): auto is the honest default there, because auto is
  * what an unset preference means. */
-.ui-theme-select .label-icon {
+.ui-theme-trigger .label-icon {
   display: none;
 }
 
-html:not([data-theme-choice]) .ui-theme-select .label-icon[data-icon='auto'],
-html[data-theme-choice='auto'] .ui-theme-select .label-icon[data-icon='auto'],
-html[data-theme-choice='light'] .ui-theme-select .label-icon[data-icon='light'],
-html[data-theme-choice='dark'] .ui-theme-select .label-icon[data-icon='dark'] {
+html:not([data-theme-choice]) .ui-theme-trigger .label-icon[data-icon='auto'],
+html[data-theme-choice='auto'] .ui-theme-trigger .label-icon[data-icon='auto'],
+html[data-theme-choice='light'] .ui-theme-trigger .label-icon[data-icon='light'],
+html[data-theme-choice='dark'] .ui-theme-trigger .label-icon[data-icon='dark'] {
   display: block;
 }

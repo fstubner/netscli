@@ -118,14 +118,30 @@ html[data-theme='light'][data-docs-scrolled='true'] header.header::after {
     padding-inline: 1rem;
   }
 
+  /* Collapsed, the search joins the controls on the right.
+   *
+   * Full width it is a labelled box beside the wordmark, which reads as part
+   * of the identity group. Collapsed to a 2.5rem icon it does not: measured
+   * at 1150px it sat at x=207 with the wordmark ending at 188 and the next
+   * element 454px further along, a lone square in the middle of nothing. It
+   * belongs with the theme control and the menu button, which are the other
+   * two icons that size.
+   *
+   * `order` rather than a second markup slot, so one component still renders
+   * one search. No auto margin here either -- two auto margins on one flex
+   * row split the free space between them, and the seam is .docs-nav-links. */
   .docs-header-search {
+    order: 2;
     display: flex;
     flex: 0 0 2.5rem;
     width: 2.5rem;
     max-width: 2.5rem;
     min-width: 2.5rem;
-    margin-left: auto;
-    margin-right: 0;
+    margin-inline: 0;
+  }
+
+  .docs-header-theme {
+    order: 3;
   }
 
   .docs-header-search site-search,
@@ -145,6 +161,16 @@ html[data-theme='light'][data-docs-scrolled='true'] header.header::after {
   .docs-header-search site-search button[data-open-modal] span,
   .docs-header-search site-search button[data-open-modal] kbd {
     display: none;
+  }
+}
+
+/* Between 800 and 900px the links and the theme control are both hidden
+   (Header.astro), so the seam that pushed search rightward goes with them and
+   it would fall back beside the wordmark. Search carries the auto margin
+   itself in that band -- there is nothing left for it to collide with. */
+@media (min-width: 50rem) and (max-width: 900px) {
+  .docs-header-search {
+    margin-inline-start: auto;
   }
 }
 
