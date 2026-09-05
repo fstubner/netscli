@@ -86,7 +86,6 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
       text-decoration: none;
       min-width: 0;
       height: var(--sl-nav-height);
-      margin: 0 auto 0 0;
       /* Cancels the wordmark asset's own transparent left margin. This was a
          flat -18px against a 12.4px margin, so the docs logo hung 5.5px
          further left than the identical logo on the landing bar. See
@@ -103,7 +102,16 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
       filter: var(--ui-mark-filter);
     }
 
+    /* The bar is two groups: identity and search on the left, navigation and
+       the theme control on the right. The auto margin is the seam.
+     *
+     * It used to sit on the wordmark, which put the whole gap immediately
+     * after it -- and since search is the next element, search came to rest
+     * near the middle of the bar, reading as a stray control belonging to
+     * neither side. Measured at a 1367px bar: search at x=704, which is the
+     * centre to within a few pixels. */
     .docs-nav-links {
+      margin-inline-start: auto;
       flex: 0 0 auto;
       display: flex;
       align-items: center;
@@ -134,17 +142,23 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
 
     /* Same separator as the landing bar -- see Nav.astro, including why it is
        a short centred pseudo-element rather than a border: these links are the
-       full nav height, so a border ran floor to ceiling and split the bar. */
+       full nav height, so a border ran floor to ceiling and split the bar.
+     *
+     * The space it sits in is a MARGIN, not padding. It was padding, and the
+     * current-page underline is a border on this same box -- so on the docs
+     * page, where the group-start link is also the current one, the underline
+     * began 15px to the left of the word and read as misaligned. Margin puts
+     * the gap outside the box the border draws around; the pseudo-element
+     * sits in that margin, negatively inset. */
     .docs-nav-links a.nav-group-start {
       position: relative;
-      margin-inline-start: 0.35rem;
-      padding-inline-start: 0.95rem;
+      margin-inline-start: 1.3rem;
     }
 
     .docs-nav-links a.nav-group-start::before {
       content: "";
       position: absolute;
-      inset-inline-start: 0;
+      inset-inline-start: -0.65rem;
       top: 50%;
       width: 1px;
       height: 18px;

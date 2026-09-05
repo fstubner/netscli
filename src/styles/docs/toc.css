@@ -42,7 +42,11 @@ html[data-theme='light'] .right-sidebar-panel :where(a[aria-current='location'])
   .right-sidebar-panel {
     flex-basis: var(--ui-docs-toc-width);
     width: var(--ui-docs-toc-width);
-    padding-inline: 1.85rem var(--ui-sidebar-rail-inset, clamp(2.2rem, 3vw, 3.15rem));
+    /* No fallback value. The token is declared unconditionally on :root in
+       docs/theme.css, so a fallback can never fire -- it can only be a second
+       copy of the number that drifts when the real one changes, which is what
+       it just did. */
+    padding-inline: 1.85rem var(--ui-sidebar-rail-inset);
     position: sticky;
     top: var(--sl-nav-height);
     max-height: calc(100vh - var(--sl-nav-height));

@@ -1,0 +1,16 @@
+---
+/**
+ * Starlight's theme control, replaced with ours.
+ *
+ * Upstream renders <starlight-theme-select> around a native <select>, whose
+ * dropdown the operating system draws -- unstyled and positioned by the
+ * platform. See components/ThemeControl.astro.
+ *
+ * The storage key is unchanged (`starlight-theme`), so Starlight's own
+ * pre-paint ThemeProvider still applies the choice on load and a preference
+ * set in either bar holds across the whole site.
+ */
+import ThemeControl from '../ThemeControl.astro';
+---
+
+<ThemeControl />
