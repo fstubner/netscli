@@ -1,7 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="680" viewBox="0 0 1200 680" role="img" aria-label="NETSCLI TUI preview (/discover)">
   <defs>
-    <linearGradient id="netscliGradient" x1="0" y1="0" x2="1200" y2="0" gradientUnits="userSpaceOnUse">
+    <!-- Spans each element it fills, not the canvas.
+         It was userSpaceOnUse across x=0..1200, and the logo occupies only
+         the middle ~636px of that, so the word sampled t=0.24..0.76 -- the
+         teal middle of the ramp, never the dark green start or the cyan end.
+         Beside the nav wordmark, which does span its own width, the two
+         logos read as different colours: #07a86c..#15d7cd against
+         #047f46..#1bd5eb.
+         Per-element is also what the TUI itself does. Both
+         gradient_text_line_with_left_pad and draw_gradient_rounded_border in
+         apps/netscli-cli/src/tui/widgets/gradient.rs walk t from 0 to 1
+         across the element's own width. -->
+    <linearGradient id="netscliGradient" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0%" stop-color="#005a1e"/>
       <stop offset="45%" stop-color="#0aae7a"/>
       <stop offset="100%" stop-color="#1edcff"/>
