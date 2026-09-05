@@ -113,5 +113,9 @@ NEXT_GEN_NETWORKING_PLAN.md
 site/.visual-baseline/
 site/.visual-current/
 site/.visual-diff/
+# Same tool's scratch dirs for its stability re-captures. Untracked but not
+# listed until now, so a record run left them showing up in `git status`.
+site/.visual-verify/
+site/.visual-confirm/
 # Captured runtime DOM for scripts/css-equivalence.mjs (capture-search).
 site/.css-equivalence/

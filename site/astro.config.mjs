@@ -46,6 +46,9 @@ export default defineConfig({
         Footer: './src/components/starlight/Footer.astro',
         MobileMenuFooter: './src/components/starlight/MobileMenuFooter.astro',
         PageSidebar: './src/components/starlight/PageSidebar.astro',
+        // Upstream's is a native <select>; its dropdown is drawn by the OS
+        // and cannot be styled or positioned. See ThemeControl.astro.
+        ThemeSelect: './src/components/starlight/ThemeSelect.astro',
       },
       // One file per region of the docs shell. None uses !important (the five
       // token remaps in code.css excepted, for inline styles): Starlight's own

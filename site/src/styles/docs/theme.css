@@ -107,8 +107,13 @@ html[data-theme='light'] ::backdrop {
   --ui-docs-toc-width: 15rem;
   --ui-docs-shell-gutter: clamp(1.25rem, 2vw, 2.5rem);
   /* How far a rail insets its text from the frame's outer edge. Both rails
-     read it; it was once declared twice with drifted values. */
-  --ui-sidebar-rail-inset: clamp(2.2rem, 3vw, 3.15rem);
+     read it, so the page keeps the same air down each side; it was once
+     declared twice with drifted values.
+     Was clamp(2.2rem, 3vw, 3.15rem), which put the section labels 50px in
+     from the viewport at a wide window -- more air than the rail needed and
+     less room for the link text. The rails' widths are fixed, so the text
+     column simply takes back what the padding gives up. */
+  --ui-sidebar-rail-inset: clamp(1.5rem, 2vw, 2.25rem);
   /* Height of the title band at the top of every docs page. The band's own
      min-height and the offset that starts the contents rail below it both
      read this, so they move together. Measured across all eleven docs pages
