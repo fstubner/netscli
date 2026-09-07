@@ -28,7 +28,7 @@ export const changelogOgDescription = `Versioned ${meta.siteName} release notes 
  * this map to describe. */
 export const releaseSummaries: Record<string, string> = {
   'v0.3.1':
-    'Port-scan results carry more detail, probe concurrency is configurable on every interface, and the desktop workspace gains tab management. Four months of work since 0.2.6, with a long tail of fixes for code that reported success while doing nothing.',
+    'The desktop app is redesigned around a denser diagnostic workspace, with reorderable tabs, right-click tab management and a refreshed icon. Port scans return richer status data on every interface, probe concurrency is configurable everywhere, and the website and docs were rebuilt alongside. Four months of work since 0.2.6, and much of the long tail is fixes for code that reported success while doing nothing.',
   'v0.2.6':
     'Installed GUI builds now identify themselves correctly, and the Windows title-bar controls work. Also completes the CLI/TUI refactors that make future interface changes easier to review and test.',
   'v0.2.5':
@@ -44,7 +44,7 @@ export const releaseSummaries: Record<string, string> = {
   'v0.2.0':
     'Turns the initial scanner into something distributable. mDNS discovery and typed core errors on the product side; shell completions, man pages, package-manager templates and signed artifacts on the shipping side.',
   'v0.1.1':
-    'Cleans up the first public version: crate documentation, security notes and a structured changelog, plus the release workflow fixes that make binaries and pcap variants reproducible.',
+    'Cleans up the first public version with crate documentation, security notes and a structured changelog, plus the release workflow fixes that make binaries and pcap variants reproducible.',
   'v0.1.0':
-    'This is the first public NetsCLI release: one Rust core powers the CLI, terminal UI, desktop app, and MCP server, with structured output and cross-platform binaries for early users.',
+    'The first public NetsCLI release. One Rust core powers the CLI, terminal UI, desktop app, and MCP server, with structured output and cross-platform binaries for early users.',
 };

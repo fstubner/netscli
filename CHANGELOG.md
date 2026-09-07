@@ -18,7 +18,7 @@ its heading and collects entries; the date and the link go on with the tag.
 
 ## [0.3.1]
 
-The first release since 0.2.6 in May, and a large one: four months of work on
+The first release since 0.2.6 in May, and a large one. Four months of work on
 the desktop app, the shared core and the website.
 
 The features are additive -- richer port-scan results, configurable probe
