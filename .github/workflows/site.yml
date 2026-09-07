@@ -3,8 +3,19 @@ name: Site
 on:
   push:
     branches: [main]
+    # Not just site/. The build reads four files from outside it: CHANGELOG.md
+    # (changelog.astro imports it with ?raw), scripts/install.ps1 and
+    # scripts/install.sh (served at /install.ps1 and /install.sh), and
+    # apps/netscli-gui/package.json (site-content/version.ts reads the version
+    # from it). Keep this list, the `changes` job's grep below, and
+    # site-preview.yml's two filters in step -- they are the same list three
+    # times and a media query cannot read a variable here either.
     paths:
       - 'site/**'
+      - 'CHANGELOG.md'
+      - 'scripts/install.ps1'
+      - 'scripts/install.sh'
+      - 'apps/netscli-gui/package.json'
   # NOTE: deliberately unfiltered, unlike the push trigger above. `Site
   # Gate` below is a required status check, and a required check that
   # never *reports* leaves a PR stuck on "Expected — waiting for status"
@@ -51,7 +62,8 @@ jobs:
           echo "Changed files:"
           echo "$files" | sed 's/^/  /'
 
-          if echo "$files" | grep -qE '^site/'; then
+          # Same set as the push trigger's paths list above.
+          if echo "$files" | grep -qE '^(site/|CHANGELOG\.md$|scripts/install\.(ps1|sh)$|apps/netscli-gui/package\.json$)'; then
             echo "site=true" >> "$GITHUB_OUTPUT"
           else
             echo "site=false" >> "$GITHUB_OUTPUT"

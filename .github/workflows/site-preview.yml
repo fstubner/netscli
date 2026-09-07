@@ -23,6 +23,10 @@ on:
     branches: [main]
     paths:
       - 'site/**'
+      - 'CHANGELOG.md'
+      - 'scripts/install.ps1'
+      - 'scripts/install.sh'
+      - 'apps/netscli-gui/package.json'
       - '.github/workflows/site-preview.yml'
   # Keep a `main` preview that tracks main, so there is always somewhere to
   # see the site as it currently is. It cannot come from the PR path: that
@@ -35,6 +39,10 @@ on:
     branches: [main]
     paths:
       - 'site/**'
+      - 'CHANGELOG.md'
+      - 'scripts/install.ps1'
+      - 'scripts/install.sh'
+      - 'apps/netscli-gui/package.json'
       - '.github/workflows/site-preview.yml'
 
 concurrency:
