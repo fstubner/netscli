@@ -27,11 +27,6 @@ is fixes, most of them found by using the desktop app on a real network
 rather than by reading the code. The recurring theme in that tail is code
 that reported success while doing nothing.
 
-It is numbered 0.3.1 because the crates, the desktop app and its Tauri
-manifest already carry that version. 0.3.0 was tagged and its notes drafted,
-but no release was ever published from it and no binary carries the number;
-its entries are here. There is no 0.3.0 release to look for.
-
 ### Added
 
 - **Tabs can be reordered.** Drag one along the strip, or move it with the
@@ -860,8 +855,7 @@ backed by the same core library.
 - Desktop app needs the WebView2 runtime on Windows. Most Windows
   10/11 systems have it preinstalled.
 
-[Unreleased]: https://github.com/fstubner/netscli/compare/v0.3.0...HEAD
-[0.3.0]: https://github.com/fstubner/netscli/releases/tag/v0.3.0
+[Unreleased]: https://github.com/fstubner/netscli/compare/v0.2.6...HEAD
 [0.2.6]: https://github.com/fstubner/netscli/releases/tag/v0.2.6
 [0.2.5]: https://github.com/fstubner/netscli/releases/tag/v0.2.5
 [0.2.4]: https://github.com/fstubner/netscli/releases/tag/v0.2.4
