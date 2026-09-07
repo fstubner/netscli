@@ -16,9 +16,19 @@ export const changelogCopy: SectionCopy = {
 /** Shown when the page is shared. */
 export const changelogOgDescription = `Versioned ${meta.siteName} release notes and shipped changes.`;
 
+/* One curated line per release, shown above the expandable body.
+ *
+ * A tag with no entry here falls back to a summary derived from the release
+ * body, which is fine for a short entry and poor for a long one -- so any
+ * release whose CHANGELOG section opens with prose wants a line here, or the
+ * page prints that prose twice. See scripts/changelog/summarize.ts.
+ *
+ * No 'v0.3.0': it was tagged, its notes were drafted, and no release was ever
+ * published from it. Its entries are under 0.3.1 and there is no 0.3.0 for
+ * this map to describe. */
 export const releaseSummaries: Record<string, string> = {
-  'v0.3.0':
-    'The desktop workspace is redesigned, scan results carry richer status data, and interactive interfaces gain probe concurrency controls. Public docs are refreshed and packaging is fixed across release channels.',
+  'v0.3.1':
+    'Four months of work since 0.2.6: richer port-scan results, probe concurrency controls on every interface, and tab management in the desktop workspace — plus a long tail of fixes for code that reported success while doing nothing.',
   'v0.2.6':
     'Installed GUI builds now identify themselves correctly, and the Windows title-bar controls work. Also completes the CLI/TUI refactors that make future interface changes easier to review and test.',
   'v0.2.5':
