@@ -5,8 +5,11 @@ name: Deploy GitHub Pages
 # deliberately NOT wired to push-to-main right now. site/ currently holds
 # a redesign that's still mid review/design-pass; auto-deploying on every
 # main merge shipped it to netscli.com prematurely once already. Restore
-# the `push: branches: [main], paths: ['site/**', ...]` trigger once the
-# redesign is actually approved to ship, then deploys resume automatically.
+# the push trigger once the redesign is actually approved to ship, then
+# deploys resume automatically. Copy the `paths:` list from site.yml rather
+# than writing `['site/**']`: the build also reads CHANGELOG.md,
+# scripts/install.ps1, scripts/install.sh and apps/netscli-gui/package.json,
+# so a site/**-only filter would leave changes to those undeployed.
 #
 # Until then: Actions tab → Deploy GitHub Pages → Run workflow, or
 # `gh workflow run pages.yml`.
