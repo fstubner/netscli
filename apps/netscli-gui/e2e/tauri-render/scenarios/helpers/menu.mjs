@@ -75,18 +75,52 @@ async function assertEmptyWorkspaceState(driver) {
   assert.doesNotMatch(state.status, /v\d+\./i, 'Version should live in About, not the footer');
 }
 
-async function assertExitMenuItemNeutralUntilHover(driver) {
+/* A destructive item is marked before you aim at it, not once you have.
+ *
+ * This asserted the opposite until now -- "Exit icon should be neutral before
+ * hover" -- which was correct until #296 moved the red to rest, on the
+ * reasoning that a warning arriving after you have already aimed at the item
+ * is too late to redirect you. That PR touched four source files and no e2e
+ * file, so the assertion kept encoding the behaviour it replaced and failed
+ * on a run of the current app.
+ *
+ * The expected colour is read from `--red` rather than written as a hex, so
+ * this holds in both themes: the token is #f47582 dark and #c6293d light. A
+ * probe element resolves it through getComputedStyle, which normalises it to
+ * the same `rgb(...)` form the icon's own computed colour is reported in.
+ *
+ * The probe goes inside `.container`, not on `document.body`. tokens.css
+ * declares the palette on `.container` (and `.container.theme-light`), not on
+ * `:root`, so a probe on the body resolves `var(--red)` to nothing and
+ * inherits white. `rawRed` is asserted non-empty below to catch that directly
+ * rather than through a confusing colour mismatch, which is how it was found.
+ */
+async function assertDestructiveMenuItemMarkedAtRest(driver) {
   await openMenu(driver, 'File');
   const colors = await driver.executeScript(`
     const items = Array.from(document.querySelectorAll('.menu-popover-item'));
     const normal = items.find((button) => button.textContent.trim() === 'New Port Scan')?.querySelector('svg');
     const exit = items.find((button) => button.textContent.trim() === 'Exit')?.querySelector('svg');
+    const scope = document.querySelector('.container');
+    const probe = document.createElement('span');
+    probe.style.cssText = 'color: var(--red); position: absolute; visibility: hidden;';
+    scope.appendChild(probe);
+    const danger = getComputedStyle(probe).color;
+    probe.remove();
     return {
       normalIcon: normal ? getComputedStyle(normal).color : '',
       exitIcon: exit ? getComputedStyle(exit).color : '',
+      danger,
+      rawRed: getComputedStyle(scope).getPropertyValue('--red').trim(),
     };
   `);
-  assert.equal(colors.exitIcon, colors.normalIcon, 'Exit icon should be neutral before hover');
+  assert.notEqual(colors.rawRed, '', '--red should resolve on .container; if empty, the probe is in the wrong scope');
+  assert.equal(colors.exitIcon, colors.danger, 'Exit icon should be danger-coloured at rest');
+  assert.notEqual(colors.normalIcon, colors.danger, 'A non-destructive item should not be danger-coloured');
+
+  // Hover must not take the marking away. menu.css covers hover as "a subset"
+  // of at-rest, so a rule that reverted here would be a regression the
+  // at-rest check alone would not see.
   const exitButton = await driver.findElement(By.xpath("//button[contains(@class, 'menu-popover-item') and normalize-space()='Exit']"));
   await driver.actions({ async: true }).move({ origin: exitButton }).perform();
   const hoverColor = await driver.executeScript(`
@@ -95,7 +129,7 @@ async function assertExitMenuItemNeutralUntilHover(driver) {
       ?.querySelector('svg');
     return exit ? getComputedStyle(exit).color : '';
   `);
-  assert.notEqual(hoverColor, colors.exitIcon, 'Exit icon should become danger-colored on hover');
+  assert.equal(hoverColor, colors.danger, 'Exit icon should stay danger-coloured on hover');
 }
 
 async function assertMenuItemDisabled(driver, menuLabel, itemLabel, expected) {
@@ -225,8 +259,8 @@ async function assertToolbarButtonDisabled(driver, title, expected) {
 }
 
 export {
+  assertDestructiveMenuItemMarkedAtRest,
   assertEmptyWorkspaceState,
-  assertExitMenuItemNeutralUntilHover,
   assertInterfaceReadinessReflectsSelection,
   assertMenuIncludes,
   assertMenuItemDisabled,
