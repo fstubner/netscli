@@ -4,7 +4,7 @@ import { assertCommand, assertNoErrorStrip, assertTheme, clickButtonText, replac
 import { assertExportArtifactsCreated, countExportArtifacts } from './helpers/export.mjs';
 import { assertAboutDialogPolish, assertEmptyStateCentered, assertTrafficArrowsAreLedStyle, forceTabOverflow } from './helpers/polish.mjs';
 import { assertCommandStatusAlignment, assertInteractiveCursorTreatment, assertSuppressesNativeContextMenu, assertThemedTooltips, assertToastHasTimeoutBar } from './helpers/interaction.mjs';
-import { assertEmptyWorkspaceState, assertExitMenuItemNeutralUntilHover, assertInterfaceReadinessReflectsSelection, assertMenuIncludes, assertMenuItemDisabled, assertMenuItems, assertMenuKeyboardNavigation, assertToolbarButtonDisabled, clickMenuItem, countTabs, ensureTrafficIndicatorsVisible, getActiveTabText, waitForTabCount } from './helpers/menu.mjs';
+import { assertDestructiveMenuItemMarkedAtRest, assertEmptyWorkspaceState, assertInterfaceReadinessReflectsSelection, assertMenuIncludes, assertMenuItemDisabled, assertMenuItems, assertMenuKeyboardNavigation, assertToolbarButtonDisabled, clickMenuItem, countTabs, ensureTrafficIndicatorsVisible, getActiveTabText, waitForTabCount } from './helpers/menu.mjs';
 import { assertSettingsDialog, closeSettingsDialog, openSettingsDialog } from './helpers/settingsDialog.mjs';
 import { assertActiveTabVisible, assertDetailPaneCanFillWorkspace, assertEmptyToolLauncherVisible, assertOverflowTabClickSelection, assertTabAddControlPlacement, assertTabOverflowTreatment, assertTabToolPopoverTopLayer, assertTabToolPopoverVisible } from './helpers/tabs.mjs';
 
@@ -111,7 +111,7 @@ export async function exerciseMenusAndToolbar(driver) {
 
   await assertMenuItemDisabled(driver, 'File', 'Export JSON', false);
   await assertMenuItemDisabled(driver, 'File', 'Export CSV', false);
-  await assertExitMenuItemNeutralUntilHover(driver);
+  await assertDestructiveMenuItemMarkedAtRest(driver);
   await assertMenuItemDisabled(driver, 'History', 'Clear History', false);
   await assertMenuItemDisabled(driver, 'Scan', 'Run Active Tab', false);
   await assertMenuItemDisabled(driver, 'Scan', 'Cancel Active Tab', true);
