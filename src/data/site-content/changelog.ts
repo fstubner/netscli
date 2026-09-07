@@ -28,7 +28,7 @@ export const changelogOgDescription = `Versioned ${meta.siteName} release notes 
  * this map to describe. */
 export const releaseSummaries: Record<string, string> = {
   'v0.3.1':
-    'The desktop app is redesigned around a denser diagnostic workspace, with reorderable tabs, right-click tab management and a refreshed icon. Port scans return richer status data on every interface, probe concurrency is configurable everywhere, and the website and docs were rebuilt alongside. Four months of work since 0.2.6, and much of the long tail is fixes for code that reported success while doing nothing.',
+    'The desktop app is redesigned around a denser diagnostic workspace, with reorderable tabs, right-click tab management and a refreshed icon. Port scans return richer status data on every interface, probe concurrency is configurable everywhere, and the website and docs were rebuilt alongside.',
   'v0.2.6':
     'Installed GUI builds now identify themselves correctly, and the Windows title-bar controls work. Also completes the CLI/TUI refactors that make future interface changes easier to review and test.',
   'v0.2.5':
