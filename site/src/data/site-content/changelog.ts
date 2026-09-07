@@ -28,7 +28,7 @@ export const changelogOgDescription = `Versioned ${meta.siteName} release notes 
  * this map to describe. */
 export const releaseSummaries: Record<string, string> = {
   'v0.3.1':
-    'Four months of work since 0.2.6: richer port-scan results, probe concurrency controls on every interface, and tab management in the desktop workspace — plus a long tail of fixes for code that reported success while doing nothing.',
+    'Port-scan results carry more detail, probe concurrency is configurable on every interface, and the desktop workspace gains tab management. Four months of work since 0.2.6, with a long tail of fixes for code that reported success while doing nothing.',
   'v0.2.6':
     'Installed GUI builds now identify themselves correctly, and the Windows title-bar controls work. Also completes the CLI/TUI refactors that make future interface changes easier to review and test.',
   'v0.2.5':
