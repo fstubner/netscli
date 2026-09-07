@@ -68,18 +68,25 @@ export function summarizeRelease(
   if (curated) return curated;
 
   const tag = release.tag_name || release.name || 'This release';
+  // Blank lines are KEPT, because a blank line is what separates one
+  // paragraph from the next. They used to be filtered out here, which left
+  // the loop below no way to tell where the first paragraph ended -- it ran
+  // until the next heading and returned the whole intro as the "summary".
+  // 0.3.1 is the first entry with multi-paragraph intro prose, so that is
+  // when it showed: the changelog page printed all three paragraphs as the
+  // summary and then again as the body.
   const lines = normalizeMarkdown(markdown)
     .split('\n')
     .map((line) => line.trim())
-    .filter((line) => line && !isGeneratedReleaseBoilerplate(line, release));
+    .filter((line) => !line || !isGeneratedReleaseBoilerplate(line, release));
 
   for (let index = 0; index < lines.length; index += 1) {
-    if (isBodyBoundary(lines[index])) {
+    if (!lines[index] || isBodyBoundary(lines[index])) {
       continue;
     }
 
     const paragraph = [];
-    while (index < lines.length && !isBodyBoundary(lines[index])) {
+    while (index < lines.length && lines[index] && !isBodyBoundary(lines[index])) {
       paragraph.push(lines[index]);
       index += 1;
     }
