@@ -32,7 +32,16 @@ import {
 } from './tauri-render/scenarios.mjs';
 import { alignmentReport } from './tauri-render/scenarios/helpers/alignment.mjs';
 
-const DESKTOP_WINDOW = { x: 0, y: 0, width: 1000, height: 970 };
+/* 16:9, because that is the shape a desktop app is actually used in.
+ *
+ * This was 1000x970, very nearly square, which no monitor is. The captures
+ * came out 1250x1213 and anything showing them at 16:9 cropped the bottom
+ * third -- the detail pane, the command strip and the status bar, which is
+ * to say every part of the window a screenshot of a scan is taken FOR.
+ *
+ * The narrow window below stays as it is: it exists to exercise the
+ * responsive breakpoint, so its shape is the point rather than a mistake. */
+const DESKTOP_WINDOW = { x: 0, y: 0, width: 1600, height: 900 };
 const NARROW_WINDOW = { width: 520, height: 720 };
 
 let nativeDriverProcess;
