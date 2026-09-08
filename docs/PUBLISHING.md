@@ -61,6 +61,20 @@ cargo login <your-crates.io-token>
 
 ## Pre-publish checklist
 
+Check the publishing credentials first, because they are the slowest thing
+to fix and the only one that fails *during* a release:
+
+```bash
+gh workflow run publish-preflight.yml
+```
+
+It validates all five secrets (crates.io, the tap, the bucket, winget, AUR)
+and publishes nothing — every request is a read. Worth doing because
+`publish.yml` pushes to each registry the moment that job succeeds and AUR
+has no review step, so a credential that expired quietly between releases
+leaves some registries on the new version and some on the old. GitHub PATs
+commonly carry a 90-day expiry; releases here are months apart.
+
 ```bash
 # Everything green, nothing uncommitted.
 cargo fmt --check
