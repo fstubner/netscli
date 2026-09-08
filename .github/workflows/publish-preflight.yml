@@ -1,0 +1,146 @@
+name: Publish preflight
+
+# Checks the five publishing credentials WITHOUT publishing anything.
+#
+# publish.yml pushes to each registry the moment that job succeeds, AUR has no
+# review step, and its own concurrency note says a run that dies halfway
+# "leaves some registries on the new version and some on the old, with no
+# record of which". A credential that expired quietly between releases is the
+# most likely way to reach that state: the secrets here were last set on
+# 2026-05-03 and GitHub PATs commonly carry a 90-day expiry.
+#
+# Every request below is a read. Nothing is created, forked, pushed or
+# tagged. Run it before publishing a release.
+#
+# No secret value is ever echoed. The checks report HTTP status codes and
+# exit codes only, so a failure says which credential is bad without
+# revealing any part of it.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-preflight
+  cancel-in-progress: true
+
+jobs:
+  preflight:
+    name: Check publishing credentials
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # One step, not five, so a bad credential does not stop the others from
+      # being checked. Finding out that all four of the rest are fine too is
+      # the point -- discovering them one release at a time is what this
+      # workflow exists to prevent.
+      - name: Check all five credentials
+        env:
+          CARGO_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          SCOOP_BUCKET_TOKEN: ${{ secrets.SCOOP_BUCKET_TOKEN }}
+          WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+        shell: bash
+        run: |
+          set -uo pipefail   # NOT -e: every check must run even after one fails.
+          failures=0
+          summary() { echo "$1" >> "$GITHUB_STEP_SUMMARY"; echo "$1"; }
+          summary "| Credential | Target | Result |"
+          summary "| --- | --- | --- |"
+
+          record() { # name, target, ok(0/1), detail
+            if [ "$3" = "0" ]; then
+              summary "| $1 | $2 | ✅ $4 |"
+            else
+              summary "| $1 | $2 | ❌ $4 |"
+              failures=$((failures + 1))
+            fi
+          }
+
+          # ---- crates.io -------------------------------------------------
+          # /me returns the token's owner. 200 means the token is live; 403
+          # is what an expired or revoked token gets.
+          code=$(curl -sS -o /dev/null -w '%{http_code}' \
+            -H "Authorization: ${CARGO_TOKEN}" \
+            -H 'User-Agent: netscli-publish-preflight' \
+            https://crates.io/api/v1/me || echo 000)
+          [ "$code" = "200" ] && record "CARGO_REGISTRY_TOKEN" "crates.io" 0 "valid" \
+            || record "CARGO_REGISTRY_TOKEN" "crates.io" 1 "HTTP $code"
+
+          # ---- GitHub PATs ------------------------------------------------
+          # Validity alone is not enough for the tap and the bucket: the jobs
+          # push to those repos, so `permissions.push` is the thing that has
+          # to be true. A token that authenticates but lost its scope fails
+          # here rather than halfway through a release.
+          check_gh_repo() { # secret-name, token, repo
+            local code push
+            code=$(curl -sS -o /dev/null -w '%{http_code}' \
+              -H "Authorization: Bearer $2" -H 'Accept: application/vnd.github+json' \
+              https://api.github.com/user || echo 000)
+            if [ "$code" != "200" ]; then
+              record "$1" "$3" 1 "token rejected (HTTP $code)"
+              return
+            fi
+            push=$(curl -sS -H "Authorization: Bearer $2" -H 'Accept: application/vnd.github+json' \
+              "https://api.github.com/repos/$3" | jq -r '.permissions.push // false')
+            [ "$push" = "true" ] && record "$1" "$3" 0 "valid, push allowed" \
+              || record "$1" "$3" 1 "valid, but NO push permission"
+          }
+          check_gh_repo "HOMEBREW_TAP_TOKEN" "$HOMEBREW_TAP_TOKEN" "fstubner/homebrew-tap"
+          check_gh_repo "SCOOP_BUCKET_TOKEN" "$SCOOP_BUCKET_TOKEN" "fstubner/scoop-bucket"
+
+          # ---- winget -----------------------------------------------------
+          # Nobody has push on microsoft/winget-pkgs; the action forks and
+          # opens a PR. So validity is what matters, and the fork is reported
+          # for information -- its absence is fine, the action creates it.
+          code=$(curl -sS -o /dev/null -w '%{http_code}' \
+            -H "Authorization: Bearer ${WINGET_TOKEN}" -H 'Accept: application/vnd.github+json' \
+            https://api.github.com/user || echo 000)
+          if [ "$code" = "200" ]; then
+            login=$(curl -sS -H "Authorization: Bearer ${WINGET_TOKEN}" \
+              -H 'Accept: application/vnd.github+json' https://api.github.com/user | jq -r '.login')
+            fork=$(curl -sS -o /dev/null -w '%{http_code}' \
+              -H "Authorization: Bearer ${WINGET_TOKEN}" -H 'Accept: application/vnd.github+json' \
+              "https://api.github.com/repos/${login}/winget-pkgs" || echo 000)
+            if [ "$fork" = "200" ]; then
+              record "WINGET_TOKEN" "microsoft/winget-pkgs" 0 "valid, fork present"
+            else
+              record "WINGET_TOKEN" "microsoft/winget-pkgs" 0 "valid, no fork yet (created on publish)"
+            fi
+          else
+            record "WINGET_TOKEN" "microsoft/winget-pkgs" 1 "token rejected (HTTP $code)"
+          fi
+
+          # ---- AUR --------------------------------------------------------
+          # `list-repos` is AUR's own read-only command over SSH and prints
+          # the packages this key maintains, so it proves the key is still on
+          # the account rather than merely well-formed.
+          #
+          # `IdentityAgent=none` and `-F /dev/null` are load-bearing, not
+          # belt-and-braces. Tested with a deliberately invalid key and this
+          # check PASSED, listing two repos: ssh had fallen through to the
+          # agent and to ~/.ssh/config and authenticated with an ambient key
+          # instead. A credential check that can succeed without the
+          # credential is worse than none, because it reports green.
+          key=$(mktemp)
+          printf '%s\n' "$AUR_SSH_PRIVATE_KEY" > "$key"
+          chmod 600 "$key"
+          if ssh -i "$key" -F /dev/null -o StrictHostKeyChecking=accept-new \
+              -o ConnectTimeout=20 -o IdentitiesOnly=yes -o IdentityAgent=none \
+              aur@aur.archlinux.org list-repos > /tmp/aur-repos.txt 2>/tmp/aur-err.txt; then
+            count=$(grep -c . /tmp/aur-repos.txt || echo 0)
+            record "AUR_SSH_PRIVATE_KEY" "aur.archlinux.org" 0 "valid, $count repo(s) listed"
+          else
+            record "AUR_SSH_PRIVATE_KEY" "aur.archlinux.org" 1 "ssh auth failed"
+          fi
+          rm -f "$key"
+
+          summary ""
+          if [ "$failures" -gt 0 ]; then
+            summary "**$failures credential(s) need attention before publishing.**"
+            exit 1
+          fi
+          summary "All five credentials are good. Safe to publish."
