@@ -379,9 +379,19 @@ jobs:
 
   # ─── Winget GUI (microsoft/winget-pkgs) ────────────────────────────
   # Distinct PackageIdentifier `fstubner.netscli.gui` (the CLI is
-  # `fstubner.netscli`). Prefer the canonical command
-  # `winget install fstubner.netscli.gui`; the `netscli-gui` moniker may
-  # resolve after the package is accepted into the Winget catalog.
+  # `fstubner.netscli`).
+  #
+  # Both `winget install fstubner.netscli.gui` and the short
+  # `winget install netscli-gui` work. This used to say the moniker "may
+  # resolve after the package is accepted into the Winget catalog", written
+  # while the initial submission was still open. It was accepted: 0.2.6 is
+  # live at manifests/f/fstubner/netscli/gui/0.2.6/ and publishes
+  # `Moniker: netscli-gui`, exactly as the CLI publishes `Moniker: netscli`.
+  #
+  # The site relies on that. The landing hero and install section lead with
+  # the short form deliberately, and the install guide gives the identifier
+  # for anyone who wants to be unambiguous. Left as it was, this comment read
+  # as if the site were contradicting itself.
   winget-gui:
     name: Winget (GUI)
     runs-on: windows-latest
@@ -389,11 +399,12 @@ jobs:
     steps:
       # Same wait-then-submit pattern as the CLI Winget job above. The
       # GUI .msi takes longer to build than the CLI .exe (Tauri bundle
-      # + WiX compose), so this poll matters even more here. Note: this
-      # job will still fail until microsoft/winget-pkgs has accepted at
-      # least one version of `fstubner.netscli.gui` — the action checks
-      # for an existing package directory before doing anything else.
-      # PR #368471 is the initial submission gating that.
+      # + WiX compose), so this poll matters even more here.
+      #
+      # This used to warn that the job would fail until winget-pkgs had
+      # accepted a first version of `fstubner.netscli.gui`, since the action
+      # looks for an existing package directory before doing anything. That
+      # was resolved when PR #368471 landed 0.2.6; the directory exists.
       - name: Wait for Windows GUI release asset
         shell: bash
         env:
