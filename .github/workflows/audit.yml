@@ -26,6 +26,12 @@ on:
       - '.cargo/audit.toml'
       - '**/package-lock.json'
       - '**/package.json'
+      # This file. The push trigger above has always listed it and the PR
+      # trigger never did, so a change to the audit workflow itself was the
+      # one change that could not be checked by the PR making it -- it ran
+      # for the first time after merging to main. Adding the npm-audit job
+      # below hit exactly that: its first run would have been on main.
+      - '.github/workflows/audit.yml'
   # Let us kick it off manually from the Actions tab.
   workflow_dispatch:
 
