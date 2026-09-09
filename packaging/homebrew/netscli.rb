@@ -1,11 +1,17 @@
 # Formula for Homebrew, published to fstubner/homebrew-tap.
 #
-# The values below are a template, not what users install.
+# This file IS the shipped formula, minus its digests and this header.
 # `scripts/release/publish-homebrew.sh` runs from publish.yml on every
 # release: it downloads each asset, hashes the bytes, checks the result
-# against the published .sha256 sidecar, rewrites `version` and every
-# `sha256` in the tap's copy of this file, verifies exactly four valid
-# digests came out, and pushes that.
+# against the published .sha256 sidecar, then regenerates the tap's
+# Formula/netscli.rb from everything below the `class` line here, with
+# the digests and `version` substituted in.
+#
+# So an edit to the formula body below reaches users on the next release,
+# and an edit made directly in the tap does not survive one. It used to be
+# the other way around -- the publish script patched only `version` and the
+# four `sha256` lines, leaving the rest of the tap's copy frozen at
+# whatever was committed when the tap was bootstrapped.
 #
 # The digests here are @@…@@ placeholders on purpose. They used to be
 # real-looking 64-hex values left behind by whichever release last touched
@@ -24,7 +30,7 @@
 class Netscli < Formula
   desc "Network diagnostics CLI, terminal UI, and MCP server"
   homepage "https://netscli.com"
-  version "0.3.0"
+  version "0.3.1"
   license "MIT"
 
   on_macos do

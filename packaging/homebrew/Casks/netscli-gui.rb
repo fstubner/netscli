@@ -20,7 +20,7 @@
 # worst of both: too plausible to notice, too stale to work. A placeholder
 # fails loudly if it ever reaches a tap.
 cask "netscli-gui" do
-  version "0.3.0"
+  version "0.3.1"
 
   on_arm do
     sha256 "@@SHA256_MACOS_AARCH64@@"

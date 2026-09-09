@@ -8,6 +8,11 @@
 2. Copy `netscli.rb` from this directory into `Formula/netscli.rb` in
    that repo. Commit and push.
 
+   Only needed to get the tap off the ground. From the first release
+   onward `publish-homebrew.sh` regenerates that file from the template,
+   so whatever this step leaves behind — including its `@@…@@` digests —
+   is replaced rather than patched.
+
 Users install with:
 
 ```bash
@@ -18,9 +23,16 @@ brew install netscli
 ## After each release
 
 `publish.yml` updates the tap through `scripts/release/publish-homebrew.sh`
-and `scripts/release/publish-homebrew-cask.sh`. The CLI formula installs
-prebuilt binaries from the GitHub release; it is not a source-build
-formula.
+and `scripts/release/publish-homebrew-cask.sh`. Both regenerate their file
+in the tap wholesale rather than patching it, so the tap is a pure
+function of this directory plus the release digests, and nothing in it
+can quietly diverge. The CLI formula installs prebuilt binaries from the
+GitHub release; it is not a source-build formula.
+
+The cask script carries its body in a heredoc; the formula script reads
+`netscli.rb` here directly. The difference is only that the cask has no
+equivalent template with digest placeholders to read from — worth
+collapsing if the cask ever grows one.
 
 Validate the pushed tap with:
 

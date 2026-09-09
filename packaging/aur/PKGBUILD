@@ -23,7 +23,7 @@
 
 pkgname=netscli-bin
 _binname=netscli
-pkgver=0.3.0
+pkgver=0.3.1
 pkgrel=1
 pkgdesc="Network diagnostics CLI, terminal UI, and MCP server"
 arch=('x86_64' 'aarch64')

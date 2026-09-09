@@ -135,7 +135,26 @@ outside Cargo entirely. Seven files have to move together:
 | `apps/netscli-gui/package.json` | version shown in the GUI About dialog and on the website |
 | `CHANGELOG.md` | the release heading (see below for its date and link) |
 
-Missing the last three is what shipped a GUI installer stamped with the
+Six more, under `packaging/`, carry a version that nothing reads — every
+publish job rewrites it from the tag before the manifest reaches a
+registry. They still have to move, because the version in a template is
+what a human reviewing that template believes:
+
+| File | What it sets |
+| --- | --- |
+| `packaging/aur/PKGBUILD` | `pkgver` |
+| `packaging/aur/netscli-gui-bin/PKGBUILD` | `pkgver` |
+| `packaging/homebrew/netscli.rb` | `version` |
+| `packaging/homebrew/Casks/netscli-gui.rb` | `version` |
+| `packaging/scoop/netscli.json` | `version` **+ the asset URL** |
+| `packaging/scoop/netscli-gui.json` | `version` **+ the asset URL** |
+
+All six sat at `0.3.0` — a version that was tagged, never published, and
+whose tag was then deleted — until the 0.3.1 release. That is the same
+failure the `@@…@@` digest placeholders in those files exist to prevent,
+one field over: a plausible-looking value that describes nothing.
+
+Missing the last three of the first table is what shipped a GUI installer stamped with the
 wrong version at v0.2.4 and got the Winget submission rejected by a
 moderator (see the 0.2.4 entry in `CHANGELOG.md`). The website reads its
 version from `apps/netscli-gui/package.json`, so a miss there also
@@ -172,6 +191,20 @@ sed -i "s/\"version\": \"${OLD}\"/\"version\": \"${NEW}\"/" \
     apps/netscli-gui/package.json \
     apps/netscli-gui/src-tauri/tauri.conf.json
 
+# Packaging templates. The scoop manifests carry the version twice (the
+# field and the asset URL), so those take a global replace; the PKGBUILDs
+# and the Ruby files are anchored, because both carry the old version in a
+# comment describing a past mistake and those must not move.
+sed -i "s/${OLD}/${NEW}/g" \
+    packaging/scoop/netscli.json \
+    packaging/scoop/netscli-gui.json
+sed -i "s/^pkgver=${OLD}/pkgver=${NEW}/" \
+    packaging/aur/PKGBUILD \
+    packaging/aur/netscli-gui-bin/PKGBUILD
+sed -i "s/^  version \"${OLD}\"/  version \"${NEW}\"/" \
+    packaging/homebrew/netscli.rb \
+    packaging/homebrew/Casks/netscli-gui.rb
+
 # Refresh the lockfile so the bumped versions are recorded.
 cargo update -w
 ```
@@ -185,8 +218,19 @@ Then verify every surface agrees before tagging — this should print
       apps/netscli-gui/src-tauri/Cargo.toml
   grep -h '"version"' apps/netscli-gui/package.json \
       apps/netscli-gui/src-tauri/tauri.conf.json
+  grep -h '^pkgver=' packaging/aur/PKGBUILD \
+      packaging/aur/netscli-gui-bin/PKGBUILD
+  grep -h '^  version "' packaging/homebrew/netscli.rb \
+      packaging/homebrew/Casks/netscli-gui.rb
+  grep -hE '"version"|releases/download' packaging/scoop/netscli.json \
+      packaging/scoop/netscli-gui.json
 } | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | sort -u
 ```
+
+Every grep above is anchored to the line that actually holds a version.
+A bare `grep -oE` over these files would also match the version numbers
+in their explanatory comments, and the check would report a second value
+on every run until someone stopped believing it.
 
 Finally, move the `## [Unreleased]` content in `CHANGELOG.md` under a
 `## [X.Y.Z] — YYYY-MM-DD` heading and add the matching link reference at
@@ -366,8 +410,8 @@ Only `0.2.0` is right. It was submitted by hand; the other five came from the
 before that was fixed. `fstubner.netscli.gui` is unaffected — its single
 `0.2.6` was also hand-submitted.
 
-**This does not break upgrades.** winget normalises a leading `v` when
-comparing, checked against the client rather than assumed:
+**This does not break upgrades**, checked against the client rather than
+assumed:
 
 ```
 > winget list --id fstubner.netscli
@@ -377,7 +421,24 @@ netscli  fstubner.netscli  0.2.0  v0.2.6  winget      # offers the upgrade
 > winget show fstubner.netscli --version 0.2.9        # finds nothing
 ```
 
-What it does do is display a version the project never issued, and put the
+The reason is not that winget strips the `v`. It does not: nothing in
+`Versions.cpp` trims a leading letter, and `Version::Assign` only trims
+whitespace. What happens is that each dot-separated part is split into a
+leading integer and a remainder, and a part with a non-empty remainder
+sorts *below* one without. `v0` parses as integer `0` with remainder
+`v`; plain `0` parses as integer `0` with none. So `v0.2.6 < 0.2.6`, and
+every `v0.2.x` in the catalog sits below any `0.3.x` on the first part
+alone.
+
+Same outcome, but the mechanism decides what happens next. Under
+normalisation `v0.2.6` and `0.2.6` would be the *same* version, and
+re-submitting `0.2.6` would be a duplicate. Under the real rule they are
+two distinct versions and `0.2.6` is the higher one — so a correctly
+formed re-submission of an already-published number would land as an
+upgrade rather than being rejected. Nothing plans to do that, but it is
+the kind of thing the wrong mental model licenses.
+
+What the bad versions do do is display a version the project never issued, and put the
 two packages side by side inconsistently in `winget search`:
 
 ```

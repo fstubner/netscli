@@ -1,11 +1,11 @@
 {
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "NetsCLI desktop app (Tauri 2 + React) for reviewing network scans, DNS, ARP, and local inventory.",
   "homepage": "https://netscli.com",
   "license": "MIT",
   "architecture": {
     "64bit": {
-      "url": "https://github.com/fstubner/netscli/releases/download/v0.3.0/netscli-gui-windows-x86_64.msi",
+      "url": "https://github.com/fstubner/netscli/releases/download/v0.3.1/netscli-gui-windows-x86_64.msi",
       "hash": "@@SHA256_WINDOWS_GUI@@"
     }
   },
