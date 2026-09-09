@@ -82,6 +82,8 @@ Exact method signatures can change as operations gain richer structured data. Pr
 | `discover` | Host discovery over a subnet. |
 | `inspect` | Host profile data built from reachability, reverse DNS, and port checks. |
 | `sweep` | Discovery plus per-host port checks. |
+| `ping` | Reachability probing, with the ICMP and TCP-connect backends. |
+| `trace` | Route hops, over the platform trace tool. |
 | `dns` | Record lookup and reverse lookup behavior. |
 | `mdns` | Local mDNS/DNS-SD service discovery behind the `mdns` feature. |
 | `arp` | Local neighbor cache and MAC vendor enrichment. |
