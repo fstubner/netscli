@@ -34,8 +34,14 @@ Dark by default, with a light theme defined in the same token block. Near
 -black backgrounds layered by elevation (`--bg-body` `#0d1015` → `--bg-base`
 `#181c24` → `--bg-elevated` `#20242d`), low-contrast borders
 (`--border-subtle` `#2a303b`), and a single mint accent (`--mint` `#3eddb0`)
-carrying interaction and success. Cyan (`#1edcff`), red (`#ef4456`) and
+carrying interaction and success. Cyan (`#1edcff`), red (`#f47582`) and
 amber (`#f5a524`) are reserved for state, not decoration.
+
+The values above are quoted for readability and can drift; the checked ones
+are `apps/netscli-gui/design-tokens.json` and `site/design-tokens.json`,
+which `scripts/design-tokens.mjs` generates from the stylesheets and CI
+verifies. A third copy used to sit at the repo root, read by nothing, and had
+already drifted `red` and `accent` away from both of them.
 
 Every colour is a token on `.container`; components reference tokens, never
 literals. This is enforced by convention rather than by a checker

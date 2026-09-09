@@ -71,13 +71,13 @@ the same Rust calls.
 ### Desktop GUI
 
 <div align="center">
-  <img src="docs/screenshots/gui-dashboard.png" alt="Desktop app: Dashboard" width="820" />
-  <br/>
-  <em>Dashboard: default interface, live up/down rates, all interfaces at a glance.</em>
-  <br/><br/>
   <img src="docs/screenshots/gui-scan.png" alt="Desktop app: port scan results" width="820" />
   <br/>
-  <em>Port scan. Results show service names for well-known ports.</em>
+  <em>Port scan. The detail pane below carries the banner, headers and raw response for the selected row.</em>
+  <br/><br/>
+  <img src="docs/screenshots/gui-discover.png" alt="Desktop app: host discovery" width="820" />
+  <br/>
+  <em>Discover. Every row says how the host was found, and tabs keep several investigations open at once.</em>
   <br/><br/>
   <img src="docs/screenshots/gui-dns.png" alt="Desktop app: DNS lookup" width="820" />
   <br/>
