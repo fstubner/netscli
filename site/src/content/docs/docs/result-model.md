@@ -39,7 +39,7 @@ Banner, HTTP, TLS, and raw preview data are probe results. They are useful diagn
 
 ## Host inventory
 
-Discovery and sweep results describe hosts.
+Discovery and sweep results describe hosts. A host row carries:
 
 <div data-ui-table="row-headers"></div>
 
@@ -50,9 +50,37 @@ Discovery and sweep results describe hosts.
 | `mac` | MAC address when present in ARP/vendor data. |
 | `vendor` | OUI vendor lookup. |
 | `rtt_ms` | Reachability latency. |
-| `open_ports` | Sweep-only list of open port rows for that host. |
+| `found_by` | Which probe found the host. |
 
 Discovery prioritizes inventory. Sweep adds exposed-service data by scanning selected ports on discovered hosts.
+
+### Sweep nests the host
+
+`discover` returns those rows directly, so `.[]` is a host:
+
+```bash
+netscli discover --json | jq '.[].ip'
+```
+
+`sweep` returns a different shape. Each entry pairs a whole host object with
+the ports found open on it, so the host fields are one level down:
+
+```json
+[
+  {
+    "host": { "ip": "192.168.1.1", "hostname": "router.local", "rtt_ms": 3 },
+    "open_ports": [{ "port": 443, "open": true, "status": "open" }]
+  }
+]
+```
+
+```bash
+netscli sweep 192.168.1.0/24 -p 22,80,443 --json | jq '.[].host.ip'
+```
+
+This page used to list `open_ports` in the table above as a "sweep-only"
+field, which read as though it sat beside `ip`. It does not, on any surface —
+the CLI and the MCP `sweep_network` tool both serialize the nested form.
 
 ## DNS records
 
@@ -102,18 +130,47 @@ mDNS/DNS-SD returns service announcements rather than generic host rows. A singl
 
 ## Interfaces and ARP
 
-Interface rows describe local network interfaces. ARP rows describe the local neighbor cache.
+Interface rows describe local network interfaces. ARP rows describe the local
+neighbor cache. These are two different shapes, and unlike everywhere else on
+this page, the desktop app does not show them under the field names the data
+carries — so both are given here.
+
+### Interfaces
 
 <div data-ui-table="row-headers"></div>
 
-| Field | Meaning |
-| --- | --- |
-| `name` / `interface` | Interface name or interface address associated with the row. |
-| `ips` / `addresses` | Interface addresses. |
-| `mac` | MAC address when available. |
-| `state` | Interface state such as up or down. |
-| `loopback` | Whether the interface is loopback where known. |
-| `vendor` | OUI vendor lookup for MAC addresses where available. |
+| Field | Desktop column | Meaning |
+| --- | --- | --- |
+| `name` | Interface | Interface name. |
+| `ips` | Addresses | Addresses assigned to the interface, with prefix length. |
+| `mac` | MAC | MAC address when available. |
+| `is_up` | State | Whether the interface is up. Boolean in the data; the desktop app renders it as `up` or `down`. |
+| `is_loopback` | — | Whether the interface is loopback. Boolean in the data. The desktop app has no column for it directly; it feeds the Kind column below. |
+
+The desktop table adds one column with no field behind it: **Kind**, derived
+from `is_loopback` and the interface name, showing `loopback`, `virtual`,
+`vpn` or `physical`.
+
+### ARP entries
+
+<div data-ui-table="row-headers"></div>
+
+| Field | Desktop column | Meaning |
+| --- | --- | --- |
+| `ip` | IP | Neighbor address. |
+| `mac` | MAC | Neighbor MAC address. |
+| `interface` | Interface | Interface the entry was learned on. |
+| `vendor` | Vendor | OUI vendor lookup for the MAC address. |
+
+Take the first column when reading `--json`, `--yaml` or MCP output, and the
+second when reading the desktop table.
+
+This section previously merged the two shapes into one list and gave
+`addresses`, `state` and `loopback` as field names. None of the three is a
+field: `addresses` is a column *header* over `ips`, `state` is a desktop row
+key derived from `is_up`, and `loopback` is a desktop row key that is not even
+shown as a column. `vendor` was also listed as though it applied to
+interfaces, which it does not.
 
 ARP is not full discovery. It reports entries already known to the operating system.
 
