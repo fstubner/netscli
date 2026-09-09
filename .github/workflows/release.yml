@@ -135,11 +135,11 @@ jobs:
 
       - name: Install libpcap (Linux, pcap)
         if: runner.os == 'Linux' && matrix.pcap
-        run: sudo apt-get update && sudo apt-get install -y libpcap-dev pkg-config
+        run: sudo apt-get update || true; sudo apt-get install -y libpcap-dev pkg-config
 
       - name: Install musl toolchain (Linux)
         if: matrix.target == 'x86_64-unknown-linux-musl'
-        run: sudo apt-get update && sudo apt-get install -y musl-tools
+        run: sudo apt-get update || true; sudo apt-get install -y musl-tools
 
       - name: Install Npcap SDK (Windows, pcap)
         if: runner.os == 'Windows' && matrix.pcap
@@ -296,7 +296,10 @@ jobs:
       - name: Install Linux GUI dependencies
         if: runner.os == 'Linux'
         run: |
-          sudo apt-get update
+          # `|| true` so a broken third-party apt index cannot fail this job;
+          # the install below still fails hard. See the first occurrence in
+          # ci.yml for the full reasoning.
+          sudo apt-get update || true
           sudo apt-get install -y \
             libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev \
             librsvg2-dev libsoup-3.0-dev libjavascriptcoregtk-4.1-dev

@@ -91,23 +91,47 @@ pub(super) fn ensure_subnet_allowed(net: &Ipv4Net, shown_as: &str) -> Result<(),
     ensure_ip_allowed(IpAddr::V4(net.network()), shown_as)
 }
 
-/// Gate a host that may be a name rather than an address.
+/// Gate a host that may be a name rather than an address, and hand back the
+/// address that was actually checked.
 ///
 /// A literal is checked directly. A name has to be resolved first, which is
 /// why this is async: the policy is about where packets go, and only the
 /// resolved address answers that.
-pub(super) async fn ensure_host_allowed(host: &str, dns_timeout_ms: u64) -> Result<(), RpcError> {
-    if public_targets_allowed() {
-        return Ok(());
-    }
+///
+/// **Returning the address is the point, not a convenience.** This used to
+/// return `()`, and every caller then passed the *name* down to the core,
+/// which resolved it a second time and scanned whatever that second lookup
+/// returned. Two lookups mean two answers: a name that resolves to a private
+/// address when this function asks and a public one when the scanner asks
+/// was approved here and scanned somewhere else. The DNS server deciding
+/// both answers is the same party the policy exists to defend against, since
+/// the whole threat model is a model being steered by text someone else
+/// wrote.
+///
+/// So callers take the `IpAddr` from here and scan *that*. One lookup, one
+/// decision, one destination. Where a result carries the caller's original
+/// target for display, the caller restores it after the call — the address
+/// is what gets scanned, the name is what gets shown.
+pub(super) async fn ensure_host_allowed(
+    host: &str,
+    dns_timeout_ms: u64,
+) -> Result<IpAddr, RpcError> {
     let host = host.trim();
-    if let Ok(ip) = host.parse::<IpAddr>() {
-        return ensure_ip_allowed(ip, host);
-    }
-    let ip = netscli_core::resolve_host_ip_with_timeout(host, dns_timeout_ms)
-        .await
-        .map_err(|e| RpcError::ToolError(e.to_string()))?;
-    ensure_ip_allowed(ip, &format!("{host} ({ip})"))
+    let (ip, shown_as) = match host.parse::<IpAddr>() {
+        Ok(ip) => (ip, host.to_string()),
+        Err(_) => {
+            let ip = netscli_core::resolve_host_ip_with_timeout(host, dns_timeout_ms)
+                .await
+                .map_err(|e| RpcError::ToolError(e.to_string()))?;
+            (ip, format!("{host} ({ip})"))
+        }
+    };
+    // `ensure_ip_allowed` applies the opt-in itself, so the resolution above
+    // happens either way. That is deliberate: with the opt-in set this call
+    // used to short-circuit before resolving and hand the name on, which is
+    // the same double-lookup shape one branch further out.
+    ensure_ip_allowed(ip, &shown_as)?;
+    Ok(ip)
 }
 
 #[cfg(test)]
@@ -144,6 +168,24 @@ mod tests {
             let parsed: IpAddr = ip.parse().unwrap();
             assert!(!is_local_scope(parsed), "{ip} should not be local");
         }
+    }
+
+    #[tokio::test]
+    async fn an_allowed_literal_comes_back_as_the_address_to_scan() {
+        // The return value is the fix, so it is what the test asserts. A
+        // caller that scanned the name instead of this address would be
+        // scanning whatever a second DNS lookup returned.
+        let ip = ensure_host_allowed("192.168.1.1", 500)
+            .await
+            .expect("a private literal is allowed");
+        assert_eq!(ip, "192.168.1.1".parse::<IpAddr>().unwrap());
+    }
+
+    #[tokio::test]
+    async fn a_public_literal_is_refused_and_yields_no_address() {
+        // No DNS involved, so this holds regardless of the test host's
+        // resolver.
+        assert!(ensure_host_allowed("198.51.100.7", 500).await.is_err());
     }
 
     #[test]

@@ -183,7 +183,17 @@ jobs:
       # won't link without these even when we only intend to lint Rust.
       - name: Install system dependencies
         run: |
-          sudo apt-get update
+          # `|| true`, deliberately. GitHub's Ubuntu image ships third-party
+          # apt sources (Google Chrome among them) that this job does not use,
+          # and a broken index on any one of them makes `apt-get update` exit
+          # 100 and kill the job before Rust is even invoked. That is not a
+          # hypothetical: on 2026-09-09 a `Hash Sum mismatch` on
+          # dl.google.com failed this step across three re-runs.
+          #
+          # The install below is the step whose failure means something, and
+          # it still fails hard: if libpcap genuinely cannot be fetched,
+          # `apt-get install` exits non-zero and the job stops there.
+          sudo apt-get update || true
           sudo apt-get install -y \
             libpcap-dev pkg-config \
             libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev \
@@ -230,7 +240,10 @@ jobs:
       - name: Install system dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
-          sudo apt-get update
+          # `|| true` so a broken third-party apt index cannot fail this job;
+          # the install below still fails hard. See the first occurrence in
+          # ci.yml for the full reasoning.
+          sudo apt-get update || true
           sudo apt-get install -y \
             libpcap-dev pkg-config \
             libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev \
@@ -256,6 +269,64 @@ jobs:
       - name: cargo test netscli-mcp with pcap
         if: runner.os == 'Linux'
         run: cargo test -p netscli-mcp --features pcap --no-fail-fast
+      # The Windows pcap paths used to be covered by nothing, anywhere.
+      #
+      # Both steps above are Linux-only, and the feature cannot be built on a
+      # Windows runner without the Npcap SDK -- the link step fails with
+      # `LNK1181: cannot open input file 'wpcap.lib'`. So the Npcap code, which
+      # is the entire reason the feature exists on Windows and is what the
+      # `-pcap` Windows release asset ships, was exercised on no platform.
+      # SECURITY.md said so; this is the half of it that CI can close.
+      #
+      # release.yml already installs this SDK to build that asset, so the
+      # step below is its twin -- same pinned URL, same pinned digest, same
+      # reason for verifying before extracting. Re-pin both together.
+      - name: Install Npcap SDK (Windows, pcap)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $sdkUrl = "https://npcap.com/dist/npcap-sdk-1.13.zip"
+          $sdkSha256 = "dad1f2bf1b02b787be08ca4862f99e39a876c1f274bac4ac0cedc9bbc58f94fd"
+          $zipPath = Join-Path $env:RUNNER_TEMP "npcap-sdk.zip"
+          $destPath = Join-Path $env:RUNNER_TEMP "npcap-sdk"
+          Invoke-WebRequest -Uri $sdkUrl -OutFile $zipPath
+          $actual = (Get-FileHash -Algorithm SHA256 -Path $zipPath).Hash.ToLowerInvariant()
+          if ($actual -ne $sdkSha256) {
+            Write-Error "Npcap SDK checksum mismatch. Expected $sdkSha256, got $actual"
+            exit 1
+          }
+          Write-Host "Npcap SDK checksum verified."
+          Expand-Archive -Path $zipPath -DestinationPath $destPath -Force
+          "LIB=$(Join-Path $destPath 'Lib\x64');$env:LIB" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "INCLUDE=$(Join-Path $destPath 'Include');$env:INCLUDE" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      # Build, not test, and the difference is forced rather than chosen.
+      #
+      # The SDK above provides headers and `wpcap.lib`, which is everything
+      # the *link* needs. Running is a different matter: the test binary
+      # imports `wpcap.dll`, which ships with the Npcap runtime driver, not
+      # the SDK. Windows resolves imports at load time, so without that DLL
+      # the executable does not start and every test in it fails at once --
+      # measured, not predicted: `cargo test` here exited 0xc0000135,
+      # STATUS_DLL_NOT_FOUND, after compiling cleanly in 1m35s.
+      #
+      # Installing the Npcap runtime is not the fix. Its silent installer is
+      # licensed, and a CI job that installs a packet-capture driver to run
+      # unit tests is a poor trade.
+      #
+      # `--tests` still compiles the test targets, so a Windows-only break in
+      # the pcap code -- a cfg that stops matching, an API that moved, a type
+      # that only differs on this platform -- fails here. That is the part
+      # that was covered by nothing. Actually capturing a packet needs a live
+      # adapter and stays a manual check.
+      - name: cargo build netscli-core with pcap (Windows)
+        if: runner.os == 'Windows'
+        run: cargo build -p netscli-core --features pcap --tests
+
+      - name: cargo build netscli-mcp with pcap (Windows)
+        if: runner.os == 'Windows'
+        run: cargo build -p netscli-mcp --features pcap --tests
+
 
   gui-build:
     name: GUI Build (TypeScript + Vite)
@@ -324,7 +395,10 @@ jobs:
       - name: Install system dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
-          sudo apt-get update
+          # `|| true` so a broken third-party apt index cannot fail this job;
+          # the install below still fails hard. See the first occurrence in
+          # ci.yml for the full reasoning.
+          sudo apt-get update || true
           sudo apt-get install -y libpcap-dev pkg-config
       - name: Install Rust
         # See the pin note on the lint job above.
@@ -373,7 +447,10 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install system dependencies
         run: |
-          sudo apt-get update
+          # `|| true` so a broken third-party apt index cannot fail this job;
+          # the install below still fails hard. See the first occurrence in
+          # ci.yml for the full reasoning.
+          sudo apt-get update || true
           sudo apt-get install -y libpcap-dev pkg-config
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
