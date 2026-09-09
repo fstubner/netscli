@@ -142,14 +142,15 @@ carries — so both are given here.
 | Field | Desktop column | Meaning |
 | --- | --- | --- |
 | `name` | Interface | Interface name. |
-| `ips` | Addresses | Addresses assigned to the interface, with prefix length. |
+| `ips` | Addresses | Addresses, with prefix length. |
 | `mac` | MAC | MAC address when available. |
-| `is_up` | State | Whether the interface is up. Boolean in the data; the desktop app renders it as `up` or `down`. |
-| `is_loopback` | — | Whether the interface is loopback. Boolean in the data. The desktop app has no column for it directly; it feeds the Kind column below. |
+| `is_up` | State | Whether the interface is up. |
+| `is_loopback` | — | Whether the interface is loopback. |
 
-The desktop table adds one column with no field behind it: **Kind**, derived
-from `is_loopback` and the interface name, showing `loopback`, `virtual`,
-`vpn` or `physical`.
+`is_up` and `is_loopback` are booleans in the data. The desktop app renders
+the first as `up` or `down`, and has no column for the second — it feeds the
+**Kind** column instead, which has no field of its own and shows `loopback`,
+`virtual`, `vpn` or `physical`, derived from `is_loopback` and the name.
 
 ### ARP entries
 
@@ -159,8 +160,8 @@ from `is_loopback` and the interface name, showing `loopback`, `virtual`,
 | --- | --- | --- |
 | `ip` | IP | Neighbor address. |
 | `mac` | MAC | Neighbor MAC address. |
-| `interface` | Interface | Interface the entry was learned on. |
-| `vendor` | Vendor | OUI vendor lookup for the MAC address. |
+| `interface` | Interface | Interface it was learned on. |
+| `vendor` | Vendor | OUI vendor lookup for the MAC. |
 
 Take the first column when reading `--json`, `--yaml` or MCP output, and the
 second when reading the desktop table.
