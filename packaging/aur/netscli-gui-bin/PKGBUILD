@@ -15,7 +15,7 @@
 
 pkgname=netscli-gui-bin
 _appname=netscli-gui
-pkgver=0.3.0
+pkgver=0.3.1
 pkgrel=1
 pkgdesc="NetsCLI desktop app for reviewing network scans, DNS, ARP, and local inventory"
 arch=('x86_64')
