@@ -76,10 +76,12 @@ pub(super) async fn op_scan_ports(
         scan_timeout_ms: timeout_ms,
         ..Default::default()
     };
-    ensure_host_allowed(&p.host, netscli_core::DEFAULT_DNS_TIMEOUT_MS).await?;
+    // Scan the address that was checked, not the name that produced it --
+    // see `ensure_host_allowed` for why the two can differ.
+    let ip = ensure_host_allowed(&p.host, netscli_core::DEFAULT_DNS_TIMEOUT_MS).await?;
     let ops = netscli_core::Ops::new(cfg);
     let (_ip, res) = ops
-        .scan_ports(&p.host, ports)
+        .scan_ports(&ip.to_string(), ports)
         .await
         .map_err(|e| RpcError::ToolError(e.to_string()))?;
     Ok(res)
@@ -98,10 +100,15 @@ pub(super) async fn op_inspect_host(
         dns_timeout_ms: timeout_ms,
     };
     let ops = netscli_core::Ops::new(cfg);
-    ensure_host_allowed(&p.host, netscli_core::DEFAULT_DNS_TIMEOUT_MS).await?;
-    ops.inspect_host(p.host, ports)
+    let ip = ensure_host_allowed(&p.host, netscli_core::DEFAULT_DNS_TIMEOUT_MS).await?;
+    let mut result = ops
+        .inspect_host(ip.to_string(), ports)
         .await
-        .map_err(|e| RpcError::ToolError(e.to_string()))
+        .map_err(|e| RpcError::ToolError(e.to_string()))?;
+    // `host` is documented as the original target, so give the caller back
+    // what it asked for. The address above is what was probed.
+    result.host = p.host.trim().to_string();
+    Ok(result)
 }
 
 pub(super) async fn op_sweep(p: SweepParams) -> Result<Vec<netscli_core::SweepEntry>, RpcError> {
@@ -141,11 +148,15 @@ pub(super) async fn op_ping_host(p: PingHostParams) -> Result<netscli_core::Ping
         dns_timeout_ms: timeout_ms,
         ..Default::default()
     };
-    ensure_host_allowed(&p.host, timeout_ms).await?;
+    let ip = ensure_host_allowed(&p.host, timeout_ms).await?;
     let ops = netscli_core::Ops::new(cfg);
-    ops.ping_host_summary(&p.host, count)
+    let mut summary = ops
+        .ping_host_summary(&ip.to_string(), count)
         .await
-        .map_err(|e| RpcError::ToolError(e.to_string()))
+        .map_err(|e| RpcError::ToolError(e.to_string()))?;
+    // Same as inspect: probe the checked address, report the asked-for name.
+    summary.host = p.host.trim().to_string();
+    Ok(summary)
 }
 
 pub(super) async fn op_dns_lookup(
