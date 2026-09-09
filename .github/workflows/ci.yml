@@ -269,6 +269,49 @@ jobs:
       - name: cargo test netscli-mcp with pcap
         if: runner.os == 'Linux'
         run: cargo test -p netscli-mcp --features pcap --no-fail-fast
+      # The Windows pcap paths used to be covered by nothing, anywhere.
+      #
+      # Both steps above are Linux-only, and the feature cannot be built on a
+      # Windows runner without the Npcap SDK -- the link step fails with
+      # `LNK1181: cannot open input file 'wpcap.lib'`. So the Npcap code, which
+      # is the entire reason the feature exists on Windows and is what the
+      # `-pcap` Windows release asset ships, was exercised on no platform.
+      # SECURITY.md said so; this is the half of it that CI can close.
+      #
+      # release.yml already installs this SDK to build that asset, so the
+      # step below is its twin -- same pinned URL, same pinned digest, same
+      # reason for verifying before extracting. Re-pin both together.
+      - name: Install Npcap SDK (Windows, pcap)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $sdkUrl = "https://npcap.com/dist/npcap-sdk-1.13.zip"
+          $sdkSha256 = "dad1f2bf1b02b787be08ca4862f99e39a876c1f274bac4ac0cedc9bbc58f94fd"
+          $zipPath = Join-Path $env:RUNNER_TEMP "npcap-sdk.zip"
+          $destPath = Join-Path $env:RUNNER_TEMP "npcap-sdk"
+          Invoke-WebRequest -Uri $sdkUrl -OutFile $zipPath
+          $actual = (Get-FileHash -Algorithm SHA256 -Path $zipPath).Hash.ToLowerInvariant()
+          if ($actual -ne $sdkSha256) {
+            Write-Error "Npcap SDK checksum mismatch. Expected $sdkSha256, got $actual"
+            exit 1
+          }
+          Write-Host "Npcap SDK checksum verified."
+          Expand-Archive -Path $zipPath -DestinationPath $destPath -Force
+          "LIB=$(Join-Path $destPath 'Lib\x64');$env:LIB" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "INCLUDE=$(Join-Path $destPath 'Include');$env:INCLUDE" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      # Compiles and runs the Windows pcap code, including the tests that do
+      # not need an adapter. Actually capturing a packet needs a live NIC and
+      # a driver the runner does not have, so that stays a manual check --
+      # but "does the Npcap path still build and pass its unit tests" is most
+      # of the value and was previously answered by nothing.
+      - name: cargo test netscli-core with pcap (Windows)
+        if: runner.os == 'Windows'
+        run: cargo test -p netscli-core --features pcap --no-fail-fast
+
+      - name: cargo test netscli-mcp with pcap (Windows)
+        if: runner.os == 'Windows'
+        run: cargo test -p netscli-mcp --features pcap --no-fail-fast
 
 
   gui-build:
