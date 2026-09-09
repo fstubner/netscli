@@ -63,26 +63,62 @@ export function initLandingPage(repo: string): void {
           refreshMetricSeparators();
         })
         .catch(() => {});
+      /* Downloads come from two places, and the count said "total" while
+         reporting one of them.
+       *
+         GitHub release assets are the installers and the standalone
+         binaries. crates.io is `cargo install netscli`, which the install
+         section offers and which never touched a release asset. Only the
+         `netscli` crate is counted: netscli-core and netscli-mcp are
+         libraries, so their downloads are dependency resolution and docs.rs
+         builds rather than anyone installing anything, and adding them would
+         count a single `cargo install` three times.
+
+         Either source may fail or be rate-limited, so each records its own
+         number and the label re-renders from whichever have arrived. A
+         partial count is better than none, and better than a spinner that
+         never resolves. */
+      let githubDownloads: number | null = null;
+      let cratesDownloads: number | null = null;
+      const renderDownloads = () => {
+        if (githubDownloads === null && cratesDownloads === null) return;
+        const total = (githubDownloads ?? 0) + (cratesDownloads ?? 0);
+        const el = document.getElementById("downloads");
+        if (el) {
+          el.textContent = `${fmtDownloads(total)} ${total === 1 ? "download" : "downloads"}`;
+          el.dataset.totalDownloads = `Downloads: ${fmt(total)} total`;
+          el.setAttribute("aria-label", el.dataset.totalDownloads);
+          el.hidden = false;
+        }
+        refreshMetricSeparators();
+      };
+
+      // crates.io sets `access-control-allow-origin: *`, so this needs no
+      // proxy or build step. `downloads` is all-time; `recent_downloads` is
+      // the trailing 90 days and is not what the label claims.
+      fetch("https://crates.io/api/v1/crates/netscli")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          const n = d?.crate?.downloads;
+          if (typeof n !== "number") return;
+          cratesDownloads = n;
+          renderDownloads();
+        })
+        .catch(() => {});
+
       fetch(`https://api.github.com/repos/${repo}/releases?per_page=100`)
         .then((r) => (r.ok ? r.json() : null))
         .then((rs: unknown) => {
           if (!Array.isArray(rs)) return;
           const releases = rs as GitHubRelease[];
-          const total = releases.reduce(
+          githubDownloads = releases.reduce(
             (sum, release) => sum + (release.assets ?? []).reduce(
               (assetSum, asset) => assetSum + (asset.download_count ?? 0),
               0,
             ),
             0,
           );
-          const el = document.getElementById("downloads");
-          if (el) {
-            el.textContent = `${fmtDownloads(total)} ${total === 1 ? "download" : "downloads"}`;
-            el.dataset.totalDownloads = `Downloads: ${fmt(total)} total`;
-            el.setAttribute("aria-label", el.dataset.totalDownloads);
-            el.hidden = false;
-          }
-          refreshMetricSeparators();
+          renderDownloads();
           const latest = releases.find((release) => !release.draft && !release.prerelease)
             ?? releases.find((release) => !release.draft);
           const versionEl = document.getElementById("latest-version");
