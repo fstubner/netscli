@@ -300,18 +300,32 @@ jobs:
           "LIB=$(Join-Path $destPath 'Lib\x64');$env:LIB" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "INCLUDE=$(Join-Path $destPath 'Include');$env:INCLUDE" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
-      # Compiles and runs the Windows pcap code, including the tests that do
-      # not need an adapter. Actually capturing a packet needs a live NIC and
-      # a driver the runner does not have, so that stays a manual check --
-      # but "does the Npcap path still build and pass its unit tests" is most
-      # of the value and was previously answered by nothing.
-      - name: cargo test netscli-core with pcap (Windows)
+      # Build, not test, and the difference is forced rather than chosen.
+      #
+      # The SDK above provides headers and `wpcap.lib`, which is everything
+      # the *link* needs. Running is a different matter: the test binary
+      # imports `wpcap.dll`, which ships with the Npcap runtime driver, not
+      # the SDK. Windows resolves imports at load time, so without that DLL
+      # the executable does not start and every test in it fails at once --
+      # measured, not predicted: `cargo test` here exited 0xc0000135,
+      # STATUS_DLL_NOT_FOUND, after compiling cleanly in 1m35s.
+      #
+      # Installing the Npcap runtime is not the fix. Its silent installer is
+      # licensed, and a CI job that installs a packet-capture driver to run
+      # unit tests is a poor trade.
+      #
+      # `--tests` still compiles the test targets, so a Windows-only break in
+      # the pcap code -- a cfg that stops matching, an API that moved, a type
+      # that only differs on this platform -- fails here. That is the part
+      # that was covered by nothing. Actually capturing a packet needs a live
+      # adapter and stays a manual check.
+      - name: cargo build netscli-core with pcap (Windows)
         if: runner.os == 'Windows'
-        run: cargo test -p netscli-core --features pcap --no-fail-fast
+        run: cargo build -p netscli-core --features pcap --tests
 
-      - name: cargo test netscli-mcp with pcap (Windows)
+      - name: cargo build netscli-mcp with pcap (Windows)
         if: runner.os == 'Windows'
-        run: cargo test -p netscli-mcp --features pcap --no-fail-fast
+        run: cargo build -p netscli-mcp --features pcap --tests
 
 
   gui-build:

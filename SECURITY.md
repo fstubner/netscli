@@ -90,11 +90,15 @@ reading the bundle config, not by any review. It is now `embedBootstrapper`.
   attacked by someone trying to get code into a release.
 - **No fuzzing.** Neither the packet parser nor the MCP JSON-RPC surface has
   been fuzzed, and both parse input the operator did not write.
-- **Packet capture on Windows is covered by unit tests only.** CI now
-  installs the Npcap SDK on the Windows runner and runs the `--features pcap`
-  test suites there, so the Npcap paths at least compile and pass their tests
-  on the platform that ships them. Performing an actual capture needs a live
-  adapter and a driver the runner does not have; that remains a manual check.
+- **Packet capture on Windows is compiled, never executed.** CI now installs
+  the Npcap SDK on the Windows runner and builds the `--features pcap` test
+  targets there, so a Windows-only break in the Npcap paths fails the build
+  rather than reaching a release. Nothing runs them: the test binary imports
+  `wpcap.dll`, which ships with the Npcap runtime driver rather than the SDK,
+  and without it Windows refuses to load the executable at all
+  (`STATUS_DLL_NOT_FOUND`). Installing a capture driver in CI to run unit
+  tests is a worse trade than leaving this gap named. Every Windows capture
+  path is therefore verified by compilation only, and by manual testing.
 - **No dependency licence audit.** There is no `cargo deny` or equivalent in
   the repository.
 
