@@ -183,7 +183,17 @@ jobs:
       # won't link without these even when we only intend to lint Rust.
       - name: Install system dependencies
         run: |
-          sudo apt-get update
+          # `|| true`, deliberately. GitHub's Ubuntu image ships third-party
+          # apt sources (Google Chrome among them) that this job does not use,
+          # and a broken index on any one of them makes `apt-get update` exit
+          # 100 and kill the job before Rust is even invoked. That is not a
+          # hypothetical: on 2026-09-09 a `Hash Sum mismatch` on
+          # dl.google.com failed this step across three re-runs.
+          #
+          # The install below is the step whose failure means something, and
+          # it still fails hard: if libpcap genuinely cannot be fetched,
+          # `apt-get install` exits non-zero and the job stops there.
+          sudo apt-get update || true
           sudo apt-get install -y \
             libpcap-dev pkg-config \
             libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev \
@@ -230,7 +240,10 @@ jobs:
       - name: Install system dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
-          sudo apt-get update
+          # `|| true` so a broken third-party apt index cannot fail this job;
+          # the install below still fails hard. See the first occurrence in
+          # ci.yml for the full reasoning.
+          sudo apt-get update || true
           sudo apt-get install -y \
             libpcap-dev pkg-config \
             libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev \
@@ -256,6 +269,7 @@ jobs:
       - name: cargo test netscli-mcp with pcap
         if: runner.os == 'Linux'
         run: cargo test -p netscli-mcp --features pcap --no-fail-fast
+
 
   gui-build:
     name: GUI Build (TypeScript + Vite)
@@ -324,7 +338,10 @@ jobs:
       - name: Install system dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
-          sudo apt-get update
+          # `|| true` so a broken third-party apt index cannot fail this job;
+          # the install below still fails hard. See the first occurrence in
+          # ci.yml for the full reasoning.
+          sudo apt-get update || true
           sudo apt-get install -y libpcap-dev pkg-config
       - name: Install Rust
         # See the pin note on the lint job above.
@@ -373,7 +390,10 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install system dependencies
         run: |
-          sudo apt-get update
+          # `|| true` so a broken third-party apt index cannot fail this job;
+          # the install below still fails hard. See the first occurrence in
+          # ci.yml for the full reasoning.
+          sudo apt-get update || true
           sudo apt-get install -y libpcap-dev pkg-config
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable

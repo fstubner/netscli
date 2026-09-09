@@ -85,7 +85,7 @@ jobs:
           toolchain: 1.96.0
 
       - name: Install libpcap (workspace builds need pkg-config + libpcap headers)
-        run: sudo apt-get update && sudo apt-get install -y libpcap-dev pkg-config
+        run: sudo apt-get update || true; sudo apt-get install -y libpcap-dev pkg-config
 
       # Verify all three before uploading any of them.
       #

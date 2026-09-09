@@ -17,11 +17,15 @@ on:
       - '**/Cargo.toml'
       - '.cargo/audit.toml'
       - '.github/workflows/audit.yml'
+      - '**/package-lock.json'
+      - '**/package.json'
   pull_request:
     paths:
       - 'Cargo.lock'
       - '**/Cargo.toml'
       - '.cargo/audit.toml'
+      - '**/package-lock.json'
+      - '**/package.json'
   # Let us kick it off manually from the Actions tab.
   workflow_dispatch:
 
@@ -64,3 +68,55 @@ jobs:
 
       - name: Run cargo audit
         run: cargo audit
+
+  # The Rust half of the tree was scanned here from the start; the JavaScript
+  # half was scanned by nothing. Neither the site's dependencies nor the
+  # desktop app's -- the ones that build the shipped bundle -- were covered by
+  # any job, leaving Dependabot alerts as the only cover.
+  #
+  # That is not equivalent, measured rather than assumed: on 2026-09-09
+  # `npm audit` in site/ reported a high-severity js-yaml advisory and three
+  # moderates that Dependabot had never raised, while Dependabot was
+  # reporting six it grouped differently. Each tool saw things the other
+  # missed.
+  #
+  # Deliberately NOT `--omit=dev`. The build toolchain is what produces the
+  # bundle users install, so excluding it would leave exactly the blind spot
+  # SECURITY.md names.
+  npm-audit:
+    name: npm audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      # Report both trees in one run. `fail-fast: false` because "the site is
+      # clean but the app is not" is the answer worth having, and stopping at
+      # the first failure hides half of it.
+      fail-fast: false
+      matrix:
+        include:
+          - name: site
+            path: site
+          - name: desktop app
+            path: apps/netscli-gui
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: ${{ matrix.path }}/package-lock.json
+
+      # `npm audit` reads the lockfile; it does not need node_modules, so
+      # there is no install step to keep in sync here.
+      #
+      # `--audit-level=high` sets where the job FAILS, not what it reports --
+      # everything is still printed. High is the threshold because the three
+      # moderates open today are a deliberate deferral: adm-zip, reached
+      # through chromedriver via @axe-core/cli, whose only offered fix is a
+      # major downgrade of the accessibility runner to a two-year-old
+      # version. A job that is red on day one for a decision already taken
+      # gets ignored, and then the high it was meant to catch is ignored too.
+      - name: npm audit (${{ matrix.name }})
+        working-directory: ${{ matrix.path }}
+        run: npm audit --audit-level=high
