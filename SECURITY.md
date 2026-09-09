@@ -47,42 +47,74 @@ Out of scope:
 - Issues that require root or administrator access to exploit, when
   that access already grants equivalent capability without netscli.
 
-## What has never been reviewed
+## How far the supply chain has been reviewed
 
-There has been no security review of the supply chain. Specifically, none
-of the following has been examined:
+This section used to say the supply chain had never been reviewed at all,
+and listed four areas as unexamined. Three of them have since had work, so
+the list was telling readers to distrust things that had been fixed. What
+follows is where each actually stands. **"Read" is not "adversarially
+reviewed" — nobody has attacked any of this.**
 
-- `.github/workflows/` — including `publish.yml`, which holds tokens for
-  crates.io, the Homebrew tap, the Scoop bucket, winget and AUR.
-- `scripts/release/` — the publish scripts, which fetch release assets over
-  the network and rewrite packaging manifests from what they download.
-- `packaging/` — the manifests and installer templates.
-- `apps/netscli-gui/src-tauri/wix/` and `nsis/` — the Windows installer
-  templates.
+- `.github/workflows/` — **read, and hardened.** `publish.yml` holds the
+  tokens for crates.io, the Homebrew tap, the Scoop bucket, winget and AUR.
+  It now validates the tag before it reaches a `sed` expression (a
+  `workflow_dispatch` input previously flowed straight into one, in a job
+  holding an SSH key), and re-hashes every downloaded asset instead of
+  trusting the `.sha256` published beside it.
+- `scripts/release/` — **read, and hardened.** The same checksum logic lives
+  in `lib.sh` as `verified_sha`, which downloads the asset, hashes the bytes,
+  and refuses to continue unless the sidecar agrees. `lib_test.sh` pins that
+  behaviour along with the tag-validation cases, including shell-metacharacter
+  rejection.
+- `packaging/` — **read.** Manifests and templates checked against the
+  release assets they name. Digests in the checked-in templates are `@@…@@`
+  placeholders rather than real-looking values, so a failed substitution
+  cannot ship a stale hash, and the AUR render step greps for leftovers
+  before pushing to a registry that has no review step.
+- `apps/netscli-gui/src-tauri/wix/` and `nsis/` — **read, nothing found.**
+  The NSIS hook only deletes its own registry keys on uninstall. `main.wxs`
+  is Tauri's stock template; its one custom action launches the installed
+  app under `Impersonate="yes"`, so it runs as the invoking user rather than
+  elevated.
 
-This is stated because the gap has already produced a real issue. Until
-2026-08-19 the MSI used Tauri's `downloadBootstrapper` default, which
-fetched and executed an installer over the network at install time,
-elevated, with no hash pinning. It was found by reading the bundle config,
-not by any review.
+The original warning existed because the gap had already produced a real
+issue, and that is worth keeping: until 2026-08-19 the MSI used Tauri's
+`downloadBootstrapper` default, which fetched and executed an installer over
+the network at install time, elevated, with no hash pinning. It was found by
+reading the bundle config, not by any review. It is now `embedBootstrapper`.
 
-Dependency scanning also has a blind spot worth naming: `npm audit
---omit=dev` excludes the build toolchain that produces the shipped bundle,
-so a compromised bundler is not something the current checks would catch.
+## What is still not covered
 
-Packet capture on Windows is covered by no test at all. The
-`--features pcap` test steps in `.github/workflows/ci.yml` are gated
-`if: runner.os == 'Linux'`, and the feature cannot even be built on Windows
-without the Npcap SDK installed — without it the link step fails with
-`LNK1181: cannot open input file 'wpcap.lib'`. So the Npcap paths, which are
-the reason the feature matters on Windows, are exercised by nothing anywhere.
-
-If you are picking this up, treat those four areas as unaudited rather than
-as reviewed and clean.
+- **No adversarial review of anything above.** Everything in that list has
+  been read for correctness and obvious injection paths. None of it has been
+  attacked by someone trying to get code into a release.
+- **No fuzzing.** Neither the packet parser nor the MCP JSON-RPC surface has
+  been fuzzed, and both parse input the operator did not write.
+- **Packet capture on Windows is covered by unit tests only.** CI now
+  installs the Npcap SDK on the Windows runner and runs the `--features pcap`
+  test suites there, so the Npcap paths at least compile and pass their tests
+  on the platform that ships them. Performing an actual capture needs a live
+  adapter and a driver the runner does not have; that remains a manual check.
+- **No dependency licence audit.** There is no `cargo deny` or equivalent in
+  the repository.
 
 ## Dependencies
 
-The project uses Dependabot for automated dependency updates. Alerts
-are visible at
+Two scanners run in `.github/workflows/audit.yml`, weekly and on every
+change to a lockfile or manifest:
+
+- `cargo audit` over the Rust tree.
+- `npm audit` over `site/` and `apps/netscli-gui/`, deliberately **not**
+  `--omit=dev`: the build toolchain is what produces the bundle users
+  install, so excluding it would leave a compromised bundler unscanned.
+  The job fails on `high` and above. The moderates below that threshold are
+  still printed; the ones open today are an `adm-zip` chain reached through
+  the accessibility test runner, whose only offered fix is a major downgrade
+  of that runner.
+
+Dependabot runs alongside these, and the two are not redundant. On
+2026-09-09 `npm audit` reported a high-severity `js-yaml` advisory and three
+moderates that Dependabot had never raised, while Dependabot was reporting
+six it grouped differently. Alerts are at
 https://github.com/fstubner/netscli/security/dependabot
 (public-visible; advisory severity is GitHub's classification).
