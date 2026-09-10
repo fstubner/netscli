@@ -94,7 +94,9 @@ async fn reverse_lookup_windows_ping(ip: IpAddr, timeout_ms: u64) -> Option<Stri
 
     let ip_s = ip.to_string();
     let wait_ms = timeout_ms.saturating_add(250);
-    let mut cmd = Command::new("ping");
+    // Absolute System32 path rather than a bare name -- see
+    // `common::system_tools` for the planting measurement behind this.
+    let mut cmd = Command::new(crate::common::system_tool("ping"));
     cmd.args(["-a", "-n", "1", "-w", &timeout_ms.to_string(), &ip_s])
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
