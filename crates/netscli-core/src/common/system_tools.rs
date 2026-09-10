@@ -1,8 +1,14 @@
 //! Absolute paths for the operating-system tools netscli shells out to.
 //!
+//! Windows-only, and compiled only there. On Unix `exec` searches `PATH`
+//! alone -- neither the working directory nor the executable's own directory
+//! is consulted -- so there is nothing for this module to fix, and a
+//! non-Windows variant would be dead code that `-D warnings` rejects.
+//!
 //! On Windows, launching a helper by bare name is a local privilege
-//! escalation, and this was measured on the pinned 1.96.0 toolchain rather
-//! than inferred from the platform docs:
+//! escalation. Measured on the pinned 1.96.0 toolchain rather than inferred
+//! from the platform docs, with a control run proving the planted binary
+//! executes:
 //!
 //! - A planted `ping.exe` in the **current directory** did NOT run. Rust no
 //!   longer includes the working directory in the search, so the classic
@@ -26,31 +32,21 @@
 //!
 //! The desktop app is not a vector: its MSI installs under
 //! `ProgramFiles64Folder`, so planting there already needs administrator.
-//!
-//! Unix is unaffected. `exec` searches `PATH` only -- neither the working
-//! directory nor the executable's own directory is consulted -- so the
-//! non-Windows path below deliberately keeps the bare name and the `PATH`
-//! lookup that the traceroute/tracepath fallback in `trace.rs` depends on.
 
 use std::ffi::OsString;
+use std::path::PathBuf;
 
-/// Resolve an OS tool to the path netscli should actually launch.
+/// Resolve an OS tool to an absolute path under `%SystemRoot%\System32`,
+/// which is not user-writable.
 ///
-/// Windows: an absolute path under `%SystemRoot%\System32`, which is not
-/// user-writable. Everywhere else: the name unchanged, for a normal `PATH`
-/// lookup.
-#[cfg(windows)]
+/// No `is_file()` check and no fallback to the bare name, on purpose. A
+/// fallback would reintroduce exactly the bug this function exists to
+/// remove, and would do it silently, on whichever machine the check happened
+/// to fail. Returning the absolute path unconditionally means a genuinely
+/// missing tool fails to spawn with an error naming the full path it looked
+/// for, which is a better answer than quietly searching somewhere an
+/// attacker can write.
 pub(crate) fn system_tool(program: &str) -> OsString {
-    use std::path::PathBuf;
-
-    // No `is_file()` check and no fallback to the bare name on purpose.
-    //
-    // A fallback would reintroduce exactly the bug this function exists to
-    // remove, and it would do it silently, on whichever machine the check
-    // happened to fail. Returning the absolute path unconditionally means a
-    // genuinely missing tool fails to spawn with an error naming the full
-    // path it looked for, which is a better answer than quietly searching
-    // somewhere an attacker can write.
     let root = std::env::var_os("SystemRoot").unwrap_or_else(|| OsString::from(r"C:\Windows"));
     let mut path = PathBuf::from(root);
     path.push("System32");
@@ -58,19 +54,12 @@ pub(crate) fn system_tool(program: &str) -> OsString {
     path.into_os_string()
 }
 
-/// See the Windows variant above: on Unix this is a plain `PATH` lookup.
-#[cfg(not(windows))]
-pub(crate) fn system_tool(program: &str) -> OsString {
-    OsString::from(program)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    #[cfg(windows)]
     #[test]
-    fn windows_tools_resolve_under_system32() {
+    fn tools_resolve_under_system32() {
         for tool in ["ping", "arp", "tracert"] {
             let resolved = system_tool(tool);
             let resolved = resolved.to_string_lossy().to_ascii_lowercase();
@@ -85,9 +74,8 @@ mod tests {
         }
     }
 
-    #[cfg(windows)]
     #[test]
-    fn windows_tools_resolve_to_an_absolute_path() {
+    fn tools_resolve_to_an_absolute_path() {
         // The whole fix is that the launched program is not a bare name, so
         // this is the assertion that actually pins it: a relative path is
         // resolved against directories an unprivileged attacker can write.
@@ -97,14 +85,5 @@ mod tests {
             path.is_absolute(),
             "expected an absolute path, got {resolved:?}"
         );
-    }
-
-    #[cfg(not(windows))]
-    #[test]
-    fn unix_keeps_the_bare_name_for_a_path_lookup() {
-        // trace.rs tries traceroute and falls back to tracepath by spawning
-        // each and checking for a not-found error, which needs the PATH
-        // search that an absolute path would bypass.
-        assert_eq!(system_tool("traceroute"), OsString::from("traceroute"));
     }
 }

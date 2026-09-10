@@ -1,6 +1,10 @@
 mod constants;
 mod network;
 mod ports;
+// Windows-only. On Unix `exec` searches PATH alone, so there is nothing to
+// resolve, and a non-Windows variant is dead code that `-D warnings`
+// rejects -- which is exactly how CI caught the first attempt at this.
+#[cfg(windows)]
 mod system_tools;
 mod terminal;
 
@@ -14,5 +18,6 @@ pub use network::{
 pub use ports::{
     default_ports, parse_ports, parse_ports_checked, validate_ports, MAX_PORTS_PER_SCAN,
 };
+#[cfg(windows)]
 pub(crate) use system_tools::system_tool;
 pub use terminal::sanitize_for_terminal;
