@@ -1,6 +1,6 @@
 name: Release Drafter
 
-# Push to main only.
+# Push to main, plus manual dispatch.
 #
 # It used to also run on pull_request (opened/reopened/synchronize). On a PR
 # event release-drafter does nothing but apply autolabels, and no autolabeler
@@ -10,6 +10,26 @@ name: Release Drafter
 on:
   push:
     branches: [main]
+  # Manual runs, because the draft's version comes from tags but the trigger
+  # above comes from commits, and those two move independently.
+  #
+  # Tagging is the thing that tells this workflow which version the pending
+  # release is -- the "Resolve version from tags" step below reads the newest
+  # tag and uses it directly when it has no published release. But pushing a
+  # tag triggers nothing here, so the draft kept whatever title it was last
+  # given until some unrelated commit happened to land on main.
+  #
+  # Concretely: with v0.2.6 the last published release, this workflow
+  # proposes v0.2.7 and keeps regenerating a draft under that name. Tagging
+  # v0.3.1 makes the resolution correct but does not make it run, so the
+  # draft went on advertising the wrong version -- holding, by then, ~23,800
+  # characters of 0.3.1 release notes. Publishing that draft as-is ships
+  # 0.3.1's notes under a version that does not exist.
+  #
+  # The workaround was an empty commit to main: it pollutes history and runs
+  # the full three-OS CI matrix to correct a release title. This does the
+  # same job with neither.
+  workflow_dispatch:
 
 # Only what the draft update needs. `pull-requests: write` went with the
 # pull_request trigger; nothing here labels a PR.
