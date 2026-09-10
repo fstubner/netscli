@@ -25,7 +25,15 @@ pub async fn trace_route(
     #[cfg(windows)]
     {
         let args = build_tracert_args(host, max_hops, resolve);
-        run_command_streaming("tracert", &args, host, progress).await
+        // Absolute System32 path rather than a bare name -- see
+        // `common::system_tools`. The Unix branch below keeps its bare names
+        // deliberately: its traceroute -> tracepath fallback works by
+        // spawning each and checking for a not-found error, which needs the
+        // PATH lookup that an absolute path would bypass, and Unix `exec`
+        // does not search the executable's own directory anyway.
+        let tracert = crate::common::system_tool("tracert");
+        let tracert = tracert.to_string_lossy().into_owned();
+        run_command_streaming(&tracert, &args, host, progress).await
     }
 
     #[cfg(not(windows))]

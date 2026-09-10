@@ -1,6 +1,7 @@
 mod constants;
 mod network;
 mod ports;
+mod system_tools;
 mod terminal;
 
 pub use constants::{
@@ -13,4 +14,5 @@ pub use network::{
 pub use ports::{
     default_ports, parse_ports, parse_ports_checked, validate_ports, MAX_PORTS_PER_SCAN,
 };
+pub(crate) use system_tools::system_tool;
 pub use terminal::sanitize_for_terminal;
