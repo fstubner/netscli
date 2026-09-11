@@ -206,13 +206,44 @@ jobs:
       #     <asset>
       - name: Install cosign
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        with:
+          # Pinned, not left to the action's default.
+          #
+          # The action version and the cosign version are different things,
+          # and that gap is what broke the v0.3.1 release. Dependabot moved
+          # this action from `@v3` to `@v4.1.2` in #166; the action's default
+          # `cosign-release` moved with it, from v2.5.2 to v3.0.6. Nothing in
+          # the diff mentioned cosign, and no release was cut between the
+          # bump and v0.3.1, so the first time the new binary ever ran was
+          # the release itself -- where all 15 matrix legs failed at signing.
+          cosign-release: v3.0.6
       - name: Sign release asset (sigstore keyless)
         shell: bash
         env:
           COSIGN_EXPERIMENTAL: "1"
         run: |
           cd target/${{ matrix.target }}/release
+          # `--new-bundle-format=false` is load-bearing.
+          #
+          # It defaults to TRUE in cosign v3. With it on, cosign ignores
+          # --output-signature and --output-certificate (it says so, as
+          # warnings) and writes a single bundle instead -- to --bundle,
+          # which nothing here sets. So it tried to open the empty string
+          # and died with `create bundle file: open : no such file or
+          # directory`, on every platform at once.
+          #
+          # Turning it off restores the v2 behaviour this pipeline is built
+          # around: sign_blob.go guards the bundle write behind
+          # `if ko.BundlePath != ""` and writes the detached files under
+          # their own checks, so with no --bundle it takes the sidecar path.
+          #
+          # The sidecars are not incidental. `.sig` + `.pem` are what
+          # packaging/README.md and the published install guide tell people
+          # to pass to `cosign verify-blob`, and v0.2.6 shipped 64 assets as
+          # .sha256/.sig/.pem triples. Moving to bundles is a real option,
+          # but it rewrites those instructions and belongs in its own change.
           cosign sign-blob --yes \
+            --new-bundle-format=false \
             --output-signature "${{ matrix.asset_name }}.sig" \
             --output-certificate "${{ matrix.asset_name }}.pem" \
             "${{ matrix.asset_name }}"
@@ -368,6 +399,12 @@ jobs:
 
       - name: Install cosign
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        with:
+          # Pinned for the same reason as the CLI job above: the action
+          # version and the cosign version move independently, and the
+          # action's default carried us from cosign v2.5.2 to v3.0.6 without
+          # saying so. Keep both installers on the same pin.
+          cosign-release: v3.0.6
       - name: Sign GUI artifacts (sigstore keyless)
         shell: bash
         env:
@@ -382,7 +419,16 @@ jobs:
             case "$f" in
               *.sha256|*.sig|*.pem) continue ;;
             esac
+            # `--new-bundle-format=false` for the same reason as the CLI job
+            # above -- see that step for the full explanation. Without it
+            # cosign v3 ignores both --output-* flags and fails trying to
+            # write a bundle to an unset path.
+            #
+            # The skip-list above stays keyed on .sig/.pem because that is
+            # still what this produces. If this ever moves to bundles, that
+            # list needs a .bundle arm or a re-run will sign its own output.
             cosign sign-blob --yes \
+              --new-bundle-format=false \
               --output-signature "${f}.sig" \
               --output-certificate "${f}.pem" \
               "$f"
