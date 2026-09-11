@@ -117,11 +117,24 @@ Before the first automated release runs, add these secrets at
 4. **Promote the draft to public.** This is the one human action that
    stays in the loop.
    ```bash
-   gh release edit vX.Y.Z --draft=false --repo fstubner/netscli
+   gh workflow run publish-release.yml -f tag=vX.Y.Z
    ```
-   This single event fires both `release.yml` (builds binaries + GUI
-   installers, attaches them to the release) and `publish.yml` (fans out
-   to package managers).
+   Publish through this workflow, not `gh release edit --draft=false` and
+   not the web UI's publish button. `release-drafter` rewrites its draft on
+   every push to `main`, and it overwrites whatever release it picked up if
+   that release goes public mid-run — one second of overlap is enough, and
+   that is how v0.3.1 lost its tag. `publish-release.yml` holds a lock the
+   drafter shares; the other two routes hold nothing. "Merge the changelog,
+   then publish" puts a push and a publish back to back, so the overlap is
+   the normal sequence rather than bad luck.
+
+   The workflow refuses a tag that does not exist or is already published,
+   flips the draft, reads it back to confirm the release is public and still
+   carries its tag, then starts `release.yml` (binaries + GUI installers)
+   and `publish.yml` (package managers). It dispatches those two explicitly
+   because GitHub suppresses `release: published` for anything done with a
+   workflow token — `workflow_dispatch` is one of the two documented
+   exceptions.
 5. **Watch the dashboard.** From the release page or the Actions tab:
    - `Release` workflow: 11 CLI assets + 5 GUI installers attached.
    - `Publish to package managers` workflow: 9 jobs — a CLI and a GUI job
