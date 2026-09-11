@@ -223,19 +223,34 @@ jobs:
           COSIGN_EXPERIMENTAL: "1"
         run: |
           cd target/${{ matrix.target }}/release
-          # `--new-bundle-format=false` is load-bearing.
+          # Two flags, both load-bearing, and both defaulting to TRUE in
+          # cosign v3.
           #
-          # It defaults to TRUE in cosign v3. With it on, cosign ignores
-          # --output-signature and --output-certificate (it says so, as
-          # warnings) and writes a single bundle instead -- to --bundle,
-          # which nothing here sets. So it tried to open the empty string
-          # and died with `create bundle file: open : no such file or
-          # directory`, on every platform at once.
+          # `--use-signing-config` is the one that actually broke v0.3.1.
+          # With a signing config in play, cosign refuses to sign at all
+          # unless a bundle is requested. From signcommon/common.go at
+          # v3.0.6, lines 660-661:
           #
-          # Turning it off restores the v2 behaviour this pipeline is built
-          # around: sign_blob.go guards the bundle write behind
-          # `if ko.BundlePath != ""` and writes the detached files under
-          # their own checks, so with no --bundle it takes the sidecar path.
+          #   if (useSigningConfig || signingConfigPath != "") &&
+          #       !newBundleFormat && bundlePath == "" {
+          #     return fmt.Errorf("must provide --new-bundle-format or
+          #       --bundle ... with --signing-config or --use-signing-config")
+          #
+          # An earlier fix set only `--new-bundle-format=false`. That
+          # satisfies one half of that condition and leaves the other
+          # standing, so every leg that reached this step failed with
+          # exactly the error above. Turning the signing config off is what
+          # disarms the gate, and it is the only gate that applies: the
+          # neighbouring checks at :649 and :656 both require a signing
+          # config as well.
+          #
+          # `--new-bundle-format=false` is still needed on its own account.
+          # With it true, cosign writes a bundle to --bundle -- unset here
+          # -- instead of the detached files.
+          #
+          # With both off, sign_blob.go closes its `if ko.BundlePath != ""`
+          # block (168-229) before the `outputSignature` (231) and
+          # `outputCertificate` (250) writes, so the sidecars are produced.
           #
           # The sidecars are not incidental. `.sig` + `.pem` are what
           # packaging/README.md and the published install guide tell people
@@ -243,6 +258,7 @@ jobs:
           # .sha256/.sig/.pem triples. Moving to bundles is a real option,
           # but it rewrites those instructions and belongs in its own change.
           cosign sign-blob --yes \
+            --use-signing-config=false \
             --new-bundle-format=false \
             --output-signature "${{ matrix.asset_name }}.sig" \
             --output-certificate "${{ matrix.asset_name }}.pem" \
@@ -419,15 +435,17 @@ jobs:
             case "$f" in
               *.sha256|*.sig|*.pem) continue ;;
             esac
-            # `--new-bundle-format=false` for the same reason as the CLI job
-            # above -- see that step for the full explanation. Without it
-            # cosign v3 ignores both --output-* flags and fails trying to
-            # write a bundle to an unset path.
+            # Both flags for the same reasons as the CLI job above -- see
+            # that step for the full explanation. Each defaults to true in
+            # cosign v3: the signing config is what refuses to sign at all
+            # without a bundle, and the bundle format is what would divert
+            # output away from the --output-* files.
             #
             # The skip-list above stays keyed on .sig/.pem because that is
             # still what this produces. If this ever moves to bundles, that
             # list needs a .bundle arm or a re-run will sign its own output.
             cosign sign-blob --yes \
+              --use-signing-config=false \
               --new-bundle-format=false \
               --output-signature "${f}.sig" \
               --output-certificate "${f}.pem" \
