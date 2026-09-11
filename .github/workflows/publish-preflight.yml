@@ -61,14 +61,58 @@ jobs:
           }
 
           # ---- crates.io -------------------------------------------------
-          # /me returns the token's owner. 200 means the token is live; 403
-          # is what an expired or revoked token gets.
-          code=$(curl -sS -o /dev/null -w '%{http_code}' \
+          # This check used to compare the status against 200 and could never
+          # pass, for any token, ever.
+          #
+          # `/api/v1/me` is cookie-only. crates.io's `src/controllers/user/me.rs`
+          # guards it with `AuthCheck::only_cookie()`, which sets
+          # `allow_token: false`, so it refuses EVERY API token and answers
+          # "this action can only be performed on the crates.io website".
+          #
+          # The cost of getting that wrong was not theoretical. This reported
+          # CARGO_REGISTRY_TOKEN dead on two separate runs against two
+          # different tokens, and a working token was rotated on the strength
+          # of it. What settled it was crates.io's own token page showing
+          # "Last used 2 minutes ago" for a token this check had just called
+          # dead -- crates.io had authenticated it, then refused the endpoint.
+          #
+          # The status alone cannot separate the cases. The body can. Measured
+          # against the live API, with the strings confirmed in auth.rs:
+          #
+          #   401 + "does not match the format used by crates.io" -> malformed
+          #   403 + "this action requires authentication"         -> no token sent
+          #   403 + "authentication failed"                       -> unknown/revoked
+          #   403 + "only be performed on the crates.io website"  -> VALID
+          #
+          # That last one is the pass, and it is a stronger signal than the
+          # old 200 ever was: reaching the cookie-only refusal proves
+          # crates.io looked the token up and accepted it. A 200 from a public
+          # endpoint would have proved nothing about the token at all.
+          #
+          # What this still cannot check is SCOPE. A token scoped to the wrong
+          # crates, or holding `publish-update` when a brand-new crate needs
+          # `publish-new`, authenticates identically here. Every scoped
+          # endpoint on crates.io mutates something, so there is no read-only
+          # way to test scope without publishing or yanking. `cargo publish`
+          # is the first thing that exercises it -- verified: `--dry-run`
+          # never contacts the registry for auth and passes with a deliberately
+          # invalid token.
+          resp=$(curl -sS -w '%{http_code}' \
             -H "Authorization: ${CARGO_TOKEN}" \
             -H 'User-Agent: netscli-publish-preflight' \
-            https://crates.io/api/v1/me || echo 000)
-          [ "$code" = "200" ] && record "CARGO_REGISTRY_TOKEN" "crates.io" 0 "valid" \
-            || record "CARGO_REGISTRY_TOKEN" "crates.io" 1 "HTTP $code"
+            https://crates.io/api/v1/me 2>/dev/null || echo "000")
+          code="${resp: -3}"
+          if printf '%s' "$resp" | grep -q 'only be performed on the crates.io website'; then
+            record "CARGO_REGISTRY_TOKEN" "crates.io" 0 "valid (authenticated; scope not checkable)"
+          elif printf '%s' "$resp" | grep -q 'authentication failed'; then
+            record "CARGO_REGISTRY_TOKEN" "crates.io" 1 "rejected: unknown or revoked token"
+          elif printf '%s' "$resp" | grep -q 'does not match the format'; then
+            record "CARGO_REGISTRY_TOKEN" "crates.io" 1 "malformed token (HTTP $code)"
+          elif printf '%s' "$resp" | grep -q 'this action requires authentication'; then
+            record "CARGO_REGISTRY_TOKEN" "crates.io" 1 "no token sent -- is the secret set?"
+          else
+            record "CARGO_REGISTRY_TOKEN" "crates.io" 1 "unrecognised response (HTTP $code)"
+          fi
 
           # ---- GitHub PATs ------------------------------------------------
           # Validity alone is not enough for the tap and the bucket: the jobs
