@@ -1,0 +1,127 @@
+name: Publish release
+
+# Promotes a drafted GitHub release to public.
+#
+# Publishing does not need a workflow. This one exists to hold a lock.
+#
+# release-drafter rewrites its draft by listing every release, taking the
+# first one whose `draft` is true, and then PATCHing that release by id. It
+# re-checks nothing between the read and the write, and the payload it sends
+# always carries `draft: true` (see `find-previous-releases.ts` and
+# `update-release.ts` at the SHA pinned in release-drafter.yml). Publish
+# inside that gap and the PATCH lands on a release that is no longer a draft.
+#
+# Not theoretical. Drafter run 34597984827 built its payload at 12:15:46.96
+# and logged "Release updated!" at 12:15:47.96; v0.3.1 was published at
+# 12:15:47Z, one second inside the window. The release came back out of it
+# with its tag replaced by an `untagged-...` placeholder and had to be
+# repaired by hand. Nothing failed and no workflow reported anything wrong --
+# the corruption was found by chance, on a release that was already public.
+#
+# The collision is not bad luck. "Merge the changelog, then publish" is the
+# ordinary release sequence, and merging to main is exactly what starts a
+# drafter run.
+#
+# `concurrency` below shares one group with release-drafter.yml, so a publish
+# and a draft rewrite can never overlap. That only covers publishes that go
+# through here: `gh release edit --draft=false` and the web UI's publish
+# button hold no lock and stay exposed. docs/RELEASE.md sends you here for
+# that reason.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag of the drafted release to publish (e.g. v0.3.1)'
+        required: true
+        type: string
+
+# `contents: write` to flip the draft. `actions: write` to dispatch the two
+# workflows at the end -- nothing here needs more.
+permissions:
+  contents: write
+  actions: write
+
+# Shared with release-drafter.yml. This group is the entire point of the
+# workflow; queueing behind an in-flight drafter run costs about 30 seconds.
+#
+# `cancel-in-progress: false` on BOTH sides, and that pairing is load-bearing
+# rather than cautious. The setting is read from the workflow of the run that
+# joins the group, so a drafter configured to cancel would cancel a publish
+# run already in progress -- leaving the release public with neither
+# release.yml nor publish.yml ever dispatched. Serialising instead costs a
+# few idle seconds.
+concurrency:
+  group: release-draft
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Promote draft to public
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Promote the draft and start the pipeline
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ inputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # The same shape publish.yml enforces, for the same reason: the tag
+          # reaches sed replacements and commit messages downstream.
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
+            echo "::error::refusing to publish malformed tag '$TAG'"
+            exit 1
+          fi
+
+          if ! gh api "repos/${GH_REPO}/git/ref/tags/${TAG}" >/dev/null 2>&1; then
+            echo "::error::no tag ${TAG} in this repository -- tag and push it first."
+            exit 1
+          fi
+
+          if ! is_draft=$(gh release view "$TAG" --json isDraft --jq '.isDraft' 2>/dev/null); then
+            echo "::error::no release found for ${TAG}. Draft it first."
+            exit 1
+          fi
+          if [[ "$is_draft" != "true" ]]; then
+            echo "::error::${TAG} is already published. Nothing to promote."
+            exit 1
+          fi
+
+          echo "Promoting ${TAG}..."
+          gh release edit "$TAG" --draft=false
+
+          # Read it back rather than assume the edit did what it said. This is
+          # the exact failure this workflow exists for, so it is worth one API
+          # call to prove the release is public AND still carries its tag.
+          after=$(gh release view "$TAG" --json isDraft,tagName --jq '"\(.isDraft) \(.tagName)"')
+          if [[ "$after" != "false ${TAG}" ]]; then
+            echo "::error::${TAG} did not survive the promote (isDraft/tagName = ${after}). Check for a concurrent release-drafter run."
+            exit 1
+          fi
+
+          # `release: published` does NOT fire here -- GitHub suppresses
+          # events raised by GITHUB_TOKEN. `workflow_dispatch` is one of its
+          # two documented exceptions, so the consumers are started
+          # explicitly instead.
+          #
+          # This is more deterministic than the event path it replaces, where
+          # release.yml and publish.yml both fire on `release: published` at
+          # the same instant and race. Order here is deliberate but not
+          # blocking: publish.yml's `wait_for_asset` polls for 15 minutes, so
+          # it tolerates release.yml still building, exactly as before.
+          gh workflow run release.yml -f tag="$TAG"
+          gh workflow run publish.yml -f tag="$TAG"
+
+          {
+            echo "### Published ${TAG}"
+            echo
+            echo "- Release is public and still tagged \`${TAG}\`."
+            echo "- Dispatched \`release.yml\` (binaries + GUI installers)."
+            echo "- Dispatched \`publish.yml\` (package managers)."
+            echo
+            echo "Watch both in the Actions tab. Assets attach to the release as they build."
+          } >> "$GITHUB_STEP_SUMMARY"

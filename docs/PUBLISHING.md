@@ -239,13 +239,17 @@ the bottom of the file.
 ## GitHub Releases
 
 Platform installers, and the download links the install scripts resolve,
-come from the GitHub release — not crates.io. `release.yml` fires on
-`release: published`.
+come from the GitHub release — not crates.io. `release.yml` is started by
+`publish-release.yml`, and still answers `release: published` and a manual
+dispatch.
 
 ```bash
 git tag vX.Y.Z
 git push origin vX.Y.Z
-# Then: Releases → Draft a new release → pick the tag → notes → publish.
+# Then: Releases → Draft a new release → pick the tag → write the notes.
+# Leave it as a draft, and promote it with the workflow — never with the
+# web UI's publish button, which races release-drafter (see RELEASE.md).
+gh workflow run publish-release.yml -f tag=vX.Y.Z
 ```
 
 It builds and attaches, per asset, four files: the artifact, `.sha256`,

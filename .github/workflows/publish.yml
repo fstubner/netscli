@@ -6,9 +6,12 @@ name: Publish to package managers
 # the others, and each is re-runnable from the Actions tab.
 #
 # Triggers:
-#   - On `release: published` (canonical path: flip a draft to public).
-#   - On `workflow_dispatch` with a tag input (re-run a specific job
-#     after fixing a transient failure).
+#   - On `workflow_dispatch` with a tag input. The canonical path:
+#     publish-release.yml dispatches this after promoting a draft, and it
+#     is also how you re-run a specific job after a transient failure.
+#   - On `release: published`, still honoured for a release promoted by
+#     hand. Note that promoting by hand races release-drafter -- see
+#     publish-release.yml for why that path is no longer recommended.
 
 on:
   release:

@@ -36,6 +36,25 @@ on:
 permissions:
   contents: write
 
+# Shared with publish-release.yml, which holds the same group while it flips
+# a draft to public.
+#
+# The action below rewrites its draft by listing every release, taking the
+# first one whose `draft` is true, then PATCHing that release by id -- with
+# no re-check in between and a payload that always carries `draft: true`.
+# A publish landing in that gap gets overwritten. It happened: run
+# 34597984827 wrote to v0.3.1 one second after it went public, and the
+# release came back with its tag replaced by an `untagged-...` placeholder.
+# Nothing failed and nothing reported it.
+#
+# `cancel-in-progress: false` matters on both sides. The setting comes from
+# the workflow of the run joining the group, so cancelling here would kill an
+# in-progress publish and strand a public release with no pipeline started.
+# Serialising drafter runs instead costs a few seconds -- they take ~30.
+concurrency:
+  group: release-draft
+  cancel-in-progress: false
+
 jobs:
   update_release_draft:
     runs-on: ubuntu-latest
