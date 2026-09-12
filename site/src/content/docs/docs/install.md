@@ -9,8 +9,8 @@ NetsCLI publishes command-line binaries and desktop installers through GitHub Re
 
 | Platform | Recommended path | Installs |
 | --- | --- | --- |
-| Windows | `winget install fstubner.netscli` | CLI and TUI |
-| Windows | `winget install fstubner.netscli.gui` | Desktop app |
+| Windows | `winget install netscli` | CLI and TUI |
+| Windows | `winget install netscli-gui` | Desktop app |
 | macOS | Homebrew or install script | CLI and TUI |
 | Linux | Install script, Homebrew, AUR, or release artifact | CLI and TUI |
 | Rust users | `cargo install netscli` | CLI and TUI from crates.io |
@@ -20,14 +20,18 @@ NetsCLI publishes command-line binaries and desktop installers through GitHub Re
 Use winget for the hash-verified install path:
 
 ```powershell
-winget install fstubner.netscli
+winget install netscli
 ```
 
 The desktop app is distributed separately:
 
 ```powershell
-winget install fstubner.netscli.gui
+winget install netscli-gui
 ```
+
+Both short names resolve today. The full identifiers are `fstubner.netscli`
+and `fstubner.netscli.gui`, and they cannot become ambiguous — use those if a
+short name ever matches more than one package in the catalog.
 
 Scoop is also supported, for both the CLI and the desktop app:
 
