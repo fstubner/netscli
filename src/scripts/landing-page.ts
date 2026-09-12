@@ -80,13 +80,30 @@ export function initLandingPage(repo: string): void {
          never resolves. */
       let githubDownloads: number | null = null;
       let cratesDownloads: number | null = null;
+      // Whether each source has finished, which is not the same as whether it
+      // produced a number. A rate-limited source never sets its count, so
+      // gating on the counts alone would leave the label waiting forever.
+      let githubSettled = false;
+      let cratesSettled = false;
       const renderDownloads = () => {
         if (githubDownloads === null && cratesDownloads === null) return;
         const total = (githubDownloads ?? 0) + (cratesDownloads ?? 0);
+        // "total" is a claim about both sources, so only make it once both
+        // have reported. Measured on this page: "Downloads: 178 total" with
+        // only GitHub in, then "Downloads: 2,635 total" once crates.io
+        // landed -- same label, same page, a fifteenfold difference. Until
+        // both are in, the number is a lower bound and now says so.
+        const complete = githubSettled && cratesSettled
+          && githubDownloads !== null && cratesDownloads !== null;
         const el = document.getElementById("downloads");
         if (el) {
-          el.textContent = `${fmtDownloads(total)} ${total === 1 ? "download" : "downloads"}`;
-          el.dataset.totalDownloads = `Downloads: ${fmt(total)} total`;
+          // fmtDownloads already appends "+" above 1000; don't double it.
+          const shown = fmtDownloads(total);
+          const text = complete || shown.endsWith("+") ? shown : `${shown}+`;
+          el.textContent = `${text} ${total === 1 ? "download" : "downloads"}`;
+          el.dataset.totalDownloads = complete
+            ? `Downloads: ${fmt(total)} total`
+            : `Downloads: ${fmt(total)} so far; one source has not reported`;
           el.setAttribute("aria-label", el.dataset.totalDownloads);
           el.hidden = false;
         }
@@ -102,9 +119,15 @@ export function initLandingPage(repo: string): void {
           const n = d?.crate?.downloads;
           if (typeof n !== "number") return;
           cratesDownloads = n;
-          renderDownloads();
         })
-        .catch(() => {});
+        .catch(() => {})
+        // `finally`, not the success path: a failed or rate-limited fetch
+        // settles this source too, and the label has to know that to stop
+        // withholding the word "total".
+        .finally(() => {
+          cratesSettled = true;
+          renderDownloads();
+        });
 
       fetch(`https://api.github.com/repos/${repo}/releases?per_page=100`)
         .then((r) => (r.ok ? r.json() : null))
@@ -118,7 +141,6 @@ export function initLandingPage(repo: string): void {
             ),
             0,
           );
-          renderDownloads();
           const latest = releases.find((release) => !release.draft && !release.prerelease)
             ?? releases.find((release) => !release.draft);
           const versionEl = document.getElementById("latest-version");
@@ -130,7 +152,11 @@ export function initLandingPage(repo: string): void {
             refreshMetricSeparators();
           }
         })
-        .catch(() => {});
+        .catch(() => {})
+        .finally(() => {
+          githubSettled = true;
+          renderDownloads();
+        });
     })();
 
     initCopyButtons();
