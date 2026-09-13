@@ -1,24 +1,40 @@
 name: Deploy GitHub Pages
 
 # Builds the Astro site in `site/` and deploys the static output to
-# GitHub Pages. Manual trigger ONLY (workflow_dispatch) — deployment is
-# deliberately NOT wired to push-to-main right now. site/ currently holds
-# a redesign that's still mid review/design-pass; auto-deploying on every
-# main merge shipped it to netscli.com prematurely once already. Restore
-# the push trigger once the redesign is actually approved to ship, then
-# deploys resume automatically. Copy the `paths:` list from site.yml rather
-# than writing `['site/**']`: the build also reads CHANGELOG.md,
-# scripts/install.ps1, scripts/install.sh and apps/netscli-gui/package.json,
-# so a site/**-only filter would leave changes to those undeployed.
+# GitHub Pages.
 #
-# Until then: Actions tab → Deploy GitHub Pages → Run workflow, or
-# `gh workflow run pages.yml`.
+# The push trigger was removed while site/ held a redesign that was still
+# mid review, because auto-deploying on every main merge had shipped that
+# redesign to netscli.com once before it was ready. The redesign shipped on
+# 2026-09-13, so the condition is gone and deploys are automatic again.
+# `workflow_dispatch` stays alongside it, for redeploying without a commit.
+#
+# The `paths:` list below is copied from site.yml rather than written as
+# `['site/**']`, because the build reads four files from outside site/:
+# CHANGELOG.md (changelog.astro imports it with ?raw), scripts/install.ps1
+# and scripts/install.sh (served at /install.ps1 and /install.sh), and
+# apps/netscli-gui/package.json (site-content/version.ts reads the version
+# from it). A site/**-only filter would leave changes to those four built
+# but never deployed -- the site would render a stale changelog or version
+# with nothing failing to say so.
+#
+# That makes this the same list in four places: here, site.yml's push
+# filter, site.yml's `changes` job grep, and site-preview.yml's two
+# filters. Keep them in step; YAML has no variable to share them.
 #
 # Prerequisite: in the repo Settings → Pages, set "Source" to
 # "GitHub Actions" (NOT "Deploy from a branch"). This workflow expects
 # that mode.
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - 'CHANGELOG.md'
+      - 'scripts/install.ps1'
+      - 'scripts/install.sh'
+      - 'apps/netscli-gui/package.json'
   workflow_dispatch:
 
 permissions:
