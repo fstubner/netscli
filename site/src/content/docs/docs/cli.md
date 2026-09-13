@@ -47,6 +47,74 @@ Example script pattern:
 netscli discover --json | jq '.[].ip'
 ```
 
+## Example output
+
+Captured from a real run against loopback, so every port reads `filtered` —
+nothing is listening on 127.0.0.1 for these ports. A host with services up
+returns `open` with latency, and a banner where one was offered.
+
+```console
+$ netscli scan 127.0.0.1 -p 22,80,443 --json
+[
+  {
+    "port": 22,
+    "open": false,
+    "status": "filtered",
+    "service": "ssh"
+  },
+  {
+    "port": 80,
+    "open": false,
+    "status": "filtered",
+    "service": "http"
+  },
+  {
+    "port": 443,
+    "open": false,
+    "status": "filtered",
+    "service": "https"
+  }
+]
+```
+
+`open` is the compatibility boolean older consumers already read; `status`
+carries the four-way answer. Both are present, so a script written against
+either keeps working.
+
+```console
+$ netscli ping 127.0.0.1 -c 3
+PING 127.0.0.1 (127.0.0.1)
+sent=3 received=3 loss=0.0%
+rtt min/avg/max = 0/0.0/0 ms
+```
+
+```console
+$ netscli dns localhost
+DNS A
+  127.0.0.1
+
+DNS AAAA
+  ::1
+
+DNS PTR
+  localhost
+```
+
+The same lookup with `--json` adds the fields a script needs:
+
+```console
+$ netscli dns localhost --json
+[
+  {
+    "record_type": "A",
+    "value": "127.0.0.1",
+    "name": "localhost",
+    "ttl_seconds": 86400,
+    "resolver_source": "system"
+  }
+]
+```
+
 ## Command list
 
 The CLI exposes shared network operations plus command-line maintenance workflows:

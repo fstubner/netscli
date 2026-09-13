@@ -5,6 +5,10 @@ description: NetsCLI terminal UI guide for keyboard-first network diagnostics.
 
 The terminal UI is for interactive, keyboard-first diagnostics inside a terminal. It uses the same core operations as the CLI, desktop app, and MCP server.
 
+![The NetsCLI terminal UI running /discover, listing hosts with their device IDs, vendors and hostnames, with local interface activity along the bottom](/assets/tui-discover.png)
+
+*`/discover` in the terminal UI. Results fill the table as hosts answer, with local interface activity along the bottom.*
+
 ## When to use it
 
 Use the TUI when:

@@ -46,6 +46,51 @@ Example client configuration:
 
 Tool inputs stay stable. Structured output may gain additive fields as the shared core result model improves.
 
+## A request and its response
+
+Captured from a real session against loopback. The client writes one JSON
+object per line to stdin; the server answers on stdout. Most clients do this
+for you — this is what they are exchanging.
+
+Opening the connection:
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"docs","version":"1"}}}
+```
+
+```json
+{"jsonrpc":"2.0","result":{"capabilities":{"tools":{}},"protocolVersion":"2024-11-05","serverInfo":{"name":"netscli","version":"0.3.1"}},"error":null,"id":1}
+```
+
+Calling a tool:
+
+```json
+{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"scan_ports","arguments":{"host":"127.0.0.1","ports":[22,80,443]}}}
+```
+
+The result arrives as MCP text content whose body is the same JSON the CLI
+would print, so a model reads one shape wherever it came from:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "[\n  {\n    \"open\": false,\n    \"port\": 22,\n    \"service\": \"ssh\",\n    \"status\": \"filtered\"\n  },\n  {\n    \"open\": false,\n    \"port\": 80,\n    \"service\": \"http\",\n    \"status\": \"filtered\"\n  },\n  {\n    \"open\": false,\n    \"port\": 443,\n    \"service\": \"https\",\n    \"status\": \"filtered\"\n  }\n]"
+      }
+    ]
+  },
+  "error": null,
+  "id": 2
+}
+```
+
+Every port reads `filtered` because nothing is listening on loopback for
+those ports. Closing stdin cancels any operation still running and shuts the
+server down, which is why a client that exits mid-scan leaves nothing behind.
+
 ## Packet capture jobs
 
 Packet-capture tools appear only in MCP builds that include packet-capture support. Captures also need Npcap on Windows or libpcap on Linux/macOS. Supported builds expose two packet-capture styles.
