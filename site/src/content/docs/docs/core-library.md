@@ -20,12 +20,16 @@ Interface layers use the core `Ops` facade instead of implementing their own pro
 
 Dependency flow stays one-way:
 
-```text
-netscli CLI/TUI ──┬──────────────> netscli-core
-                  │                     ^
-                  └─> netscli-mcp ──────┘
-netscli-gui ─────────────────────────────┘
-```
+<svg viewBox="0 0 720 300" role="img" width="100%"
+     aria-label="Dependency graph: netscli (CLI, TUI and serve) depends on netscli-mcp and on netscli-core; netscli-mcp depends on netscli-core; netscli-gui depends on netscli-core; netscli-core depends on none of them"
+     style="max-width:720px;height:auto;margin-block:1.25rem">
+  <defs><marker id="dep-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--sl-color-gray-3, #8b919b)"/></marker></defs>
+  <g fill="none" stroke="var(--sl-color-gray-3, #8b919b)" stroke-width="1.5" marker-end="url(#dep-arrow)"><path d="M170 86 L170 112"/><path d="M300 52 L360 52 L360 210"/><path d="M170 176 L170 196 L250 196 L250 210"/><path d="M540 86 L540 196 L470 196 L470 210"/></g>
+  <g stroke="var(--sl-color-gray-4, #3a3f46)" stroke-width="1.5" fill="none"><rect x="40" y="20" width="260" height="66" rx="8"/><rect x="420" y="20" width="240" height="66" rx="8"/><rect x="40" y="112" width="260" height="64" rx="8"/></g>
+  <rect x="200" y="210" width="320" height="66" rx="8" stroke="var(--ui-accent, #22c55e)" stroke-width="2" fill="none"/>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" fill="var(--sl-color-white, #ffffff)" text-anchor="middle"><text x="170" y="48">netscli</text><text x="540" y="48">netscli-gui</text><text x="170" y="140">netscli-mcp</text><text x="360" y="240">netscli-core</text></g>
+  <g font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" fill="var(--sl-color-gray-3, #8b919b)" text-anchor="middle"><text x="170" y="70">CLI · TUI · serve</text><text x="540" y="70">Tauri desktop app</text><text x="170" y="160">JSON-RPC tools</text><text x="360" y="262">operations, result types, safety limits</text></g>
+</svg>
 
 Interface crates may depend on the core. The core must not depend on a UI layer, MCP protocol layer, or desktop runtime.
 

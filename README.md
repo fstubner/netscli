@@ -90,8 +90,13 @@ the same Rust calls.
 
 ## Architecture
 
+Three of the four surfaces are the same binary: `netscli` with a command is
+the CLI, `netscli` with none opens the terminal UI, and `netscli serve` starts
+the MCP server. Installing the CLI installs all three. The desktop app is a
+separate download built on the same core.
+
 <div align="center">
-  <img src="docs/assets/overview.svg" alt="NetsCLI architecture overview" width="720" />
+  <img src="docs/assets/overview.svg" alt="NetsCLI architecture: one binary providing CLI, TUI and MCP server, a separate desktop app, and the shared netscli-core library beneath both" width="720" />
 </div>
 
 ## Installation
@@ -106,11 +111,15 @@ brew install netscli
 ### Winget (Windows)
 
 ```powershell
-winget install fstubner.netscli      # CLI/TUI
-winget install fstubner.netscli.gui  # Desktop GUI
+winget install netscli      # CLI/TUI
+winget install netscli-gui  # Desktop GUI
 ```
 
 Resolves from the official [`microsoft/winget-pkgs`](https://github.com/microsoft/winget-pkgs/tree/master/manifests/f/fstubner) repo (winget ships preinstalled on Windows 10/11). The CLI and desktop app are separate package identifiers so they can be installed independently.
+
+The short names above resolve today. The full identifiers are
+`fstubner.netscli` and `fstubner.netscli.gui`, and those cannot become
+ambiguous — use them if a short name ever matches more than one package.
 
 For Windows, winget is the recommended install path. The winget manifest pins
 the installer URL and verifies the installer SHA256 hash before install. Direct
@@ -140,7 +149,7 @@ curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/insta
 ```
 
 This downloads the latest release binary for your platform and installs it into `~/.local/bin` by default.
-You can pin a specific release by setting `NETSCLI_VERSION` (e.g. `NETSCLI_VERSION=v0.1.0`).
+You can pin a specific release by setting `NETSCLI_VERSION` (e.g. `NETSCLI_VERSION=v0.3.1`).
 If the release publishes a matching `.sha256` asset, the installer will verify the download automatically; you can also set `NETSCLI_SHA256` (or `NETSCLI_SHA256_URL` to fetch a checksum file).
 Release assets: Windows `x86_64`, Linux `x86_64`/`aarch64` (glibc) + Linux `x86_64` (musl), macOS `x86_64`/`aarch64`.
 
@@ -204,9 +213,9 @@ cargo install --git https://github.com/fstubner/netscli netscli
 
 ### GUI Application
 
-Prebuilt installers are attached to every [GitHub release](https://github.com/fstubner/netscli/releases/latest) as of v0.2.1:
+Prebuilt installers are attached to every [GitHub release](https://github.com/fstubner/netscli/releases/latest):
 
-- **Windows**: `netscli-gui-windows-x86_64.msi` — recommended install path is `winget install fstubner.netscli.gui` because winget verifies the published installer hash. Direct MSI installs are currently unsigned and may show Windows warnings. WebView2 ships preinstalled on Windows 10/11; if the app fails to start, [install the Evergreen runtime](https://developer.microsoft.com/microsoft-edge/webview2/).
+- **Windows**: `netscli-gui-windows-x86_64.msi` — recommended install path is `winget install netscli-gui` because winget verifies the published installer hash. Direct MSI installs are currently unsigned and may show Windows warnings. WebView2 ships preinstalled on Windows 10/11; if the app fails to start, [install the Evergreen runtime](https://developer.microsoft.com/microsoft-edge/webview2/).
 - **macOS**: `netscli-gui-macos-aarch64.dmg` (Apple Silicon) or `netscli-gui-macos-x86_64.dmg` (Intel). Currently **unsigned** — first launch will show "unverified developer". Right-click → Open to bypass Gatekeeper, or run `xattr -dr com.apple.quarantine /Applications/NetsCLI.app`. Notarized build is tracked separately.
 - **Linux**: `netscli-gui-linux-x86_64.deb` (Debian/Ubuntu) or `netscli-gui-linux-x86_64.AppImage` (any distro; `chmod +x` and run).
 

@@ -40,6 +40,11 @@ const canonicalUrl =
 // changes, the schema updates automatically.
 const softwareApp = {
   '@type': 'SoftwareApplication',
+  // A stable identity for the software, so the docs pages can reference this
+  // one entity instead of each restating the product's details. The docs
+  // side is components/starlight/Head.astro; both build the id the same way
+  // from meta.domain, and a change here has to change there.
+  '@id': `${meta.domain}/#software`,
   name: meta.siteName,
   url: meta.domain,
   downloadUrl: `${site.hero.sourceUrl}/releases/latest`,
