@@ -129,7 +129,13 @@ html[data-theme='light'][data-docs-scrolled='true'] header.header::after {
    *
    * `order` rather than a second markup slot, so one component still renders
    * one search. No auto margin here either -- two auto margins on one flex
-   * row split the free space between them, and the seam is .docs-nav-links. */
+   * row split the free space between them.
+   *
+   * The seam moves for this band. Full width it sits on .docs-header-search,
+   * which is the first element of the right-hand group; here search is an
+   * icon that has already moved into the right cluster by `order`, so the
+   * links carry it instead. Without that the bar has no seam at all between
+   * 900px and 72rem and every element bunches to the left. */
   .docs-header-search {
     order: 2;
     display: flex;
@@ -138,6 +144,10 @@ html[data-theme='light'][data-docs-scrolled='true'] header.header::after {
     max-width: 2.5rem;
     min-width: 2.5rem;
     margin-inline: 0;
+  }
+
+  .docs-nav-links {
+    margin-inline-start: auto;
   }
 
   .docs-header-theme {

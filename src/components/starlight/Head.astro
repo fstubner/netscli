@@ -1,0 +1,79 @@
+---
+/**
+ * Starlight's own Head, plus structured data for the docs pages.
+ *
+ * The landing page and the changelog get their JSON-LD from
+ * layouts/Page.astro: a SoftwareApplication node and a FAQPage built from
+ * the same `site` data the visible FAQ renders. Starlight does not use that
+ * layout, so until this file existed the eleven docs pages -- the ones that
+ * actually answer a question someone typed -- shipped no structured data at
+ * all. Only the landing page did.
+ *
+ * What is added here, per page:
+ *
+ *   TechArticle    the page itself, with its own frontmatter title and
+ *                  description, pointing back at the software it documents.
+ *   BreadcrumbList  Docs > <section> > <page>, matching the sidebar group
+ *                  the page sits in, so a result can show where it lives.
+ *
+ * `isPartOf` ties every docs page to the same SoftwareApplication `@id` the
+ * landing page declares, rather than restating the software's details on
+ * each page. One entity, described once, referenced everywhere.
+ */
+import Default from '@astrojs/starlight/components/Head.astro';
+import { meta } from '../../data/site-content/meta';
+import { docsSidebar } from '../../data/site-content/docs';
+
+const route = Astro.locals.starlightRoute;
+const entry = route.entry;
+
+const title = entry?.data?.title ?? route.siteTitle ?? meta.siteName;
+const description = entry?.data?.description ?? meta.description;
+
+// Trailing slash kept: it is what `canonicalPath` emits and what the sitemap
+// lists, and a schema URL that disagrees with the canonical is a second
+// identity for one page.
+const pageUrl = new URL(Astro.url.pathname, meta.domain).href;
+
+// Which sidebar group the page sits in, for the breadcrumb's middle rung.
+// Matching on the link rather than the slug because docs.ts writes links
+// with the leading and trailing slash this compares against.
+const section = docsSidebar.find((group) =>
+  group.items.some((item) => item.link === Astro.url.pathname),
+)?.label;
+
+const softwareId = `${meta.domain}/#software`;
+
+const breadcrumb = {
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Docs', item: `${meta.domain}/docs/` },
+    ...(section ? [{ '@type': 'ListItem', position: 2, name: section }] : []),
+    { '@type': 'ListItem', position: section ? 3 : 2, name: title, item: pageUrl },
+  ],
+};
+
+const techArticle = {
+  '@type': 'TechArticle',
+  '@id': pageUrl,
+  headline: title,
+  name: title,
+  description,
+  url: pageUrl,
+  inLanguage: 'en',
+  isPartOf: { '@id': softwareId },
+  about: { '@id': softwareId },
+  author: { '@type': 'Person', name: meta.author.name, url: meta.author.url },
+  publisher: { '@type': 'Person', name: meta.author.name, url: meta.author.url },
+  image: meta.ogImage,
+};
+
+const ldJson = JSON.stringify(
+  { '@context': 'https://schema.org', '@graph': [techArticle, breadcrumb] },
+  null,
+  2,
+);
+---
+
+<Default><slot /></Default>
+<script is:inline type="application/ld+json" set:html={ldJson} />

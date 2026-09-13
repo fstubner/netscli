@@ -49,6 +49,11 @@ export default defineConfig({
         // Upstream's is a native <select>; its dropdown is drawn by the OS
         // and cannot be styled or positioned. See ThemeControl.astro.
         ThemeSelect: './src/components/starlight/ThemeSelect.astro',
+        // Wraps Starlight's own Head and appends per-page JSON-LD. The
+        // landing page and changelog get theirs from layouts/Page.astro,
+        // which Starlight does not use, so without this the eleven docs
+        // pages shipped no structured data at all.
+        Head: './src/components/starlight/Head.astro',
       },
       // One file per region of the docs shell. None uses !important (the five
       // token remaps in code.css excepted, for inline styles): Starlight's own

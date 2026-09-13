@@ -102,16 +102,26 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
       filter: var(--ui-mark-filter);
     }
 
-    /* The bar is two groups: identity and search on the left, navigation and
-       the theme control on the right. The auto margin is the seam.
+    /* The bar is two groups: identity on the left, then search, navigation
+       and the theme control together on the right. The auto margin is the
+       seam, and it sits on the search box because search is the first
+       element of the right-hand group.
      *
-     * It used to sit on the wordmark, which put the whole gap immediately
-     * after it -- and since search is the next element, search came to rest
-     * near the middle of the bar, reading as a stray control belonging to
-     * neither side. Measured at a 1367px bar: search at x=704, which is the
-     * centre to within a few pixels. */
-    .docs-nav-links {
+     * Two earlier placements are worth not repeating. On the wordmark, the
+     * whole gap landed immediately after it, and since search was the next
+     * element search came to rest near the middle of the bar, reading as a
+     * stray control belonging to neither side -- measured at a 1367px bar,
+     * search at x=704, the centre to within a few pixels. On .docs-nav-links,
+     * search stayed pinned beside the wordmark at the far left, a long way
+     * from the navigation it belongs with.
+     *
+     * DOM order is unchanged: search still precedes the nav links, so it is
+     * reachable by keyboard before six nav items rather than after them. */
+    .docs-header-search {
       margin-inline-start: auto;
+    }
+
+    .docs-nav-links {
       flex: 0 0 auto;
       display: flex;
       align-items: center;

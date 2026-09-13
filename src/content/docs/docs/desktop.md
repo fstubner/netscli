@@ -5,6 +5,22 @@ description: NetsCLI Desktop guide for tabs, filters, details, history, settings
 
 NetsCLI Desktop is the interactive interface for reviewing network results. It is built for users who want tables, filters, row details, history, exports, and multiple operation tabs open at once.
 
+![Port scan results in NetsCLI Desktop, with the details pane open below the table showing the banner and raw response for the selected row](/assets/gui-scan.png)
+
+*Port scan. The details pane carries the banner, headers and raw response for the selected row.*
+
+![Host discovery in NetsCLI Desktop, with several operation tabs open along the tab strip](/assets/gui-discover.png)
+
+*Discover. Every row records how the host was found, and tabs keep several investigations open at once.*
+
+![A DNS lookup in NetsCLI Desktop, one row per record with type and value columns](/assets/gui-dns.png)
+
+*DNS lookup. Type and value per row, for every standard record type.*
+
+![The interfaces view in NetsCLI Desktop, each row showing state, MAC address and assigned addresses](/assets/gui-interfaces.png)
+
+*Interfaces. Each row shows state, MAC, and every assigned address.*
+
 ## When to use the desktop app
 
 Use the desktop app when:
