@@ -8,6 +8,15 @@ export const hero: Hero = {
   // information. The platform list is the part a visitor cannot get anywhere
   // else above the fold.
   badge: 'Windows · Linux · macOS',
+  // The badge becomes `v0.3.1 · What changed →` once the release lookup that
+  // already runs for the download counter confirms a version, and the version
+  // leaves the metrics line below the headline -- it was the least metric-like
+  // thing on a line of metrics, and it now has somewhere to point.
+  //
+  // The platform list above stays as the fallback: no extra request is made
+  // for this, but the one it rides on can be rate-limited or fail, and a badge
+  // that renders as nothing is worse than the string it replaced.
+  releaseLink: '/changelog/',
   // The H1 is the strongest on-page signal after the title, and this one used
   // to be "A modern network scanner" -- no brand, no differentiator, and
   // "modern" is not a word anyone searches for. Naming the surfaces says what

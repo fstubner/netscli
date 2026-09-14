@@ -13,7 +13,15 @@ const defaultDownload = heroDownloads[0];
 ---
 <div class="hero-frame">
 <div class="hero">
-  <p class="badge">{hero.badge}</p>
+  {hero.releaseLink
+    ? (
+      /* Rendered with the static badge text, not with a version. The version
+         arrives from the release lookup in scripts/landing-page.ts, which may
+         be rate-limited or fail; this way the badge is never empty and never
+         names a release that was not confirmed. */
+      <a class="badge badge-release" id="hero-release-badge" href={hero.releaseLink}>{hero.badge}</a>
+    )
+    : <p class="badge">{hero.badge}</p>}
   <h1>{hero.heading}</h1>
   <p class="sub">{hero.subhead}</p>
 
@@ -24,16 +32,10 @@ const defaultDownload = heroDownloads[0];
     </a>
     <span class="sep" aria-hidden="true" id="metrics-sep" hidden>·</span>
     <a href={`https://github.com/${social.repo}/releases`} id="downloads" hidden></a>
-    <span class="sep" aria-hidden="true" id="version-sep" hidden>·</span>
-    {/* Empty and hidden, like every other metric beside it.
-        It used to ship the version from the GUI package.json, which is the
-        version being developed, not the one released -- the page advertised
-        v0.3.0 while the latest release was v0.2.6. Its siblings were already
-        hidden-until-confirmed for exactly this reason; this one was not, so a
-        rate-limited or failed GitHub call left the wrong number on screen
-        indefinitely rather than showing nothing. Unauthenticated GitHub is 60
-        requests an hour per IP and each load spends two. */}
-    <a href={`https://github.com/${social.repo}/releases/latest`} id="latest-version" hidden></a>
+    {/* The version used to sit here, between the download count and the
+        source link. It has moved into the badge above the headline, where it
+        can carry the release notes link with it; this line is metrics only
+        again. */}
     <span class="sep" aria-hidden="true" id="source-sep" hidden>·</span>
     <a class="plain" href={hero.sourceUrl}>
       <svg class="gh-icon" viewBox="0 0 16 16" fill="currentColor" style="vertical-align:-2px;margin-right:3px">
@@ -148,6 +150,29 @@ const defaultDownload = heroDownloads[0];
 .hero .badge{
   display:inline-block;font-size:.6875rem;font-weight:600;
   letter-spacing:.06em;text-transform:uppercase;color:var(--ui-text-muted);margin-bottom:16px;
+}
+/* The release variant of the badge. Not uppercase: the badge's own
+   text-transform would render the tag as "V0.3.1", and a version string is a
+   literal -- it has a case of its own. Sized a step up from the platform list
+   it replaces because it is now a link with a destination, and styled as a
+   quiet one: the accent belongs to the install button below it, and a second
+   accent-coloured thing directly above the headline competes with it. */
+.hero .badge-release{
+  text-transform:none;
+  letter-spacing:.005em;
+  font-size:.78125rem;
+  font-weight:620;
+  color:var(--ui-text-muted);
+  text-decoration:none;
+  padding:3px 10px;
+  border:1px solid var(--ui-chip-border);
+  border-radius:999px;
+  background:var(--ui-chip-bg);
+}
+.hero .badge-release:hover,
+.hero .badge-release:focus-visible{
+  color:var(--ui-text-strong);
+  border-color:rgba(var(--ui-accent-rgb),.42);
 }
 .hero h1{
   font-size:clamp(1.75rem,4vw,2.75rem);font-weight:700;color:var(--ui-text-strong);
