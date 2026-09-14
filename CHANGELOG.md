@@ -454,63 +454,6 @@ that reported success while doing nothing.
   Search Console data rather than guesswork: whether there is a `netscan`
   command, and whether this replaces nmap and has a terminal UI.
 
-### Changed (internal)
-
-- **The release pipeline verifies before it commits to anything.** The
-  three crates are now published in one command, so cargo packages and
-  compiles all of them before uploading any -- previously an upload of
-  `netscli-core` could succeed and leave that version permanent on
-  crates.io, which has no unpublish, while a later crate failed to package.
-  CI runs the same command as a dry run on every push, so packaging is
-  exercised long before a release rather than for the first time during
-  one. Release Drafter also resolves its version from tags instead of from
-  the last published release, which had it proposing v0.2.7 for a repo
-  already tagged v0.3.0.
-
-- **The Tauri render suite can run.** It had never passed: every run ended
-  at session creation, because msedgedriver looks for the debug port in a
-  `DevToolsActivePort` file inside its own temporary profile while wry
-  writes that file into Tauri's. The harness now starts the app itself and
-  attaches to it, which skips the lookup entirely. It does not pass yet --
-  the remaining failures are assertions to triage -- but it drives the real
-  app for the first time, and the throughput bug above is what it found.
-
-- **GUI architecture split into maintainable ownership modules.**
-  `App.tsx` and the old single CSS file were decomposed into workspace
-  state, tool presentation helpers, shell components, result/detail
-  components, Tauri services, and layered style files. The UI behavior
-  stays production-data driven; no mock/sample data is shipped in the
-  app.
-- **Core, CLI, TUI, MCP, and Tauri internals reduced from monolithic
-  files into facades plus focused modules.** The public Rust API, CLI
-  syntax, MCP schema, Tauri command payloads, GUI data shape, and SQLite
-  schema remain stable.
-- **CI tightened for future changes.** PR CI now includes GUI unit tests
-  before the GUI build, and a separate Tauri render workflow can run
-  manually, nightly, or on GUI/Tauri-related pull requests.
-- **Packaging templates and release workflows audited.** Release workflows
-  use the pinned Rust toolchain, AUR templates include runtime dependencies
-  and license installation, Winget/Scoop/Homebrew reference manifests were
-  refreshed, and packaging validation commands were added to the release
-  checklist.
-- **CI gates report unconditionally**, so branch protection can require them,
-  and both required checks were closed against a job that fails without
-  failing the gate. ([#161](https://github.com/fstubner/netscli/pull/161),
-  [#187](https://github.com/fstubner/netscli/pull/187))
-- **The end-to-end suite can now fail.** Several scenarios were structurally
-  incapable of it. ([#199](https://github.com/fstubner/netscli/pull/199))
-- **The Tauri render suite is schedule-only** and no longer gates releases.
-  ([#178](https://github.com/fstubner/netscli/pull/178))
-- **A dead-CSS budget runs in CI**, holding the docs override stack at its
-  current 126 provably shadowed declarations.
-  ([#207](https://github.com/fstubner/netscli/pull/207))
-- **Node 22, jsdom 30, ESLint 10, react-hooks 7**, and three Rust dependency
-  bumps. ([#187](https://github.com/fstubner/netscli/pull/187)–[#189](https://github.com/fstubner/netscli/pull/189))
-- **Release pipeline hardened**: tag validation on the AUR jobs, a checksum
-  that could be contaminated by progress output, and the publish long tail.
-  ([#158](https://github.com/fstubner/netscli/pull/158),
-  [#200](https://github.com/fstubner/netscli/pull/200))
-
 ## [0.2.6] — 2026-05-06
 
 ### Fixed
@@ -531,23 +474,6 @@ that reported success while doing nothing.
   explicit `core:window:allow-close/minimize/maximize/unmaximize/start-dragging`
   grants; the app was missing its capabilities config entirely.
   Added `src-tauri/capabilities/main.json`. (#62)
-
-### Changed (internal)
-
-- **Major refactor of TUI / CLI organization** ([#63](https://github.com/fstubner/netscli/pull/63)–[#67](https://github.com/fstubner/netscli/pull/67)):
-  - `apps/netscli-cli/src/main.rs` shrank from 1870 → 527 lines (-72%).
-  - `apps/netscli-cli/src/tui.rs` (2226 lines) decomposed into
-    a `tui/` module with 8 focused files (state, events, widgets,
-    palette, command_catalog, config, history, mod).
-  - `apps/netscli-gui/src/App.tsx` shrank from 1480 → 931 lines (-37%)
-    via per-tab views in `views/*View.tsx`.
-  - `formatter.rs` renamed to `tui_formatter.rs` for naming
-    consistency with `tui_export.rs`, `tui_settings.rs`.
-  - All behavior-preserving; 25 tests pass on every PR's 3-OS matrix.
-- **CI runner-minute spend cut by ~70% per PR** by collapsing the
-  `release-build` matrix to ubuntu-only on PRs (full 3-OS only on
-  push to main) and adding `paths-ignore` for docs/site/packaging
-  changes. ([#61](https://github.com/fstubner/netscli/pull/61))
 
 ## [0.2.5] — 2026-05-05
 
