@@ -206,7 +206,12 @@ export function renderMarkdown(
         i += 1;
         continue;
       }
-      const depth = Math.min(heading[1].length + 2, 5);
+      // The card's own title is an <h2>, so body headings start at h3 and the
+      // document reads h2 -> h3 -> h4. This used to be `length + 2` capped at
+      // 5, which turned CHANGELOG.md's `###` sections into <h5> and skipped
+      // two levels on every release card -- the one accessibility failure on
+      // the changelog page.
+      const depth = Math.min(Math.max(heading[1].length, 3), 5);
       const node = el(`h${depth}`, 'release-heading');
       appendInline(node, normalizeReleaseHeading(heading[2]), repo);
       root.append(node);
