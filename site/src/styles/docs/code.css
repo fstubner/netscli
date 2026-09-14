@@ -226,24 +226,40 @@ html[data-theme='light'] .sl-markdown-content .expressive-code .frame::before {
 }
 
 /* On a phone the button is always visible -- there is no hover to reveal it
-   -- and it is opaque, so left over the first line it hides code. Untitled
-   blocks therefore keep some air above the code for it.
+   -- and it is opaque, so anywhere over the code it hides a line. It moves
+   out of the block entirely here, into space above it.
  *
- * The reservation used to be the full button plus 0.5rem, which read as an
- * empty band above every short command: two lines of space to hold one
- * button, on the screens with the least room. The button is smaller here now
- * and the air is trimmed to match, so the gap is a margin rather than a row.
+ * Two earlier attempts reserved room INSIDE the frame instead: first the
+ * full button plus 0.5rem, then a trimmed 26.4px. Both read as an empty band
+ * above every one-line command, on the screens with the least room to spare,
+ * because the button was still over the code and the code had to get out of
+ * its way.
  *
- * Not removed altogether: with no reservation the button sits on top of the
- * first line, and `winget install netscli` is exactly the kind of one-line
- * block where that covers the part you came to read. */
+ * HOW IT LEAVES A CLIPPING PARENT. `.copy` is a DOM child of `.frame`, and
+ * the frame is `overflow: hidden` for its rounded corners, so a negative
+ * offset would simply be cut off. Un-positioning the frame here hands
+ * `.copy` a containing block further up -- the `.expressive-code` wrapper --
+ * and an absolutely positioned element is not clipped by an intermediate
+ * ancestor's overflow when its containing block sits above that ancestor.
+ * The frame keeps its clipping for the code surface itself.
+ *
+ * Safe because `.copy` is the only thing anchored to the frame: its own
+ * `.feedback` is positioned against `.copy`, and the accent `::before` that
+ * used to sit on the frame no longer paints. */
 @media (max-width: 700px) {
   .sl-markdown-content .expressive-code {
     --ui-code-copy-size: 1.5rem;
     --ui-code-copy-inset: 0.35rem;
+    position: relative;
+    padding-block-start: calc(var(--ui-code-copy-size) + 0.4rem);
   }
 
-  .sl-markdown-content .expressive-code .frame:not(.has-title) pre {
-    padding-block-start: calc(var(--ui-code-copy-size) + 0.15rem);
+  .sl-markdown-content .expressive-code .frame {
+    position: static;
+  }
+
+  .sl-markdown-content .expressive-code .copy {
+    inset-block-start: 0;
+    inset-inline-end: 0;
   }
 }
