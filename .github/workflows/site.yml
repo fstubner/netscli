@@ -162,6 +162,21 @@ jobs:
       - name: Rendered contrast sweep
         run: npm run check:contrast
 
+      # Lighthouse across every built route, with a floor per category.
+      #
+      # Catches the class of regression the checks above cannot see at all: a
+      # hero image shipped without dimensions, a render-blocking script, a
+      # heading level skipped inside generated markup. The last of those was
+      # live on the changelog page and no existing gate reported it -- axe
+      # passes it, and the contrast sweep only reads colour.
+      #
+      # The performance floor sits at 85 rather than near the 100 the site
+      # scores, because it is the one number here that moves with how busy the
+      # machine is: the same three pages measured 91-93 under load and 100
+      # idle, on identical code. See the floors in the script for the numbers.
+      - name: Lighthouse
+        run: npm run check:lighthouse
+
   # ─── Required status check ────────────────────────────────────────────
   # The only job here that should be marked required in branch protection.
   # See the equivalent note in ci.yml.
