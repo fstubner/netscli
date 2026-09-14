@@ -1,3 +1,13 @@
+declare module 'virtual:starlight/components/EditLink' {
+  const component: any;
+  export default component;
+}
+
+declare module 'virtual:starlight/components/LastUpdated' {
+  const component: any;
+  export default component;
+}
+
 declare module 'virtual:starlight/components/MobileTableOfContents' {
   const component: any;
   export default component;

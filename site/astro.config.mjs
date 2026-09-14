@@ -37,6 +37,17 @@ export default defineConfig({
       title: docsTitle,
       description: docsDescription,
       disable404Route: true,
+      // Both are Starlight's own components (LastUpdated.astro, EditLink.astro)
+      // and cost one line each. The date comes from git, which is why the site
+      // workflow already checks out with `fetch-depth: 0` -- it does that for
+      // check:changelog, and without full history every page would report the
+      // date of the shallow clone instead of its own last edit.
+      lastUpdated: true,
+      editLink: {
+        // Starlight appends the page's path within the content collection, so
+        // this points at the site/ subdirectory rather than the repo root.
+        baseUrl: `https://github.com/${social.repo}/edit/main/site/`,
+      },
       logo: {
         src: docsLogo,
         replacesTitle: true,
@@ -54,6 +65,11 @@ export default defineConfig({
         // which Starlight does not use, so without this the eleven docs
         // pages shipped no structured data at all.
         Head: './src/components/starlight/Head.astro',
+        // Adds a "Copy page" control beside the title, backed by the
+        // /docs/<page>.md routes. Wraps rather than replaces: it still
+        // renders the same <h1 id="_top"> the skip link and the table of
+        // contents anchor to.
+        PageTitle: './src/components/starlight/PageTitle.astro',
       },
       // One file per region of the docs shell. None uses !important (the five
       // token remaps in code.css excepted, for inline styles): Starlight's own
