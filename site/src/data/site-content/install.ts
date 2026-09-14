@@ -101,6 +101,9 @@ export const installByPlatform: Record<Platform, PlatformInstall> = {
     ],
   },
   linux: {
+    /* Distro-agnostic first, then Homebrew, then the Arch-only route. Same
+     * reasoning as the desktop list above: AUR sat second, ahead of a package
+     * manager that works on every distro. */
     cli: [
       {
         label: 'Install script',
@@ -108,18 +111,25 @@ export const installByPlatform: Record<Platform, PlatformInstall> = {
           INSTALL_SH_COMMAND,
       },
       {
-        label: 'AUR (Arch)',
-        command: 'yay -S netscli-bin',
-      },
-      {
         label: 'Homebrew',
         command: 'brew tap fstubner/tap && brew install netscli',
       },
-    ],
-    desktop: [
       {
         label: 'AUR (Arch)',
-        command: 'yay -S netscli-gui-bin',
+        command: 'yay -S netscli-bin',
+      },
+    ],
+    /* Debian and Ubuntu first, then a distro-agnostic AppImage, then Arch.
+     *
+     * The first entry is the recommended one and renders as the big card, so
+     * the order is a recommendation rather than a list. It used to lead with
+     * `yay -S netscli-gui-bin`, which recommended Arch to everyone running
+     * Linux -- a minority path presented as the default, with the .deb most
+     * readers actually wanted buried two rows below it. */
+    desktop: [
+      {
+        label: 'Debian / Ubuntu',
+        href: `${RELEASE_DOWNLOAD}/netscli-gui-linux-x86_64.deb`,
       },
       {
         label: 'AppImage',
@@ -127,8 +137,8 @@ export const installByPlatform: Record<Platform, PlatformInstall> = {
         hint: 'Any distro — chmod +x and run',
       },
       {
-        label: 'Debian / Ubuntu',
-        href: `${RELEASE_DOWNLOAD}/netscli-gui-linux-x86_64.deb`,
+        label: 'AUR (Arch)',
+        command: 'yay -S netscli-gui-bin',
       },
     ],
   },

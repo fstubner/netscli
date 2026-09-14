@@ -82,6 +82,11 @@ const markdownHref = `/docs/${slug}.md`;
     justify-content: space-between;
     gap: 1rem;
     flex-wrap: wrap;
+    /* Starlight's .sl-container is itself a flex container, so without this
+       the row is a flex ITEM and shrinks to fit its contents -- leaving
+       `space-between` nothing to distribute, and the button jammed against
+       the title instead of sitting at the right edge. */
+    width: 100%;
   }
   h1 {
     margin-top: 1rem;
@@ -113,9 +118,12 @@ const markdownHref = `/docs/${slug}.md`;
     border-color: var(--sl-color-gray-4);
     background: var(--sl-color-gray-6);
   }
+  /* The site's accent, not Starlight's green. The two are different greens
+     and the difference shows: --sl-color-green is the framework's stock hue,
+     while everything else on this page that means "good" uses --ui-accent. */
   .copy-page[data-state='copied'] {
-    color: var(--sl-color-green-high);
-    border-color: var(--sl-color-green);
+    color: var(--ui-accent-bright);
+    border-color: rgba(var(--ui-accent-rgb), 0.48);
   }
   .copy-page[data-state='failed'] {
     color: var(--sl-color-red-high);

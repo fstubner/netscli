@@ -41,14 +41,19 @@
   box-shadow: none;
 }
 
-/* A 2px accent rule along the top edge. */
+/* A 1px accent rule along the top edge.
+ *
+ * Was 2px. At that weight it read as a coloured header band rather than a
+ * hairline, and the same accent at the same weight underlined every table
+ * header -- so two unrelated elements were competing for the eye with the
+ * loudest colour on the page. Both are 1px now (see tables.css). */
 .sl-markdown-content .expressive-code .frame::before {
   content: "";
   position: absolute;
   inset-block-start: 0;
   inset-inline: 0;
   z-index: 1;
-  height: 2px;
+  height: 1px;
   background: rgba(var(--ui-accent-rgb), 0.55);
 }
 
@@ -196,12 +201,12 @@ html[data-theme='light'] .sl-markdown-content .expressive-code .frame::before {
 }
 
 .sl-markdown-content .expressive-code .copy:has(.feedback.show) button {
-  border-color: rgba(63, 185, 80, 0.4);
-  color: #3fb950;
+  border-color: rgba(var(--ui-accent-rgb), 0.4);
+  color: var(--ui-accent-bright);
 }
 
 .sl-markdown-content .expressive-code .copy:has(.feedback.show) button::after {
-  background: #3fb950;
+  background: var(--ui-accent-bright);
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg aria-hidden='true' viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 8.2 6.1 11 13 4'/%3E%3C/svg%3E");
   mask-image: url("data:image/svg+xml,%3Csvg aria-hidden='true' viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 8.2 6.1 11 13 4'/%3E%3C/svg%3E");
 }
@@ -221,10 +226,25 @@ html[data-theme='light'] .sl-markdown-content .expressive-code .frame::before {
   }
 }
 
-/* On a phone the always-visible button would sit on the first line, so
-   untitled blocks keep a line of air above the code for it. */
+/* On a phone the button is always visible -- there is no hover to reveal it
+   -- and it is opaque, so left over the first line it hides code. Untitled
+   blocks therefore keep some air above the code for it.
+ *
+ * The reservation used to be the full button plus 0.5rem, which read as an
+ * empty band above every short command: two lines of space to hold one
+ * button, on the screens with the least room. The button is smaller here now
+ * and the air is trimmed to match, so the gap is a margin rather than a row.
+ *
+ * Not removed altogether: with no reservation the button sits on top of the
+ * first line, and `winget install netscli` is exactly the kind of one-line
+ * block where that covers the part you came to read. */
 @media (max-width: 700px) {
+  .sl-markdown-content .expressive-code {
+    --ui-code-copy-size: 1.5rem;
+    --ui-code-copy-inset: 0.35rem;
+  }
+
   .sl-markdown-content .expressive-code .frame:not(.has-title) pre {
-    padding-block-start: calc(var(--ui-code-copy-size) + 0.5rem);
+    padding-block-start: calc(var(--ui-code-copy-size) + 0.15rem);
   }
 }

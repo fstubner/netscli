@@ -17,12 +17,15 @@ const year = new Date().getFullYear();
     That is the cost of overriding a component rather than extending it: the
     override inherits responsibility for everything the original rendered.
   */}
+  <Pagination />
+
+  {/* Below the Previous/Next cards, not above them. These are a footnote
+      about the page you just read; the pagination is where you go next, and
+      it should not be pushed down the screen by metadata. */}
   <div class="docs-page-meta">
     <LastUpdated />
     <EditLink />
   </div>
-
-  <Pagination />
 
   <div class="docs-footer-inner">
     <div>&copy; {year} {meta.author.name} · MIT</div>
@@ -118,11 +121,12 @@ const year = new Date().getFullYear();
       color: var(--sl-color-gray-1);
     }
 
+    /* Matches the landing page's footer: a third item in the same row rather
+       than a centred band of its own behind another rule. components/Footer
+       .astro is the reference -- the two footers carry the same links and the
+       same built-with line, and reading as two different components on two
+       pages of one site was the whole complaint. */
     .docs-built-with {
-      width: 100%;
-      padding-top: 1rem;
-      border-top: 1px solid var(--sl-color-hairline);
-      text-align: center;
       color: var(--sl-color-gray-3);
     }
   }
