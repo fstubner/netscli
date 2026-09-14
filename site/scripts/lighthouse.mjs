@@ -44,6 +44,8 @@
 // on it. It is the only score here that depends on how busy the machine is,
 // and it swung by nine points on identical code during one afternoon.
 
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import process from 'node:process';
 import { join } from 'node:path';
 
@@ -118,8 +120,20 @@ async function audit(chromePort, route) {
   return result.lhr;
 }
 
+// A profile directory we own, so chrome-launcher does not create -- or try to
+// delete -- one of its own.
+//
+// Its `destroyTmp` runs `rmSync` on the temp profile from the child's exit
+// handler, and on Windows Chrome has not always released the directory by
+// then: the run prints its table, passes, and THEN throws EPERM from a
+// callback no `await` can wrap, leaving a non-zero exit on a gate that
+// succeeded. Passing our own directory skips that path entirely. It lives
+// under the OS temp dir, so the OS cleans it up.
+const profileDir = mkdtempSync(join(tmpdir(), 'netscli-lh-'));
+
 const chrome = await chromeLauncher.launch({
   chromeFlags: ['--headless=new', '--no-sandbox', '--disable-gpu'],
+  userDataDir: profileDir,
 });
 
 const { cleanup } = await startPreview({

@@ -41,16 +41,20 @@
   box-shadow: none;
 }
 
-/* A 2px accent rule along the top edge. */
-.sl-markdown-content .expressive-code .frame::before {
-  content: "";
-  position: absolute;
-  inset-block-start: 0;
-  inset-inline: 0;
-  z-index: 1;
-  height: 2px;
-  background: rgba(var(--ui-accent-rgb), 0.55);
-}
+/* No accent rule along the top edge.
+ *
+ * There was one, at 2px and then at 1px. Thinning it helped and did not fix
+ * the actual problem, which is repetition rather than weight: a docs page
+ * carries six or more code blocks, and an accent worn by every one of them
+ * marks nothing. The same green was also underlining every table header,
+ * tinting every inline code chip, and colouring the syntax highlighting
+ * inside the blocks themselves.
+ *
+ * The frame's own border already says where a code block starts and ends, so
+ * the rule was decoration on top of a boundary that existed. The accent is
+ * kept for things that are interactive or stateful -- links, the active
+ * sidebar item, focus rings, the copied state -- where being the loudest
+ * colour on the page is the point. */
 
 html[data-theme='light'] .sl-markdown-content .expressive-code .frame {
   border-color: rgba(var(--ui-hairline-rgb), 0.13);
@@ -196,12 +200,12 @@ html[data-theme='light'] .sl-markdown-content .expressive-code .frame::before {
 }
 
 .sl-markdown-content .expressive-code .copy:has(.feedback.show) button {
-  border-color: rgba(63, 185, 80, 0.4);
-  color: #3fb950;
+  border-color: rgba(var(--ui-accent-rgb), 0.4);
+  color: var(--ui-accent-bright);
 }
 
 .sl-markdown-content .expressive-code .copy:has(.feedback.show) button::after {
-  background: #3fb950;
+  background: var(--ui-accent-bright);
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg aria-hidden='true' viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 8.2 6.1 11 13 4'/%3E%3C/svg%3E");
   mask-image: url("data:image/svg+xml,%3Csvg aria-hidden='true' viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 8.2 6.1 11 13 4'/%3E%3C/svg%3E");
 }
@@ -221,10 +225,41 @@ html[data-theme='light'] .sl-markdown-content .expressive-code .frame::before {
   }
 }
 
-/* On a phone the always-visible button would sit on the first line, so
-   untitled blocks keep a line of air above the code for it. */
+/* On a phone the button is always visible -- there is no hover to reveal it
+   -- and it is opaque, so anywhere over the code it hides a line. It moves
+   out of the block entirely here, into space above it.
+ *
+ * Two earlier attempts reserved room INSIDE the frame instead: first the
+ * full button plus 0.5rem, then a trimmed 26.4px. Both read as an empty band
+ * above every one-line command, on the screens with the least room to spare,
+ * because the button was still over the code and the code had to get out of
+ * its way.
+ *
+ * HOW IT LEAVES A CLIPPING PARENT. `.copy` is a DOM child of `.frame`, and
+ * the frame is `overflow: hidden` for its rounded corners, so a negative
+ * offset would simply be cut off. Un-positioning the frame here hands
+ * `.copy` a containing block further up -- the `.expressive-code` wrapper --
+ * and an absolutely positioned element is not clipped by an intermediate
+ * ancestor's overflow when its containing block sits above that ancestor.
+ * The frame keeps its clipping for the code surface itself.
+ *
+ * Safe because `.copy` is the only thing anchored to the frame: its own
+ * `.feedback` is positioned against `.copy`, and the accent `::before` that
+ * used to sit on the frame no longer paints. */
 @media (max-width: 700px) {
-  .sl-markdown-content .expressive-code .frame:not(.has-title) pre {
-    padding-block-start: calc(var(--ui-code-copy-size) + 0.5rem);
+  .sl-markdown-content .expressive-code {
+    --ui-code-copy-size: 1.5rem;
+    --ui-code-copy-inset: 0.35rem;
+    position: relative;
+    padding-block-start: calc(var(--ui-code-copy-size) + 0.4rem);
+  }
+
+  .sl-markdown-content .expressive-code .frame {
+    position: static;
+  }
+
+  .sl-markdown-content .expressive-code .copy {
+    inset-block-start: 0;
+    inset-inline-end: 0;
   }
 }

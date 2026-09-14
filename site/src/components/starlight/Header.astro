@@ -248,11 +248,11 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
 
     }
 
-    /* Same width the landing bar collapses at -- see the note on
-       .docs-nav-links below. The theme control moves into the mobile menu's
-       footer at this point (MobileMenuFooter.astro), so it is relocated
-       rather than lost. */
-    @media (max-width: 900px) {
+    /* 72rem, matching the hamburger -- see the note on .docs-nav-links below
+       for why this is no longer 900px. The theme control moves into the
+       mobile menu's footer at this point (MobileMenuFooter.astro), so it is
+       relocated rather than lost. */
+    @media (max-width: 72rem) {
       .docs-header-theme {
         display: none !important;
       }
@@ -288,19 +288,27 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
 
     }
 
-    /* 900px, matching the landing bar's own collapse in Nav.astro.
+    /* 72rem, matching the hamburger and the sidebar.
      *
-     * This was 72rem (1152px), so between 901 and 1152 the docs bar showed a
-     * hamburger while the landing bar showed the same six links -- the two
-     * halves of one site with visibly different navigation, and the shape of
-     * the bar changing under the cursor when you clicked "Docs".
+     * This was 900px, to collapse at the same width as the landing bar
+     * (Nav.astro). That traded one inconsistency for a worse one: the
+     * hamburger appears at 72rem (header.css) and the sidebar leaves at 72rem
+     * (sidebar.css), so between 901 and 1152 the docs bar showed the full six
+     * links AND a hamburger whose menu -- MobileMenuFooter.astro -- lists
+     * those same six links and the theme control. Two navigations on one
+     * screen, one of them a duplicate of the other.
      *
-     * Nothing forced the early collapse: measured at 901px the bar's contents
-     * come to 476px against 842px of room, with the wordmark at its full size
-     * and search already reduced to its icon. If you change this, change
-     * Nav.astro's `@media(max-width:900px)` with it; a media query cannot read
-     * a custom property, so the number genuinely has to be written twice. */
-    @media (max-width: 900px) {
+     * The earlier note is right that there is ROOM for the links at 901px
+     * (476px of content against 842px). Room was never the question; the
+     * question is whether a reader sees one navigation or two. Matching the
+     * hamburger wins over matching the landing bar, because the duplication
+     * is visible on a single screen and the cross-page difference is only
+     * visible by navigating between them.
+     *
+     * Nav.astro keeps its own 900px: the landing page has no sidebar and no
+     * hamburger, so nothing there duplicates its links. The two numbers are
+     * deliberately different now, and are no longer a pair to keep in step. */
+    @media (max-width: 72rem) {
       .docs-nav-links {
         display: none;
       }

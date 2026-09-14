@@ -1,0 +1,153 @@
+---
+/**
+ * Starlight's markdown wrapper, with a "Copy page" control above the content.
+ *
+ * WHY HERE RATHER THAN BESIDE THE TITLE
+ *
+ * It began as a PageTitle override, which put it in the hero band opposite
+ * the <h1>. Even right-aligned it read as floating: the hero is a gradient
+ * band with one thing in it, and a small bordered pill at the far end of it
+ * belongs to nothing. Starlight renders the page as two stacked panels --
+ * hero, then content (see ContentPanel.astro) -- so this sits at the top of
+ * the second one, with the text it copies.
+ *
+ * Moving it here also removed the PageTitle override entirely, which is the
+ * better outcome for a reason beyond tidiness: that override had to hardcode
+ * `id="_top"` on the <h1>, because Starlight's PAGE_TITLE_ID constant is not
+ * in the package's exports map, and the skip link and table of contents both
+ * anchor to it. Starlight's own PageTitle renders again now, so that literal
+ * is no longer ours to keep correct.
+ *
+ * The control is a sibling of .sl-markdown-content rather than its first
+ * child, so it does not pick up the markdown element styling that applies
+ * inside it.
+ */
+import '@astrojs/starlight/style/markdown.css';
+
+const { entry } = Astro.locals.starlightRoute;
+// 'docs/cli' -> 'cli'. The section index arrives as the bare id 'docs',
+// which the strip does not match -- see the same mapping in
+// src/pages/docs/[...slug].md.ts, which serves these files.
+const slug = entry.id === 'docs' ? 'index' : entry.id.replace(/^docs\//, '');
+const markdownHref = `/docs/${slug}.md`;
+---
+
+<div class="page-actions">
+  <button
+    type="button"
+    class="copy-page"
+    hidden
+    data-markdown-href={markdownHref}
+    aria-label="Copy this page as markdown"
+    title="Copy this page as markdown"
+  >
+    <svg aria-hidden="true" viewBox="0 0 16 16" focusable="false">
+      <path d="M5.5 2.5h7v9h-7z"></path>
+      <path d="M3.5 4.5h-1v9h7v-1"></path>
+    </svg>
+    <span class="copy-page-label">Copy page</span>
+  </button>
+</div>
+
+<div class="sl-markdown-content"><slot /></div>
+
+<script>
+  // Progressive enhancement: the button ships `hidden` and is revealed only
+  // once this has wired it. A visible control that does nothing is worse
+  // than no control.
+  document.querySelectorAll<HTMLButtonElement>('.copy-page').forEach((button) => {
+    const href = button.dataset.markdownHref;
+    if (!href || !navigator.clipboard) return;
+    button.hidden = false;
+
+    const label = button.querySelector('.copy-page-label');
+    const original = label?.textContent ?? 'Copy page';
+    let resetAt: ReturnType<typeof setTimeout> | undefined;
+
+    button.addEventListener('click', async () => {
+      const say = (text: string, state: string) => {
+        if (label) label.textContent = text;
+        button.dataset.state = state;
+        clearTimeout(resetAt);
+        resetAt = setTimeout(() => {
+          if (label) label.textContent = original;
+          delete button.dataset.state;
+        }, 2000);
+      };
+
+      try {
+        const response = await fetch(href);
+        if (!response.ok) throw new Error(String(response.status));
+        await navigator.clipboard.writeText(await response.text());
+        say('Copied', 'copied');
+      } catch {
+        // Say so rather than looking like it worked. A silent failure leaves
+        // the reader pasting whatever was on the clipboard before.
+        say('Failed', 'failed');
+      }
+    });
+  });
+</script>
+
+<style>
+  @layer starlight.core {
+    .page-actions {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    /* Empty when the script has not run, and an empty flex row would still
+       take its margin from ContentPanel's `* + *` rule. */
+    .page-actions:not(:has(button:not([hidden]))) {
+      display: none;
+    }
+
+    .copy-page {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4em;
+      padding: 0.35rem 0.7rem;
+      border: 1px solid var(--sl-color-gray-5);
+      border-radius: 7px;
+      background: transparent;
+      color: var(--sl-color-gray-2);
+      font: inherit;
+      font-size: 0.8125rem;
+      line-height: 1;
+      cursor: pointer;
+      transition:
+        color 140ms ease,
+        border-color 140ms ease,
+        background 140ms ease;
+    }
+
+    .copy-page:hover,
+    .copy-page:focus-visible {
+      color: var(--sl-color-white);
+      border-color: var(--sl-color-gray-4);
+      background: var(--sl-color-gray-6);
+    }
+
+    /* The site's accent, not Starlight's green -- they are different hues and
+       everything else here that means "good" uses --ui-accent. */
+    .copy-page[data-state='copied'] {
+      color: var(--ui-accent-bright);
+      border-color: rgba(var(--ui-accent-rgb), 0.48);
+    }
+
+    .copy-page[data-state='failed'] {
+      color: var(--sl-color-red-high);
+      border-color: var(--sl-color-red);
+    }
+
+    .copy-page svg {
+      width: 14px;
+      height: 14px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+  }
+</style>
