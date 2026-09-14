@@ -320,12 +320,15 @@ html[data-js] .release-collapsible:not(.release-expanded) .release-body::after{
 }
 /* Both margins, explicitly.
  *
- * Only `margin-top` was set, so the bottom fell through to the UA default
- * for h5 -- 1.67em, which computes to 25.65px against this font-size. A
- * heading therefore sat 18px below the previous list and 25px above its own,
- * binding it to the section it had just ended instead of the one it
- * introduces. More space above than below now, which is the relationship a
- * section heading is supposed to have. */
+ * Only `margin-top` was set, so the bottom fell through to the UA default and
+ * came out larger than the gap above. A heading therefore sat closer to the
+ * list it had just ended than to the one it introduces, binding it to the
+ * wrong section. More space above than below now, which is the relationship a
+ * section heading is supposed to have.
+ *
+ * Setting both is also what keeps this stable across heading levels: these
+ * render as <h3> today, and did render as <h5> until the heading-order fix,
+ * whose UA defaults differ. */
 .release-body .release-heading{
   color:var(--ui-text);font-size:.96rem;line-height:1.35;
   margin:26px 0 9px;
