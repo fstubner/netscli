@@ -18,498 +18,206 @@ its heading and collects entries; the date and the link go on with the tag.
 
 ## [0.3.1] — 2026-09-11
 
-The first release since 0.2.6 in May, and a large one. Four months of work on
+The first release since 0.2.6 in May, and a large one: four months of work on
 the desktop app, the shared core and the website.
 
-The features are additive -- richer port-scan results, configurable probe
-concurrency everywhere, tab management in the workspace -- and the long tail
-is fixes, most of them found by using the desktop app on a real network
-rather than by reading the code. The recurring theme in that tail is code
-that reported success while doing nothing.
+The headline is the desktop app. Everything listed under it is new to anyone
+upgrading from 0.2.6 — the old dashboard-style GUI is gone, and what replaces
+it is a different application rather than a revision of that one. The rest is
+additive work in the core, CLI and MCP server, and a long tail of fixes. The
+recurring theme in that tail is code that reported success while doing nothing.
 
 ### Added
 
-- **Tabs can be reordered.** Drag one along the strip, or move it with the
-  keyboard. The strip already had a pointer drag, but it scrolled the strip,
-  so grabbing a tab moved the viewport rather than the tab -- and no gesture
-  did the thing a tab drag is for. Drag-to-scroll still works in the space
-  around the tabs. The drop slot is decided by tab midpoints rather than
-  pixels travelled, because tabs are sized by their labels and a fixed step
-  drifts further the more you move.
-- **Clear ARP table, then discover.** A chevron beside Run offers a
-  cache-flushing variant on discover, sweep and the ARP tab — the tools where
-  a stale neighbour entry changes the answer. Clearing needs administrator
-  rights; when it fails the run is suppressed rather than quietly returning
-  the stale entries it was meant to drop.
-- **Right-click a tab to close it, its neighbours, or all of them.** Close,
-  close others, close to the right, close to the left, close all. Every item
-  acts on the tab you clicked rather than the active one — those are often
-  different — and anything that would do nothing is greyed rather than
-  hidden, so the menu keeps its shape wherever you open it. Closing cancels
-  whatever those tabs were running.
-- **Richer port scan results across every interface.** Port scans now
-  report additive status and detail fields (`open`, `closed`,
-  `filtered`, `error`, latency, banners, HTTP metadata, TLS metadata,
-  and raw previews where available) while keeping the older `open`,
-  `port`, `service`, and `error` fields intact for compatibility.
-- **GUI render automation.** The desktop app now has Tauri/WebDriver
-  render coverage for the diagnostic workspace, including tab layout,
-  top menus, toolbar actions, filtering, row selection, detail panes,
-  command preview, and status bar behavior.
+- **The desktop app is a diagnostic workspace.** NetsCLI Desktop replaces the
+  earlier dashboard with a native-like shell built around operation tabs. It
+  runs the same `netscli-core` operations as the CLI, TUI and MCP server, so
+  its results match the rest of the tool. What it does:
+  - Operation tabs you can reorder by drag or keyboard, and close individually,
+    to either side, or all at once from a right-click menu.
+  - Sortable and filterable result tables, row detail panes, and a preview of
+    the CLI command each run is equivalent to.
+  - Save a whole workspace of results to a file and reopen it later; export CSV
+    or JSON, whole or selection-only. Exported cells are escaped against
+    spreadsheet formula injection, since banners and hostnames are chosen by
+    the scanned host.
+  - Light and dark themes, and a settings dialog covering probe concurrency,
+    default and traffic interfaces, IPv4/IPv6 display preference, history and
+    save behaviour, and notification preferences.
+  - Full keyboard operation, and a refreshed icon matching the site's brand.
+- **Clear the ARP table, then discover.** A chevron beside Run offers a
+  cache-flushing variant on discover, sweep and the ARP tab — the tools where a
+  stale neighbour entry changes the answer. Clearing needs administrator
+  rights; when it fails the run is suppressed rather than quietly returning the
+  stale entries it was meant to drop.
+- **Richer port scan results across every interface.** Port scans now report
+  additive status and detail fields (`open`, `closed`, `filtered`, `error`,
+  latency, banners, HTTP metadata, TLS metadata, and raw previews where
+  available) while keeping the older `open`, `port`, `service`, and `error`
+  fields intact for compatibility.
 - **User-configurable probe concurrency.** The CLI and MCP server already
-  accepted concurrency limits; the desktop app settings and TUI settings
-  now expose the same control so users can reduce simultaneous probes on
-  fragile networks or raise them within the core safety cap.
-- **Address-family display preference in the desktop app.** The status bar
-  now prefers IPv4 by default and lets users choose IPv6-first display when
-  that better matches their environment.
+  accepted concurrency limits; the desktop app and TUI settings now expose the
+  same control, so probes can be reduced on fragile networks or raised within
+  the core safety cap.
 
 ### Changed
 
-- **A scan or inspect opened from a result starts on its own.** Right-clicking
-  a discovered host and choosing "Scan 192.168.1.5" opened a tab pre-filled
-  with that host and then waited for a Run press -- a step that asked you to
-  repeat what the click had already said.
-- **Destructive menu items are red before you hover them.** Exit had the
-  danger variant; Clear Current Results and Clear History did not, so two
-  items that throw work away looked exactly like Export CSV -- and the
-  context menu had no notion of a variant at all, so the same action looked
-  different depending on which menu you reached it through. The icon carries
-  the colour, not the label: a red row reads as an error sitting in the menu
-  rather than an ordinary item that happens to destroy something.
-- **The interface dropdown is quieter.** A row could carry three competing
-  status treatments at once — a `Primary` chip, a `Selected` chip and a
-  dot-plus-word `Up`/`Down` — with three different mint elements on the
-  selected row alone. Selection is now carried by the row highlight and
-  `aria-selected`, `Primary` is a plain label rather than a bordered chip, and
-  only `Down` is spelled out: an interface that is up is the unremarkable case,
-  and labelling every row `Up` spent width on a word that never varied.
-  Addresses are monospaced, matching the rule that monospace means "this is
-  literal".
-- **The warning icon in confirmation dialogs lost its amber box.** It sat in a
-  32px square with an amber border and wash, which read as decoration next to
-  every confirmation. It is now the icon alone, matching the packet-capture
-  notice, which had always done it that way.
-- **The app opens on Discover** rather than Scan. The first useful question
-  on an unfamiliar network is what is on it, and a scan needs a host you do
-  not have yet.
-- **Completion notifications only appear for tabs you are not looking at.**
-  On the visible tab the result arriving in the table already says the run
-  finished. Failures still report unconditionally.
-- Dependency updates: `pcap` 2.4 → 2.5, `astro`, `lucide-react`, `vitest`,
-  `@axe-core/cli`, and the vite/rollup group.
-- **Desktop app redesigned around a denser diagnostic workspace.**
-  NetsCLI Desktop moved from the earlier dashboard-style UI to a
-  native-like shell with operation tabs, compact forms, sortable and
-  filterable results, row details, CLI command previews, and status
-  summaries. The GUI continues to use the same `netscli-core`
-  operations as the CLI, TUI, and MCP server, so desktop behavior stays
-  aligned with the rest of the tool.
-- **Desktop app icon refreshed to match the current brand.** The Tauri
-  icon generator now renders the ANSI-style `N` using the same gradient
-  direction as the website/favicon, and regenerates the Windows/Tauri
-  icon assets from that source.
-- **CLI and TUI scan output now reflects richer status data.** Human
-  output stays concise, but scanned ports can show closed, filtered, and
-  error states with latency where available instead of only emphasizing
-  open ports.
-- **Windows install guidance now prefers Winget for the desktop app.**
-  Release notes and install docs call out Winget's manifest review and
-  installer hash verification as the recommended Windows path, while direct
-  GitHub Windows installers remain unsigned and may show Windows warnings
-  until code signing is added later.
-- **Website, docs, FAQ, 404 page, and changelog refreshed for the new
-  release.** The public site now uses a more consistent shell, unified code
-  and table styling, clearer search behavior, release-note summaries, and
-  a desktop-app screenshot captured from the real UI with representative
-  demo data.
-- **Linux/macOS install docs clarified.** mDNS is documented as the default
-  pure-Rust capability in published builds, while packet capture remains
-  the optional workflow that depends on libpcap/Npcap support.
-- **Website rebuilt for every screen width.** The landing page and docs were
-  swept across six widths and both themes, and the shell, navigation, contents
-  list, colour and typography were reworked to hold up at all of them. The
-  brand accent moved from a teal-green that read blue in small text to one that
-  reads green at any size, and contrast improved with it.
-  ([#190](https://github.com/fstubner/netscli/pull/190)–[#209](https://github.com/fstubner/netscli/pull/209))
-- **Search, head metadata and page titles rewritten** so the site describes
-  what it is rather than repeating adjectives.
-  ([#204](https://github.com/fstubner/netscli/pull/204))
-- **Per-PR site previews on Cloudflare Pages**, and GitHub Pages deploys are
-  manual-only. ([#165](https://github.com/fstubner/netscli/pull/165),
-  [#136](https://github.com/fstubner/netscli/pull/136))
-
 - **`netscli scan --json` now reports every port, not just the open ones.**
-  Filtering to open ports made "all closed", "all filtered" and "every
-  probe errored" the same empty array, so a script could not tell a clean
-  scan from a host that refused every probe. Each entry carries `open` and
-  `status`, so callers that want only open ports can filter for them.
-- **The MCP server now scans only local networks by default.** This is the
-  one surface driven by a model rather than by the person at the keyboard,
-  so the instruction to scan a third party can arrive from a web page or a
-  file someone else wrote — and the packets leave from your machine and
-  your IP. RFC1918, loopback, link-local and the carrier-grade NAT range
-  overlay networks use are allowed; set `NETSCLI_MCP_ALLOW_PUBLIC_TARGETS=1`
-  to reach past them.
+  Filtering to open ports made "all closed", "all filtered" and "every probe
+  errored" the same empty array, so a script could not tell a clean scan from a
+  host that refused every probe. Each entry carries `open` and `status`, so
+  callers that want only open ports can filter for them.
+- **The MCP server now scans only local networks by default.** This is the one
+  surface driven by a model rather than by the person at the keyboard, so the
+  instruction to scan a third party can arrive from a web page or a file
+  someone else wrote — and the packets leave from your machine and your IP.
+  RFC1918, loopback, link-local and the carrier-grade NAT range overlay
+  networks use are allowed; set `NETSCLI_MCP_ALLOW_PUBLIC_TARGETS=1` to reach
+  past them.
 - **Scan results returned to a model are capped.** The full probe response
   (`raw`) is no longer included and banners are truncated, both being bytes
   chosen by the scanned host.
-- **Tool failures are returned as MCP `isError` results** rather than
-  JSON-RPC errors, so a failed scan no longer reads to a client as a broken
-  server.
-- **The desktop app's CSV export escapes spreadsheet formulas.** A cell
-  beginning `=` `+` `-` or `@` is evaluated on open by Excel and
-  LibreOffice, and exported cells carry banners and hostnames the scanned
-  host chose. Values that parse as numbers are untouched, so a negative
-  latency is still a number.
+- **Tool failures are returned as MCP `isError` results** rather than JSON-RPC
+  errors, so a failed scan no longer reads to a client as a broken server.
+- **CLI and TUI scan output reflects the richer status data.** Human output
+  stays concise, but scanned ports can show closed, filtered and error states
+  with latency where available, instead of only emphasising open ports.
+- **Windows install guidance prefers Winget for the desktop app.** Winget's
+  manifest review and installer hash verification make it the recommended
+  Windows path; direct GitHub Windows installers remain unsigned and may show
+  warnings until code signing is added.
+- **Linux/macOS install docs clarified.** mDNS is the default pure-Rust
+  capability in published builds; packet capture remains the optional workflow
+  depending on libpcap/Npcap.
+- **The website and docs were rebuilt.** A consistent shell, unified code and
+  table styling, clearer search, and a layout swept across six widths and both
+  themes. The brand accent moved from a teal-green that read blue in small text
+  to one that reads green at any size.
 
 ### Fixed
 
-- **Copying the CLI command says that it did.** The button reported success
-  through an `interaction` toast, and those are off by default -- so at stock
-  settings the one action whose whole result is invisible, putting text on the
-  clipboard, gave no sign at all. The button now shows a tick for a moment,
-  borrowing the frame it already uses on hover so the only thing that changes
-  is the icon.
-- **Packet capture is greyed everywhere it is offered, not just in the menu
-  bar.** The menu bar greyed it and said why on a build that cannot capture;
-  the tab menu beside the tabs, and the picker on the empty workspace, offered
-  it as an ordinary item. Whichever one you happened to open decided whether
-  you were told. Two signals were in play -- a capability that removes an entry
-  and a reason that greys it -- and only the menu bar read the second.
-- **Stop actually stops a run now, and progress shows real counts.** Every
-  command argument was sent under its Rust name (`op_id`, `max_concurrent`)
-  where Tauri expects the camelCase form, so the keys never matched. Stop
-  failed outright — the error was swallowed, so the button looked like it
-  worked while the run carried on — and because the operation id never reached
-  the backend, no operation registered for progress events either: the bar sat
-  on its opening message for the whole run instead of counting. Found by the
-  first test to drive Stop in the app.
-- **"Open setup docs" opens something.** The button asked the system to open
-  `github.com/fstubner/netscli#packet-capture`, which the app's own URL
-  allowlist did not cover — it permitted the repository URL and paths beneath
-  it, but not a fragment — and the refusal was swallowed by a `window.open`
-  fallback that does nothing inside a desktop window. It now opens the Packet
-  Capture page on netscli.com, and a browser that cannot be opened says so
-  instead of leaving the button looking dead.
-- **A failed Stop no longer shows internal text.** It reported the backend's
-  own message, so pressing Stop could put ``invalid args `opId` for command
-  `cancel_operation` `` on screen. It now says the run may still be going and
-  that Stop is worth pressing again; the detail goes to the console.
-  The unexpected-stop message also carried a run of stray spaces from a
-  mangled line continuation.
-
-- **A crash in an operation is no longer reported as though you cancelled it.**
-  The task's result channel closes the same way whether the task was aborted or
-  panicked, and both came back as "Operation cancelled" — so a fault in the
-  scanner was indistinguishable from pressing Stop, and nothing recorded it.
-  A cancel deregisters the operation and a crash does not, which is now how the
-  two are told apart; a crash says so instead.
-- **Stopping a run no longer shows a result for it.** The in-flight guard was
-  cleared only after the backend answered, and a run that finished inside that
-  window still matched, took the success path, and wrote a result and a history
-  entry for a run that had been stopped.
-- **A refused stop says so, and stays stoppable.** The cancel call swallowed
-  its own failure, cleared the busy state and dropped the operation id, so a
-  run that could not be stopped carried on with nothing on screen saying so and
-  no way to try again. Closing a tab whose operation cannot be stopped now
-  reports it too, since there is no tab left to show it on.
-
-- **A failed export, copy or file-open no longer says nothing at all.** At
-  stock settings every failure outside a run was reported as an interaction
-  toast, and that toast defaults to off — so exporting to a folder the app
-  could not create wrote no file and showed no message, which on screen is
-  indistinguishable from success. Those failures now go to the tab's error
-  strip, which is not preference-gated; the two with no tab to attach to (the
-  progress listener and the interface poll) use a toast kind that is never
-  suppressed. Found by an independent acceptance pass.
-- **The site's small grey text was unreadable on card surfaces.** The docs
-  footer, built-with row and mobile section labels use `--sl-color-gray-3`,
-  much of it at 12px. It was raised once already to clear 4.5:1 against the
-  page background, but nothing had checked it against the slightly darker card
-  surface, where it sat at 4.44:1. It now clears every light surface.
-- **Muted text, and several status colours, were below the readability bar.**
-  Eight colour tokens failed WCAG AA (4.5:1) against surfaces they are actually
-  painted on. The worst were in the light theme, which gets far less use than
-  the dark one and had drifted furthest: the mint accent failed as text on every
-  light surface, down to 3.85:1. In the dark theme the description lines under
-  every setting in the Settings dialog sat at 4.13:1, and the red "Down" label
-  on a hovered interface row at 3.76:1. All 84 foreground/surface combinations
-  now clear 4.5:1, and a check keeps them there.
-- **The interface picker shows the address you would actually use.** Each row
-  rendered the first two addresses in whatever order the OS returned them,
-  then cut the result off mid-token to fit. On a real machine that meant every
-  row showed a truncated IPv6: Tailscale's usable `100.106.71.95/32` sat third
-  in the list and never appeared at all, and the down interfaces displayed
-  their `169.254.x` APIPA addresses. The picker now shows one address, chosen
-  by the existing IPv4/IPv6 preference — which the status bar already honoured
-  and the picker did not, so the two could disagree about the same interface.
 - **Pinging your own machine no longer reports 100% loss.** On Windows,
   `ping 127.0.0.1` — and the machine's own LAN address — timed out while the
-  system `ping` answered immediately. Two causes stacked up: raw ICMP sockets
-  need administrator rights, so an ordinary run fell back to TCP probes on
-  ports 80/443/22 and concluded a host was down when nothing answered; and a
-  Windows raw socket does not observe traffic to an address the host owns.
-  Windows now sends echoes through the IP Helper API, which needs no
-  privileges and reaches local addresses. Discover and sweep both start from
-  a ping sweep, so both returned nothing for any range covering this host.
-- **IPv6 hosts can be pinged.** `ping ::1` reported total loss because IPv6
-  had no ICMP path at all and fell through to the same TCP probe. Windows now
-  uses `Icmp6SendEcho2`.
-- **A fresh install no longer runs one probe at a time.** `Number(null)` is
-  `0` and passes an `isFinite` check, so reading an unset preference produced
-  a stored zero rather than the default: max concurrent probes came out as 1
-  instead of 256, serialising every scan, discover and sweep. Traffic
-  precision had the same fault, showing no decimals. Profiles already left at
-  1 by the broken build are repaired once on upgrade.
-- **Discover reports devices the OS already knows about.** Results now merge
-  probe replies with the neighbour table, so a device that answers ARP but
-  not ICMP is no longer missing. Each host records whether it was found by
-  probe or by neighbour, since a stale neighbour entry can outlive the device.
-- **`netscli arp --clear` no longer claims to have cleared the table when it
-  has not.** `arp -d *` on Windows prints "The requested operation requires
-  elevation" and then exits 0, so checking the exit status alone reported
-  success while nothing was touched. It now fails, with the reason, and a
-  non-zero exit.
-- **The settings dialog is centred on the window**, and its Max Concurrent
-  Probes control is themed rather than rendering in the WebView's default
-  3D-bevelled controls with duplicate spin arrows.
-- **Menu items in the run options popover respond to clicks.** An
-  unrecognised popover was torn down by the global dismissal handler before
-  its own item could fire, so the item did nothing, threw nothing and logged
-  nothing.
-- **`netscli arp --add` and `--delete` no longer claim to have changed the
-  table when they have not.** The same fault as `--clear` above, in the two
-  functions beside it: `arp -s` and `arp -d` also print "The requested
-  operation requires elevation" and exit 0, so an ordinary run printed "ARP
-  entry added for 192.0.2.77" — and `"ok": true` in JSON — having done
-  nothing. All three now share one check. `--clear` also returns an error on
-  platforms where it was never implemented, instead of reporting a cleared
-  table.
-- **The MCP server no longer says it returned everything while truncating.**
-  A capped result reported the byte count as its item count, so a 40,000-row
-  scan that returned 11,518 rows said `returned: 40000, total: 40000` beside
-  `truncated: true`.
-- **Packet captures fetched as a background MCP job are bounded like every
-  other result.** `get_pcap_capture_result` was routed before the limits that
-  strip and truncate remote text, so the one result made entirely of bytes off
-  the wire was the one that skipped them — while the blocking `capture_pcap`
-  beside it was capped.
-- **A database written by a newer netscli is refused rather than read.** The
-  version check treated a future schema as "already migrated", so an older
-  build queried tables it had never seen.
-- **The Exit item no longer flashes red on the way out**, and Packet Capture
-  is greyed with an explanation rather than hidden on builds without capture
-  support.
-- **The desktop app describes how each host was found.** A discover row from
-  the neighbour table is no longer labelled as having responded to a probe,
-  and the table carries a column for it rather than burying it in the detail
-  pane.
-- **winget publishes the version number, not the tag.** Both package
-  manifests were passed the tag including its `v`, which the action only
-  strips when the input is left empty. This is not hypothetical: `v0.2.2`
-  through `v0.2.6` are already in the public catalog that way, so
-  `winget show netscli` reports a version this project never issued, and the
-  CLI reads inconsistently beside the desktop package's `0.2.6`. Upgrades
-  still work — winget normalises a leading `v` when comparing — and the next
-  correctly-numbered release fixes what is displayed. The publish job now
-  asserts `MAJOR.MINOR.PATCH` rather than trusting the strip, because
-  winget-pkgs accepted all five without complaint and a merged manifest is
-  permanent. The same two jobs would also have failed on the documented
-  re-run path, looking for a release tagged `main`.
-- **MCP server handled one request at a time.** The read loop awaited each
-  handler before parsing the next line, so a slow scan blocked every other
-  request on the connection, including cancellation. Handlers now run
-  concurrently under a semaphore. ([#169](https://github.com/fstubner/netscli/pull/169))
-- **Reading the ARP table blocked a runtime worker.** On Windows and macOS it
-  shells out to `arp` and waits on the child process; three callers invoked it
-  straight from async code. With MCP handlers capped at 16 concurrent, sixteen
-  of these could stall every worker — including the one reading stdin, so no
-  further request could even be parsed. Moved to a blocking thread.
-  ([#196](https://github.com/fstubner/netscli/pull/196))
+  system `ping` answered immediately. Raw ICMP sockets need administrator
+  rights, so an ordinary run fell back to TCP probes on ports 80/443/22 and
+  concluded a host was down when nothing answered; and a Windows raw socket
+  does not observe traffic to an address the host owns. Windows now sends
+  echoes through the IP Helper API, which needs no privileges and reaches local
+  addresses. Discover and sweep both start from a ping sweep, so both returned
+  nothing for any range covering this host.
+- **IPv6 hosts can be pinged.** `ping ::1` reported total loss because IPv6 had
+  no ICMP path at all and fell through to the same TCP probe. Windows now uses
+  `Icmp6SendEcho2`.
+- **`netscli arp --clear`, `--add` and `--delete` no longer claim to have
+  changed the table when they have not.** On Windows these print "The requested
+  operation requires elevation" and then exit 0, so checking the exit status
+  alone reported success while nothing was touched — an ordinary run printed
+  "ARP entry added for 192.0.2.77", and `"ok": true` in JSON, having done
+  nothing. All three now share one check and exit non-zero with the reason.
+  `--clear` also errors on platforms where it was never implemented, instead of
+  reporting a cleared table.
+- **Discover reports devices the OS already knows about.** Results merge probe
+  replies with the neighbour table, so a device that answers ARP but not ICMP
+  is no longer missing. Each host records whether it was found by probe or by
+  neighbour, since a stale neighbour entry can outlive the device.
 - **Safety limits were enforced in `Ops` but not in the engines.** The scan,
   sweep, discover and inspect engines are public API re-exported at the crate
   root, and called directly they applied no subnet, port or concurrency cap —
   `0.0.0.0/0` collected 4,294,967,294 addresses into a `Vec` before sending a
   packet. Every engine now enforces its own limits.
   ([#198](https://github.com/fstubner/netscli/pull/198))
+- **Safety limits that only one caller was applying.** `SweepEngine::sweep`
+  validates its port list instead of trusting the caller and silently returning
+  "no open ports"; mDNS browse duration, `ping -c` and packet captures given a
+  packet count but no duration all gained the core-side ceiling they were
+  documented to have.
 - **Port 0 was rejected only by the MCP surface.** Now rejected everywhere.
   ([#164](https://github.com/fstubner/netscli/pull/164))
-- **Panic paths in the core and silent corruption in the OUI generator.**
-  ([#172](https://github.com/fstubner/netscli/pull/172))
-- **TUI mis-measured wide characters**, so CJK and emoji in a remote-supplied
-  hostname or banner pushed box borders out of alignment.
-  ([#173](https://github.com/fstubner/netscli/pull/173))
-- **The desktop app described work it had not done.** The command preview
-  claimed five ports while three were scanned, truncated captures were
-  presented as complete, and the open-port count drifted from the rows below
-  it. ([#197](https://github.com/fstubner/netscli/pull/197))
-- **Packet Capture vanished on builds without capture support** instead of
-  explaining what was needed. ([#193](https://github.com/fstubner/netscli/pull/193))
-- **The desktop app was not keyboard operable**, and the result grid had
-  incorrect ARIA. ([#171](https://github.com/fstubner/netscli/pull/171))
-- **The website claimed packet capture in builds that do not ship it**, and
-  advertised a version that was never released.
-  ([#194](https://github.com/fstubner/netscli/pull/194),
-  [#208](https://github.com/fstubner/netscli/pull/208))
-
-- **Safety limits that only one caller was applying.** `SweepEngine::sweep`
-  validates its port list instead of trusting the caller and silently
-  returning "no open ports"; mDNS browse duration, `ping -c` and packet
-  captures given a packet count but no duration all gained the core-side
-  ceiling they were documented to have.
-- **`netscli trace` no longer prints router-supplied hostnames unsanitised.**
-  Hop names come from PTR records controlled by whoever runs those routers,
-  and this was the last plain-text output path without the terminal-safety
-  pass every other one had.
+- **MCP server handled one request at a time.** The read loop awaited each
+  handler before parsing the next line, so a slow scan blocked every other
+  request on the connection, including cancellation. Handlers now run
+  concurrently under a semaphore.
+  ([#169](https://github.com/fstubner/netscli/pull/169))
+- **Reading the ARP table blocked a runtime worker.** On Windows and macOS it
+  shells out to `arp` and waits on the child process; three callers invoked it
+  straight from async code. With MCP handlers capped at 16 concurrent, sixteen
+  of these could stall every worker — including the one reading stdin, so no
+  further request could even be parsed. Moved to a blocking thread.
+  ([#196](https://github.com/fstubner/netscli/pull/196))
 - **Four ways an MCP client could wedge or kill the server**: no overall
   request deadline, permits acquired after spawning rather than before, a
   single invalid UTF-8 byte on stdin terminating the process, and client
   disconnect cancelling nothing.
+- **The MCP server no longer says it returned everything while truncating.** A
+  capped result reported the byte count as its item count, so a 40,000-row scan
+  that returned 11,518 rows said `returned: 40000, total: 40000` beside
+  `truncated: true`.
+- **Packet captures fetched as a background MCP job are bounded like every
+  other result.** `get_pcap_capture_result` was routed before the limits that
+  strip and truncate remote text, so the one result made entirely of bytes off
+  the wire was the one that skipped them.
 - **The concurrent packet-capture limit could be bypassed** by calling the
   blocking capture tool, which never registered a job.
 - **`discover_network` with no arguments failed on a host whose interface
   carries a /8**, because the substituted default exceeded the /16 cap.
-- **Workspace search jumped to the wrong row.** The search dialog listed
-  rows in backend order and the table renders them sorted and filtered, so
-  the position it handed over meant a different row — which is every scan,
-  since each tool has a default sort.
-- **A malformed result bundle blanked the window.** Import validated only
-  that array-backed kinds got an array, so a bad entry threw during render
-  with nothing to catch it, taking every other tab's state with it.
-- **The desktop app stayed on "Detecting…" in silence** when interface
-  polling kept failing, leaving the capture form with no interfaces and no
-  explanation.
-- **AUR packages are published against a re-hashed asset.** Both AUR jobs
-  took the published `.sha256` sidecar on trust rather than downloading the
-  asset and hashing it, which is the circular check the release scripts
-  exist to prevent; the other registries already did this correctly.
+- **A database written by a newer netscli is refused rather than read.** The
+  version check treated a future schema as "already migrated", so an older
+  build queried tables it had never seen.
+- **`netscli trace` no longer prints router-supplied hostnames unsanitised.**
+  Hop names come from PTR records controlled by whoever runs those routers, and
+  this was the last plain-text output path without the terminal-safety pass
+  every other one had.
+- **TUI mis-measured wide characters**, so CJK and emoji in a remote-supplied
+  hostname or banner pushed box borders out of alignment.
+  ([#173](https://github.com/fstubner/netscli/pull/173))
+- **Panic paths in the core, and silent corruption in the OUI generator.**
+  ([#172](https://github.com/fstubner/netscli/pull/172))
+- **winget publishes the version number, not the tag.** Both package manifests
+  were passed the tag including its `v`, which the action only strips when the
+  input is left empty. `v0.2.2` through `v0.2.6` are already in the public
+  catalog that way, so `winget show netscli` reports a version this project
+  never issued. Upgrades still work — winget normalises a leading `v` when
+  comparing — and this release fixes what is displayed. The publish job now
+  asserts `MAJOR.MINOR.PATCH` rather than trusting the strip, because
+  winget-pkgs accepted all five without complaint and a merged manifest is
+  permanent.
+- **AUR packages are published against a re-hashed asset.** Both AUR jobs took
+  the published `.sha256` sidecar on trust rather than downloading the asset and
+  hashing it, which is the circular check the release scripts exist to prevent;
+  the other registries already did this correctly.
 - **The Windows installer verifies Npcap before running it.** `install.ps1`
   downloaded the Npcap installer from an overridable URL and launched it
-  elevated with nothing checked; it now verifies the Authenticode signature
-  and signer, and refuses to run an unsigned or unexpected binary.
-- **`install.sh` no longer claims success before installing libpcap.** A
-  user who asked for capture support could read "Installed successfully" and
-  get a binary that cannot capture.
-- **The desktop app's throughput reading no longer disappears on a VPN or
-  tunnel interface.** Traffic counters come from a different enumeration
-  than the interface list, and the two disagree: on one Windows machine
-  seven of twelve interfaces had no counterpart, including the Tailscale
-  adapter that was up and was what the app selected by default. The status
-  bar then dropped the whole reading -- numbers, unit and divider -- with
-  nothing to explain it, permanently. Selection now prefers an interface
-  whose throughput can actually be read, and where none can, the bar says
-  "no traffic data" instead of showing nothing.
+  elevated with nothing checked; it now verifies the Authenticode signature and
+  signer, and refuses to run an unsigned or unexpected binary.
+- **`install.sh` no longer claims success before installing libpcap.** A user
+  who asked for capture support could read "Installed successfully" and get a
+  binary that cannot capture.
 
 ### Website
 
+- **Small grey text was unreadable on card surfaces.** The docs footer,
+  built-with row and mobile section labels use `--sl-color-gray-3`, much of it
+  at 12px. It had been raised once to clear 4.5:1 against the page background,
+  but nothing checked it against the slightly darker card surface, where it sat
+  at 4.44:1.
+- **Muted text, and several status colours, were below the readability bar.**
+  Eight colour tokens failed WCAG AA (4.5:1) against surfaces they are actually
+  painted on — the mint accent failed as text on every light surface, down to
+  3.85:1. All 84 foreground/surface combinations now clear 4.5:1, and a check
+  keeps them there.
 - **The install guide has the verification steps the landing page promises.**
-  It advertised checksums and Sigstore signatures "see the install guide for
-  verification steps" and linked to a page with none of them on it.
-- **The changelog no longer dates a release that has not happened.** An entry
-  marked "Not yet released" was rendered beside a publication date taken from
-  this file's own heading.
-- **The docs table of contents is back in the right-hand rail.** It had been
-  moved under the page hero at every width, which is the mobile layout applied
-  to desktop.
-- **Release notes are in the page rather than painted in by script**, so the
-  changelog reads with JavaScript disabled and does not flash "Loading".
-- The website's colours are now covered by the contrast gate, which had been
-  measuring the desktop app's palette and reporting a pass for both.
-- **Docs pages are evenly padded.** The page frame was always centred, but
-  the two rails inset their text differently — the section list started 84px
-  from the edge while the contents list ended 40px from it. Both use the same
-  inset now, and the contents rail is wider so it did not lose its text to the
-  change.
-- **Headings are sized for reading rather than for a poster.** They were
-  42px and 35px against 16px body text; they are 34, 26 and 21 now.
-- **Anchor links move to the heading instead of jumping past it.** Following
-  a contents link or a shared deep link landed the heading behind the sticky
-  header, because the docs never loaded the rule that prevents it.
-- **The left nav's hover highlight lines up with the current page's.** Only
-  the current item sat on the rail, so hovering anything else drew a
-  highlight inset from it by 9px.
-- **The theme selector shows keyboard focus, and its dropdown is legible.**
-  Focus produced the hover treatment and removed the background rather than
-  drawing a ring, and the list itself was set in a translucent colour the
-  platform will not use, so it fell back to the browser default.
-- **The search button and the menu button match**, and the breadcrumb
-  separators sit level with their text.
-- **Search fills the screen on a phone.** The results stopped 151px above the
-  bottom, Cancel sat level with the middle of the results rather than with
-  the field, and the clear control floated short of the field's edge.
-- **The install section leads with `winget install netscli`.** The prominent
-  command was a `curl … | bash` pipeline until JavaScript ran, and stayed one
-  for anyone without it. The panel also lost a Cargo row repeated on all
-  three platforms and a hash note repeated four times in one panel, and the
-  direct-download button is no longer the loudest control in a section where
-  it is the least verified route.
-- **The interface coverage table says what it means.** Yes/No became ticks
-  and dashes with a legend, and the page now says that the CLI, terminal UI
-  and MCP server are one binary rather than three programs — a dash in the
-  MCP column never meant a second install. Rows that conflated two things
-  (setup with doctor, reading the ARP table with changing it) are split, and
-  dashes that meant "not applicable" say which.
-- **The FAQ answers two questions people actually search for**, from the
-  Search Console data rather than guesswork: whether there is a `netscan`
-  command, and whether this replaces nmap and has a terminal UI.
-
-### Changed (internal)
-
-- **The release pipeline verifies before it commits to anything.** The
-  three crates are now published in one command, so cargo packages and
-  compiles all of them before uploading any -- previously an upload of
-  `netscli-core` could succeed and leave that version permanent on
-  crates.io, which has no unpublish, while a later crate failed to package.
-  CI runs the same command as a dry run on every push, so packaging is
-  exercised long before a release rather than for the first time during
-  one. Release Drafter also resolves its version from tags instead of from
-  the last published release, which had it proposing v0.2.7 for a repo
-  already tagged v0.3.0.
-
-- **The Tauri render suite can run.** It had never passed: every run ended
-  at session creation, because msedgedriver looks for the debug port in a
-  `DevToolsActivePort` file inside its own temporary profile while wry
-  writes that file into Tauri's. The harness now starts the app itself and
-  attaches to it, which skips the lookup entirely. It does not pass yet --
-  the remaining failures are assertions to triage -- but it drives the real
-  app for the first time, and the throughput bug above is what it found.
-
-- **GUI architecture split into maintainable ownership modules.**
-  `App.tsx` and the old single CSS file were decomposed into workspace
-  state, tool presentation helpers, shell components, result/detail
-  components, Tauri services, and layered style files. The UI behavior
-  stays production-data driven; no mock/sample data is shipped in the
-  app.
-- **Core, CLI, TUI, MCP, and Tauri internals reduced from monolithic
-  files into facades plus focused modules.** The public Rust API, CLI
-  syntax, MCP schema, Tauri command payloads, GUI data shape, and SQLite
-  schema remain stable.
-- **CI tightened for future changes.** PR CI now includes GUI unit tests
-  before the GUI build, and a separate Tauri render workflow can run
-  manually, nightly, or on GUI/Tauri-related pull requests.
-- **Packaging templates and release workflows audited.** Release workflows
-  use the pinned Rust toolchain, AUR templates include runtime dependencies
-  and license installation, Winget/Scoop/Homebrew reference manifests were
-  refreshed, and packaging validation commands were added to the release
-  checklist.
-- **CI gates report unconditionally**, so branch protection can require them,
-  and both required checks were closed against a job that fails without
-  failing the gate. ([#161](https://github.com/fstubner/netscli/pull/161),
-  [#187](https://github.com/fstubner/netscli/pull/187))
-- **The end-to-end suite can now fail.** Several scenarios were structurally
-  incapable of it. ([#199](https://github.com/fstubner/netscli/pull/199))
-- **The Tauri render suite is schedule-only** and no longer gates releases.
-  ([#178](https://github.com/fstubner/netscli/pull/178))
-- **A dead-CSS budget runs in CI**, holding the docs override stack at its
-  current 126 provably shadowed declarations.
-  ([#207](https://github.com/fstubner/netscli/pull/207))
-- **Node 22, jsdom 30, ESLint 10, react-hooks 7**, and three Rust dependency
-  bumps. ([#187](https://github.com/fstubner/netscli/pull/187)–[#189](https://github.com/fstubner/netscli/pull/189))
-- **Release pipeline hardened**: tag validation on the AUR jobs, a checksum
-  that could be contaminated by progress output, and the publish long tail.
-  ([#158](https://github.com/fstubner/netscli/pull/158),
-  [#200](https://github.com/fstubner/netscli/pull/200))
+  It advertised checksums and Sigstore signatures and linked to a page with
+  none of them on it.
+- **The site claimed packet capture in builds that do not ship it**, and
+  advertised a version that was never released.
+  ([#194](https://github.com/fstubner/netscli/pull/194),
+  [#208](https://github.com/fstubner/netscli/pull/208))
+- **The interface coverage table no longer conflates separate things.** Rows
+  that merged setup with doctor, or reading the ARP table with changing it, are
+  split, and dashes that meant "not applicable" say which.
+- **The FAQ answers two questions people actually search for**, from Search
+  Console data rather than guesswork: whether there is a `netscan` command, and
+  whether this replaces nmap and has a terminal UI.
 
 ## [0.2.6] — 2026-05-06
 
@@ -531,23 +239,6 @@ that reported success while doing nothing.
   explicit `core:window:allow-close/minimize/maximize/unmaximize/start-dragging`
   grants; the app was missing its capabilities config entirely.
   Added `src-tauri/capabilities/main.json`. (#62)
-
-### Changed (internal)
-
-- **Major refactor of TUI / CLI organization** ([#63](https://github.com/fstubner/netscli/pull/63)–[#67](https://github.com/fstubner/netscli/pull/67)):
-  - `apps/netscli-cli/src/main.rs` shrank from 1870 → 527 lines (-72%).
-  - `apps/netscli-cli/src/tui.rs` (2226 lines) decomposed into
-    a `tui/` module with 8 focused files (state, events, widgets,
-    palette, command_catalog, config, history, mod).
-  - `apps/netscli-gui/src/App.tsx` shrank from 1480 → 931 lines (-37%)
-    via per-tab views in `views/*View.tsx`.
-  - `formatter.rs` renamed to `tui_formatter.rs` for naming
-    consistency with `tui_export.rs`, `tui_settings.rs`.
-  - All behavior-preserving; 25 tests pass on every PR's 3-OS matrix.
-- **CI runner-minute spend cut by ~70% per PR** by collapsing the
-  `release-build` matrix to ubuntu-only on PRs (full 3-OS only on
-  push to main) and adding `paths-ignore` for docs/site/packaging
-  changes. ([#61](https://github.com/fstubner/netscli/pull/61))
 
 ## [0.2.5] — 2026-05-05
 

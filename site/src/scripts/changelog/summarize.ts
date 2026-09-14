@@ -46,7 +46,6 @@ function sectionLabel(heading: string): string {
   if (normalized.startsWith('added')) return 'additions';
   if (normalized.startsWith('fixed')) return 'fixes';
   if (normalized.startsWith('security')) return 'security updates';
-  if (normalized.startsWith('changed internal')) return 'internal changes';
   if (normalized.startsWith('changed')) return 'changes';
   if (normalized.startsWith('removed')) return 'removals';
   if (normalized.startsWith('notes')) return 'release notes';
