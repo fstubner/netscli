@@ -16,6 +16,31 @@ const title = changelogCopy.heading;
 const description = changelogCopy.leadHtml;
 
 
+/**
+ * Drop the "Changed (internal)" section from a release body.
+ *
+ * CHANGELOG.md keeps it -- refactors, CI plumbing and test-harness work are
+ * worth having in the repo's history -- but nobody reading this page can act
+ * on "internals reduced from monolithic files into facades", and in 0.3.1 that
+ * section ran to fifty-odd lines above the fixes people came for.
+ *
+ * Done here rather than in the renderer, deliberately. The renderer only
+ * shapes the DOM; the raw body is also serialised into the page for the
+ * client to re-render from, so filtering downstream left the full text in the
+ * page source for anything reading it -- which is most of what this section
+ * was hidden from. Cutting it at the parse keeps one copy of the decision and
+ * removes the text from both.
+ *
+ * Matched before any normalisation: "Changed (internal)" with the
+ * parenthetical stripped is just "changed", which is also why
+ * summarize.ts's `changed internal` branch never fires.
+ *
+ * The section ends at the next heading of the same depth or shallower, so the
+ * list underneath leaves with it and the section after it is untouched.
+ */
+const stripInternalSection = (body: string): string =>
+  body.replace(/^###\s*Changed\s*\(\s*internal\s*\)\s*$[\s\S]*?(?=^#{1,3}\s|(?![\s\S]))/gim, '').trim();
+
 const parseLocalChangelog = (text: string) => {
   const headings = [...text.matchAll(/^## \[([^\]]+)\](?:\s+(?:—|-)\s+(\d{4}-\d{2}-\d{2}))?/gm)];
   return headings
@@ -26,7 +51,7 @@ const parseLocalChangelog = (text: string) => {
       const tag = version.startsWith('v') ? version : `v${version}`;
       const start = (heading.index ?? 0) + heading[0].length;
       const end = headings[index + 1]?.index ?? text.length;
-      const body = text.slice(start, end).trim();
+      const body = stripInternalSection(text.slice(start, end).trim());
       const date = heading[2] ? `${heading[2]}T00:00:00.000Z` : '';
       return {
         name: tag,
