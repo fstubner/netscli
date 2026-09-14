@@ -100,7 +100,13 @@
 
 /* ---- Surfaces -------------------------------------------------------- */
 .sl-markdown-content thead tr {
-  box-shadow: inset 0 -1px 0 rgba(var(--ui-accent-rgb), 0.55);
+  /* A hairline, not the accent. This was accent-coloured at 2px, then at
+     1px; thinning it treated the weight when the problem was repetition.
+     The header already has its own background, so the line only has to
+     separate it from the body -- it does not also need to be the loudest
+     colour on the page, on every table, beside code blocks that were
+     carrying the same green. See the note in code.css. */
+  box-shadow: inset 0 -1px 0 rgba(var(--ui-hairline-rgb), 0.22);
 }
 
 .sl-markdown-content tbody tr:hover {
@@ -118,7 +124,16 @@ html[data-theme='light'] .sl-markdown-content table {
 }
 
 html[data-theme='light'] .sl-markdown-content thead tr {
-  box-shadow: inset 0 -1px 0 rgba(var(--ui-accent-rgb), 0.42);
+  /* The light half of the change above. Left accent-coloured on the first
+     pass, so the green underline survived in light theme while the dark one
+     had gone -- a half-applied fix is worse than none, because it reads as
+     deliberate.
+     A lower alpha than the dark theme's 0.22: --ui-hairline-rgb flips to dark
+     ink here, and dark ink on a light ground carries further than white on a
+     dark one at the same value. The file already sets the two themes
+     separately for this rule, which is why this is a number rather than a
+     shared token. */
+  box-shadow: inset 0 -1px 0 rgba(var(--ui-hairline-rgb), 0.16);
 }
 
 html[data-theme='light'] .sl-markdown-content th {

@@ -41,21 +41,20 @@
   box-shadow: none;
 }
 
-/* A 1px accent rule along the top edge.
+/* No accent rule along the top edge.
  *
- * Was 2px. At that weight it read as a coloured header band rather than a
- * hairline, and the same accent at the same weight underlined every table
- * header -- so two unrelated elements were competing for the eye with the
- * loudest colour on the page. Both are 1px now (see tables.css). */
-.sl-markdown-content .expressive-code .frame::before {
-  content: "";
-  position: absolute;
-  inset-block-start: 0;
-  inset-inline: 0;
-  z-index: 1;
-  height: 1px;
-  background: rgba(var(--ui-accent-rgb), 0.55);
-}
+ * There was one, at 2px and then at 1px. Thinning it helped and did not fix
+ * the actual problem, which is repetition rather than weight: a docs page
+ * carries six or more code blocks, and an accent worn by every one of them
+ * marks nothing. The same green was also underlining every table header,
+ * tinting every inline code chip, and colouring the syntax highlighting
+ * inside the blocks themselves.
+ *
+ * The frame's own border already says where a code block starts and ends, so
+ * the rule was decoration on top of a boundary that existed. The accent is
+ * kept for things that are interactive or stateful -- links, the active
+ * sidebar item, focus rings, the copied state -- where being the loudest
+ * colour on the page is the point. */
 
 html[data-theme='light'] .sl-markdown-content .expressive-code .frame {
   border-color: rgba(var(--ui-hairline-rgb), 0.13);
