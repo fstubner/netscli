@@ -62,17 +62,24 @@ const groups = [
                   {alternatives.length > 0 && (
                     <div class="alts">
                       {alternatives.map((e) => (
-                        <div class={`alt${e.command ? ' has-copy' : ''}`}>
+                        <div class={`alt${e.command ? ' has-copy always-show' : ''}`}>
                           <div class="alt-label">
                             {e.label}
-                            {e.hint && <span class="alt-hint">{e.hint}</span>}
+                            {/* A caveat about a command belongs by the label;
+                                a caveat about a download belongs by the
+                                button, which is where the person is looking
+                                when they act on it. */}
+                            {e.command && e.hint && <span class="alt-hint">{e.hint}</span>}
                           </div>
                           {e.command ? (
                             <div class="alt-cmd">{e.command}</div>
                           ) : (
-                            <a class="alt-cmd install-download" href={e.href} download>
-                              Download →
-                            </a>
+                            <div class="alt-action">
+                              <a class="alt-cmd install-download" href={e.href} download>
+                                Download →
+                              </a>
+                              {e.hint && <span class="alt-hint">{e.hint}</span>}
+                            </div>
                           )}
                         </div>
                       ))}
@@ -227,8 +234,20 @@ html[data-theme='light'] #install .reco{
 .alt-label{font-size:.85rem;color:var(--ui-text)}
 .alt-cmd{
   font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.82rem;
-  color:var(--ui-text);overflow-wrap:anywhere;word-break:normal;padding-right:50px;
+  color:var(--ui-text);overflow-wrap:anywhere;word-break:normal;
 }
+/* Reserve for the copy button, which only command rows have. It used to sit
+   on `.alt-cmd` unconditionally, so a download row reserved 50px for a button
+   that is never rendered there -- dead space the Download button was then
+   aligned against. */
+.alt-cmd:not(.install-download){padding-right:50px}
+/* The action column: button on the right edge, its caveat directly beneath
+   and aligned to it, so the warning reads as a note about the thing you are
+   about to click rather than a property of the row's label. */
+.alt-action{
+  display:grid;justify-items:end;justify-self:end;gap:5px;max-width:100%;
+}
+.alt-action .alt-hint{margin-top:0;text-align:right}
 /* Two groups per OS panel: desktop app, then CLI. */
 .install-group + .install-group{margin-top:26px}
 .install-group-title{

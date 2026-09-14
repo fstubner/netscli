@@ -88,12 +88,24 @@
   border-inline-start-color: var(--sl-color-accent);
 }
 
+/* No background fill: the marker and the white text are the signal.
+ *
+ * This carried four at once -- white text, an accent left border, a 12%
+ * accent wash, and the weight -- while the rule above gives the current
+ * page's GROUP a 13% wash and the same accent border. The two were nearly
+ * identical, so the wash was not distinguishing the page from its parent;
+ * it was the border and the text colour doing that work while the wash sat
+ * on top of both.
+ *
+ * Dropping it separates them: the page gets border plus white text, the
+ * group keeps wash plus border. It also follows the rule applied to the
+ * code blocks and table headers -- the accent marks state, not surface. */
 .sidebar-content a[aria-current='page'] {
   position: relative;
   color: var(--sl-color-white);
   border-color: transparent;
   border-inline-start-color: var(--ui-accent);
-  background: rgba(var(--ui-accent-rgb), 0.12);
+  background: transparent;
   box-shadow: none;
 }
 

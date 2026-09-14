@@ -22,21 +22,15 @@ const MACOS_UNSIGNED_HINT = 'Unsigned — right-click → Open on first launch';
  * not what this row does. Someone clicking Download gets the installer
  * straight from GitHub Releases with nothing checking it, and was being told
  * otherwise at the moment they did it. The checksums are real and published;
- * this now points at them. */
-const WINDOWS_UNSIGNED_HINT = 'Unsigned — SmartScreen may warn; checksums published';
-
-/* Both of these check the download against a SHA256 in their own manifest
- * and abort on a mismatch, which is the thing the direct-download row cannot
- * do for you. Stated on both rather than only on winget: scoop does it too,
- * and naming one would have implied the other does not.
+ * this now points at them.
  *
- * Two words, not a sentence. It appears on four rows in a single Windows
- * panel -- winget and scoop, under both Desktop app and CLI -- and four
- * copies of "Verifies the download against the hash in its manifest" is most
- * of what made that panel read as a wall. The full explanation is in the
- * install guide; here it only has to distinguish these rows from the
- * download below them. */
-const WINDOWS_MANAGER_HASH_HINT = 'Hash-verified';
+ * Stated as the exception rather than labelling its opposite. Every package
+ * manager row used to carry a "Hash-verified" tag so this row would read as
+ * different -- four copies of it in one Windows panel, saying the unremarkable
+ * thing four times to make the remarkable thing stand out once. The
+ * verification is the norm; not having it is the news, so only the news is
+ * written down. */
+const WINDOWS_UNSIGNED_HINT = 'Unsigned — SmartScreen may warn. Checksums are published.';
 
 export const installByPlatform: Record<Platform, PlatformInstall> = {
   windows: {
@@ -44,13 +38,11 @@ export const installByPlatform: Record<Platform, PlatformInstall> = {
       {
         label: 'Winget',
         command: 'winget install netscli',
-        hint: WINDOWS_MANAGER_HASH_HINT,
       },
       {
         label: 'Scoop',
         command:
           'scoop bucket add fstubner https://github.com/fstubner/scoop-bucket && scoop install netscli',
-        hint: WINDOWS_MANAGER_HASH_HINT,
       },
       {
         label: 'PowerShell script',
@@ -62,13 +54,11 @@ export const installByPlatform: Record<Platform, PlatformInstall> = {
       {
         label: 'Winget',
         command: 'winget install netscli-gui',
-        hint: WINDOWS_MANAGER_HASH_HINT,
       },
       {
         label: 'Scoop',
         command:
           'scoop bucket add fstubner https://github.com/fstubner/scoop-bucket && scoop install netscli-gui',
-        hint: WINDOWS_MANAGER_HASH_HINT,
       },
       {
         label: 'Installer',
@@ -111,6 +101,9 @@ export const installByPlatform: Record<Platform, PlatformInstall> = {
     ],
   },
   linux: {
+    /* Distro-agnostic first, then Homebrew, then the Arch-only route. Same
+     * reasoning as the desktop list above: AUR sat second, ahead of a package
+     * manager that works on every distro. */
     cli: [
       {
         label: 'Install script',
@@ -118,18 +111,25 @@ export const installByPlatform: Record<Platform, PlatformInstall> = {
           INSTALL_SH_COMMAND,
       },
       {
-        label: 'AUR (Arch)',
-        command: 'yay -S netscli-bin',
-      },
-      {
         label: 'Homebrew',
         command: 'brew tap fstubner/tap && brew install netscli',
       },
-    ],
-    desktop: [
       {
         label: 'AUR (Arch)',
-        command: 'yay -S netscli-gui-bin',
+        command: 'yay -S netscli-bin',
+      },
+    ],
+    /* Debian and Ubuntu first, then a distro-agnostic AppImage, then Arch.
+     *
+     * The first entry is the recommended one and renders as the big card, so
+     * the order is a recommendation rather than a list. It used to lead with
+     * `yay -S netscli-gui-bin`, which recommended Arch to everyone running
+     * Linux -- a minority path presented as the default, with the .deb most
+     * readers actually wanted buried two rows below it. */
+    desktop: [
+      {
+        label: 'Debian / Ubuntu',
+        href: `${RELEASE_DOWNLOAD}/netscli-gui-linux-x86_64.deb`,
       },
       {
         label: 'AppImage',
@@ -137,8 +137,8 @@ export const installByPlatform: Record<Platform, PlatformInstall> = {
         hint: 'Any distro — chmod +x and run',
       },
       {
-        label: 'Debian / Ubuntu',
-        href: `${RELEASE_DOWNLOAD}/netscli-gui-linux-x86_64.deb`,
+        label: 'AUR (Arch)',
+        command: 'yay -S netscli-gui-bin',
       },
     ],
   },

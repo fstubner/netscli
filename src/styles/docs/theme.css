@@ -116,9 +116,27 @@ html[data-theme='light'] ::backdrop {
   --ui-sidebar-rail-inset: clamp(1.5rem, 2vw, 2.25rem);
   /* Height of the title band at the top of every docs page. The band's own
      min-height and the offset that starts the contents rail below it both
-     read this, so they move together. Measured across all eleven docs pages
-     at five widths: no page's title wraps. */
-  --ui-docs-hero-height: clamp(6.75rem, 9vw, 8.25rem);
+     read this, so they move together -- change it here and the rail follows.
+
+     Was clamp(6.75rem, 9vw, 8.25rem). At a 1440px window that resolved to
+     130px for a 37.6px title, so roughly two thirds of the band was empty
+     and it read as a near-square block rather than a band. The page carried
+     266px before its first sentence, of which this was the largest single
+     part.
+
+     Not reduced further: below about 5.5rem the corner wash in shell.css
+     loses the area it needs to read as a gradient at all, and the title
+     starts to crowd the header above it.
+
+     WIDE WINDOWS ONLY. Below 72rem the band stops reading this: shell.css
+     sets clamp(8rem, 18vw, 10.5rem) under 71.99rem and a flat 8.5rem under
+     49.99rem, so a narrow window measures ~136px whatever this says. That is
+     deliberate -- a long title wraps to two lines down there and the band
+     grows to hold it (min-height is a floor, not a cap, so nothing is
+     clipped despite the panel's overflow:hidden). It does mean the band is
+     now SHORTER on a desktop than on a phone, which is worth revisiting on
+     its own rather than by changing this number. */
+  --ui-docs-hero-height: clamp(5.5rem, 7vw, 6.75rem);
   --ui-docs-frame-width: calc(
     var(--ui-shell-width) + var(--ui-docs-sidebar-width) + var(--ui-docs-toc-width)
   );

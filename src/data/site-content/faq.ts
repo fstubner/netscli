@@ -99,14 +99,13 @@ export const faq: FaqItem[] = [
     aHtml: `
       <p>Yes. NetsCLI is MIT-licensed and free for personal, open-source, and commercial use.</p>
       <div class="faq-command-list" aria-label="Package manager commands">
-        <div class="faq-command"><span>Windows CLI/TUI/MCP</span><code>winget install netscli</code></div>
-        <div class="faq-command"><span>Windows app</span><code>winget install netscli-gui</code></div>
-        <div class="faq-command"><span>Windows</span><code>scoop bucket add fstubner https://github.com/fstubner/scoop-bucket &amp;&amp; scoop install netscli</code></div>
-        <div class="faq-command"><span>macOS</span><code>brew tap fstubner/tap &amp;&amp; brew install netscli</code></div>
-        <div class="faq-command"><span>Linux</span><code>${INSTALL_SH_COMMAND}</code></div>
-        <div class="faq-command"><span>Arch Linux</span><code>yay -S netscli-bin</code></div>
+        <div class="faq-command"><span>Winget — CLI</span><code>winget install netscli</code></div>
+        <div class="faq-command"><span>Winget — app</span><code>winget install netscli-gui</code></div>
+        <div class="faq-command"><span>Scoop</span><code>scoop bucket add fstubner https://github.com/fstubner/scoop-bucket &amp;&amp; scoop install netscli</code></div>
+        <div class="faq-command"><span>Homebrew</span><code>brew tap fstubner/tap &amp;&amp; brew install netscli</code></div>
+        <div class="faq-command"><span>Install script</span><code>${INSTALL_SH_COMMAND}</code></div>
+        <div class="faq-command"><span>AUR</span><code>yay -S netscli-bin</code></div>
       </div>
-      <p>Packet capture is the only workflow that needs a system capture library: libpcap on Linux/macOS or Npcap on Windows. mDNS discovery is pure Rust and is included in the published app, CLI, and MCP builds.</p>
     `,
   },
   {
