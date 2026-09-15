@@ -5,7 +5,7 @@
          same reasoning, as tui-discover.svg: userSpaceOnUse across x=0..1200
          left the logo sampling only the teal middle of the ramp, because the
          word occupies the middle ~636px of that span. Per-element is also
-         what the TUI does -- gradient_text_line_with_left_pad and
+         what the TUI does — gradient_text_line_with_left_pad and
          draw_gradient_rounded_border in
          apps/netscli-cli/src/tui/widgets/gradient.rs both walk t from 0 to 1
          across the element's own width. -->
