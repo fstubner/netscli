@@ -8,493 +8,88 @@
 [![crates.io](https://img.shields.io/crates/v/netscli.svg)](https://crates.io/crates/netscli)
 [![Release](https://img.shields.io/github/v/release/fstubner/netscli)](https://github.com/fstubner/netscli/releases)
 [![Downloads](https://img.shields.io/github/downloads/fstubner/netscli/total)](https://github.com/fstubner/netscli/releases)
-[![Rust 1.96.0](https://img.shields.io/badge/rust-1.96.0-blue.svg)](https://www.rust-lang.org/)
-[![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-informational)](#installation)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+**[Documentation](https://netscli.com/docs/)** · **[Install](https://netscli.com/docs/install/)** · **[Changelog](https://netscli.com/changelog/)**
+
 </div>
-
-## Table of Contents
-
-- [Why this exists](#why-this-exists)
-- [Features](#features)
-- [Screenshots](#screenshots)
-- [Architecture](#architecture)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Building](#building)
-- [MCP Server](#mcp-server)
-- [Contributing](#contributing)
-- [License](#license)
 
 ## Why this exists
 
-I wanted my AI agent to answer questions about my local network. Things
-like "what's the IP of the device that just joined" or "is port 22 open
-on 192.168.1.42". Existing tools work but they aren't great to drive from
-an agent. Half a dozen CLI invocations, brittle output parsing, no shared
-context. So I built an MCP server first. `netscli serve`, nine tools by
-default (13 in the `-pcap` build), JSON-RPC over stdio, structured results.
+The terminal UI came first. I wanted to understand how the newer TUIs work,
+the ones coding agents like Claude Code have put real effort into.
+Autocomplete, command history, in-place progress, and a UI that does not take
+over the terminal, so scrollback and copying text keep working. Building one
+seemed like the way to learn it, and a network scanner gave it something to
+do.
 
-Then the TUI. Coding agents like Claude Code have put real work into
-autocomplete, command history, in-place progress, and mouse selection
-that doesn't fight the scrollback. I wanted to see how they do it. So
-netscli has a proper ratatui TUI with those affordances.
+The MCP server came next. I thought it would be interesting to let an agent
+work with a network that way. Ask which device just joined, or whether port 22
+is open on some host, instead of shelling out to another tool and parsing
+output that was written for a person to read.
 
-The CLI is simpler. Sometimes you just want `netscli scan host --json | jq`
-and running a full MCP server for that is overkill. Cron jobs and CI
-scripts want the same thing.
+Then the CLI, for programmatic use. A script or a cron job wants one command
+and JSON back, not an interactive session.
 
-The desktop app is for when I don't want to open a terminal. Click an
-icon, see what's on my network, close it. Because every other surface
-already talked to `netscli-core`, the GUI was mostly a Tauri window over
-the same Rust calls.
+The desktop app came last. Some people would rather have a GUI than a
+terminal, and honestly I sometimes prefer it myself over running the commands
+locally.
 
-## Features
-
-- Ping, port scan, host discover, subnet sweep, DNS lookup (all record types), reverse DNS, traceroute, ARP table with vendor lookup, mDNS/Bonjour device discovery, interface listing, optional packet capture.
-- Four interfaces for the same core: `netscli <cmd>` for scripts, `netscli` alone for a terminal UI with autocomplete and history, a Tauri desktop app for when you want a window, and `netscli serve` for Claude / Cursor / any MCP client.
-- `--json` and `--yaml` output on every non-interactive subcommand; pipe straight into jq.
-- Cross-platform. Windows / Linux / macOS binaries in the release matrix. Packet capture is feature-gated so the default binary has zero non-Rust runtime deps.
-- Auto-detects a reasonable subnet so `netscli discover` works with no args.
+Three of them are the same binary. `netscli <command>` is the CLI, `netscli`
+on its own opens the terminal UI, and `netscli serve` starts the MCP server.
+The desktop app is a separate download over the same core.
 
 ## Screenshots
 
-### Terminal UI
-
 <div align="center">
-  <img src="docs/screenshots/tui-preview.svg" alt="NETSCLI TUI preview (idle)" width="820" />
-  <br/>
-  <img src="docs/screenshots/tui-discover.svg" alt="NETSCLI TUI running /discover" width="820" />
+  <img src="docs/screenshots/tui-discover.svg" alt="NETSCLI terminal UI running /discover" width="820" />
+  <br/><br/>
+  <img src="docs/screenshots/gui-scan.png" alt="Desktop app showing port scan results" width="820" />
 </div>
 
-### Desktop GUI
-
-<div align="center">
-  <img src="docs/screenshots/gui-scan.png" alt="Desktop app: port scan results" width="820" />
-  <br/>
-  <em>Port scan. The detail pane below carries the banner, headers and raw response for the selected row.</em>
-  <br/><br/>
-  <img src="docs/screenshots/gui-discover.png" alt="Desktop app: host discovery" width="820" />
-  <br/>
-  <em>Discover. Every row says how the host was found, and tabs keep several investigations open at once.</em>
-  <br/><br/>
-  <img src="docs/screenshots/gui-dns.png" alt="Desktop app: DNS lookup" width="820" />
-  <br/>
-  <em>DNS lookup. Type and value per row, supports every standard record type.</em>
-  <br/><br/>
-  <img src="docs/screenshots/gui-interfaces.png" alt="Desktop app: interfaces" width="820" />
-  <br/>
-  <em>Interfaces. Each row shows state, MAC, and every assigned address.</em>
-</div>
-
-## Architecture
-
-Three of the four surfaces are the same binary: `netscli` with a command is
-the CLI, `netscli` with none opens the terminal UI, and `netscli serve` starts
-the MCP server. Installing the CLI installs all three. The desktop app is a
-separate download built on the same core.
-
-<div align="center">
-  <img src="docs/assets/overview.svg" alt="NetsCLI architecture: one binary providing CLI, TUI and MCP server, a separate desktop app, and the shared netscli-core library beneath both" width="720" />
-</div>
-
-## Installation
-
-### Homebrew (macOS + Linux)
+## Install
 
 ```bash
-brew tap fstubner/tap
-brew install netscli
-```
+# macOS / Linux
+brew tap fstubner/tap && brew install netscli
 
-### Winget (Windows)
+# Windows
+winget install netscli        # CLI, TUI and MCP server
+winget install netscli-gui    # desktop app
 
-```powershell
-winget install netscli      # CLI/TUI
-winget install netscli-gui  # Desktop GUI
-```
-
-Resolves from the official [`microsoft/winget-pkgs`](https://github.com/microsoft/winget-pkgs/tree/master/manifests/f/fstubner) repo (winget ships preinstalled on Windows 10/11). The CLI and desktop app are separate package identifiers so they can be installed independently.
-
-The short names above resolve today. The full identifiers are
-`fstubner.netscli` and `fstubner.netscli.gui`, and those cannot become
-ambiguous — use them if a short name ever matches more than one package.
-
-For Windows, winget is the recommended install path. The winget manifest pins
-the installer URL and verifies the installer SHA256 hash before install. Direct
-GitHub downloads are available, but the Windows installers are currently
-unsigned and may show "unknown publisher" or SmartScreen warnings until code
-signing is added later.
-
-### Scoop (Windows)
-
-```powershell
-scoop bucket add fstubner https://github.com/fstubner/scoop-bucket
-scoop install netscli
-```
-
-### AUR (Arch Linux)
-
-```bash
-yay -S netscli-bin       # or paru -S netscli-bin
-```
-
-Source: [`aur.archlinux.org/packages/netscli-bin`](https://aur.archlinux.org/packages/netscli-bin).
-
-### Quick Install (One-line)
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | bash
-```
-
-This downloads the latest release binary for your platform and installs it into `~/.local/bin` by default.
-You can pin a specific release by setting `NETSCLI_VERSION` (e.g. `NETSCLI_VERSION=v0.3.1`).
-If the release publishes a matching `.sha256` asset, the installer will verify the download automatically; you can also set `NETSCLI_SHA256` (or `NETSCLI_SHA256_URL` to fetch a checksum file).
-Release assets: Windows `x86_64`, Linux `x86_64`/`aarch64` (glibc) + Linux `x86_64` (musl), macOS `x86_64`/`aarch64`.
-
-PCAP-enabled install (optional, adds packet capture support):
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.sh | NETSCLI_PCAP=1 bash
-```
-
-The single `NETSCLI_PCAP=1` flag does two things: it downloads the pcap-enabled binary variant *and* installs the `libpcap` system library via your package manager. If you already have libpcap installed and don't want the installer touching it, add `NETSCLI_SKIP_LIBPCAP=1`.
-
-Windows PowerShell (same idea; `NETSCLI_PCAP=1` downloads the pcap binary and runs the Npcap installer):
-
-```powershell
-iwr -useb https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.ps1 | iex
-# With PCAP:
-$env:NETSCLI_PCAP=1; iwr -useb https://raw.githubusercontent.com/fstubner/netscli/main/scripts/install.ps1 | iex
-```
-
-Windows CLI installer details:
-- Installs `netscli.exe` to `$env:USERPROFILE\.cargo\bin` by default (override with `INSTALL_DIR`).
-- Installs from `fstubner/netscli` by default (override with `REPO`) and installs the latest release by default (override with `NETSCLI_VERSION`).
-- When `NETSCLI_PCAP=1` is set: installs the `-pcap` asset and runs the Npcap installer (admin required; skip with `NETSCLI_SKIP_NPCAP=1`). The Npcap installer's Authenticode signature is checked before it is launched, and it is not run at all unless the signer is the Nmap Project — override the expected name with `NETSCLI_NPCAP_SIGNER` if they publish a new one.
-- If the release publishes a matching `.sha256` asset, the script verifies the download automatically; you can also set `NETSCLI_SHA256` or `NETSCLI_SHA256_URL`.
-
-### Verifying Release Signatures
-
-Every CLI and GUI release asset is signed keylessly via [Sigstore cosign](https://docs.sigstore.dev/cosign/overview/) in CI, using the GitHub Actions OIDC identity — no key management, and the signature is bound to the exact workflow run that built the asset. Each asset ships with a `.sig` and `.pem` alongside it. To verify a downloaded asset:
-
-```bash
-cosign verify-blob \
-  --signature netscli-linux-x86_64.sig \
-  --certificate netscli-linux-x86_64.pem \
-  --certificate-identity-regexp 'https://github.com/fstubner/netscli/.github/workflows/release\.yml@.*' \
-  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-  netscli-linux-x86_64
-```
-
-Requires the [cosign CLI](https://docs.sigstore.dev/cosign/system_config/installation/). A successful verification confirms the asset was built and signed by this repository's release workflow and hasn't been tampered with since.
-
-### From Source
-
-```bash
-git clone https://github.com/fstubner/netscli.git
-cd netscli
-cargo build --release -p netscli
-sudo cp target/release/netscli /usr/local/bin/
-```
-
-### Using Cargo
-
-```bash
+# Any platform, via cargo
 cargo install netscli
 ```
 
-Or install directly from the git tip:
+Desktop installers for Windows, macOS and Linux are attached to every
+[release](https://github.com/fstubner/netscli/releases/latest).
 
-```bash
-cargo install --git https://github.com/fstubner/netscli netscli
-```
-
-### GUI Application
-
-Prebuilt installers are attached to every [GitHub release](https://github.com/fstubner/netscli/releases/latest):
-
-- **Windows**: `netscli-gui-windows-x86_64.msi` — recommended install path is `winget install netscli-gui` because winget verifies the published installer hash. Direct MSI installs are currently unsigned and may show Windows warnings. WebView2 ships preinstalled on Windows 10/11; if the app fails to start, [install the Evergreen runtime](https://developer.microsoft.com/microsoft-edge/webview2/).
-- **macOS**: `netscli-gui-macos-aarch64.dmg` (Apple Silicon) or `netscli-gui-macos-x86_64.dmg` (Intel). Currently **unsigned** — first launch will show "unverified developer". Right-click → Open to bypass Gatekeeper, or run `xattr -dr com.apple.quarantine /Applications/NetsCLI.app`. Notarized build is tracked separately.
-- **Linux**: `netscli-gui-linux-x86_64.deb` (Debian/Ubuntu) or `netscli-gui-linux-x86_64.AppImage` (any distro; `chmod +x` and run).
-
-The published desktop GUI installers are built without packet capture support
-so they do not depend on or redistribute Npcap/libpcap. The Packet Capture
-tool is visible in the GUI, but it shows setup guidance and cannot run unless
-the desktop backend was built with the `pcap` feature and a working
-Npcap/libpcap runtime is installed.
-
-To run it from source:
-
-```bash
-cd apps/netscli-gui
-npm install
-npm run tauri:dev
-```
-
-That starts the Vite dev server and the app together. Building the Tauri
-crate on its own — `cargo build -p netscli-gui` — gives you a binary that
-expects that dev server on `localhost:1420` rather than one with the
-frontend inside it, so running it directly opens an empty window with no
-explanation. Use `tauri:dev`, or build an installer:
-
-```bash
-cd apps/netscli-gui
-npm install
-npm run tauri build
-# Installers created in src-tauri/target/release/bundle/
-```
-
-**Output:**
-- **macOS**: `.app` bundle in `src-tauri/target/release/bundle/macos/`
-- **Windows**: `.exe` and `.msi` in `src-tauri/target/release/bundle/msi/`
-- **Linux**: `.AppImage` and `.deb` in `src-tauri/target/release/bundle/`
-
-### Post-Installation
-
-Run the setup wizard to install optional dependencies:
-
-```bash
-netscli setup
-```
-
-This will interactively guide you through installing:
-- `libpcap` (for packet capture)
-- `tcpdump` (for PCAP functionality)
-
-### DNS Fallback Privacy
-
-DNS lookups use the operating system resolver first. If that resolver returns
-an error, NetsCLI may retry public names with Cloudflare DNS so normal internet
-lookups still work when the local resolver is flaky. Obvious local/internal
-names such as `.local`, `.lan`, `.home`, `.internal`, `.test`, and `localhost`
-skip the public fallback.
-
-Set `NETSCLI_DNS_FALLBACK=off` to disable public DNS fallback entirely.
-
-### PCAP Support (Optional)
-
-PCAP capture is optional and disabled in the default builds for portability. To enable it:
-
-- **Via installer (recommended)**: `NETSCLI_PCAP=1` does everything. It picks the pcap-enabled binary variant *and* installs the system library (`libpcap` on Linux/macOS, Npcap on Windows).
-  - Add `NETSCLI_SKIP_LIBPCAP=1` (POSIX) or `NETSCLI_SKIP_NPCAP=1` (Windows) if you manage the system library yourself.
-- **From source**: `cargo build --features pcap` (see [Building](#building) for the full command with OS-specific deps).
-- **Desktop GUI**: published GUI installers are intentionally non-PCAP. The Packet Capture tab shows setup guidance in those builds. Use `npm run tauri:dev:pcap` or `npm run tauri build -- --features pcap` for local packet-capture GUI builds.
-- **Capture parsing**: pcap-enabled CLI builds can also summarize existing capture files with `netscli pcap --read <file> --json` or `--yaml`.
-- **On Windows runtime**: ensure `wpcap.dll` is on PATH. Npcap installs it to `C:\Windows\System32\Npcap\` which isn't on PATH by default. Add that directory to your PATH, or the installer does it for you when you set `NETSCLI_PCAP=1`.
-- **On Windows source builds**: install the [Npcap SDK](https://npcap.com/#download) as well as the runtime. MSVC needs the SDK import library (`wpcap.lib`) at link time:
-
-  ```powershell
-  $env:NPCAP_SDK = "C:\tmp\netscli-npcap-sdk"
-  $env:LIB = "$env:NPCAP_SDK\Lib\x64;$env:LIB"
-  $env:INCLUDE = "$env:NPCAP_SDK\Include;$env:INCLUDE"
-  $env:PATH = "C:\Windows\System32\Npcap;$env:PATH"
-  cargo build -p netscli --features pcap
-  .\target\debug\netscli.exe pcap --check
-  ```
+Scoop, the AUR, the one-line install scripts, packet-capture builds and
+signature verification are all covered in the
+**[install guide](https://netscli.com/docs/install/)**.
 
 ## Usage
 
-### TUI Mode
-
-Launch the interactive terminal UI:
-
 ```bash
-netscli
-```
-
-**Key Features:**
-- **Autocomplete**: Type `/` to see commands, use Up/Down to navigate, Tab to accept
-- **Command History**: Use Up/Down when no suggestions are shown
-- **Scrollback**: PageUp/PageDown/Ctrl+Home/Ctrl+End
-- **Status footer**: Host/IP plus live traffic stats (configurable via `/config`)
-- **Cancel**: Esc cancels a running command
-- **Exit**: Press Esc or Ctrl+C twice, or type `/exit`
-- **Export**: `/export` saves session output to a file
-- **Scrollback/Selection**: TUI renders in the main buffer so native scrollback and selection work
-- **Responsive Layout**: UI adapts to terminal resize automatically
-
-**Available Commands:**
-- `/discover [subnet]` - Discover live hosts on a network subnet
-- `/scan <host> [ports]` - Scan TCP ports on a host (default: common ports)
-- `/inspect <host> [ports]` - Inspect host (ping + scan + resolve)
-- `/sweep [subnet] [ports] [--no-resolve]` - Sweep network (discover + scan)
-- `/ping <host> [count]` - Ping a host
-- `/trace <host> [--resolve] [--max-hops <n>]` - Trace route (hops)
-- `/dns <host> [--record <type>|ALL]` - DNS lookup (A/AAAA/CNAME/MX/NS/TXT/SRV/PTR/SOA/CAA)
-- `/reverse <ip>` - Reverse DNS (PTR) lookup
-- `/arp` - Show/manage ARP table with vendor information
-- `/interfaces` - List network interfaces
-- `/mdns` - Discover devices on the local network via mDNS/DNS-SD (Bonjour)
-- `/config` - Interactive TUI settings (saved to `~/.netscli/tui-settings.json`)
-- `/export [md|json] [--output <path>]` - Export the current session output
-- `/pcap ...` - Packet capture (pcap-enabled builds only; run `/pcap --check` to list interfaces)
-- `/help` - Show detailed help
-- `/exit` - Exit the TUI
-
-### CLI Mode
-
-Run commands directly from the command line:
-
-```bash
-# Discover hosts on network
-netscli discover [subnet] --resolve
-
-# Scan specific ports
-netscli scan <host> -p 22,80,443
-
-# Comprehensive host inspection
-netscli inspect <host>
-
-# Network sweep (discover + scan)
-netscli sweep [subnet] -p 80,443 --resolve
-
-# ARP table
-netscli arp
-
-# Ping with count
-netscli ping <host> -c 4
-
-# Trace route (hops)
-netscli trace <host> --max-hops 20
-
-# DNS lookup (all record types)
-netscli dns <host>
-
-# Reverse DNS lookup
-netscli reverse <ip>
-
-# List network interfaces
+netscli discover                     # find hosts on the local subnet
+netscli scan 192.168.1.10 -p 22,80,443
+netscli inspect example.com          # ping + scan + resolve
+netscli dns example.com              # all record types
+netscli arp                          # ARP table with vendor lookup
 netscli interfaces
-
-# Capture packets (pcap-enabled builds)
-netscli pcap --interface "Ethernet" --duration 10 --max-packets 1000 --output capture.pcap
-
-# Summarize an existing capture as a packet table
-netscli pcap --read capture.pcap --max-packets 100
 ```
 
-### Output Formats
+Every non-interactive command takes `--json` or `--yaml`, so results pipe
+straight into `jq`.
 
-Most CLI commands support structured JSON output:
+Run `netscli` with no arguments for the terminal UI: slash commands with
+autocomplete, command history, scrollback and `/export`.
 
-```bash
-netscli discover --json
-netscli scan host -p 80 --json
-netscli arp --json
-netscli pcap --read capture.pcap --json
-```
+Full command reference: **[CLI](https://netscli.com/docs/cli/)** ·
+**[TUI](https://netscli.com/docs/tui/)** ·
+**[desktop app](https://netscli.com/docs/desktop/)**
 
-Most CLI commands also support YAML:
-
-```bash
-netscli discover --yaml
-netscli scan host -p 80 --yaml
-netscli arp --yaml
-netscli pcap --read capture.pcap --yaml
-```
-
-**Supported formats:** `--json`, `--yaml`
-
-## Building
-
-### Prerequisites
-
-- Rust 1.96.0 (pinned via `rust-toolchain.toml`) ([install from rustup.rs](https://rustup.rs/))
-- For GUI: Node.js 18+ and npm
-
-### CLI Binary
-
-```bash
-# Development
-cargo build -p netscli
-
-# Release
-cargo build --release -p netscli
-
-# Release with PCAP enabled
-cargo build --release -p netscli --features pcap
-
-# Run tests
-cargo test --all
-```
-
-Windows PCAP source builds require both the Npcap runtime and SDK. Set `LIB`
-to the SDK architecture directory containing `wpcap.lib` before running
-`cargo build --features pcap`; for 64-bit MSVC this is usually
-`<Npcap SDK>\Lib\x64`. For the core PCAP test target on Windows, run
-`.\scripts\test-pcap.ps1`; it sets `LIB`, `INCLUDE`, and the Npcap runtime
-`PATH` from `NPCAP_SDK` or `C:\tmp\netscli-npcap-sdk`.
-
-### GUI Application
-
-```bash
-cd apps/netscli-gui
-npm install
-npm run tauri:dev    # Development
-npm run tauri build  # Production
-```
-
-Do not launch `target/debug/netscli-gui.exe` directly after `cargo build`.
-Debug Tauri binaries load the configured `devUrl` (`http://localhost:1420`);
-if the Vite dev server is not running, WebView2 shows its own localhost
-connection error page. Use `npm run tauri:dev` so Tauri starts and waits for
-the frontend server, or build a bundled app with `npm run tauri build`.
-
-To include PCAP support in the desktop app build:
-
-```bash
-cd apps/netscli-gui
-npm run tauri:dev:pcap          # Development with PCAP
-npm run tauri build -- --features pcap
-```
-
-On Windows, the same Npcap SDK `LIB`/`INCLUDE` setup is required for the
-Tauri backend when building with `--features pcap`. For local development,
-`scripts/dev-gui-pcap.ps1` sets `LIB`, `INCLUDE`, and the Npcap runtime `PATH`
-from `NPCAP_SDK` or `C:\tmp\netscli-npcap-sdk`, uses a separate
-`target-pcap` Cargo target directory, then starts the app through Tauri's dev
-command. Keeping PCAP GUI builds in a separate target directory avoids
-accidentally replacing the normal non-PCAP debug app with a binary that
-requires `wpcap.dll` at process startup.
-
-### Cross-Compilation
-
-```bash
-# Linux (static)
-rustup target add x86_64-unknown-linux-musl
-cargo build -p netscli --target x86_64-unknown-linux-musl --release
-
-# Windows (from Linux/WSL)
-rustup target add x86_64-pc-windows-msvc
-cargo build -p netscli --target x86_64-pc-windows-msvc --release
-
-# macOS
-rustup target add x86_64-apple-darwin aarch64-apple-darwin
-cargo build -p netscli --target x86_64-apple-darwin --release
-```
-
-### OUI Dataset Generation
-
-To update the MAC vendor database:
-
-```bash
-cd scripts
-cargo run --bin generate-oui
-```
-
-This fetches data from IEEE and Wireshark sources and generates `crates/netscli-core/data/oui.min.json.gz`, which ships embedded in the `netscli-core` crate.
-
-## MCP Server
-
-The MCP server exposes network scanning tools for AI agents via the Model Context Protocol.
-
-### Configuration
-
-#### Claude Desktop
-
-Edit `~/.config/Claude/claude_desktop_config.json` (Linux):
+## MCP server
 
 ```json
 {
@@ -507,78 +102,30 @@ Edit `~/.config/Claude/claude_desktop_config.json` (Linux):
 }
 ```
 
-#### Cursor
+Nine tools by default: discover, scan, ping, DNS, ARP, inspect, sweep,
+interfaces and mDNS. Packet-capture builds add four more. Details and the
+full schemas are in the **[MCP guide](https://netscli.com/docs/mcp/)**.
 
-1. Settings -> MCP Servers -> Add MCP Server
-2. **Command**: `netscli`
-3. **Arguments**: `serve`
+## Documentation
 
-#### Auto-Start (Linux)
-
-```bash
-netscli mcp-service --install
-systemctl --user enable --now netscli-mcp.service
-```
-
-### Available Tools
-
-The MCP server exposes 9 tools by default (13 in `-pcap` builds, which add `capture_pcap` plus three job-based tools for longer captures):
-1. `discover_network` - Discover live hosts on a network subnet
-2. `scan_ports` - Scan TCP ports on a host
-3. `ping_host` - Ping a host with statistics
-4. `dns_lookup` - Forward DNS lookup, all record types (reverse lookups are not exposed over MCP)
-5. `get_arp_table` - Get ARP/neighbor table with vendor information
-6. `inspect_host` - Comprehensive host inspection
-7. `sweep_network` - Sweep a network (discover hosts then scan ports)
-8. `list_network_interfaces` - List network interfaces with details
-9. `discover_mdns` - Discover devices via mDNS/DNS-SD (Bonjour), returning hostnames + resolved IPs + service metadata
-10. `capture_pcap` - Capture network packets to a PCAP file in one blocking call (pcap builds only)
-11. `start_pcap_capture` - Start a packet capture as a background job (pcap builds only)
-12. `get_pcap_capture_status` - Poll the running/completed/failed status of a capture job (pcap builds only)
-13. `get_pcap_capture_result` - Fetch the result of a completed capture job (pcap builds only)
+| Page | Covers |
+| --- | --- |
+| [Overview](https://netscli.com/docs/) | What it does, the interface model, safety limits |
+| [Installation](https://netscli.com/docs/install/) | Every install route, per platform |
+| [CLI](https://netscli.com/docs/cli/) | Commands, flags, structured output |
+| [Terminal UI](https://netscli.com/docs/tui/) | Slash commands and session behaviour |
+| [Desktop app](https://netscli.com/docs/desktop/) | Tabs, filters, exports |
+| [MCP server](https://netscli.com/docs/mcp/) | Tools, schemas, agent setup |
+| [Operations](https://netscli.com/docs/operations/) | What each scan actually does |
+| [Result model](https://netscli.com/docs/result-model/) | Shape of the JSON and YAML output |
+| [Packet capture](https://netscli.com/docs/packet-capture/) | Requirements and the pcap builds |
+| [Core library](https://netscli.com/docs/core-library/) | Using `netscli-core` directly |
 
 ## Contributing
 
-We welcome contributions! Here's how you can help:
-
-### Development Setup
-
-```bash
-git clone https://github.com/fstubner/netscli.git
-cd netscli
-cargo build -p netscli
-cargo test --all
-```
-
-### Code Style
-
-- Follow Rust standard formatting: `cargo fmt`
-- Run clippy: `cargo clippy --all-targets -- -D warnings`
-- Write tests for new features
-- Update documentation
-
-### Submitting Changes
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Make your changes and add tests
-4. Ensure all tests pass: `cargo test --all`
-5. Commit: `git commit -m 'Add amazing feature'`
-6. Push: `git push origin feature/amazing-feature`
-7. Open a Pull Request
-
-### Project Structure
-
-```
-netscli/
-|-- crates/
-|   |-- netscli-core/     # Core network scanning logic
-|   `-- netscli-mcp/      # MCP server implementation
-|-- apps/
-|   |-- netscli-cli/      # CLI/TUI application
-|   `-- netscli-gui/      # Tauri desktop GUI
-`-- scripts/              # Build/utility scripts
-```
+Issues and pull requests are welcome. Building from source, the desktop app
+dev loop, packet-capture builds and the repository layout are all in
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
