@@ -33,9 +33,7 @@ export function initLandingPage(repo: string): void {
         return `${(Math.floor(n / 100000) / 10).toFixed(1)}M+`;
       };
       // Every separator is derived from what is actually on screen, so a
-      // partial failure cannot leave a dangling interpunct. The version is
-      // part of this now: it is only rendered once a release has confirmed
-      // it, so it can be absent like the rest.
+      // partial failure cannot leave a dangling interpunct.
       const refreshMetricSeparators = () => {
         const shown = (id: string) => {
           const el = document.getElementById(id);
@@ -47,10 +45,8 @@ export function initLandingPage(repo: string): void {
         };
         const hasStars = shown("stars");
         const hasDownloads = shown("downloads");
-        const hasVersion = shown("latest-version");
         setSep("metrics-sep", hasStars && hasDownloads);
-        setSep("version-sep", (hasStars || hasDownloads) && hasVersion);
-        setSep("source-sep", hasStars || hasDownloads || hasVersion);
+        setSep("source-sep", hasStars || hasDownloads);
       };
       fetch(`https://api.github.com/repos/${repo}`)
         .then((r) => (r.ok ? r.json() : null))
@@ -143,13 +139,14 @@ export function initLandingPage(repo: string): void {
           );
           const latest = releases.find((release) => !release.draft && !release.prerelease)
             ?? releases.find((release) => !release.draft);
-          const versionEl = document.getElementById("latest-version");
-          // Only reveal a version a release actually carries.
-          if (latest?.tag_name && versionEl) {
-            versionEl.textContent = latest.tag_name;
-            if (latest.html_url) versionEl.setAttribute("href", latest.html_url);
-            versionEl.hidden = false;
-            refreshMetricSeparators();
+          // The badge above the headline, upgraded from the static platform
+          // list to the released version. Only a version a release actually
+          // carries: the badge already renders readable text, so a failed or
+          // rate-limited lookup leaves it exactly as served rather than
+          // blanking it or naming a version nothing confirmed.
+          const badge = document.getElementById("hero-release-badge");
+          if (latest?.tag_name && badge) {
+            badge.textContent = `${latest.tag_name} · What changed →`;
           }
         })
         .catch(() => {})
