@@ -62,7 +62,7 @@ const groups = [
                   {alternatives.length > 0 && (
                     <div class="alts">
                       {alternatives.map((e) => (
-                        <div class={`alt${e.command ? ' has-copy always-show' : ''}`}>
+                        <div class={`alt${e.command ? ' has-copy' : ''}`}>
                           <div class="alt-label">
                             {e.label}
                             {/* A caveat about a command belongs by the label;
@@ -325,7 +325,18 @@ a.install-download:focus-visible{
 
 /* Always-visible Copy variant used where controls should be discoverable
    without hover, while keeping the same neutral command-bar treatment as
-   the hero copy buttons. */
+   the hero copy buttons.
+ *
+ * Applied to the RECOMMENDED command only. #416 extended it to the
+ * alternatives list too, on the grounds that a hover-hidden control reads as
+ * a missing one. That holds for the recommended row -- it is the one command
+ * in the panel most visitors act on -- and not for the rows under it: six
+ * buttons permanently lit compete with the route the panel is steering
+ * towards. The alternatives are hover-gated again, and `.alt-cmd` reserves
+ * the button's width either way, so nothing moves when one appears.
+ *
+ * Touch is unaffected: with no hover to reveal them, the (hover: none) rule
+ * in landing/base.css keeps every copy button visible. */
 .has-copy.always-show .copy-btn{
   opacity:1;
 }
@@ -337,6 +348,23 @@ a.install-download:focus-visible{
 
 #install .copy-btn{
   right:10px;
+}
+
+/* The alternatives list aligns on one edge, so the copy button matches the
+   row's own padding rather than sitting 6px proud of it.
+ *
+ * The two controls are positioned by different mechanisms and that is why
+ * they disagreed. A Download button lives in `.alt-action`, which is
+ * `justify-self:end` in the grid, so it lands on the content-box edge --
+ * `.alt`'s 16px padding. The copy button is absolutely positioned against
+ * `.alt` and so answers only to its own `right`, which was 10px. Measured
+ * before the change: copy 10px from the row edge, Download 16px, on rows
+ * stacked directly on top of each other in the same list.
+ *
+ * 16px rather than moving the button: the padding is the row's real edge,
+ * and every other thing in the row already respects it. */
+#install .alt .copy-btn{
+  right:16px;
 }
 
 /* Mobile: stack the grid into one column, Try it drops below. */
