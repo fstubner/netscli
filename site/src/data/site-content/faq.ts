@@ -75,9 +75,21 @@ export const faq: FaqItem[] = [
   {
     group: 'Network workflows',
     q: 'Is NetsCLI an alternative to Angry IP Scanner or Advanced IP Scanner?',
-    a: 'NetsCLI overlaps with those tools for common LAN discovery tasks: finding live hosts, scanning TCP ports, resolving hostnames, and showing MAC vendors from the local ARP cache. It is not a drop-in clone of either application. The main differences are cross-platform desktop app/TUI/CLI/MCP interfaces, structured JSON/YAML output, and an MIT-licensed Rust core.',
+    // Named facts rather than a list of our own adjectives, because the
+    // differences that matter here are properties of the OTHER tools and are
+    // checkable: advanced-ip-scanner.com states Windows 11/10/8/7 only and is
+    // Famatech freeware rather than open source, and angryip.org advertises
+    // its own command-line interface, so "we have a CLI" is not a difference
+    // from that one and is not claimed as one.
+    //
+    // The last sentence concedes remote administration on purpose. Advanced
+    // IP Scanner's own front page leads with RDP/Radmin control, shared
+    // folders and remote shutdown, and a comparison that omitted the thing a
+    // reader can see on that page in ten seconds would discredit the rest of
+    // the answer.
+    a: 'NetsCLI overlaps with those tools for common LAN discovery tasks: finding live hosts, scanning TCP ports, resolving hostnames, and showing MAC vendors from the local ARP cache. It is not a drop-in clone of either. Advanced IP Scanner is Windows-only and closed-source freeware. NetsCLI runs on Windows, macOS, and Linux, is MIT-licensed, and offers the same scans from a desktop app, a terminal UI, a CLI, and an MCP server, with JSON and YAML output. Angry IP Scanner is also open source and cross-platform, and ships its own command-line interface. What NetsCLI does not do is remote administration: Advanced IP Scanner can open shared folders, control machines over RDP or Radmin, and switch them off remotely, and NetsCLI has no equivalent.',
     aHtml:
-      'NetsCLI overlaps with those tools for common LAN discovery tasks: finding live hosts, scanning TCP ports, resolving hostnames, and showing MAC vendors from the local ARP cache. It is not a drop-in clone of either application. The main differences are cross-platform desktop app/TUI/CLI/MCP interfaces, structured <code>--json</code>/<code>--yaml</code> output, and an MIT-licensed Rust core.',
+      'NetsCLI overlaps with those tools for common LAN discovery tasks: finding live hosts, scanning TCP ports, resolving hostnames, and showing MAC vendors from the local ARP cache. It is not a drop-in clone of either. Advanced IP Scanner is Windows-only and closed-source freeware. NetsCLI runs on Windows, macOS, and Linux, is MIT-licensed, and offers the same scans from a <a href="#surfaces">desktop app, terminal UI, CLI, and MCP server</a>, with <code>--json</code> and <code>--yaml</code> output. Angry IP Scanner is also open source and cross-platform, and ships its own command-line interface. What NetsCLI does not do is remote administration: Advanced IP Scanner can open shared folders, control machines over RDP or Radmin, and switch them off remotely, and NetsCLI has no equivalent.',
   },
   {
     group: 'Network workflows',
@@ -111,9 +123,9 @@ export const faq: FaqItem[] = [
   {
     group: 'Network workflows',
     q: 'Can NetsCLI replace nmap, and does it have a TUI?',
-    a: 'NetsCLI covers the simpler cases nmap is often reached for: host discovery, basic TCP port scans, DNS lookups, and ARP-table inspection on a local network, with direct subcommands and structured output. It also ships a terminal UI — run netscli with no arguments to get an interactive, keyboard-driven scanner in the terminal, which nmap itself does not provide. For advanced service detection, NSE scripts, OS fingerprinting, and raw packet workflows, nmap remains the better tool.',
+    a: 'NetsCLI covers the simpler cases nmap is often reached for: host discovery, basic TCP port scans, DNS lookups, and ARP-table inspection on a local network, with direct subcommands and structured output. It also ships a terminal UI — run netscli with no arguments to get an interactive, keyboard-driven scanner in the terminal, which nmap itself does not provide. For advanced service detection, NSE scripts, and OS fingerprinting, nmap remains the better tool.',
     aHtml:
-      'NetsCLI covers the simpler cases nmap is often reached for: host discovery, basic TCP port scans, DNS lookups, and ARP-table inspection on a local network, with direct subcommands and structured output. It also ships a <a href="#surfaces">terminal UI</a> — run <code>netscli</code> with no arguments to get an interactive, keyboard-driven scanner in the terminal, which nmap itself does not provide. For advanced service detection, NSE scripts, OS fingerprinting, and raw packet workflows, nmap remains the better tool.',
+      'NetsCLI covers the simpler cases nmap is often reached for: host discovery, basic TCP port scans, DNS lookups, and ARP-table inspection on a local network, with direct subcommands and structured output. It also ships a <a href="#surfaces">terminal UI</a> — run <code>netscli</code> with no arguments to get an interactive, keyboard-driven scanner in the terminal, which nmap itself does not provide. For advanced service detection, NSE scripts, and OS fingerprinting, nmap remains the better tool.',
   },
   {
     group: 'Network workflows',
