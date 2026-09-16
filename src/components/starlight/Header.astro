@@ -22,7 +22,30 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
 
 <div class="docs-topbar">
   <a class="docs-mark" href="/" aria-label={`${meta.siteName} home`}>
-    <img src={branding.wordmark} alt={branding.wordmarkAlt} width="160" height="32" />
+    {/* fetchpriority, because on a docs page this image IS the Largest
+        Contentful Paint. There is no hero here -- the wordmark is the largest
+        thing painted, so it is on the critical path by default rather than by
+        choice, and it is discovered late: it sits behind the inlined stylesheet
+        in <head> and competes with nothing that announces itself as urgent.
+
+        Cloudflare field data, 24h to 2026-09-15: this element is named as the
+        LCP element at 5,415ms, against a 599ms P50 on the same day. The asset
+        is 8.8 KB, so the five seconds are discovery and connection, not bytes
+        -- which is exactly what this hint addresses and what shrinking the
+        image would not.
+
+        NOT set on the landing page's copy of the same wordmark
+        (components/Nav.astro). There the hero screenshot is the LCP element and
+        already carries fetchpriority="high"; raising the logo too would put two
+        images at the front of the queue and demote the one that actually is the
+        largest paint. */}
+    <img
+      src={branding.wordmark}
+      alt={branding.wordmarkAlt}
+      width="160"
+      height="32"
+      fetchpriority="high"
+    />
   </a>
 
   <div class="docs-header-search print:hidden">

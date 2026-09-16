@@ -81,8 +81,15 @@ export interface HeroDownload {
 }
 
 export interface Hero {
-  /** Small uppercase strip above the headline. */
+  /** Small uppercase strip above the headline. Also the server-rendered
+   *  fallback when `releaseLink` is set and the release lookup fails. */
   badge: string;
+  /** Turns the badge into a link to the release notes, and lets the page
+   *  replace its text with the latest released version once GitHub confirms
+   *  one (`v0.3.1 · What changed →`). Omit it and the badge stays the static
+   *  string above, which is the default for a product with no changelog page
+   *  or no published releases. */
+  releaseLink?: string;
   heading: string;
   subhead: string;
   /** Shell command shown in the hero's highlighted install block. */
