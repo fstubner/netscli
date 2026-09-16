@@ -3,7 +3,7 @@
   <defs>
     <!-- Spans each element it fills, not the canvas.
          It was userSpaceOnUse across x=0..1200, and the logo occupies only
-         the middle ~636px of that, so the word sampled t=0.24..0.76 -- the
+         the middle ~636px of that, so the word sampled t=0.24..0.76 — the
          teal middle of the ramp, never the dark green start or the cyan end.
          Beside the nav wordmark, which does span its own width, the two
          logos read as different colours: #07a86c..#15d7cd against
