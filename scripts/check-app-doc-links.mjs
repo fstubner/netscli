@@ -60,9 +60,20 @@ function siteHasRoute(pathname) {
   const slug = pathname.replace(/^\/+/, '').replace(/\/+$/, '');
 
   // The site root and anything under src/pages.
+  //
+  // `.ts` as well as `.astro`: src/pages also holds endpoint routes that
+  // return a file rather than a page -- install.sh.ts, install.ps1.ts,
+  // llms.txt.ts, llms-full.txt.ts. They are real built routes, and checking
+  // only for .astro reported the site's own canonical install one-liner
+  // (https://netscli.com/install.sh) as a link the site does not build.
   const pageCandidates = slug
-    ? [`${slug}.astro`, path.join(slug, 'index.astro')]
-    : ['index.astro'];
+    ? [
+        `${slug}.astro`,
+        `${slug}.ts`,
+        path.join(slug, 'index.astro'),
+        path.join(slug, 'index.ts'),
+      ]
+    : ['index.astro', 'index.ts'];
   if (pageCandidates.some((candidate) => fs.existsSync(path.join(pagesRoot, candidate)))) {
     return true;
   }
