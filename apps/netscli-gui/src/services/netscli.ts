@@ -206,3 +206,17 @@ export async function openFilesystemPath(path: string): Promise<void> {
 export async function revealFilesystemPath(path: string): Promise<void> {
   return invoke<void>('reveal_saved_artifact', { path });
 }
+
+/** Where the netscli CLI is, if it is installed at all.
+ *
+ *  The desktop app does not ship the CLI, so `path` being null is an ordinary
+ *  state rather than a failure -- see src-tauri/src/commands/mcp.rs. */
+export interface CliDetection {
+  path: string | null;
+  version: string | null;
+  os: 'windows' | 'macos' | 'linux';
+}
+
+export async function detectNetscliCli(): Promise<CliDetection> {
+  return invoke<CliDetection>('detect_netscli_cli');
+}
