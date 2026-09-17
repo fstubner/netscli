@@ -8,8 +8,8 @@ use std::sync::Mutex;
 
 use commands::{
     cancel_operation, capture_pcap, choose_file_save_default_directory, clear_arp_table,
-    clear_file_save_default_directory, discover_mdns, discover_network, dns_lookup,
-    export_text_file, get_arp_table, get_default_interface, get_file_save_preferences,
+    clear_file_save_default_directory, detect_netscli_cli, discover_mdns, discover_network,
+    dns_lookup, export_text_file, get_arp_table, get_default_interface, get_file_save_preferences,
     get_network_stats, inspect_host_cmd, list_interfaces, list_monitorable_interfaces,
     mdns_capability, open_pcap_file, open_result_bundle, open_saved_artifact, pcap_capability,
     ping_host, reveal_saved_artifact, reverse_dns_lookup, save_result_bundle, scan_ports,
@@ -77,7 +77,8 @@ fn main() {
             clear_file_save_default_directory,
             get_network_stats,
             list_monitorable_interfaces,
-            get_default_interface
+            get_default_interface,
+            detect_netscli_cli
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
