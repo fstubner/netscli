@@ -194,6 +194,7 @@ mod tests {
                 vendor: Some("Philips Lighting BV".to_string()),
                 rtt_ms: Some(4),
                 found_by: crate::FoundBy::Probe,
+                hostname_source: Some(crate::NameSource::Mdns),
             },
             open_ports: vec![PortResult {
                 port: 443,

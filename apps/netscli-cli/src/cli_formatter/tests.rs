@@ -122,6 +122,7 @@ fn hostile_host() -> netscli_core::discover::Host {
         vendor: None,
         rtt_ms: Some(1),
         found_by: netscli_core::FoundBy::Probe,
+        hostname_source: Some(netscli_core::NameSource::Reverse),
     }
 }
 

@@ -4,7 +4,6 @@ use crate::oui::lookup_vendor;
 use crate::ping::PingScanner;
 use futures::stream::{self, StreamExt};
 use ipnet::Ipv4Net;
-use serde::Serialize;
 use std::collections::HashMap;
 use std::net::IpAddr;
 use std::sync::{
@@ -12,52 +11,17 @@ use std::sync::{
     Arc,
 };
 
-/// How a host came to be in the results.
-///
-/// Worth reporting rather than flattening, because the two carry different
-/// confidence. A host that answered a probe is definitely there now; a host
-/// known only from the neighbour table is one the OS has spoken to
-/// recently, which is usually but not always still true.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum FoundBy {
-    /// Answered an ICMP or TCP probe during this scan.
-    Probe,
-    /// Did not answer, but is in the ARP/neighbour table.
-    Neighbor,
-}
+#[cfg(feature = "mdns")]
+mod mdns_fusion;
+mod types;
 
-#[derive(Debug, Clone, Serialize)]
-pub struct Host {
-    pub ip: IpAddr,
-    pub hostname: Option<String>,
-    pub mac: Option<String>,
-    pub vendor: Option<String>,
-    pub rtt_ms: Option<u64>,
-    /// Additive field: existing consumers that ignore it are unaffected.
-    pub found_by: FoundBy,
-}
+pub use types::{DiscoverPhase, DiscoverProgress, FoundBy, Host, NameSource};
 
 pub struct DiscoverEngine {
     ping_scanner: PingScanner,
     concurrency: usize,
     ping_timeout_ms: u64,
     dns_timeout_ms: u64,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum DiscoverPhase {
-    Ping,
-    Resolve,
-}
-
-#[derive(Debug, Clone)]
-pub struct DiscoverProgress {
-    pub phase: DiscoverPhase,
-    pub completed: usize,
-    pub total: usize,
-    pub found: usize,
-    pub ip: IpAddr,
 }
 
 impl DiscoverEngine {
@@ -108,6 +72,11 @@ impl DiscoverEngine {
     ) -> Result<Vec<Host>> {
         crate::ops::validation::ensure_subnet_limit(&subnet, &subnet.to_string())?;
         let ips: Vec<IpAddr> = subnet.hosts().map(IpAddr::V4).collect();
+
+        // 0) Start the mDNS browse now, so it overlaps everything below.
+        // See discover/mdns_fusion.rs for why this exists and what it costs.
+        #[cfg(feature = "mdns")]
+        let mdns_browse = mdns_fusion::spawn_browse();
 
         // 1) Ping first (fast), to avoid reverse-DNS work on dead hosts.
         let total = ips.len();
@@ -216,19 +185,39 @@ impl DiscoverEngine {
             HashMap::new()
         };
 
+        // 4) Fuse in mDNS names for hosts the reverse lookup left unnamed.
+        // Fill-blanks-only, so nothing that resolves today changes. Placed
+        // after `hostname_map` so ARP-only neighbours are named too -- a
+        // device that never answered a probe is the one least likely to have
+        // a PTR record.
+        #[cfg(feature = "mdns")]
+        let mdns_names = mdns_fusion::collect_names(mdns_browse).await;
+        #[cfg(not(feature = "mdns"))]
+        let mdns_names: HashMap<IpAddr, String> = HashMap::new();
+
         let build = |ip: IpAddr, rtt_ms: Option<u64>, found_by: FoundBy| {
             let mac_entry = arp_map.get(&ip);
             let mac_str = mac_entry.map(|e| e.mac.to_string());
             let vendor = mac_entry
                 .and_then(|e| e.vendor.clone())
                 .or_else(|| mac_str.as_deref().and_then(lookup_vendor));
+            // One path for both builds: without the mdns feature the map is
+            // simply empty, so the fallback never fires.
+            let (hostname, hostname_source) = match hostname_map.get(&ip).cloned().unwrap_or(None) {
+                Some(name) => (Some(name), Some(NameSource::Reverse)),
+                None => match mdns_names.get(&ip) {
+                    Some(name) => (Some(name.clone()), Some(NameSource::Mdns)),
+                    None => (None, None),
+                },
+            };
             Host {
                 ip,
-                hostname: hostname_map.get(&ip).cloned().unwrap_or(None),
+                hostname,
                 mac: mac_str,
                 vendor,
                 rtt_ms,
                 found_by,
+                hostname_source,
             }
         };
 

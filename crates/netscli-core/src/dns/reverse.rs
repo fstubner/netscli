@@ -76,7 +76,7 @@ pub async fn reverse_lookup_best_effort_timeout(ip: IpAddr, timeout_ms: u64) -> 
 /// character is malformed by any definition, so "no name resolved" is the
 /// honest answer and leaves nothing mangled to display. Callers already
 /// handle `None`.
-fn normalize_hostname(name: String) -> Option<String> {
+pub(crate) fn normalize_hostname(name: String) -> Option<String> {
     let name = name.trim().trim_end_matches('.').trim();
     if name.is_empty() || name.chars().any(char::is_control) {
         None
