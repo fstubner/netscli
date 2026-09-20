@@ -32,7 +32,7 @@
     "chromedriver": "^152.0.3",
     "lighthouse": "^13.4.1",
     "linkedom": "^0.18.13",
-    "selenium-webdriver": "^4.48.0",
+    "selenium-webdriver": "^4.49.0",
     "typescript": "^5.5.0"
   }
 }
