@@ -271,15 +271,26 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
 
     }
 
-    /* 72rem, matching the hamburger -- see the note on .docs-nav-links below
-       for why this is no longer 900px. The theme control moves into the
-       mobile menu's footer at this point (MobileMenuFooter.astro), so it is
-       relocated rather than lost. */
-    @media (max-width: 72rem) {
-      .docs-header-theme {
-        display: none !important;
-      }
-    }
+    /* No rule hiding .docs-header-theme above 50rem, deliberately.
+     *
+     * There was one at 72rem, matching the links below, with a note saying the
+     * control "moves into the mobile menu's footer at this point
+     * (MobileMenuFooter.astro), so it is relocated rather than lost". It was
+     * lost. That footer sits inside the sidebar popover, and the button that
+     * opens it is Starlight's `.sl-menu-button`, which is `md:sl-hidden` and
+     * so only appears below 50rem. Between 800px and 1152px there was no
+     * button to open the menu and no control in the header, so the site had no
+     * theme switch at all. Measured on the built site before this change: two
+     * controls in the DOM at 1082, 982, 882 and 832px, neither visible at any
+     * of them.
+     *
+     * Below 50rem the `sl-hidden md:sl-flex` classes on the element already
+     * hide it, which is the width where the menu button appears and genuinely
+     * does carry it.
+     *
+     * The links are a different case and stay at 72rem below: the sidebar is
+     * still on screen down to 800px and lists the same pages, so hiding them
+     * loses nothing. Nothing else carries the theme control. */
 
     @media (max-width: 72rem) {
       .docs-topbar {

@@ -131,11 +131,17 @@ html[data-theme='light'][data-docs-scrolled='true'] header.header::after {
    * one search. No auto margin here either -- two auto margins on one flex
    * row split the free space between them.
    *
-   * The seam moves for this band. Full width it sits on .docs-header-search,
-   * which is the first element of the right-hand group; here search is an
-   * icon that has already moved into the right cluster by `order`, so the
-   * links carry it instead. Without that the bar has no seam at all between
-   * 900px and 72rem and every element bunches to the left. */
+   * Search carries the seam for this whole band, not the links.
+   *
+   * It used to be the links, with the note below this one giving search the
+   * auto margin only under 900px, because that was where the links and the
+   * theme control were hidden. Header.astro later moved that hide to 72rem to
+   * match the hamburger, and this rule was not moved with it -- so from 901px
+   * to 1152px the seam sat on an element with `display: none`, which takes no
+   * part in flex layout and cannot carry a margin. Measured on the built site
+   * before this change: search at x=207 with 861px of empty bar to its right
+   * at 1142px, and 621px at 902px. The old note directly below predicted this
+   * exact failure and was left pointing at the wrong number. */
   .docs-header-search {
     order: 2;
     display: flex;
@@ -143,11 +149,8 @@ html[data-theme='light'][data-docs-scrolled='true'] header.header::after {
     width: 2.5rem;
     max-width: 2.5rem;
     min-width: 2.5rem;
-    margin-inline: 0;
-  }
-
-  .docs-nav-links {
     margin-inline-start: auto;
+    margin-inline-end: 0;
   }
 
   .docs-header-theme {
@@ -171,16 +174,6 @@ html[data-theme='light'][data-docs-scrolled='true'] header.header::after {
   .docs-header-search site-search button[data-open-modal] span,
   .docs-header-search site-search button[data-open-modal] kbd {
     display: none;
-  }
-}
-
-/* Between 800 and 900px the links and the theme control are both hidden
-   (Header.astro), so the seam that pushed search rightward goes with them and
-   it would fall back beside the wordmark. Search carries the auto margin
-   itself in that band -- there is nothing left for it to collide with. */
-@media (min-width: 50rem) and (max-width: 900px) {
-  .docs-header-search {
-    margin-inline-start: auto;
   }
 }
 

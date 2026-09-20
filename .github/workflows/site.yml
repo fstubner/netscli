@@ -162,6 +162,18 @@ jobs:
       - name: Rendered contrast sweep
         run: npm run check:contrast
 
+      # Where the docs header's controls sit, at seventeen widths.
+      #
+      # Two failures shipped that nothing above could see, because both were
+      # about position rather than markup, colour or speed: the search control
+      # stranded beside the wordmark with up to 861px of empty bar beside it
+      # from 901px to 1152px, and no theme control reachable anywhere between
+      # 800px and 1152px. Both came from a breakpoint moving in one file while
+      # the rule depending on it stayed put in another. See the header of the
+      # script.
+      - name: Docs header controls
+        run: npm run check:header
+
       # Lighthouse across every built route, with a floor per category.
       #
       # Catches the class of regression the checks above cannot see at all: a
