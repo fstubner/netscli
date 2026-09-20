@@ -7,6 +7,18 @@
  *  always still true. */
 export type FoundBy = 'probe' | 'neighbor';
 
+/** Where a host's name came from.
+ *
+ *  A separate axis from `FoundBy`, which says how the host was found: a
+ *  device can be found by probe and named by mDNS, or found in the neighbour
+ *  table and named by reverse DNS, in any combination.
+ *
+ *  `reverse` is what the network's resolver calls the host (or LLMNR/NetBIOS
+ *  on Windows); `mdns` is what the device calls itself. Consumer routers
+ *  rarely serve PTR records for their own DHCP clients, so on a home LAN
+ *  `mdns` is often the only source that names an appliance at all. */
+export type NameSource = 'reverse' | 'mdns';
+
 export interface Host {
   ip: string;
   hostname?: string | null;
@@ -14,6 +26,7 @@ export interface Host {
   vendor?: string | null;
   rtt_ms?: number | null;
   found_by?: FoundBy | null;
+  hostname_source?: NameSource | null;
 }
 
 export type PortStatus = 'open' | 'closed' | 'filtered' | 'error';

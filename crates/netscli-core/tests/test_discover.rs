@@ -115,12 +115,31 @@ async fn hosts_serialize_with_the_fields_downstream_reads() {
         vendor: Some("Example Corp".to_string()),
         rtt_ms: Some(3),
         found_by: netscli_core::FoundBy::Probe,
+        hostname_source: Some(netscli_core::NameSource::Mdns),
     };
 
     let value = serde_json::to_value(&host).expect("Host serializes");
-    for key in ["ip", "hostname", "mac", "vendor", "found_by"] {
+    for key in [
+        "ip",
+        "hostname",
+        "mac",
+        "vendor",
+        "found_by",
+        "hostname_source",
+    ] {
         assert!(value.get(key).is_some(), "missing {key}: {value}");
     }
+    // Lowercase on the wire, matching `found_by`. The TUI, the desktop app
+    // and the MCP schema all read these as strings, so the serde rename is
+    // the contract rather than the Rust spelling.
+    assert_eq!(
+        value.get("hostname_source").and_then(|v| v.as_str()),
+        Some("mdns")
+    );
+    assert_eq!(
+        value.get("found_by").and_then(|v| v.as_str()),
+        Some("probe")
+    );
 }
 
 #[tokio::test]

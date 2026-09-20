@@ -27,6 +27,27 @@ pub enum FoundBy {
     Neighbor,
 }
 
+/// Where a host's name came from.
+///
+/// A separate axis from [`FoundBy`], which answers how the host itself was
+/// found. Merging the two would make both harder to read: a host can be found
+/// by probe and named by mDNS, or found in the neighbour table and named by
+/// reverse DNS, in any combination.
+///
+/// Reported because the two sources mean different things. A reverse-DNS name
+/// is what the network's own resolver calls the host; an mDNS name is what the
+/// device calls itself, which is usually friendlier and occasionally a
+/// marketing string. Neither is authoritative, and a reader deciding whether
+/// to trust one needs to know which it is.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum NameSource {
+    /// Reverse DNS, or LLMNR/NetBIOS via `ping -a` on Windows.
+    Reverse,
+    /// The host's own mDNS/DNS-SD announcement.
+    Mdns,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct Host {
     pub ip: IpAddr,
@@ -36,7 +57,27 @@ pub struct Host {
     pub rtt_ms: Option<u64>,
     /// Additive field: existing consumers that ignore it are unaffected.
     pub found_by: FoundBy,
+    /// Which lookup produced `hostname`, or `None` when there is no name.
+    /// Additive, like `found_by`.
+    pub hostname_source: Option<NameSource>,
 }
+
+/// How long the mDNS browse that runs alongside a discover listens for.
+///
+/// Measured on an ordinary home LAN rather than picked: unique hosts reached
+/// their ceiling of 7 at 1000ms and did not move at 1500, 2000 or 3000ms,
+/// while 500ms was unstable across repeat runs (3 hosts, then 5) and 250ms
+/// returned nothing at all twice. 1500 sits past the plateau with margin for a
+/// slower network, and well under the 3000ms the explicit `/mdns` browse uses
+/// -- that one is a deliberate "go and look", this one rides along.
+///
+/// It bounds the only case where this costs anything. The browse starts with
+/// the ping sweep, so on any real subnet it has long finished by the time the
+/// sweep has; the window is only visible when the sweep finishes first, on a
+/// /30 or a near-empty range, and then it adds at most
+/// `1500ms - sweep duration`.
+#[cfg(feature = "mdns")]
+const MDNS_FUSION_WINDOW_MS: u64 = 1500;
 
 pub struct DiscoverEngine {
     ping_scanner: PingScanner,
@@ -108,6 +149,24 @@ impl DiscoverEngine {
     ) -> Result<Vec<Host>> {
         crate::ops::validation::ensure_subnet_limit(&subnet, &subnet.to_string())?;
         let ips: Vec<IpAddr> = subnet.hosts().map(IpAddr::V4).collect();
+
+        // 0) Start listening for mDNS now, so the browse overlaps everything
+        // below instead of following it.
+        //
+        // This is the whole reason discover can name a Hue bridge or a
+        // Raspberry Pi. Consumer routers do not serve PTR records for their
+        // own DHCP clients, and appliances ignore LLMNR and NetBIOS, so the
+        // reverse lookup in step 3 comes back empty for exactly the devices
+        // someone opened the app to identify -- while those same devices are
+        // announcing their names over mDNS the entire time.
+        //
+        // Spawned rather than awaited: a browse is a fixed listening window,
+        // not work that finishes early, so the only way it costs nothing is
+        // to run it against the clock the sweep is already spending.
+        #[cfg(feature = "mdns")]
+        let mdns_browse = tokio::spawn(crate::mdns::MdnsEngine::discover_common(
+            std::time::Duration::from_millis(MDNS_FUSION_WINDOW_MS),
+        ));
 
         // 1) Ping first (fast), to avoid reverse-DNS work on dead hosts.
         let total = ips.len();
@@ -216,19 +275,68 @@ impl DiscoverEngine {
             HashMap::new()
         };
 
+        // 4) Fuse in mDNS names, for hosts the reverse lookup left unnamed.
+        //
+        // Fill-blanks-only, deliberately. A host that already resolved keeps
+        // the name the network's resolver gave it, so nothing that works
+        // today changes under anyone comparing runs or scripting the output.
+        // The change is additive in effect as well as in shape.
+        //
+        // Every name goes through the same `normalize_hostname` the reverse
+        // lookups use, and that is not tidiness. An mDNS name is a string
+        // chosen by whoever runs the other machine, exactly like a PTR record
+        // or an LLMNR reply -- untrusted remote text, which ARCHITECTURE.md
+        // requires be treated as data and never as control. That function
+        // rejects names carrying control characters, which is what stops a
+        // device calling itself an escape sequence from repainting a terminal
+        // or forging the row above it.
+        //
+        // A failed or unavailable browse is not an error here: no mDNS means
+        // the same empty column as before, which is the behaviour this is
+        // improving on rather than a regression to report.
+        #[cfg(feature = "mdns")]
+        let mdns_names: HashMap<IpAddr, String> = match mdns_browse.await {
+            Ok(Ok(services)) => services
+                .into_iter()
+                .filter_map(|service| {
+                    crate::dns::normalize_hostname(service.hostname)
+                        .map(|name| (service.addresses, name))
+                })
+                .flat_map(|(addresses, name)| {
+                    addresses.into_iter().map(move |ip| (ip, name.clone()))
+                })
+                .collect(),
+            _ => HashMap::new(),
+        };
+
         let build = |ip: IpAddr, rtt_ms: Option<u64>, found_by: FoundBy| {
             let mac_entry = arp_map.get(&ip);
             let mac_str = mac_entry.map(|e| e.mac.to_string());
             let vendor = mac_entry
                 .and_then(|e| e.vendor.clone())
                 .or_else(|| mac_str.as_deref().and_then(lookup_vendor));
+            let reverse_name = hostname_map.get(&ip).cloned().unwrap_or(None);
+            #[cfg(feature = "mdns")]
+            let (hostname, hostname_source) = match reverse_name {
+                Some(name) => (Some(name), Some(NameSource::Reverse)),
+                None => match mdns_names.get(&ip) {
+                    Some(name) => (Some(name.clone()), Some(NameSource::Mdns)),
+                    None => (None, None),
+                },
+            };
+            #[cfg(not(feature = "mdns"))]
+            let (hostname, hostname_source) = match reverse_name {
+                Some(name) => (Some(name), Some(NameSource::Reverse)),
+                None => (None, None),
+            };
             Host {
                 ip,
-                hostname: hostname_map.get(&ip).cloned().unwrap_or(None),
+                hostname,
                 mac: mac_str,
                 vendor,
                 rtt_ms,
                 found_by,
+                hostname_source,
             }
         };
 
