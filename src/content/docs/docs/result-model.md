@@ -46,11 +46,12 @@ Discovery and sweep results describe hosts. A host row carries:
 | Field | Meaning |
 | --- | --- |
 | `ip` | Host address. |
-| `hostname` | Reverse DNS or local name when available. |
+| `hostname` | Reverse DNS, LLMNR/NetBIOS, or the host's own mDNS name when available. |
 | `mac` | MAC address when present in ARP/vendor data. |
 | `vendor` | OUI vendor lookup. |
 | `rtt_ms` | Reachability latency. |
 | `found_by` | Which probe found the host. |
+| `hostname_source` | Where `hostname` came from: `reverse` or `mdns`. Absent when the host has no name. |
 
 Discovery prioritizes inventory. Sweep adds exposed-service data by scanning selected ports on discovered hosts.
 
