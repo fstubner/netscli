@@ -157,7 +157,6 @@
   position: relative;
   overflow: auto;
   outline: 0;
-  user-select: none;
   box-shadow:
     var(--table-shadow-top),
     var(--table-shadow-right),
@@ -174,12 +173,13 @@
   outline-offset: -1px;
 }
 
+/* No `user-select: none` here or on `.table-shell`: table values exist to be
+   copied. Row selection is a click handler; Ctrl+A preventDefaults. #417 */
 .result-table {
   width: 100%;
   min-width: 680px;
   border-collapse: collapse;
   table-layout: fixed;
-  user-select: none;
 }
 
 .result-table thead {
