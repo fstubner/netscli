@@ -307,7 +307,23 @@ html[data-js] .release-collapsible:not(.release-expanded) .release-body::after{
   content:"";
   position:absolute;left:0;right:0;bottom:0;height:84px;
   pointer-events:none;
-  background:linear-gradient(180deg,rgba(var(--ui-bg-rgb), 0),rgba(var(--ui-bg-rgb), .95) 70%,var(--ui-surface));
+  /* Every stop on the page-background channel, so the fade stays the card's
+     own hue.
+   *
+   * The last stop was `--ui-surface` (#191d25 in dark -- rgb(25,29,37), blue
+   * twelve points above red). The card it fades over is `.release-item`:
+   * `--ui-lift-rgb` at 2.8% over the page background, which composites to a
+   * neutral grey. Fading a neutral card into a blue-tinted stop is what made
+   * the overflow shadow read as navy rather than as the card continuing.
+   *
+   * `--ui-bg-rgb` is ~2% off the card's exact composite (17,17,17 against
+   * 23,23,23 in dark) and that gap is below perception at the bottom of a
+   * gradient. The old stop was wrong by twenty points on one channel, which
+   * is not. Both tokens flip with the theme, so this needs no light variant. */
+  background:linear-gradient(180deg,
+    rgba(var(--ui-bg-rgb), 0),
+    rgba(var(--ui-bg-rgb), .95) 70%,
+    rgb(var(--ui-bg-rgb)));
 }
 .release-body>*+*{margin-top:14px}
 .release-summary{
@@ -334,7 +350,27 @@ html[data-js] .release-collapsible:not(.release-expanded) .release-body::after{
   margin:26px 0 9px;
 }
 .release-body .release-heading:first-child{margin-top:0}
-.release-paragraph{margin:0;max-width:none;min-width:0;overflow-wrap:anywhere}
+/* Bottom and inline margins only -- NOT the `margin:0` shorthand.
+ *
+ * `.release-body>*+*` above is the rule that spaces every block in a release
+ * card, and it is one class deep, exactly like this selector. Same
+ * specificity means source order decides, and this rule comes later, so the
+ * shorthand's implicit `margin-top:0` beat it and every paragraph sat flush
+ * against the block above it.
+ *
+ * The visible result was on v0.3.1: the curated summary and the body's own
+ * first paragraph rendered as one unbroken run of text with only a line
+ * wrap between them, which read as a missing paragraph break rather than as
+ * two paragraphs.
+ *
+ * Leaving the top margin alone hands spacing back to the flow rule. Nothing
+ * needs a zero top here -- a paragraph is never the card's first child,
+ * because `.release-summary` always is. */
+.release-paragraph{
+  margin-block-end:0;
+  margin-inline:0;
+  max-width:none;min-width:0;overflow-wrap:anywhere;
+}
 .release-note-list{
   margin:0;padding-left:1.15rem;display:grid;gap:6px;max-width:none;
   min-width:0;
