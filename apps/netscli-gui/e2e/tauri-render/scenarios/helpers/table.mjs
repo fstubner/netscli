@@ -18,10 +18,19 @@ async function assertKeyboardSelection(driver) {
   assert.ok(rowCount > 1, 'Keyboard selection test needs multiple rows');
   const table = await driver.findElement(By.css(GRID));
   await driver.executeScript(`document.querySelector('${GRID}')?.focus();`);
-  const tableUserSelect = await driver.executeScript(`
-    return getComputedStyle(document.querySelector('[data-testid="result-table"]')).userSelect;
-  `);
-  assert.equal(tableUserSelect, 'none', 'Result table should not select text during keyboard row selection');
+  // No assertion on `user-select` here.
+  //
+  // This used to require `user-select: none` on the table, as a second guard
+  // against Ctrl+A selecting page text alongside rows. It is not needed: the
+  // handler in resultTableInteractions.ts calls `preventDefault()` and
+  // `getSelection().removeAllRanges()` before selecting all rows, so the
+  // behaviour holds on its own -- and the assertion below tests exactly that
+  // behaviour rather than the mechanism behind it.
+  //
+  // The CSS had a cost the guard did not justify: it made every port, banner
+  // and MAC address in the table unselectable, so the only way to copy one
+  // was the detail pane (#417). Pinning the mechanism here is what would have
+  // made that look deliberate forever.
   await driver.executeScript(`
     const table = document.querySelector('${GRID}');
     window.getSelection()?.removeAllRanges();

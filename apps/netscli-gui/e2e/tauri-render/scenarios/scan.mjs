@@ -40,6 +40,29 @@ export async function exerciseScan(driver, port) {
   );
   assert.ok(jsonTokenCount > 5, `Raw JSON should be syntax highlighted, got ${jsonTokenCount} tokens`);
 
+  // Results text must stay selectable (#417).
+  //
+  // `.table-shell` and `.result-table` both set `user-select: none`, so a
+  // port, banner or MAC address could not be copied from the table at all --
+  // the detail pane was the only route, because details.css sets
+  // `user-select: text`. Row selection is a click handler and Ctrl+A is
+  // handled explicitly with preventDefault, so nothing depended on the CSS.
+  //
+  // The computed value is the assertion rather than a scripted selection.
+  // An earlier version of this built a Range over the cell and read
+  // `Selection.toString()` back: it proved the behaviour, and it also left
+  // state that broke the context-menu assertion two scenarios later. The
+  // property is what decides whether a drag can select, so testing it
+  // directly costs nothing and disturbs nothing.
+  const cellUserSelect = await driver.executeScript(
+    `return getComputedStyle(document.querySelector('${rowSelector} td')).userSelect;`,
+  );
+  assert.notEqual(
+    cellUserSelect,
+    'none',
+    'Result cells should be selectable so values can be copied from the table',
+  );
+
   await replaceInput(driver, '[data-testid="result-filter"]', String(port));
   await waitForRow(driver, rowSelector);
   await replaceInput(driver, '[data-testid="result-filter"]', 'no-match-for-render-test');
