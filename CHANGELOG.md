@@ -18,6 +18,24 @@ its heading and collects entries; the date and the link go on with the tag.
 
 ## [Unreleased]
 
+### Added
+
+- **Discover names hosts from mDNS when reverse DNS cannot.** Consumer routers
+  do not serve PTR records for their own DHCP clients, and appliances ignore
+  LLMNR and NetBIOS, so reverse lookup returned nothing for exactly the devices
+  someone opened the app to identify. Those devices announce their names over
+  mDNS constantly, and netscli has shipped an mDNS browser all along as a
+  separate operation that discover never consulted. It does now, filling only
+  the blanks, so nothing that resolves today changes. On one ordinary /24 that
+  named 3 more of 26 hosts, taking 21 named to 24. Results carry a
+  `hostname_source` of `reverse` or `mdns`, since a name from a device's own
+  announcement is a different kind of claim from one in DNS.
+- **The desktop app says the MCP server exists.** Someone who only ever opens
+  the app had no way to learn that netscli ships an MCP server, let alone
+  connect an agent to one. There is now a panel that looks for a netscli binary
+  and gives you the client configuration to paste, including what to do when it
+  cannot find one — the desktop installers do not carry the CLI.
+
 ### Fixed
 
 - **The docs site lost its navigation and its theme switch between 800px and
@@ -30,17 +48,16 @@ its heading and collects entries; the date and the link go on with the tag.
   substitute: it lists the pages of the docs and carries five of those six
   links nowhere.
 
-  The search button had a second fault behind it: the width at which the links
-  hide moved from 900px to 1152px, and two rules that depended on that number
-  stayed where they were.
-  The layout seam ended up on a hidden element, which takes no part in the
-  layout, so search fell back to the left with up to 861px of empty bar beside
-  it. The theme control was hidden on the understanding that the mobile menu
-  carried it from there down, but the button that opens that menu only appears
-  below 800px, so for 352px of width there was nothing to press. A new check
-  measures where the header's controls actually sit at seventeen widths, since
-  neither fault was visible to the existing accessibility, contrast or
-  performance gates.
+  The search button had a second fault behind it. The width at which the links
+  hide moved from 900px to 1152px and two rules that depended on that number
+  stayed put, so the layout seam ended up on a hidden element, which takes no
+  part in the layout. Search fell back to the left with up to 861px of empty
+  bar beside it.
+
+  A new check measures where the header's controls sit at seventeen widths.
+  Neither fault was visible to the existing accessibility, contrast or
+  performance gates, because both are about position rather than markup,
+  colour or speed.
 
 - **`netscli-gui-bin` on the AUR installed a desktop app that could not
   start.** The PKGBUILD did not set `options=('!strip')`, and `strip` is in
@@ -76,6 +93,34 @@ its heading and collects entries; the date and the link go on with the tag.
   `--gpu-compositing` flags, which are remembered across launches. Linux only:
   the other two platforms use a web engine with neither the fault nor the
   setting. Also reported in #378.
+- **Text in the desktop app's result tables can be selected again.** Both the
+  table and its wrapper set `user-select: none`, so a port, MAC address,
+  vendor string or banner could not be dragged over with the mouse — and those
+  values are on screen precisely so they can go somewhere else. The only route
+  out was the detail pane. Selecting rows is a click, not a drag, so nothing
+  was gained by it. Reported in #417.
+- **The website's release notes lost their paragraph breaks, and the fade over
+  a long entry read navy rather than matching the page.** Both on the changelog
+  page.
+
+### Changed
+
+- **The website and docs got another pass.** The install section's two
+  controls line up and its alternatives stopped shouting; the hero badge shows
+  the released version; the interfaces are shown rather than described; the
+  README says only what a README can and its TUI screenshots work again; the
+  comparison with nmap and the other scanners is fairer in both directions.
+  Docs pages carry structured data, and the docs shell picked up a Lighthouse
+  gate and two fixes it found.
+
+### Security
+
+- **Three open advisories cleared.** `rustls` 0.23.40 → 0.23.45
+  (RUSTSEC-2026-0285, medium), which was in 0.3.1's lockfile and so is in the
+  binaries that release produced. The other two are the website's build
+  dependencies rather than anything in a release artifact: `adm-zip` ≤0.6.0
+  (GHSA-vwc7-r8mq-g2x9 and GHSA-7q85-xj36-vmfc, high) and `devalue` <5.9.1
+  (GHSA-9rgm-9g3h-6x36, moderate).
 
 ## [0.3.1] — 2026-09-11
 
