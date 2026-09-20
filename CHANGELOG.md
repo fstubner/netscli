@@ -39,11 +39,21 @@ its heading and collects entries; the date and the link go on with the tag.
   release was built on. Those libraries are now removed from the image after
   it is built. Reported in #378 against v0.2.6 on Mesa 26.2.2; v0.3.1 bundled
   the same nine.
-- **Documented the workaround for a desktop window that opens black or
-  blank.** This is WebKitGTK's hardware compositing failing silently against
-  a driver that only partly supports it, seen on virtual machines using
-  `vmwgfx`. The install page now names `WEBKIT_DISABLE_COMPOSITING_MODE=1`.
-  Also reported in #378.
+- **A desktop window that opens black or blank now recovers on the next
+  launch.** WebKitGTK's hardware compositing can fail against a driver that
+  only partly supports it, and it fails silently: the window opens, nothing
+  paints, and there is nothing on stderr to go on. Seen on virtual machines
+  using `vmwgfx`. The app now marks each launch and clears the mark once the
+  UI has actually drawn a frame, so a launch that never drew one is noticed by
+  the next, which turns hardware compositing off and says why.
+
+  This could not be a setting in the app. Every GUI preference lives in the
+  webview's `localStorage`, and the webview is the part that is not rendering,
+  so someone looking at a blank window cannot reach any of it. Alongside the
+  automatic recovery there are now `--disable-gpu-compositing` and
+  `--gpu-compositing` flags, which are remembered across launches. Linux only:
+  the other two platforms use a web engine with neither the fault nor the
+  setting. Also reported in #378.
 
 ## [0.3.1] — 2026-09-11
 
