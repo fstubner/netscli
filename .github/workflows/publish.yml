@@ -538,6 +538,15 @@ jobs:
             cat packaging/aur/netscli-gui-bin/PKGBUILD >&2
             exit 1
           fi
+          # `!strip` is load-bearing, not housekeeping — see the PKGBUILD's
+          # own note. Without it makepkg strips the appended squashfs off the
+          # AppImage and ships the bare runtime, which installs and packages
+          # cleanly and only fails once a user runs it (#377). Nothing else
+          # in this pipeline can see that, so the line is checked here.
+          if ! grep -qF "options=('!strip')" packaging/aur/netscli-gui-bin/PKGBUILD; then
+            echo "ERROR: PKGBUILD is missing options=('!strip'); makepkg would truncate the AppImage" >&2
+            exit 1
+          fi
           echo "--- rendered ---"
           cat packaging/aur/netscli-gui-bin/PKGBUILD
 

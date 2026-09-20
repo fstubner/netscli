@@ -16,6 +16,21 @@ them: it printed "24 Aug 2026" for 0.3.1 for four days on the strength of a
 date written here when the notes were drafted. An in-flight version keeps
 its heading and collects entries; the date and the link go on with the tag.
 
+## [Unreleased]
+
+### Fixed
+
+- **`netscli-gui-bin` on the AUR installed a desktop app that could not
+  start.** The PKGBUILD did not set `options=('!strip')`, and `strip` is in
+  makepkg's default options. An AppImage is the AppImage runtime — an
+  ordinary static ELF — with a squashfs image appended after everything the
+  ELF headers describe, so stripping it rewrote the file from its section
+  table and threw the appended image away. What reached `/usr/bin` was the
+  944,632-byte runtime out of a 79 MB download, and running it said only
+  "This doesn't look like a squashfs image". The package built, installed and
+  verified its checksum at every step, because the truncation happened after
+  the checksum was checked. Reported in #377.
+
 ## [0.3.1] — 2026-09-11
 
 The first release since 0.2.6 in May, and a large one: four months of work on
