@@ -30,6 +30,20 @@ its heading and collects entries; the date and the link go on with the tag.
   "This doesn't look like a squashfs image". The package built, installed and
   verified its checksum at every step, because the truncation happened after
   the checksum was checked. Reported in #377.
+- **The Linux desktop AppImage no longer aborts on hosts with a newer Mesa.**
+  It failed with `Could not create default EGL display: EGL_BAD_PARAMETER`
+  before any window appeared. The AppImage carried its own copies of nine
+  display-stack libraries — the wayland client stack, `libxkbcommon`, and
+  part of the xcb/X11 stack — and put them ahead of the host's, so the host's
+  Mesa was made to talk to the wayland client library from the machine the
+  release was built on. Those libraries are now removed from the image after
+  it is built. Reported in #378 against v0.2.6 on Mesa 26.2.2; v0.3.1 bundled
+  the same nine.
+- **Documented the workaround for a desktop window that opens black or
+  blank.** This is WebKitGTK's hardware compositing failing silently against
+  a driver that only partly supports it, seen on virtual machines using
+  `vmwgfx`. The install page now names `WEBKIT_DISABLE_COMPOSITING_MODE=1`.
+  Also reported in #378.
 
 ## [0.3.1] — 2026-09-11
 

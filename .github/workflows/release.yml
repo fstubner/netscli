@@ -364,6 +364,34 @@ jobs:
         run: npm run tauri -- build --target ${{ matrix.target }} -- --locked
         working-directory: apps/netscli-gui
 
+      # linuxdeploy bundles a copy of the wayland/xcb client stack and puts
+      # it ahead of the host's on LD_LIBRARY_PATH, which aborts the app on
+      # any host whose Mesa is newer than the runner's (#378). Nothing in
+      # Tauri's bundler can switch that off, so the AppImage is corrected
+      # here, before it is renamed, hashed or signed.
+      #
+      # Failing when the glob matches nothing is the point of the check
+      # below. Without it a change to Tauri's output path would turn this
+      # step into a no-op that still reports success, and the first sign of
+      # it would be a bug report against a shipped release.
+      - name: Unbundle host display libraries from the .AppImage
+        if: runner.os == 'Linux'
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          images=(target/"${TARGET}"/release/bundle/appimage/*.AppImage)
+          if [ ${#images[@]} -eq 0 ]; then
+            echo "::error::no .AppImage found to fix under target/${TARGET}/release/bundle/appimage/" >&2
+            exit 1
+          fi
+          for image in "${images[@]}"; do
+            echo "--- ${image} ---"
+            bash scripts/release/fix-appimage-host-libs.sh "${image}"
+          done
+
       # Tauri puts bundles under apps/netscli-gui/src-tauri/target/<TARGET>/
       # release/bundle/{deb,appimage,dmg,msi}/. Rename each artifact to a
       # predictable name then sigstore-sign it.
