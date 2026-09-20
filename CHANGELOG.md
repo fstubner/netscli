@@ -20,10 +20,19 @@ its heading and collects entries; the date and the link go on with the tag.
 
 ### Fixed
 
-- **The docs site had no theme switch between 800px and 1152px wide, and the
-  search button sat stranded beside the wordmark.** Both came from the same
-  thing: the width at which the header hides its nav links moved from 900px to
-  1152px, and two rules that depended on that number stayed where they were.
+- **The docs site lost its navigation and its theme switch between 800px and
+  1152px wide, and the search button sat stranded beside the wordmark.** The
+  header links — Features, Install, FAQ, Docs, Changelog, GitHub — and the
+  light/dark control were both hidden across that range, on the understanding
+  that the mobile menu carried them from there down. The button that opens
+  that menu only appears below 800px, so for 352px of width there was nothing
+  to press and no way to reach any of it. The docs sidebar is not a
+  substitute: it lists the pages of the docs and carries five of those six
+  links nowhere.
+
+  The search button had a second fault behind it: the width at which the links
+  hide moved from 900px to 1152px, and two rules that depended on that number
+  stayed where they were.
   The layout seam ended up on a hidden element, which takes no part in the
   layout, so search fell back to the left with up to 861px of empty bar beside
   it. The theme control was hidden on the understanding that the mobile menu

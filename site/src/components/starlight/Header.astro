@@ -306,8 +306,11 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
         margin-right: 0;
       }
 
+      /* No auto margin here. Search carries the seam (docs/header.css), and a
+         second auto margin on the same flex row splits the free space between
+         the two rather than adding to it -- measured at 1142px, 206px of it
+         landed between the search icon and the first link. */
       .docs-nav-links {
-        margin-left: auto;
         gap: 0.7rem;
         font-size: 0.76rem;
       }
@@ -322,27 +325,28 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
 
     }
 
-    /* 72rem, matching the hamburger and the sidebar.
+    /* The links go when the mobile menu arrives, and not before.
      *
-     * This was 900px, to collapse at the same width as the landing bar
-     * (Nav.astro). That traded one inconsistency for a worse one: the
-     * hamburger appears at 72rem (header.css) and the sidebar leaves at 72rem
-     * (sidebar.css), so between 901 and 1152 the docs bar showed the full six
-     * links AND a hamburger whose menu -- MobileMenuFooter.astro -- lists
-     * those same six links and the theme control. Two navigations on one
-     * screen, one of them a duplicate of the other.
+     * This was 72rem, on the reasoning that the hamburger appears at 72rem and
+     * its menu -- MobileMenuFooter.astro -- lists these same links, so showing
+     * both would be two navigations on one screen. The hamburger does not
+     * appear at 72rem. It is Starlight's `.sl-menu-button`, which is
+     * `md:sl-hidden`, so it arrives at 50rem. Between 800px and 1152px the
+     * links were hidden and nothing replaced them.
      *
-     * The earlier note is right that there is ROOM for the links at 901px
-     * (476px of content against 842px). Room was never the question; the
-     * question is whether a reader sees one navigation or two. Matching the
-     * hamburger wins over matching the landing bar, because the duplication
-     * is visible on a single screen and the cross-page difference is only
-     * visible by navigating between them.
+     * The sidebar does not cover this. It lists the pages of the docs;
+     * these are Features, Install, FAQ, Docs, Changelog and GitHub, and five
+     * of the six appear nowhere else on the page. Losing them is losing the
+     * only route to the rest of the site.
      *
-     * Nav.astro keeps its own 900px: the landing page has no sidebar and no
-     * hamburger, so nothing there duplicates its links. The two numbers are
-     * deliberately different now, and are no longer a pair to keep in step. */
-    @media (max-width: 72rem) {
+     * Room is not the constraint the old note thought it might be: measured
+     * at 802px, the narrowest width this band covers, the four elements come
+     * to 612px (wordmark 160, search 40, links 311, theme 101) of the 744px
+     * the bar has.
+     *
+     * Nav.astro keeps its own 900px. The landing page has no sidebar and no
+     * hamburger, so the two numbers are not a pair to keep in step. */
+    @media (max-width: 49.99rem) {
       .docs-nav-links {
         display: none;
       }

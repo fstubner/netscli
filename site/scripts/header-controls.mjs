@@ -131,13 +131,25 @@ try {
       }
     }
 
-    /* Below 50rem the theme control lives in the mobile menu, which is shut,
-     * so "not visible" is correct there as long as the button that opens it
-     * is. Above it, something in the header has to carry it. */
+    /* Below 50rem the theme control and the site links live in the mobile
+     * menu, which is shut, so "not visible" is correct there as long as the
+     * button that opens it is. Above it, the header has to carry both. */
     const menuAvailable = m.menuButton && !m.menuButton.hidden;
     if (!m.anyThemeVisible && !menuAvailable) {
       failures.push(
         `${m.vw}px: no theme control on screen and no menu button to reach one`,
+      );
+    }
+
+    /* The links go with the theme control, and for the same reason. They are
+     * Features, Install, FAQ, Docs, Changelog and GitHub; the docs sidebar
+     * lists the pages of the docs and carries five of those six nowhere, so
+     * it is not a substitute. This check was written without this assertion
+     * and the first fix for the theme control left the links hidden across
+     * the same band, which is the failure it now pins. */
+    if ((!m.links || m.links.hidden) && !menuAvailable) {
+      failures.push(
+        `${m.vw}px: no site navigation on screen and no menu button to reach it`,
       );
     }
   }
