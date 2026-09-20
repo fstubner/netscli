@@ -1,0 +1,77 @@
+/* The MCP section of the Settings dialog.
+ *
+ * Its own file because settings.css is at the 300-line guard and this is a
+ * self-contained region, the same reason settings-controls.css and
+ * settings-number-field.css are separate.
+ */
+
+/* ─── MCP server section ─────────────────────────────────────────────────
+ *
+ * Two shapes share one container: a multi-line JSON config block, and a
+ * single-line install command. Both are things to copy, so both get the same
+ * treatment -- a code surface with the copy control pinned to its top-right,
+ * clear of the text rather than over it.
+ *
+ * `align-items: start` so the button sits level with the block's first line
+ * instead of centring itself against six lines of JSON. */
+.settings-mcp-config {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px;
+  margin-top: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-base);
+}
+
+/* `pre`, not `code`: the config is six lines and its indentation is the
+   thing that makes it readable as JSON. Wrapping is allowed so a long
+   Windows path cannot push a horizontal scrollbar into the dialog. */
+.settings-mcp-config pre {
+  margin: 0;
+  min-width: 0;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.settings-mcp-config button {
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+}
+
+.settings-mcp-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 11px;
+  text-decoration: none;
+  justify-self: start;
+}
+
+.settings-mcp-link:hover,
+.settings-mcp-link:focus-visible {
+  color: var(--mint);
+}
+
+/* Let this section's copy wrap.
+ *
+ * Every other settings row pairs a control with a one-line note, so
+ * settings.css clips `small` with `white-space: nowrap` and an ellipsis. That
+ * is right there and wrong here: this section explains a concept instead of
+ * labelling a control, and its two sentences rendered as
+ * "... Install it and reopen Settings t…" -- the half that tells you what to
+ * do was the half that got cut. */
+.settings-mcp .settings-row-copy small {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  line-height: 1.5;
+}

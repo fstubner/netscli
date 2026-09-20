@@ -48,11 +48,24 @@ let nativeDriverProcess;
 let appProcess;
 let probeServer;
 
+/** Progress for the startup sequence.
+ *
+ * Between the build and the first scenario this harness used to print
+ * nothing, so a stall in setup was indistinguishable from a clean exit: the
+ * local symptom was "builds, then exits 0", and diagnosing it needed
+ * instrumentation added by hand. These lines are cheap and make the CI log
+ * say where it got to. */
+function step(label) {
+  console.log(`[setup] ${label}`);
+}
+
 async function main() {
-  let webdriverPort = process.env.TAURI_DRIVER_PORT ? Number(process.env.TAURI_DRIVER_PORT) : 0;
-  if (!webdriverPort) {
-    webdriverPort = await getFreePort();
-  }
+  // The WebDriver port is NOT chosen here. startNativeDriver picks it at the
+  // moment it spawns, because a port chosen now would be minutes stale by
+  // then -- see the note on that function.
+  const fixedDriverPort = process.env.TAURI_DRIVER_PORT
+    ? Number(process.env.TAURI_DRIVER_PORT)
+    : 0;
 
   const usingExternalApp = Boolean(process.env.TAURI_APP_PATH);
   if (usingExternalApp) {
@@ -67,18 +80,27 @@ async function main() {
     await run(npmBin, ['run', 'build']);
   }
 
+  step("probe server");
   const { server, port } = await startProbeServer();
   probeServer = server;
 
+  step("resolve native driver");
   const nativeDriverPath = await resolveNativeDriverPath();
+  step("find app binary");
   const application = findApplication();
   process.env.NETSCLI_EXPORT_DIR = artifactsDir;
   // We start the app, so we choose its debug port; the driver then attaches
   // to it rather than launching anything. See driver.mjs for why.
+  step("pick debug port");
   const debugPort = await getFreePort();
+  step("launch app");
   appProcess = await launchApplication(application, debugPort);
-  nativeDriverProcess = await startNativeDriver(nativeDriverPath, webdriverPort);
+  step("start native driver");
+  const started = await startNativeDriver(nativeDriverPath, fixedDriverPort);
+  nativeDriverProcess = started.child;
+  const webdriverPort = started.port;
 
+  step("create webdriver session");
   let driver;
   try {
     driver = await createDriver(webdriverPort, debugPort);
@@ -96,6 +118,7 @@ async function main() {
     throw error;
   }
 
+  step("session created; setting viewport");
   try {
     await setViewport(debugPort, DESKTOP_WINDOW);
     await withElement(driver, '[data-testid="app-shell"]', 20_000);

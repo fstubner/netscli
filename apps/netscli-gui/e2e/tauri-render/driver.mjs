@@ -6,7 +6,7 @@ import { download as downloadEdgeDriver } from 'edgedriver';
 import webdriver from 'selenium-webdriver';
 
 import { guiRoot, repoRoot } from './paths.mjs';
-import { waitForPort } from './processes.mjs';
+import { getFreePort, stopProcess, waitForPort } from './processes.mjs';
 
 export const { Builder, By, Key, until } = webdriver;
 
@@ -93,20 +93,39 @@ export async function launchApplication(application, debugPort) {
   child.getOutput = () => output;
   child.profileDir = profileDir;
 
-  await Promise.race([
-    waitForPort(debugPort, 60_000),
-    new Promise((_, reject) => {
-      child.once('exit', (code, signal) => {
-        reject(new Error(`app exited before opening its debug port (${code ?? signal})\n${output}`));
-      });
-    }),
-  ]);
+  // Kill the app if it never becomes usable.
+  //
+  // This used to let the rejection escape with the child still running, and
+  // the child is spawned with piped stdio, so those pipes kept node's event
+  // loop alive: the CI job printed "Timed out waiting for port" and then sat
+  // there for 21 more minutes until the 30-minute job cap killed it. The
+  // caller cannot clean this up, because `appProcess` is only assigned from
+  // this function's return value -- on the throw path it stays undefined and
+  // `stopProcess(appProcess)` is a no-op.
+  try {
+    await Promise.race([
+      waitForPort(debugPort, 60_000),
+      new Promise((_, reject) => {
+        child.once('exit', (code, signal) => {
+          reject(new Error(`app exited before opening its debug port (${code ?? signal})\n${output}`));
+        });
+      }),
+    ]);
+  } catch (error) {
+    stopProcess(child);
+    throw error;
+  }
 
   return child;
 }
 
 /** Run the platform WebDriver directly; `tauri-driver` is not in the path. */
-export async function startNativeDriver(nativeDriverPath, webdriverPort) {
+/** msedgedriver's own words when the port it was given is already bound. */
+function isPortCollision(message) {
+  return /bind\(\) returned an error|port not available/i.test(message);
+}
+
+function spawnNativeDriver(nativeDriverPath, webdriverPort) {
   let output = '';
   const child = spawn(
     nativeDriverPath,
@@ -118,16 +137,61 @@ export async function startNativeDriver(nativeDriverPath, webdriverPort) {
   child.stderr.on('data', (chunk) => { output += chunk.toString(); });
   child.getDriverOutput = () => output;
 
-  await Promise.race([
+  return Promise.race([
     waitForPort(webdriverPort),
     new Promise((_, reject) => {
       child.once('exit', (code, signal) => {
         reject(new Error(`native driver exited early with ${code ?? signal}\n${output}`));
       });
     }),
-  ]);
+  ])
+    .then(() => child)
+    .catch((error) => {
+      stopProcess(child);
+      throw error;
+    });
+}
 
-  return child;
+/**
+ * Start msedgedriver, choosing its port HERE rather than accepting one chosen
+ * earlier.
+ *
+ * The port used to be picked at the top of main(), then handed to this
+ * function minutes later -- after the Rust build and after the app launched.
+ * `getFreePort` reserves nothing: it binds an ephemeral port, reads it, and
+ * closes, so the number is only a fact about the instant it was taken.
+ * WebView2 starts a swarm of processes that take ephemeral ports, and one of
+ * them would take that one. msedgedriver then failed to bind and exited 1
+ * after printing only its banner:
+ *
+ *     [SEVERE]: bind() returned an error: Only one usage of each socket
+ *     address (protocol/network address/port) is normally permitted. (0x2740)
+ *     IPv6 port not available. Exiting...
+ *
+ * Reproduced directly by holding the port open and spawning the driver on it.
+ *
+ * Picking it here shrinks the window to milliseconds, and the retry closes
+ * what is left: the race cannot be eliminated, only made small and survivable.
+ * An explicit TAURI_DRIVER_PORT is honoured and never retried -- if a port was
+ * named, failing to get it is the answer, not a reason to use a different one.
+ */
+export async function startNativeDriver(nativeDriverPath, fixedPort) {
+  const attempts = fixedPort ? 1 : 3;
+  let lastError;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    const port = fixedPort || (await getFreePort());
+    try {
+      const child = await spawnNativeDriver(nativeDriverPath, port);
+      return { child, port };
+    } catch (error) {
+      lastError = error;
+      if (!isPortCollision(error.message)) throw error;
+      console.warn(`native driver could not bind port ${port}; retrying (${attempt}/${attempts})`);
+    }
+  }
+
+  throw lastError;
 }
 
 export async function createDriver(webdriverPort, debugPort) {

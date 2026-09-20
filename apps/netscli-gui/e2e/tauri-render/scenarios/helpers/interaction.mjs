@@ -68,39 +68,21 @@ async function assertThemedTooltips(driver) {
   assert.equal(state.nativeTitles.length, 0, `Native title tooltips should not be used: ${state.nativeTitles.join(', ')}`);
   assert.ok(state.tooltipCount >= 6, `Expected themed tooltip hooks, got ${state.tooltipCount}`);
   assert.equal(state.disabledTooltipHostOpacity, '1', 'Disabled toolbar buttons should not fade their themed tooltips');
-  await dispatchTooltipPointerOver(driver, '[data-testid="run-active-tab"]');
-  await waitForText(driver, '[data-testid="app-tooltip"]', /Start Scan|Run|Lookup/i);
-  const tooltipLayer = await driver.executeScript(`
-    const tooltip = document.querySelector('[data-testid="app-tooltip"]');
-    if (!tooltip) return null;
-    return {
-      position: getComputedStyle(tooltip).position,
-      zIndex: Number(getComputedStyle(tooltip).zIndex),
-    };
-  `);
-  assert.ok(tooltipLayer, 'Global tooltip should render');
-  assert.equal(tooltipLayer.position, 'fixed', 'Tooltips should be fixed-layer, not clipped by tab overflow');
-  assert.ok(tooltipLayer.zIndex >= 1000, `Tooltip should sit above app overlays, got z-index ${tooltipLayer.zIndex}`);
-  await dispatchTooltipPointerOver(driver, '.detail-actions button:last-child');
-  await waitForText(driver, '[data-testid="app-tooltip"]', /details pane/i);
-  const tooltipBounds = await driver.executeScript(`
-    const tooltip = document.querySelector('[data-testid="app-tooltip"]');
-    if (!tooltip) return null;
-    const rect = tooltip.getBoundingClientRect();
-    return {
-      left: rect.left,
-      right: rect.right,
-      top: rect.top,
-      bottom: rect.bottom,
-      width: window.innerWidth,
-      height: window.innerHeight,
-    };
-  `);
-  assert.ok(tooltipBounds, 'Tooltip bounds should be measurable');
-  assert.ok(tooltipBounds.left >= 0, `Tooltip should not be clipped on the left: ${tooltipBounds.left}`);
-  assert.ok(tooltipBounds.right <= tooltipBounds.width, `Tooltip should not be clipped on the right: ${tooltipBounds.right}/${tooltipBounds.width}`);
-  assert.ok(tooltipBounds.top >= 0, `Tooltip should not be clipped at the top: ${tooltipBounds.top}`);
-  assert.ok(tooltipBounds.bottom <= tooltipBounds.height, `Tooltip should not be clipped at the bottom: ${tooltipBounds.bottom}/${tooltipBounds.height}`);
+  const runTooltip = await hoverAndReadTooltip(
+    driver,
+    '[data-testid="run-active-tab"]',
+    /Start Scan|Run|Lookup/,
+  );
+  assert.ok(!runTooltip.error, `Global tooltip should render: ${runTooltip.error}`);
+  assert.equal(runTooltip.position, 'fixed', 'Tooltips should be fixed-layer, not clipped by tab overflow');
+  assert.ok(runTooltip.zIndex >= 1000, `Tooltip should sit above app overlays, got z-index ${runTooltip.zIndex}`);
+
+  const bounds = await hoverAndReadTooltip(driver, '.detail-actions button:last-child', /details pane/);
+  assert.ok(!bounds.error, `Tooltip bounds should be measurable: ${bounds.error}`);
+  assert.ok(bounds.left >= 0, `Tooltip should not be clipped on the left: ${bounds.left}`);
+  assert.ok(bounds.right <= bounds.viewportWidth, `Tooltip should not be clipped on the right: ${bounds.right}/${bounds.viewportWidth}`);
+  assert.ok(bounds.top >= 0, `Tooltip should not be clipped at the top: ${bounds.top}`);
+  assert.ok(bounds.bottom <= bounds.viewportHeight, `Tooltip should not be clipped at the bottom: ${bounds.bottom}/${bounds.viewportHeight}`);
 }
 
 async function assertInteractiveCursorTreatment(driver) {
@@ -122,26 +104,80 @@ async function assertInteractiveCursorTreatment(driver) {
   assert.equal(state.disabledCursor, 'not-allowed', 'Disabled toolbar actions should advertise disabled affordance');
 }
 
-async function dispatchTooltipPointerOver(driver, selector) {
-  const dispatched = await driver.executeScript(
+/**
+ * Hover a control and read its tooltip in ONE round trip.
+ *
+ * The three-step version of this -- dispatch, `waitForText`, then a separate
+ * `executeScript` to measure -- raced and lost. AppTooltip hides 40ms after a
+ * `pointerout` (see the close timer in AppTooltip.tsx), and each WebDriver
+ * round trip costs far more than 40ms, so anything producing a real pointerout
+ * between the wait and the measurement took the tooltip away. The wait passed,
+ * the measurement then found nothing, and the failure read as "Global tooltip
+ * should render" -- which sounds like the tooltip is broken rather than like a
+ * test that looked too late.
+ *
+ * Everything now happens inside the page: the hover is re-asserted on every
+ * animation frame until the text matches, so the hide timer is continually
+ * cancelled no matter what triggered it, and the measurement is taken in the
+ * same tick as the match. A real failure still reports, and now says what the
+ * tooltip actually held.
+ */
+async function hoverAndReadTooltip(driver, selector, pattern) {
+  return driver.executeAsyncScript(
     `
-      const control = document.querySelector(arguments[0]);
-      if (!control) return false;
-      const rect = control.getBoundingClientRect();
-      const EventCtor = window.PointerEvent ?? MouseEvent;
-      control.dispatchEvent(new EventCtor('pointerover', {
-        bubbles: true,
-        cancelable: true,
-        composed: true,
-        clientX: rect.left + rect.width / 2,
-        clientY: rect.top + rect.height / 2,
-      }));
-      if (typeof control.focus === 'function') control.focus({ preventScroll: true });
-      return true;
+      const selector = arguments[0];
+      const source = arguments[1];
+      const done = arguments[arguments.length - 1];
+      const wanted = new RegExp(source, 'i');
+      const control = document.querySelector(selector);
+      if (!control) return done({ error: 'no control matching ' + selector });
+
+      const hover = () => {
+        const rect = control.getBoundingClientRect();
+        const EventCtor = window.PointerEvent ?? MouseEvent;
+        control.dispatchEvent(new EventCtor('pointerover', {
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+          clientX: rect.left + rect.width / 2,
+          clientY: rect.top + rect.height / 2,
+        }));
+        if (typeof control.focus === 'function') control.focus({ preventScroll: true });
+      };
+
+      hover();
+      const deadline = Date.now() + 4000;
+      (function poll() {
+        const tooltip = document.querySelector('[data-testid="app-tooltip"]');
+        const text = tooltip ? tooltip.textContent || '' : '';
+        if (tooltip && wanted.test(text)) {
+          const style = getComputedStyle(tooltip);
+          const box = tooltip.getBoundingClientRect();
+          return done({
+            text,
+            position: style.position,
+            zIndex: Number(style.zIndex),
+            left: box.left,
+            right: box.right,
+            top: box.top,
+            bottom: box.bottom,
+            viewportWidth: window.innerWidth,
+            viewportHeight: window.innerHeight,
+          });
+        }
+        if (Date.now() > deadline) {
+          return done({
+            error: 'tooltip never matched ' + wanted + '; last text was '
+              + (tooltip ? JSON.stringify(text) : '(no tooltip element)'),
+          });
+        }
+        hover();
+        requestAnimationFrame(poll);
+      })();
     `,
     selector,
+    pattern.source,
   );
-  assert.equal(dispatched, true, `Expected tooltip host ${selector} to exist`);
 }
 
 async function assertSuppressesNativeContextMenu(driver) {

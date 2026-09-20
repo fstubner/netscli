@@ -77,6 +77,7 @@ async function assertSettingsDialog(driver) {
   await waitForText(driver, '.settings-interface-list', /\S/);
   await waitForText(driver, '.settings-interface-list', /Primary/i);
   await assertInterfacePickerRows(driver);
+  await assertMcpSection(driver);
   await closeSettingsDialog(driver);
 }
 
@@ -137,6 +138,52 @@ async function assertInterfacePickerRows(driver) {
   }
 }
 
+/**
+ * The MCP section, in whichever state this machine puts it in.
+ *
+ * Both states are legitimate and which one appears depends on the machine, so
+ * the assertion is on the shape of what is shown rather than on which branch
+ * rendered. The desktop app does not ship the CLI, so "not installed" is the
+ * common case for a real user and must not read as a failure here either.
+ *
+ * The config assertion is the one worth having: the block is pasted into
+ * another application and fails there, silently, so a malformed one is
+ * expensive and invisible. Parsing it catches the failure this is most likely
+ * to have -- an unescaped Windows path, which is a string full of backslashes
+ * going into JSON.
+ */
+async function assertMcpSection(driver) {
+  const mcp = await driver.executeScript(`
+    const section = document.querySelector('[data-testid="settings-mcp-section"]');
+    return {
+      present: section !== null,
+      text: section?.innerText ?? '',
+      config: document.querySelector('[data-testid="settings-mcp-config"]')?.textContent ?? null,
+      install: document.querySelector('[data-testid="settings-mcp-install"]')?.textContent ?? null,
+    };
+  `);
+
+  assert.ok(mcp.present, 'Settings should carry an MCP Server section');
+  assert.ok(
+    mcp.config !== null || mcp.install !== null,
+    'MCP section should show either a client config or an install command, got neither',
+  );
+
+  if (mcp.config === null) {
+    assert.match(mcp.install, /netscli/, 'Install command should mention netscli');
+    return;
+  }
+
+  const parsed = JSON.parse(mcp.config);
+  const entry = parsed?.mcpServers?.netscli;
+  assert.ok(entry, 'Config should define an mcpServers.netscli entry');
+  assert.deepEqual(entry.args, ['serve'], 'The client starts the server with `serve`');
+  assert.ok(
+    entry.command.length > 0 && entry.command !== 'netscli',
+    `Config should carry an absolute path, not a bare name, got "${entry.command}"`,
+  );
+}
+
 async function openSettingsDialog(driver) {
   const open = await driver.executeScript(
     "return document.querySelector('[data-testid=\"settings-dialog\"]') !== null",
@@ -186,4 +233,4 @@ async function assertSettingsDialogCentring(driver) {
   );
 }
 
-export { assertSettingsDialog, assertSettingsDialogCentring, closeSettingsDialog, openSettingsDialog };
+export { assertMcpSection, assertSettingsDialog, assertSettingsDialogCentring, closeSettingsDialog, openSettingsDialog };

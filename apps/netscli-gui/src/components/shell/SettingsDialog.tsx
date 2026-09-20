@@ -13,6 +13,7 @@ import {
 import type { DefaultInterfaceInfo, FileSavePreferences, InterfaceInfo } from '../../types/netscli';
 import type { Preferences } from '../../hooks/usePreferences';
 import { useModalFocus } from '../primitives/focus';
+import { McpServerSection } from './McpServerSection';
 import { NetworkActivitySection } from './NetworkActivitySection';
 import { SettingsNumberInput, SettingsSwitch } from './SettingsControls';
 
@@ -237,6 +238,8 @@ export function SettingsDialog({
             onSetTrafficPrecision={preferences.setTrafficPrecision}
             onToggleTrafficArrowAnimation={() => preferences.setTrafficIndicators((prev) => !prev)}
           />
+
+          <McpServerSection />
         </div>
       </section>
     </div>

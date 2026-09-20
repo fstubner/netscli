@@ -1,4 +1,5 @@
 mod files;
+mod mcp;
 mod monitor;
 mod operations;
 
@@ -7,6 +8,7 @@ pub(crate) use files::{
     get_file_save_preferences, open_result_bundle, open_saved_artifact, reveal_saved_artifact,
     save_result_bundle, set_file_save_ask_each_time,
 };
+pub(crate) use mcp::detect_netscli_cli;
 pub(crate) use monitor::{get_default_interface, get_network_stats, list_monitorable_interfaces};
 pub(crate) use operations::{
     cancel_operation, capture_pcap, clear_arp_table, discover_mdns, discover_network, dns_lookup,
