@@ -87,6 +87,22 @@ yay -S netscli-bin
 
 Release artifacts may include Linux CLI binaries and desktop packages such as `.deb` or `.AppImage`, depending on the release.
 
+### If the desktop window opens black or blank
+
+On some hosts the window appears but never paints anything. This is
+WebKitGTK's hardware compositing failing against a driver that only partly
+supports it, and it fails silently, so there is nothing on stderr to go on.
+It has been seen on virtual machines using the `vmwgfx` driver. Start the app
+with compositing off:
+
+```bash
+WEBKIT_DISABLE_COMPOSITING_MODE=1 netscli-gui
+```
+
+If that fixes it, keep the variable set for that machine. It is not the
+default because it turns off hardware compositing for everyone, including the
+large majority whose drivers handle it correctly.
+
 ## Cargo
 
 If Rust is installed:
