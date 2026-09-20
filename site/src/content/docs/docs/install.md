@@ -92,16 +92,33 @@ Release artifacts may include Linux CLI binaries and desktop packages such as `.
 On some hosts the window appears but never paints anything. This is
 WebKitGTK's hardware compositing failing against a driver that only partly
 supports it, and it fails silently, so there is nothing on stderr to go on.
-It has been seen on virtual machines using the `vmwgfx` driver. Start the app
-with compositing off:
+It has been seen on virtual machines using the `vmwgfx` driver.
+
+**The app should recover by itself.** It notices that a launch never drew
+anything and turns hardware compositing off on the next one, so closing the
+blank window and opening it again is usually enough. It prints the reason to
+stderr when it does this.
+
+To skip the failed launch, or if the automatic recovery does not fire:
 
 ```bash
-WEBKIT_DISABLE_COMPOSITING_MODE=1 netscli-gui
+netscli-gui --disable-gpu-compositing
 ```
 
-If that fixes it, keep the variable set for that machine. It is not the
-default because it turns off hardware compositing for everyone, including the
-large majority whose drivers handle it correctly.
+That is remembered, so later launches from the desktop icon keep it. To undo
+it and go back to hardware compositing:
+
+```bash
+netscli-gui --gpu-compositing
+```
+
+Compositing is not disabled by default because it costs hardware compositing
+for everyone, including the large majority whose drivers handle it correctly.
+The `WEBKIT_DISABLE_COMPOSITING_MODE=1` environment variable also still works,
+and overrides everything above for that one run.
+
+This applies to Linux only. Windows and macOS use a different web engine that
+has neither the fault nor the setting.
 
 ## Cargo
 

@@ -2,6 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod commands;
+mod render_mode;
 mod state;
 
 use std::sync::Mutex;
@@ -41,6 +42,9 @@ fn configure_dev_oui_path() {
 
 fn main() {
     configure_dev_oui_path();
+    // Before the builder, because that is before the web process is spawned
+    // and therefore before WebKit reads its environment. See render_mode.rs.
+    render_mode::apply();
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -78,7 +82,8 @@ fn main() {
             get_network_stats,
             list_monitorable_interfaces,
             get_default_interface,
-            detect_netscli_cli
+            detect_netscli_cli,
+            render_mode::report_first_paint
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
