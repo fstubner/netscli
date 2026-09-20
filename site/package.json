@@ -29,7 +29,7 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
     "@axe-core/cli": "^4.13.0",
-    "chromedriver": "^152.0.3",
+    "chromedriver": "^153.0.1",
     "lighthouse": "^13.4.1",
     "linkedom": "^0.18.13",
     "selenium-webdriver": "^4.48.0",
