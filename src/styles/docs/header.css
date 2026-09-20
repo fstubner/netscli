@@ -118,40 +118,34 @@ html[data-theme='light'][data-docs-scrolled='true'] header.header::after {
     padding-inline: 1rem;
   }
 
-  /* Collapsed, the search joins the controls on the right.
+  /* Collapsed, search shrinks to an icon and keeps the seam.
    *
-   * Full width it is a labelled box beside the wordmark, which reads as part
-   * of the identity group. Collapsed to a 2.5rem icon it does not: measured
-   * at 1150px it sat at x=207 with the wordmark ending at 188 and the next
-   * element 454px further along, a lone square in the middle of nothing. It
-   * belongs with the theme control and the menu button, which are the other
-   * two icons that size.
+   * Two things used to happen here and neither does now. `order: 2` on search
+   * and `order: 3` on the theme control moved both into a right-hand cluster,
+   * because the links were hidden in this band and search would otherwise
+   * have been left stranded beside the wordmark. And the seam -- the auto
+   * margin that holds the two halves of the bar apart -- sat on
+   * .docs-nav-links, with a separate rule handing it to search only below
+   * 900px, where the links were also hidden.
    *
-   * `order` rather than a second markup slot, so one component still renders
-   * one search. No auto margin here either -- two auto margins on one flex
-   * row split the free space between them.
+   * Both were built around the links being gone, and the links are back (see
+   * Header.astro). So DOM order applies again and the bar reads the same at
+   * every width above 50rem: wordmark, seam, search, links, theme control.
    *
-   * The seam moves for this band. Full width it sits on .docs-header-search,
-   * which is the first element of the right-hand group; here search is an
-   * icon that has already moved into the right cluster by `order`, so the
-   * links carry it instead. Without that the bar has no seam at all between
-   * 900px and 72rem and every element bunches to the left. */
+   * What the old arrangement cost, measured on the built site before this
+   * change: the links hid at 72rem and the seam rule was left at 900px, so
+   * from 901px to 1152px the seam sat on an element with `display: none`,
+   * which takes no part in flex layout and cannot carry a margin. Search came
+   * to rest at x=207 with 861px of empty bar to its right at 1142px, and
+   * 621px at 902px. */
   .docs-header-search {
-    order: 2;
     display: flex;
     flex: 0 0 2.5rem;
     width: 2.5rem;
     max-width: 2.5rem;
     min-width: 2.5rem;
-    margin-inline: 0;
-  }
-
-  .docs-nav-links {
     margin-inline-start: auto;
-  }
-
-  .docs-header-theme {
-    order: 3;
+    margin-inline-end: 0;
   }
 
   .docs-header-search site-search,
@@ -171,16 +165,6 @@ html[data-theme='light'][data-docs-scrolled='true'] header.header::after {
   .docs-header-search site-search button[data-open-modal] span,
   .docs-header-search site-search button[data-open-modal] kbd {
     display: none;
-  }
-}
-
-/* Between 800 and 900px the links and the theme control are both hidden
-   (Header.astro), so the seam that pushed search rightward goes with them and
-   it would fall back beside the wordmark. Search carries the auto margin
-   itself in that band -- there is nothing left for it to collide with. */
-@media (min-width: 50rem) and (max-width: 900px) {
-  .docs-header-search {
-    margin-inline-start: auto;
   }
 }
 
