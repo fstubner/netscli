@@ -1,0 +1,42 @@
+{
+  "name": "netscli",
+  "version": "@@VERSION@@",
+  "description": "Network diagnostics CLI, terminal UI, and MCP server. Written in Rust.",
+  "keywords": [
+    "network",
+    "scanner",
+    "port-scan",
+    "mdns",
+    "mcp",
+    "modelcontextprotocol",
+    "cli"
+  ],
+  "homepage": "https://netscli.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fstubner/netscli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/fstubner/netscli/issues"
+  },
+  "license": "MIT",
+  "author": "Felix Stubner",
+  "type": "commonjs",
+  "bin": {
+    "netscli": "bin/netscli.js"
+  },
+  "files": [
+    "bin/netscli.js",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "optionalDependencies": {
+    "netscli-darwin-arm64": "@@VERSION@@",
+    "netscli-darwin-x64": "@@VERSION@@",
+    "netscli-linux-arm64": "@@VERSION@@",
+    "netscli-linux-x64": "@@VERSION@@",
+    "netscli-win32-x64": "@@VERSION@@"
+  }
+}
