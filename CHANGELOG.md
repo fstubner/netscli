@@ -38,6 +38,19 @@ its heading and collects entries; the date and the link go on with the tag.
 
 ### Fixed
 
+- **`netscli` with no arguments no longer hangs when there is no terminal.**
+  With no subcommand it opens the TUI, which needs a terminal to draw on and
+  read from. Without one it did not fail, it blocked forever: raw mode was
+  entered and the runtime then waited on input that could never arrive. So
+  `netscli | head`, or `netscli` from a script or a CI job, ran until
+  something killed it. It now prints what `--help` prints and exits 0. The TUI
+  is unchanged wherever there is a terminal.
+
+  This has been the behaviour since 0.1.0, and it is what has kept the CLI's
+  winget package on 0.2.6. Winget's validation runs the executable and waits
+  for it, so the 0.3.1 submission has sat since 12 September carrying
+  `Validation-Executable-Error` while the desktop app's went through the same
+  day.
 - **The docs site lost its navigation and its theme switch between 800px and
   1152px wide, and the search button sat stranded beside the wordmark.** The
   header links — Features, Install, FAQ, Docs, Changelog, GitHub — and the
