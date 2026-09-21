@@ -61,6 +61,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      # For scripts/release-notes.mjs and the two files it reads.
+      #
+      # The default branch, NOT the tag, and that is structural rather than
+      # convenient. A version's CHANGELOG section is finished AFTER its tag:
+      # the heading is dated in its own commit once the tag exists, because
+      # site/scripts/changelog-dates.mjs fails a dated version with no tag.
+      # So the tag never carries the final section, and v0.3.2's carries no
+      # date at all. Checking it out would also have missed this script
+      # entirely, which landed after the tag it would first be used for.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
       - name: Promote the draft and start the pipeline
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -90,6 +103,25 @@ jobs:
             echo "::error::${TAG} is already published. Nothing to promote."
             exit 1
           fi
+
+          # Write the body before promoting, from CHANGELOG.md and the site's
+          # own one-line summary. See scripts/release-notes.mjs.
+          #
+          # Here rather than when the draft is created, because release-drafter
+          # regenerates that draft on every push to main -- so a body written
+          # earlier survives only if nothing merges before the publish, and
+          # "merge the changelog, then publish" is the ordinary sequence. On
+          # 0.3.2 two PRs landed in that gap and the hand-written overview was
+          # gone, with nothing reporting it. Inside the concurrency group this
+          # job already holds, the drafter cannot be mid-rewrite here.
+          #
+          # Failing here stops the publish, which is the right way round: a
+          # release whose notes cannot be built is one whose CHANGELOG section
+          # is missing, and that is worth knowing before it is public rather
+          # than after.
+          echo "Composing release notes for ${TAG}..."
+          node scripts/release-notes.mjs "$TAG" > "${RUNNER_TEMP}/release-notes.md"
+          gh release edit "$TAG" --notes-file "${RUNNER_TEMP}/release-notes.md"
 
           echo "Promoting ${TAG}..."
           gh release edit "$TAG" --draft=false
