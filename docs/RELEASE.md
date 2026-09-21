@@ -28,6 +28,11 @@ Before the first automated release runs, add these secrets at
    [`PUBLISHING.md`](PUBLISHING.md#version-bumps) for the list and a
    verification command; missing the GUI's three is what got the v0.2.4
    winget submission rejected.
+   The CHANGELOG half of this step is the heading rename only:
+   `## [Unreleased]` becomes `## [X.Y.Z]`. The date and the link reference
+   are a later commit, after the tag is pushed — see
+   [Dating the release](PUBLISHING.md#dating-the-release). Putting them in
+   here fails `check:changelog`, which asks git whether the tag exists.
    Before tagging, run the local release gate:
    ```bash
    cargo fmt --check

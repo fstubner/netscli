@@ -160,11 +160,12 @@ moderator (see the 0.2.4 entry in `CHANGELOG.md`). The website reads its
 version from `apps/netscli-gui/package.json`, so a miss there also
 silently mislabels netscli.com.
 
-### The changelog date and link go on with the tag, not with the bump
+### The changelog date and link go on after the tag, not with the bump
 
 A version heading gets `## [0.4.0]` at bump time and nothing more. The
-` — YYYY-MM-DD` and the `[0.4.0]: …/releases/tag/v0.4.0` reference are added
-in the same change that pushes the tag.
+` — YYYY-MM-DD` and the `[0.4.0]: …/releases/tag/v0.4.0` reference are a
+separate commit, made once the tag is pushed — see "Dating the release"
+below for the sequence and for why they cannot go in earlier.
 
 Both are claims about the outside world, and the website reads them straight
 out of this file. 0.3.1 was bumped and dated `2026-08-24` in the release
@@ -232,9 +233,42 @@ A bare `grep -oE` over these files would also match the version numbers
 in their explanatory comments, and the check would report a second value
 on every run until someone stopped believing it.
 
-Finally, move the `## [Unreleased]` content in `CHANGELOG.md` under a
-`## [X.Y.Z] — YYYY-MM-DD` heading and add the matching link reference at
-the bottom of the file.
+Finally, rename the `## [Unreleased]` heading in `CHANGELOG.md` to
+`## [X.Y.Z]` — the version and nothing else. **The date and the link
+reference do not go on here.** See the next section for where they go and
+why they cannot go here.
+
+## Dating the release
+
+The `— YYYY-MM-DD` and the `[X.Y.Z]: …/releases/tag/vX.Y.Z` reference are a
+separate commit, made **after** the tag is pushed.
+
+That is the opposite of what this file said until 0.3.2, and the old order
+could not be followed. `site/scripts/changelog-dates.mjs` asks
+`git tag --list` and fails a dated version with no matching tag:
+
+```
+0.3.2: CHANGELOG.md dates it 2026-09-21, but there is no v0.3.2 tag.
+The date goes on with the tag, not with the version bump.
+```
+
+Under branch protection that commit can never go green, because the tag it
+is waiting for was supposed to come after it. Nobody hit it before 0.3.2
+because 0.3.1 was dated in a commit that reached `main` without that check
+in front of it — and was then not tagged for four days, which is the bug
+the check exists to catch.
+
+So the sequence is:
+
+1. Bump the versions and rename the heading to `## [X.Y.Z]` (above).
+2. Tag and push (below). This builds nothing on its own.
+3. Date the heading, add the link reference, merge that.
+4. Write the release notes and publish.
+
+The reasoning is the one in `CHANGELOG.md`'s own header, which this now
+matches: the version bump is a statement about this repository and can
+happen whenever; the date and the link are statements about a release that
+exists.
 
 ## GitHub Releases
 
@@ -246,7 +280,13 @@ dispatch.
 ```bash
 git tag vX.Y.Z
 git push origin vX.Y.Z
+# Pushing the tag builds nothing: release.yml answers `release: published`
+# and a manual dispatch, not a tag push. So there is room between here and
+# the publish to date the changelog (see above) and read the notes back.
+
 # Then: Releases → Draft a new release → pick the tag → write the notes.
+# release-drafter has usually made the draft already; edit that one rather
+# than opening a second.
 # Leave it as a draft, and promote it with the workflow — never with the
 # web UI's publish button, which races release-drafter (see RELEASE.md).
 gh workflow run publish-release.yml -f tag=vX.Y.Z
