@@ -131,9 +131,10 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read
-      # For npm provenance: npm exchanges the Actions OIDC token for a
-      # signed attestation linking the published tarball to this workflow
-      # and commit. The same guarantee cosign gives the release binaries.
+      # Required for npm trusted publishing: the CLI exchanges this OIDC
+      # token for a short-lived, workflow-scoped credential, and attests
+      # provenance with it. The same guarantee cosign gives the release
+      # binaries, without a long-lived secret existing at all.
       id-token: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -145,6 +146,18 @@ jobs:
           node-version-file: .nvmrc
           registry-url: 'https://registry.npmjs.org'
 
+      # Node 22 bundles npm 10.x, which has no trusted publishing at all --
+      # it would fall back to looking for a token and fail with an auth
+      # error rather than anything naming the real cause. 11.5.1 is the
+      # first version that supports it.
+      - name: Upgrade npm for trusted publishing
+        run: npm install -g npm@^11.5.1
+
+      # NPM_TOKEN is the bootstrap path only. A trusted publisher is
+      # configured per package on npmjs.com and a package's settings page
+      # does not exist until the package does, so the first publish of each
+      # of these six cannot use OIDC. Unset once they are all configured;
+      # the script takes whichever is present and prefers OIDC.
       - name: Publish launcher + platform packages
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

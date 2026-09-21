@@ -195,9 +195,44 @@ if [[ "$MODE" == "--build-only" ]]; then
   exit 0
 fi
 
-: "${NPM_TOKEN:?NPM_TOKEN must be set to publish}"
-export NPM_CONFIG_PROVENANCE=true
-npm config set //registry.npmjs.org/:_authToken "${NPM_TOKEN}"
+# Two ways in, and the preferred one needs nothing set here.
+#
+# npm trusted publishing: the CLI notices it is running in GitHub Actions
+# with an OIDC token available and exchanges that for a short-lived
+# credential scoped to this workflow. Nothing long-lived exists to leak, and
+# provenance is attested automatically. It needs npm >= 11.5.1, `id-token:
+# write` on the job, and a trusted publisher configured for EACH package on
+# npmjs.com.
+#
+# That last requirement is why NPM_TOKEN is still honoured rather than
+# removed. A trusted publisher is configured on a package's settings page,
+# which does not exist until the package does, so the first ever publish of
+# each of these six cannot use OIDC. It is a bootstrap step, not a permanent
+# fallback -- see the npm section of packaging/README.md.
+if [[ -n "${NPM_TOKEN:-}" ]]; then
+  echo "Authenticating with NPM_TOKEN (trusted publishing not configured yet?)"
+  npm config set //registry.npmjs.org/:_authToken "${NPM_TOKEN}"
+  # Explicit with a token; trusted publishing attests without being asked.
+  export NPM_CONFIG_PROVENANCE=true
+else
+  echo "No NPM_TOKEN set; relying on trusted publishing via OIDC"
+  if [[ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]]; then
+    echo "ERROR: no NPM_TOKEN and no OIDC token available." >&2
+    echo "       In CI this means the job is missing 'permissions: id-token: write'." >&2
+    echo "       Outside CI, set NPM_TOKEN or use --build-only." >&2
+    exit 1
+  fi
+  # Publishing silently as the wrong identity is not a failure mode worth
+  # leaving open, and the version requirement is exact enough to check.
+  npm_version="$(npm --version)"
+  # Required version first: `sort -C` succeeds only if already ordered, so
+  # this passes exactly when 11.5.1 <= installed.
+  if ! printf '11.5.1\n%s\n' "$npm_version" | sort -V -C; then
+    echo "ERROR: trusted publishing needs npm >= 11.5.1, this is ${npm_version}." >&2
+    echo "       Node 22 ships npm 10.x, so the workflow upgrades it explicitly." >&2
+    exit 1
+  fi
+fi
 
 # Platform packages first, launcher last. See the header.
 for pkg in "${published_names[@]}"; do
