@@ -27,6 +27,8 @@ export const changelogOgDescription = `Versioned ${meta.siteName} release notes 
  * published from it. Its entries are under 0.3.1 and there is no 0.3.0 for
  * this map to describe. */
 export const releaseSummaries: Record<string, string> = {
+  'v0.3.2':
+    'Repairs the Linux packaging. The AUR desktop package installed a file that could not start, and the AppImage aborted before opening a window on any host with a recent Mesa. A desktop window that opens blank now recovers by itself, `netscli` with no arguments no longer hangs where there is no terminal, and discover names devices from mDNS when reverse DNS comes back empty.',
   'v0.3.1':
     'The desktop app is redesigned around a denser diagnostic workspace, with reorderable tabs, right-click tab management and a refreshed icon. Port scans return richer status data on every interface, probe concurrency is configurable everywhere, and the website and docs were rebuilt alongside.',
   'v0.2.6':
