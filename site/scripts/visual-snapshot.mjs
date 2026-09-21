@@ -518,7 +518,22 @@ if (mode === 'record') {
       break;
     }
     console.log(`  ${unstable.length} capture(s) did not reproduce; taking the second reading.`);
-    for (const f of unstable) writeFileSync(join(target, f), readFileSync(join(verifyDir, f)));
+    for (const f of unstable) {
+      const other = join(verifyDir, f);
+      // A capture that could not be TAKEN this round has no second reading to
+      // promote, and reading it threw:
+      //
+      //   Error: ENOENT ... open '.visual-verify\docs-search__dark__1600.png'
+      //
+      // which killed a record run after all 240 captures were on disk,
+      // leaving a baseline that looked complete and had never been confirmed.
+      // The search capture is the one that does this -- it depends on a
+      // dialog opening and Pagefind returning results, and `capture` skips it
+      // with a warning when either does not happen. It stays in `files`, so
+      // the next round retries it, and round 5 reports it if it never takes.
+      if (!existsSync(other)) continue;
+      writeFileSync(join(target, f), readFileSync(other));
+    }
     files = unstable;
     if (round === 5) {
       console.error(`\n${unstable.length} capture(s) never settled: ${unstable.join(', ')}`);
