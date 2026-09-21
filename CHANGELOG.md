@@ -16,7 +16,7 @@ them: it printed "24 Aug 2026" for 0.3.1 for four days on the strength of a
 date written here when the notes were drafted. An in-flight version keeps
 its heading and collects entries; the date and the link go on with the tag.
 
-## [0.3.2]
+## [0.3.2] — 2026-09-21
 
 ### Added
 
@@ -666,6 +666,7 @@ backed by the same core library.
   10/11 systems have it preinstalled.
 
 [Unreleased]: https://github.com/fstubner/netscli/compare/v0.3.1...HEAD
+[0.3.2]: https://github.com/fstubner/netscli/releases/tag/v0.3.2
 [0.3.1]: https://github.com/fstubner/netscli/releases/tag/v0.3.1
 [0.2.6]: https://github.com/fstubner/netscli/releases/tag/v0.2.6
 [0.2.5]: https://github.com/fstubner/netscli/releases/tag/v0.2.5
