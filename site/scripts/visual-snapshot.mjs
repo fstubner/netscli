@@ -29,7 +29,8 @@
  * number deciding it.
  */
 
-import { mkdirSync, readFileSync, writeFileSync, existsSync, rmSync, readdirSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync, existsSync, rmSync, readdirSync, statSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import process from 'node:process';
 
@@ -50,6 +51,68 @@ const mode = process.argv[2] || 'check';
 if (!['record', 'check'].includes(mode)) {
   console.error(`Usage: visual-snapshot.mjs [record|check]  (got "${mode}")`);
   process.exit(1);
+}
+
+/* Is the baseline older than the site it claims to describe?
+ *
+ * This tool degrades in a way that hides its own failure. A baseline that
+ * predates a few site changes does not report those changes -- it reports
+ * nearly every capture as differing, which reads the same as a catastrophic
+ * regression and is impossible to act on. On 2026-09-21 that was 223 of 240
+ * against a baseline from the 14th, including pages the change under test had
+ * not touched, and the honest reading was not "the CSS broke" but "nobody has
+ * recorded this in six days".
+ *
+ * A guard whose broken state looks identical to a loud failure stops being
+ * read, which is worse than not having one. So say it before the run, rather
+ * than leave someone to infer it from the length of the list afterwards.
+ *
+ * Warn, never fail. Comparing against a deliberately old baseline is a
+ * legitimate thing to want, and this is a local tool rather than a gate --
+ * see the note at the top of this file for why it is not the latter.
+ */
+function baselineStaleness() {
+  if (!existsSync(baselineDir)) return null;
+  const shots = readdirSync(baselineDir).filter((f) => f.endsWith('.png'));
+  if (!shots.length) return null;
+  // `record` writes every capture in one pass, so the newest file is when
+  // that pass finished.
+  const recordedAt = Math.max(...shots.map((f) => statSync(join(baselineDir, f)).mtimeMs));
+
+  // Only what the built pages are made of. A change to these scripts, or to
+  // the changelog, cannot move a pixel.
+  const sources = ['src', 'astro.config.mjs', 'package.json', 'public'];
+  let since;
+  try {
+    since = execFileSync(
+      'git',
+      ['log', '--format=%cI', `--since=${new Date(recordedAt).toISOString()}`, '--', ...sources],
+      { cwd: root, encoding: 'utf8' },
+    )
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
+  } catch {
+    // No git, or no history. Nothing to say, and nothing worth failing over.
+    return null;
+  }
+  if (!since.length) return null;
+  return { recordedAt, commits: since.length, newest: since[0] };
+}
+
+if (mode === 'check') {
+  const stale = baselineStaleness();
+  if (stale) {
+    const day = (value) => new Date(value).toISOString().slice(0, 10);
+    console.error(
+      `\n⚠ The baseline is older than the site.\n` +
+        `    baseline recorded   ${day(stale.recordedAt)}\n` +
+        `    site changed since  ${stale.commits} commit(s), ` +
+        `most recently ${day(Date.parse(stale.newest))}\n\n` +
+        `  Captures will differ for reasons that have nothing to do with what\n` +
+        `  you are testing. Re-record first, or read the result knowing that.\n`,
+    );
+  }
 }
 
 /* Widths, not device presets. The docs shell switches layout at 72rem and
@@ -455,7 +518,22 @@ if (mode === 'record') {
       break;
     }
     console.log(`  ${unstable.length} capture(s) did not reproduce; taking the second reading.`);
-    for (const f of unstable) writeFileSync(join(target, f), readFileSync(join(verifyDir, f)));
+    for (const f of unstable) {
+      const other = join(verifyDir, f);
+      // A capture that could not be TAKEN this round has no second reading to
+      // promote, and reading it threw:
+      //
+      //   Error: ENOENT ... open '.visual-verify\docs-search__dark__1600.png'
+      //
+      // which killed a record run after all 240 captures were on disk,
+      // leaving a baseline that looked complete and had never been confirmed.
+      // The search capture is the one that does this -- it depends on a
+      // dialog opening and Pagefind returning results, and `capture` skips it
+      // with a warning when either does not happen. It stays in `files`, so
+      // the next round retries it, and round 5 reports it if it never takes.
+      if (!existsSync(other)) continue;
+      writeFileSync(join(target, f), readFileSync(other));
+    }
     files = unstable;
     if (round === 5) {
       console.error(`\n${unstable.length} capture(s) never settled: ${unstable.join(', ')}`);
