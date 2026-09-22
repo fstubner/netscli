@@ -20,6 +20,19 @@ its heading and collects entries; the date and the link go on with the tag.
 
 ### Added
 
+- **Windows executables and the desktop installer are signed.** Both `netscli`
+  builds and the `.msi` now carry an Authenticode signature from a Certum
+  certificate, timestamped so it keeps verifying after the certificate
+  expires. Windows has been showing an unknown-publisher warning on every
+  download since the first release, and SmartScreen treats an unsigned
+  installer from a low-reputation domain as something to discourage rather
+  than merely flag.
+
+  Signing happens in one job, after the builds and before anything is
+  uploaded, so a release carries all three signed or none of them. Half a
+  signed release would be worse than none: nothing on the page would say
+  which artifacts were which.
+
 - **Two new ways to connect the MCP server, so it no longer has to be a
   hand-written config file.** Until now the only route was installing netscli,
   finding where it landed, and writing the JSON yourself.

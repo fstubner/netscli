@@ -190,13 +190,25 @@ jobs:
           fi
         working-directory: target/${{ matrix.target }}/release
 
-      - name: Generate SHA256 (Windows)
+      # Windows stops here and hands off to `sign-windows`.
+      #
+      # Everything below -- the digest, the sigstore signature, the release
+      # upload -- has to happen AFTER Authenticode signing, because signing
+      # rewrites the file. A digest taken here would describe bytes nobody
+      # ever downloads. So the Windows legs upload the unsigned binary as a
+      # workflow artifact instead, and `sign-windows` does the rest.
+      #
+      # It also means an unsigned .exe is never a release asset, not even
+      # briefly: release.yml runs after the draft has been promoted, so
+      # anything uploaded here is immediately public.
+      - name: Hand the unsigned binary to the signing job
         if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $asset = "target/${{ matrix.target }}/release/${{ matrix.asset_name }}"
-          $hash = (Get-FileHash -Algorithm SHA256 -Path $asset).Hash.ToLowerInvariant()
-          "$hash  ${{ matrix.asset_name }}" | Out-File -FilePath "${asset}.sha256" -Encoding ascii
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: unsigned-${{ matrix.asset_name }}
+          path: target/${{ matrix.target }}/release/${{ matrix.asset_name }}
+          retention-days: 1
+          if-no-files-found: error
 
       # Sigstore keyless signing via the GitHub Actions OIDC token. Produces
       # a .sig and .pem alongside each binary; verifiable by anyone with:
@@ -205,6 +217,7 @@ jobs:
       #     --certificate-oidc-issuer https://token.actions.githubusercontent.com \
       #     <asset>
       - name: Install cosign
+        if: runner.os != 'Windows'
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
         with:
           # Pinned, not left to the action's default.
@@ -218,6 +231,7 @@ jobs:
           # the release itself -- where all 15 matrix legs failed at signing.
           cosign-release: v3.0.6
       - name: Sign release asset (sigstore keyless)
+        if: runner.os != 'Windows'
         shell: bash
         env:
           COSIGN_EXPERIMENTAL: "1"
@@ -265,6 +279,7 @@ jobs:
             "${{ matrix.asset_name }}"
 
       - name: Upload Release Asset
+        if: runner.os != 'Windows'
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
         with:
           files: |
@@ -423,7 +438,21 @@ jobs:
           done
           ls -la "${OUT_DIR}"
 
+      # The Windows leg stops here, for the same reason the CLI job's does:
+      # Authenticode signing rewrites the .msi, so a digest or a sigstore
+      # signature taken now would describe bytes that never ship. The
+      # `sign-windows` job picks this up and finishes it.
+      - name: Hand the unsigned installer to the signing job
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: unsigned-${{ matrix.asset_prefix }}
+          path: ${{ runner.temp }}/gui-out/${{ matrix.asset_prefix }}.*
+          retention-days: 1
+          if-no-files-found: error
+
       - name: Generate SHA256
+        if: runner.os != 'Windows'
         shell: bash
         env:
           ASSET_PREFIX: ${{ matrix.asset_prefix }}
@@ -442,6 +471,7 @@ jobs:
           ls -la
 
       - name: Install cosign
+        if: runner.os != 'Windows'
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
         with:
           # Pinned for the same reason as the CLI job above: the action
@@ -450,6 +480,7 @@ jobs:
           # saying so. Keep both installers on the same pin.
           cosign-release: v3.0.6
       - name: Sign GUI artifacts (sigstore keyless)
+        if: runner.os != 'Windows'
         shell: bash
         env:
           COSIGN_EXPERIMENTAL: "1"
@@ -481,10 +512,141 @@ jobs:
           done
 
       - name: Upload Release Asset
+        if: runner.os != 'Windows'
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
         with:
           files: |
             ${{ runner.temp }}/gui-out/${{ matrix.asset_prefix }}.*
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ─── Authenticode signing for the Windows artifacts ───────────────────
+  # Every Windows artifact is signed here, and nowhere else. The two matrix
+  # jobs above hand their Windows outputs over as workflow artifacts and do
+  # nothing further with them, so this job is the only path by which a .exe
+  # or .msi becomes a release asset.
+  #
+  # That is deliberate rather than tidy. Signing rewrites the file, so the
+  # digest, the sigstore signature and the upload all have to come after it
+  # — and a release that carried some signed artifacts and some unsigned
+  # ones would be worse than one that carried none, because nothing would
+  # say which was which.
+  #
+  # It runs on Linux despite signing Windows binaries. The key is a Certum
+  # cloud certificate reached over HTTPS, not a file `signtool` could load,
+  # so the runner's OS stops mattering. See scripts/release/sign-windows.sh.
+  #
+  # `environment: release-signing` scopes the credentials to this job. The
+  # environment deliberately carries no protection rules: a required
+  # reviewer or a branch policy here would stall every release at the point
+  # where the artifacts are half uploaded. It exists to hold the secrets,
+  # not to gate anything.
+  sign-windows:
+    name: Sign Windows artifacts
+    needs: [release, gui]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: release-signing
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      # libengine-pkcs11-openssl is not optional and not obvious.
+      # osslsigncode's `-pkcs11module` does not load the module directly --
+      # it goes through OpenSSL's pkcs11 engine, which ships in that
+      # separate package and is not installed on ubuntu-latest. Without it
+      # the MSI step fails at `Failed to find and load 'pkcs11' engine`,
+      # having never reached Certum, and the message names the engine rather
+      # than the missing package. Reproduced in an ubuntu:24.04 container;
+      # with the package present the same command reports `Engine "pkcs11"
+      # set.` and gets as far as authentication.
+      - name: Install osslsigncode and the pkcs11 engine
+        run: |
+          sudo apt-get update || true
+          sudo apt-get install -y osslsigncode libengine-pkcs11-openssl
+
+      # `merge-multiple` flattens the three `unsigned-*` artifacts into one
+      # directory, which is what the signing script takes.
+      - name: Collect the unsigned Windows artifacts
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          pattern: unsigned-*
+          path: ${{ runner.temp }}/win
+          merge-multiple: true
+
+      # Fails when nothing arrived. Without this the signing script would
+      # also fail, but one job up: a matrix leg that died leaves this job
+      # with an empty directory, and "signed 0 files" must never read as
+      # success.
+      - name: Check what arrived
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "${RUNNER_TEMP}/win"
+          ls -la
+          count=$(find . -maxdepth 1 \( -name '*.exe' -o -name '*.msi' \) | wc -l)
+          if [[ "$count" -ne 3 ]]; then
+            echo "::error::expected 3 Windows artifacts (2 .exe + 1 .msi), found ${count}"
+            exit 1
+          fi
+
+      - name: Authenticode sign
+        env:
+          CERTUM_EMAIL: ${{ secrets.CERTUM_EMAIL }}
+          CERTUM_OTP: ${{ secrets.CERTUM_OTP }}
+        run: bash scripts/release/sign-windows.sh "${RUNNER_TEMP}/win"
+
+      # From here on it is the same tail the other matrix legs run, against
+      # the signed bytes.
+      - name: Generate SHA256
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "${RUNNER_TEMP}/win"
+          for f in *.exe *.msi; do
+            [ -f "$f" ] || continue
+            sha256sum "$f" > "${f}.sha256"
+          done
+          cat ./*.sha256
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        with:
+          # Same pin as the two jobs above; see the CLI job for why the
+          # action version and the cosign version are pinned separately.
+          cosign-release: v3.0.6
+
+      - name: Sign with sigstore
+        shell: bash
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+        run: |
+          set -euo pipefail
+          cd "${RUNNER_TEMP}/win"
+          for f in *.exe *.msi; do
+            [ -f "$f" ] || continue
+            # Both flags for the reasons spelled out in the CLI job's
+            # signing step: each defaults to true in cosign v3, and between
+            # them they would refuse to sign at all and then divert the
+            # output away from the sidecars.
+            cosign sign-blob --yes \
+              --use-signing-config=false \
+              --new-bundle-format=false \
+              --output-signature "${f}.sig" \
+              --output-certificate "${f}.pem" \
+              "$f"
+          done
+          ls -la
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
+        with:
+          files: ${{ runner.temp }}/win/*
           tag_name: ${{ github.event.inputs.tag || github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

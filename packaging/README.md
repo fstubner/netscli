@@ -75,9 +75,13 @@ These are the parts that need more than "URL + SHA256 changed":
 | AUR CLI | Runtime ELF deps and generated completions/manpage must work on Arch. | `makepkg --printsrcinfo`; `makepkg -si`; `namcap`. |
 | AUR GUI | The AppImage wrapper should also install a launcher and icon. | `makepkg -si`; confirm `/usr/share/applications/netscli-gui.desktop` launches. |
 
-Windows Authenticode signing and macOS notarization are not solved by
-the package-manager manifests. They are separate release-trust work, and
-should be tracked before pushing for broader public distribution.
+Windows Authenticode signing is handled by release.yml's `sign-windows`
+job, not by any manifest here: both `.exe` builds and the `.msi` are signed
+with a Certum cloud certificate and timestamped before they become release
+assets. See `scripts/release/sign-windows.sh`.
+
+macOS notarization is still open. The `.dmg` ships unsigned and users see
+"unverified developer" on first launch.
 
 ## Release-day checklist
 
