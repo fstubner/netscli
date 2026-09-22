@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "xtctx": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "xtctx"]
+    }
+  }
+}

@@ -119,3 +119,16 @@ site/.visual-verify/
 site/.visual-confirm/
 # Captured runtime DOM for scripts/css-equivalence.mjs (capture-search).
 site/.css-equivalence/
+
+# Agent tool state, as opposed to agent tool instructions.
+#
+# CLAUDE.md, GEMINI.md and .mcp.json ARE committed: they describe the project
+# to whichever assistant is pointed at it, and that description is the same
+# for everyone.
+#
+# These are not. `.codex/` is a local config plus captured dev-server logs,
+# `.xtctx/state/` is per-machine session-index bookkeeping regenerated on
+# demand, and opencode.json configures a tool nobody here runs.
+.codex/
+.xtctx/
+opencode.json
