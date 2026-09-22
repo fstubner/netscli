@@ -556,8 +556,19 @@ jobs:
         with:
           ref: ${{ github.event.inputs.tag || github.ref }}
 
-      - name: Install osslsigncode
-        run: sudo apt-get update || true; sudo apt-get install -y osslsigncode
+      # libengine-pkcs11-openssl is not optional and not obvious.
+      # osslsigncode's `-pkcs11module` does not load the module directly --
+      # it goes through OpenSSL's pkcs11 engine, which ships in that
+      # separate package and is not installed on ubuntu-latest. Without it
+      # the MSI step fails at `Failed to find and load 'pkcs11' engine`,
+      # having never reached Certum, and the message names the engine rather
+      # than the missing package. Reproduced in an ubuntu:24.04 container;
+      # with the package present the same command reports `Engine "pkcs11"
+      # set.` and gets as far as authentication.
+      - name: Install osslsigncode and the pkcs11 engine
+        run: |
+          sudo apt-get update || true
+          sudo apt-get install -y osslsigncode libengine-pkcs11-openssl
 
       # `merge-multiple` flattens the three `unsigned-*` artifacts into one
       # directory, which is what the signing script takes.

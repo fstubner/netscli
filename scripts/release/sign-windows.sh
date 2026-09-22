@@ -50,9 +50,23 @@ ART_DIR="$(cd "$ART_DIR" && pwd)"
 : "${CERTUM_EMAIL:?CERTUM_EMAIL must be set}"
 : "${CERTUM_OTP:?CERTUM_OTP must be set (base32 TOTP seed or otpauth:// URI)}"
 
-for tool in curl tar osslsigncode; do
+for tool in curl tar osslsigncode openssl; do
   command -v "$tool" >/dev/null 2>&1 || { echo "ERROR: $tool is not installed" >&2; exit 1; }
 done
+
+# The pkcs11 engine has no binary, so the loop above cannot see whether it is
+# there. It is a separate package (libengine-pkcs11-openssl on Debian and
+# Ubuntu) and it is absent from a stock ubuntu-latest runner. Checking it
+# here rather than letting osslsigncode discover it means the failure names
+# the package instead of the engine, and it happens before the executables
+# have been signed -- otherwise a release gets two signed .exe files and no
+# installer, which is the split this whole job exists to prevent.
+if ! openssl engine pkcs11 >/dev/null 2>&1; then
+  echo "ERROR: OpenSSL has no 'pkcs11' engine, which osslsigncode needs for the MSI." >&2
+  echo "       Install libengine-pkcs11-openssl (Debian/Ubuntu) or your" >&2
+  echo "       distribution's equivalent." >&2
+  exit 1
+fi
 
 TOOLS="$(mktemp -d)"
 trap 'rm -rf "$TOOLS"' EXIT
@@ -101,15 +115,13 @@ done
 
 for msi in "${msis[@]}"; do
   echo "Signing $(basename "$msi")"
-  # Known untested path, and the likeliest thing to go wrong on the first
-  # real release: `-pkcs11module` loads the module through OpenSSL's legacy
-  # pkcs11 engine, and on Ubuntu 24.04 that engine has been reported to fail
-  # with "bad engine id" / "Failed to set 'dynamic' engine" against the
-  # distro's libp11. If that happens here, the fix is either LibP11 built
-  # from source or OpenSSL 3's provider interface
-  # (`-provider .../pkcs11prov.so`) instead of the engine. Not pre-emptively
-  # worked around, because guessing at which of those is needed is how a
-  # workaround outlives the problem.
+  # `-pkcs11module` does not load the module directly: it goes through
+  # OpenSSL's pkcs11 engine, which on Ubuntu lives in the separate
+  # libengine-pkcs11-openssl package and is absent by default. The tool
+  # check above catches a missing osslsigncode; this one has no binary to
+  # look for, so the workflow installs it explicitly and the failure it
+  # prevents -- `Failed to find and load 'pkcs11' engine` -- names the
+  # engine rather than the package.
   # No `-ac`: that flag embeds the issuing CA certificate in the signature,
   # and the correct intermediate is named by the signing certificate's own
   # Authority Information Access extension rather than by anything knowable
