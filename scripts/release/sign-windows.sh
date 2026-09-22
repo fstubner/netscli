@@ -147,19 +147,40 @@ done
 # like a signed one until someone downloads it, and the whole point of the
 # job is that no Windows artifact ships without a signature.
 #
-# `-CAfile` is not passed, so chain building is not what is being asserted
-# here -- only that a timestamped Authenticode signature is present and
-# covers the bytes. Verifying the chain needs the root store the file will
-# actually be verified against, which is not this runner's.
+# Both CA files are needed and neither is optional. `verify` builds the
+# chain from the signing certificate to a trusted root, and the chain the
+# signature carries ends at Certum Trusted Network CA -- a root that is in
+# the distribution's CA store but NOT in whatever default osslsigncode
+# falls back to. Without `-CAfile` it reports
+#
+#   PKCS7_verify:certificate verify error: unable to get local issuer certificate
+#
+# after printing the full, correct, valid chain, so the artifact is signed
+# and the check fails anyway. `-TSA-CAfile` is the same story for the
+# timestamp chain, which roots at Certum Trusted Network CA 2.
+#
+# That is what happened on the first real run of this job, at v0.3.3: every
+# artifact signed correctly and the release got none of them.
+CA_BUNDLE=""
+for candidate in /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt; do
+  [[ -f "$candidate" ]] && { CA_BUNDLE="$candidate"; break; }
+done
+if [[ -z "$CA_BUNDLE" ]]; then
+  echo "ERROR: no system CA bundle found; cannot verify the signatures produced." >&2
+  echo "       Looked for /etc/ssl/certs/ca-certificates.crt and" >&2
+  echo "       /etc/pki/tls/certs/ca-bundle.crt." >&2
+  exit 1
+fi
+
 echo
-echo "Verifying signatures"
+echo "Verifying signatures against ${CA_BUNDLE}"
 failed=0
 for f in "${exes[@]}" "${msis[@]}"; do
-  if osslsigncode verify -timestamp-expiration "$f" >/dev/null 2>&1; then
+  if osslsigncode verify -CAfile "$CA_BUNDLE" -TSA-CAfile "$CA_BUNDLE" "$f" >/dev/null 2>&1; then
     printf '  %-44s signed\n' "$(basename "$f")"
   else
     printf '  %-44s NO VALID SIGNATURE\n' "$(basename "$f")"
-    osslsigncode verify "$f" 2>&1 | sed 's/^/      /' >&2 || true
+    osslsigncode verify -CAfile "$CA_BUNDLE" -TSA-CAfile "$CA_BUNDLE" "$f" 2>&1 | sed 's/^/      /' >&2 || true
     failed=1
   fi
 done
