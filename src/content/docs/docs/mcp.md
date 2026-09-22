@@ -5,15 +5,14 @@ description: NetsCLI MCP server guide for AI-agent network tools over JSON-RPC.
 
 The MCP server exposes NetsCLI operations to clients such as Claude Code, Cursor, and other MCP-compatible tools. It communicates over stdio using JSON-RPC 2.0.
 
-## Start the server
+## Connect a client
 
-```bash
-netscli serve
-```
+There are three ways in. Which one suits you depends on whether netscli is
+already on your machine.
 
-Most users do not run this command directly. Instead, they configure an MCP client to launch it.
+### You already have netscli installed
 
-Example client configuration:
+Point the client at the binary you have.
 
 ```json
 {
@@ -25,6 +24,55 @@ Example client configuration:
   }
 }
 ```
+
+This is the one to prefer. You get the version you installed rather than
+whatever is newest, there is no second copy of the binary, and packet
+capture works — the other two routes cannot offer it.
+
+If the client cannot find `netscli`, give the full path instead. A GUI
+client often has a different PATH from your shell.
+
+### You want the server without installing anything
+
+```json
+{
+  "mcpServers": {
+    "netscli": {
+      "command": "npx",
+      "args": ["-y", "netscli", "serve"]
+    }
+  }
+}
+```
+
+npm fetches the prebuilt binary for your platform on first launch. You need
+Node 18 or newer. `latest` is resolved each time the client starts the
+server, so the version can change under you, and the npm builds leave out
+packet capture because it needs libpcap or Npcap present on the machine.
+
+### You would rather not edit a config file
+
+Download the `.mcpb` bundle for your platform from the
+[latest release](https://github.com/fstubner/netscli/releases/latest) and
+open it with a client that supports MCP bundles. The bundle carries the
+binary, so nothing else is needed — no PATH entry, no Node.
+
+Bundles are named `netscli-<version>-<platform>-<arch>.mcpb`. Pick the one
+matching your machine; the format has no way to check that for you, and the
+wrong architecture will simply fail to start.
+
+The install prompt includes a switch for scanning beyond your local
+networks. Leave it off unless you know you need it — see
+[Reaching past your local network](#reaching-past-your-local-network).
+
+## Run it yourself
+
+```bash
+netscli serve
+```
+
+Useful for seeing startup errors. It speaks JSON-RPC on stdin and stdout, so
+there is nothing to look at until a client connects.
 
 ## Available tools
 
@@ -109,6 +157,32 @@ The start call returns a `jobId`. Poll with that ID until `resultAvailable` is t
 The MCP server calls the same core operations as the CLI and desktop app. It does not bypass core safety limits for subnet size, port count, concurrency, or timeouts.
 
 Because an MCP client can trigger local network operations, connect it only to clients and workspaces you trust. Treat the server as a local diagnostic tool, not as a remote network service.
+
+### Reaching past your local network
+
+By default this server refuses any target outside your own networks —
+private ranges, loopback, link-local, and carrier-grade NAT, which covers
+Tailscale and similar overlays. Ask it to scan a public address and it
+returns an error rather than sending packets.
+
+Every other part of netscli does what you type. This one is driven by a
+model, which may be reading a web page, an issue comment, or a file someone
+else wrote, so the instruction to scan a stranger can arrive from outside
+you entirely — and the packets still leave from your machine and your IP.
+
+Scanning public hosts you are responsible for is a fair reason to lift it:
+
+```bash
+NETSCLI_MCP_ALLOW_PUBLIC_TARGETS=1 netscli serve
+```
+
+In a client config, set it in the server's `env` block. In an `.mcpb`
+bundle it is the switch shown when you install.
+
+This is a policy layer, not a security boundary. It stops a model being
+steered into scanning strangers. It does not stop you, and it is not meant
+to — the size limits on subnets, ports and concurrency are separate and
+still apply either way.
 
 ## What stays CLI-only
 
