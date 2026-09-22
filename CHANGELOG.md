@@ -16,7 +16,7 @@ them: it printed "24 Aug 2026" for 0.3.1 for four days on the strength of a
 date written here when the notes were drafted. An in-flight version keeps
 its heading and collects entries; the date and the link go on with the tag.
 
-## [0.3.3] — 2026-09-22
+## [0.3.3] — 2026-09-23
 
 ### Added
 
