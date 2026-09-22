@@ -1,0 +1,45 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthropics/mcpb/main/schemas/mcpb-manifest-v0.4.schema.json",
+  "manifest_version": "0.3",
+  "name": "netscli",
+  "display_name": "NetsCLI",
+  "version": "@@VERSION@@",
+  "description": "Network discovery, port scanning, DNS, ARP and mDNS tools for local networks.",
+  "long_description": "NetsCLI exposes its network diagnostics as MCP tools: discover hosts on a subnet, scan TCP ports, ping, resolve DNS, read the ARP cache, browse mDNS services, and build a combined profile of a single host.\n\nThis bundle carries the netscli binary, so nothing else needs installing. If you already run netscli from a terminal, point your client at that copy instead — you will get the version you chose, and packet capture, which this bundle does not include.",
+  "author": {
+    "name": "Felix Stubner",
+    "url": "https://github.com/fstubner"
+  },
+  "homepage": "https://netscli.com",
+  "documentation": "https://netscli.com/docs/mcp/",
+  "support": "https://github.com/fstubner/netscli/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fstubner/netscli.git"
+  },
+  "license": "MIT",
+  "keywords": ["network", "scanner", "dns", "mdns", "diagnostics"],
+  "server": {
+    "type": "binary",
+    "entry_point": "server/@@EXE@@",
+    "mcp_config": {
+      "command": "${__dirname}/server/@@EXE@@",
+      "args": ["serve"],
+      "env": {
+        "NETSCLI_MCP_ALLOW_PUBLIC_TARGETS": "${user_config.allow_public_targets}"
+      }
+    }
+  },
+  "compatibility": {
+    "platforms": ["@@PLATFORM@@"]
+  },
+  "user_config": {
+    "allow_public_targets": {
+      "type": "boolean",
+      "title": "Allow scanning outside your local networks",
+      "description": "Off by default. NetsCLI is driven here by a model, so the instruction to scan a host can come from a web page or a file rather than from you — and the packets leave from your machine and your IP. Turn this on only to scan hosts you are responsible for.",
+      "default": false,
+      "required": false
+    }
+  }
+}

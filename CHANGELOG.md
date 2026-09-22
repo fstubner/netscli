@@ -16,6 +16,39 @@ them: it printed "24 Aug 2026" for 0.3.1 for four days on the strength of a
 date written here when the notes were drafted. An in-flight version keeps
 its heading and collects entries; the date and the link go on with the tag.
 
+## [Unreleased]
+
+### Added
+
+- **Two new ways to connect the MCP server, so it no longer has to be a
+  hand-written config file.** Until now the only route was installing netscli,
+  finding where it landed, and writing the JSON yourself.
+
+  `npx netscli serve` now works: `netscli` is on npm as a small launcher plus
+  one prebuilt binary per platform, and npm fetches only the one that matches
+  your machine. This is the form every MCP client's documentation already uses.
+
+  There are also `.mcpb` bundles on each release, one per platform. A client
+  that supports MCP bundles installs one in a single action — the binary is
+  inside, so nothing else is needed. The install prompt carries a switch for
+  the local-network default described below, which is the first time that
+  choice has been visible to the person making it rather than buried in an
+  environment variable.
+
+  Anyone who already has netscli installed should keep pointing their client
+  at it. That copy is the version you chose, there is only one of it, and it
+  is the only one of the three that can capture packets — libpcap and Npcap
+  cannot be shipped inside an npm package or a bundle.
+
+### Documentation
+
+- **The MCP page now says what the local-network default is and why.** The
+  server has refused targets outside your own networks since 0.3.1, and the
+  only description of that lived in a source comment, so the first anyone
+  heard of it was an error message naming a variable. It is now written down
+  next to the reason: this is the one surface where a scan can be requested by
+  something a model read rather than by the person at the keyboard.
+
 ## [0.3.2] — 2026-09-21
 
 ### Added
@@ -665,7 +698,7 @@ backed by the same core library.
 - Desktop app needs the WebView2 runtime on Windows. Most Windows
   10/11 systems have it preinstalled.
 
-[Unreleased]: https://github.com/fstubner/netscli/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/fstubner/netscli/compare/v0.3.2...HEAD
 [0.3.2]: https://github.com/fstubner/netscli/releases/tag/v0.3.2
 [0.3.1]: https://github.com/fstubner/netscli/releases/tag/v0.3.1
 [0.2.6]: https://github.com/fstubner/netscli/releases/tag/v0.2.6

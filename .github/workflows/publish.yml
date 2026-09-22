@@ -117,6 +117,52 @@ jobs:
         env:
           CARGO_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
+  # ─── npm ────────────────────────────────────────────────────────────
+  # One launcher package plus five prebuilt-binary packages. This is what
+  # makes `npx netscli serve` work as an MCP command, which is the form
+  # every MCP client's documentation uses.
+  #
+  # Unlike crates.io above, this job downloads the release assets rather
+  # than building anything, so it waits on release.yml the same way the
+  # Homebrew and Scoop jobs do.
+  npm:
+    name: npm
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      # Required for npm trusted publishing: the CLI exchanges this OIDC
+      # token for a short-lived, workflow-scoped credential, and attests
+      # provenance with it. The same guarantee cosign gives the release
+      # binaries, without a long-lived secret existing at all.
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.TAG }}
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          registry-url: 'https://registry.npmjs.org'
+
+      # Node 22 bundles npm 10.x, which has no trusted publishing at all --
+      # it would fall back to looking for a token and fail with an auth
+      # error rather than anything naming the real cause. 11.5.1 is the
+      # first version that supports it.
+      - name: Upgrade npm for trusted publishing
+        run: npm install -g npm@^11.5.1
+
+      # NPM_TOKEN is the bootstrap path only. A trusted publisher is
+      # configured per package on npmjs.com and a package's settings page
+      # does not exist until the package does, so the first publish of each
+      # of these six cannot use OIDC. Unset once they are all configured;
+      # the script takes whichever is present and prefers OIDC.
+      - name: Publish launcher + platform packages
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: bash scripts/release/publish-npm.sh "$TAG"
+
   # ─── Homebrew tap ───────────────────────────────────────────────────
   homebrew:
     name: Homebrew tap
@@ -561,6 +607,45 @@ jobs:
           commit_message: "netscli-gui ${{ env.TAG }}"
           updpkgsums: false
 
+  # ─── MCP bundles (.mcpb) ────────────────────────────────────────────
+  # Five self-contained bundles, one per platform, attached to the same
+  # release as everything else. A client installs one in a single action:
+  # no PATH entry, no config file, no Node.
+  #
+  # This job runs here rather than in release.yml because it consumes the
+  # published assets and verifies their checksums, exactly as the Homebrew
+  # and Scoop jobs do -- release.yml's matrix legs upload their own outputs
+  # and never see each other's.
+  mcpb:
+    name: MCP bundles
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      # The only job here that writes. It uploads to the release it read
+      # from; the workflow-level default is read, so this is the exception
+      # rather than a loosening for everyone.
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.TAG }}
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Build bundles
+        run: bash scripts/release/build-mcpb.sh "$TAG" "${RUNNER_TEMP}/mcpb"
+
+      # `--clobber` so a re-run after a partial upload replaces what is
+      # there rather than failing on the first bundle that already exists.
+      # Every other job here is re-runnable and this one should be too.
+      - name: Attach bundles to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release upload "$TAG" "${RUNNER_TEMP}"/mcpb/*.mcpb --clobber
+
   # ─── Fan-out summary ───────────────────────────────────────────────
   #
   # The nine jobs above are deliberately independent — crates.io landing
@@ -584,6 +669,8 @@ jobs:
     if: always()
     needs:
       - crates-io
+      - npm
+      - mcpb
       - homebrew
       - scoop
       - winget
