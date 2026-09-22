@@ -552,9 +552,21 @@ jobs:
       contents: write
       id-token: write
     steps:
+      # The default branch, NOT the tag, and for the same reason
+      # publish-release.yml checks out the default branch: the only thing
+      # this checkout provides is the signing script, which is release
+      # tooling rather than part of what is being released. The artifacts
+      # come from the two build jobs, already compiled from the tag.
+      #
+      # Checking out the tag makes a fix to the script unreachable by the
+      # release that needs it. v0.3.3 hit exactly that: the verification
+      # step had a bug, the fix merged to main minutes later, and re-running
+      # the job would still have run the broken copy frozen at the tag. The
+      # only ways out would have been moving a published tag or shipping
+      # without Windows binaries.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.inputs.tag || github.ref }}
+          ref: ${{ github.event.repository.default_branch }}
 
       # libengine-pkcs11-openssl is not optional and not obvious.
       # osslsigncode's `-pkcs11module` does not load the module directly --
