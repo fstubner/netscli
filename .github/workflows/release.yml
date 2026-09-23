@@ -391,6 +391,64 @@ jobs:
             exit 1
           fi
 
+      # Windows only: sign the app's .exe *inside* the MSI, during the build.
+      #
+      # sign-windows signs the MSI afterwards, but the executable WiX packs
+      # into it can only be signed before packing -- so the bundler does it,
+      # through bundle.windows.signCommand, calling a wrapper around ssign.
+      # Until this, v0.3.3 included, the installer was signed and the program
+      # it installs was not; SmartScreen and antivirus judge the program.
+      #
+      # The two scripts come from the default branch rather than from the
+      # tag this job has checked out, for the reason publish.yml and
+      # sign-windows already give: release tooling at the tag cannot be
+      # fixed for the release that needs the fix.
+      #
+      # The config is written here rather than committed because signCommand
+      # needs absolute paths, which only exist on the runner. It also limits
+      # the Windows bundle to MSI: NSIS is not released, and every bundle
+      # built is one more round-trip to Certum's signing service.
+      - name: Prepare Authenticode signing inside the build (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          $tools = Join-Path $env:RUNNER_TEMP 'sign-tools'
+          New-Item -ItemType Directory -Force $tools | Out-Null
+          git fetch --quiet --depth 1 origin $env:DEFAULT_BRANCH
+          foreach ($name in 'sign-windows-pe.ps1', 'check-msi-signed.ps1') {
+            git show "FETCH_HEAD:scripts/release/$name" | Set-Content -Encoding utf8 (Join-Path $tools $name)
+            if ($LASTEXITCODE -ne 0) { Write-Error "could not read scripts/release/$name from $env:DEFAULT_BRANCH"; exit 1 }
+          }
+
+          # Pinned by version and digest, as sign-windows.sh pins the Linux build.
+          $zip = Join-Path $env:RUNNER_TEMP 'ssign.zip'
+          Invoke-WebRequest -Uri 'https://github.com/Le-Syl21/ssign/releases/download/v0.1.6/ssign-windows-x86_64.zip' -OutFile $zip
+          $want = '8a2a16738f0e1f368b4640cc6cb53fac8072a38df9334a72a96e071169b730f0'
+          $got = (Get-FileHash -Algorithm SHA256 $zip).Hash.ToLowerInvariant()
+          if ($got -ne $want) { Write-Error "ssign-windows-x86_64.zip digest $got, expected $want"; exit 1 }
+          Expand-Archive $zip -DestinationPath $tools -Force
+
+          $config = @{
+            bundle = @{
+              targets = @('msi')
+              windows = @{
+                signCommand = @{
+                  cmd = 'pwsh'
+                  args = @('-NoProfile', '-NonInteractive', '-File', (Join-Path $tools 'sign-windows-pe.ps1'), '%1')
+                }
+              }
+            }
+          } | ConvertTo-Json -Depth 8
+          $configPath = Join-Path $env:RUNNER_TEMP 'sign.conf.json'
+          Set-Content -Encoding utf8 -Path $configPath -Value $config
+          Get-Content $configPath
+
+          "NETSCLI_SSIGN=$(Join-Path $tools 'ssign.exe')" >> $env:GITHUB_ENV
+          "NETSCLI_SIGN_CONFIG=$configPath" >> $env:GITHUB_ENV
+          "NETSCLI_SIGN_TOOLS=$tools" >> $env:GITHUB_ENV
+
       # createUpdaterArtifacts is switched on by tauri.release.conf.json
       # rather than in tauri.conf.json, so a local `tauri build` still works
       # without the private key. It makes the bundler emit the macOS
@@ -403,11 +461,34 @@ jobs:
       # below and the MSI is Authenticode-signed in sign-windows, and both
       # change the bytes, so those two are signed again after that.
       - name: tauri build
-        run: npm run tauri -- build --target ${{ matrix.target }} --config src-tauri/tauri.release.conf.json -- --locked
+        run: >-
+          npm run tauri -- build --target ${{ matrix.target }}
+          --config src-tauri/tauri.release.conf.json
+          ${{ runner.os == 'Windows' && format('--config {0}', env.NETSCLI_SIGN_CONFIG) || '' }}
+          -- --locked
         working-directory: apps/netscli-gui
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # Read by ssign inside the signCommand wrapper; Windows leg only.
+          CERTUM_EMAIL: ${{ runner.os == 'Windows' && secrets.CERTUM_EMAIL || '' }}
+          CERTUM_OTP: ${{ runner.os == 'Windows' && secrets.CERTUM_OTP || '' }}
+
+      # The signCommand wrapper already verifies each file it signs. This is
+      # the check at the level of what ships: unpack the MSI and look at what
+      # is actually inside it. A wrapper that was never called -- a config
+      # that did not merge, a Tauri change to when it signs -- passes every
+      # per-file check and fails this one.
+      - name: Check the app inside the MSI is signed (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          $msis = @(Get-ChildItem "target/$env:TARGET/release/bundle/msi/*.msi")
+          if ($msis.Count -ne 1) { Write-Error "expected one .msi, found $($msis.Count)"; exit 1 }
+          pwsh -NoProfile -NonInteractive -File (Join-Path $env:NETSCLI_SIGN_TOOLS 'check-msi-signed.ps1') $msis[0].FullName
+          exit $LASTEXITCODE
 
       # linuxdeploy bundles a copy of the wayland/xcb client stack and puts
       # it ahead of the host's on LD_LIBRARY_PATH, which aborts the app on
