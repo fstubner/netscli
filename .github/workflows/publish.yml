@@ -137,9 +137,17 @@ jobs:
       # binaries, without a long-lived secret existing at all.
       id-token: write
     steps:
+      # The default branch, NOT the tag. This checkout supplies the publish
+      # script and the launcher template -- release tooling. What is actually
+      # published is the binaries, downloaded from the release by digest.
+      #
+      # Checking out the tag means a fix to that tooling cannot reach the
+      # release that needs it. v0.3.3 proved it twice: `netscli-win32-x64`
+      # was rejected by npm, the rename merged to main, and the re-run
+      # published `netscli-win32-x64` again from the frozen copy.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ env.TAG }}
+          ref: ${{ github.event.repository.default_branch }}
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
@@ -626,9 +634,12 @@ jobs:
       # rather than a loosening for everyone.
       contents: write
     steps:
+      # The default branch, for the same reason as the npm job above: this
+      # checkout provides the bundle script and the manifest template, and
+      # the binaries come from the release.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ env.TAG }}
+          ref: ${{ github.event.repository.default_branch }}
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
