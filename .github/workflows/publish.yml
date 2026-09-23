@@ -22,6 +22,27 @@ on:
         description: 'Tag to publish (e.g. v0.2.1). Must already exist as a published release with assets attached.'
         required: true
         type: string
+      # Re-running one registry after fixing its tooling.
+      #
+      # "Re-run failed jobs" in the Actions tab cannot do this: a re-run
+      # replays the original run, including the workflow file as it was
+      # then, so a fix merged since is invisible to it. Only a fresh
+      # dispatch picks up a changed workflow -- and a fresh dispatch without
+      # this input runs the whole fan-out, which means Winget opens a second
+      # PR against microsoft/winget-pkgs for a version it already has.
+      #
+      # v0.3.3 hit this three times before the pattern was clear: npm
+      # rejected a package name, the fix merged, and three successive
+      # re-runs published the old name from the frozen copy.
+      #
+      # Empty on a `release: published` event, where there are no inputs at
+      # all, so every job runs -- GitHub compares the missing value equal to
+      # the empty string.
+      only:
+        description: 'Run just one job (e.g. npm). Leave blank for the whole fan-out.'
+        required: false
+        default: ''
+        type: string
 
 # Keyed on the tag, not the ref, because `workflow_dispatch` and
 # `release: published` reach the same tag by different refs and would
@@ -75,6 +96,7 @@ jobs:
   # otherwise can't see the just-published version.
   crates-io:
     name: crates.io
+    if: inputs.only == '' || inputs.only == 'crates-io'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -127,6 +149,7 @@ jobs:
   # Homebrew and Scoop jobs do.
   npm:
     name: npm
+    if: inputs.only == '' || inputs.only == 'npm'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -174,6 +197,7 @@ jobs:
   # ─── Homebrew tap ───────────────────────────────────────────────────
   homebrew:
     name: Homebrew tap
+    if: inputs.only == '' || inputs.only == 'homebrew'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -188,6 +212,7 @@ jobs:
   # ─── Scoop bucket ───────────────────────────────────────────────────
   scoop:
     name: Scoop bucket
+    if: inputs.only == '' || inputs.only == 'scoop'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -205,6 +230,7 @@ jobs:
   # approval lands it on the public catalog.
   winget:
     name: Winget
+    if: inputs.only == '' || inputs.only == 'winget'
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
@@ -296,6 +322,7 @@ jobs:
   # to aur.archlinux.org and regenerates .SRCINFO server-side.
   aur:
     name: AUR
+    if: inputs.only == '' || inputs.only == 'aur'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -406,6 +433,7 @@ jobs:
   # installers; users install with `brew install --cask netscli`.
   homebrew-cask:
     name: Homebrew Cask
+    if: inputs.only == '' || inputs.only == 'homebrew-cask'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -423,6 +451,7 @@ jobs:
   # `scoop install netscli-gui`.
   scoop-gui:
     name: Scoop bucket (GUI)
+    if: inputs.only == '' || inputs.only == 'scoop-gui'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -451,6 +480,7 @@ jobs:
   # as if the site were contradicting itself.
   winget-gui:
     name: Winget (GUI)
+    if: inputs.only == '' || inputs.only == 'winget-gui'
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
@@ -526,6 +556,7 @@ jobs:
   # flow, but for the AppImage and the netscli-gui-bin package.
   aur-gui:
     name: AUR (GUI)
+    if: inputs.only == '' || inputs.only == 'aur-gui'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -626,6 +657,7 @@ jobs:
   # and never see each other's.
   mcpb:
     name: MCP bundles
+    if: inputs.only == '' || inputs.only == 'mcpb'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
