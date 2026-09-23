@@ -185,6 +185,10 @@ Update a Homebrew install:
 brew upgrade netscli
 ```
 
+The desktop app can also update itself from 0.3.4 on. It checks for a new
+release when it opens and offers to install it; see
+[Updates](/docs/desktop/#updates) for which installs can do this.
+
 Update a global npm install:
 
 ```bash

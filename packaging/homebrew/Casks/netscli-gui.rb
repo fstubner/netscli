@@ -35,6 +35,11 @@ cask "netscli-gui" do
   desc "NetsCLI desktop app for reviewing network scans, DNS, ARP, and local inventory"
   homepage "https://netscli.com"
 
+  # The app updates itself (Settings > Release Notifications). Declaring it
+  # leaves updates to the app: `brew upgrade` skips this cask unless it is
+  # run with --greedy.
+  auto_updates true
+
   app "NetsCLI.app"
 
   # Bundle identifier must match tauri.conf.json's `identifier`
