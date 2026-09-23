@@ -14,8 +14,9 @@
 //! - **A .deb** belongs to dpkg.
 //!
 //! Those installs keep the existing behaviour: a notice that links to the
-//! release page. Everything else -- winget, the Microsoft Store, a direct MSI
-//! or AppImage download, the Homebrew cask -- installs in place. Winget reads
+//! release page. Everything else -- winget, a direct MSI or AppImage
+//! download, the Homebrew cask -- installs in place. (A Microsoft Store
+//! listing of the MSI would too: it performs an ordinary MSI install.) Winget reads
 //! the installed version back from Add/Remove Programs, so an in-app MSI
 //! upgrade does not confuse it, and the cask declares `auto_updates`.
 //!
