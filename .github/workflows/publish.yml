@@ -175,7 +175,14 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
-          registry-url: 'https://registry.npmjs.org'
+          # No `registry-url`, deliberately. With it, setup-node writes an
+          # .npmrc line `_authToken=${NODE_AUTH_TOKEN}`, which expands to an
+          # empty token once NPM_TOKEN is gone -- and whether npm treats an
+          # empty configured token as "use OIDC" or as a credential to try is
+          # not something to find out during a release. Nothing here needs
+          # the line: the default registry is already registry.npmjs.org, and
+          # publish-npm.sh writes the token itself on the one path that uses
+          # a token.
 
       # Node 22 bundles npm 10.x, which has no trusted publishing at all --
       # it would fall back to looking for a token and fail with an auth
@@ -184,11 +191,14 @@ jobs:
       - name: Upgrade npm for trusted publishing
         run: npm install -g npm@^11.5.1
 
-      # NPM_TOKEN is the bootstrap path only. A trusted publisher is
-      # configured per package on npmjs.com and a package's settings page
-      # does not exist until the package does, so the first publish of each
-      # of these six cannot use OIDC. Unset once they are all configured;
-      # the script takes whichever is present and prefers OIDC.
+      # Normally unset: all six packages have a trusted publisher, and the
+      # script uses OIDC whenever NPM_TOKEN is empty.
+      #
+      # It stays wired up for one case -- publishing a package that does not
+      # exist yet. A trusted publisher is configured on a package's settings
+      # page, which only appears once the package does, so a newly added
+      # platform package needs one token-authenticated publish first. That
+      # is how v0.3.3 bootstrapped all six.
       - name: Publish launcher + platform packages
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
