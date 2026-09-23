@@ -72,7 +72,7 @@ function App() {
   });
   const activeTab = workspace.activeTab;
 
-  useReleaseNotifications({
+  const updates = useReleaseNotifications({
     appVersion: APP_VERSION,
     dismissToast: workspace.dismissToast,
     enabled: releaseNotifications,
@@ -254,9 +254,11 @@ function App() {
       />
 
       <ToastHost
+        appVersion={APP_VERSION}
         dismissToast={workspace.dismissToast}
         setActiveTabId={workspace.setActiveTabId}
         toast={workspace.toast}
+        updates={updates}
       />
       <AppDialogs
         aboutOpen={aboutOpen}

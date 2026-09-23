@@ -19,6 +19,10 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = [] }
 tauri-plugin-opener = "2"
 tauri-plugin-dialog = "2"
+# In-app updates. The npm side (@tauri-apps/plugin-updater / plugin-process)
+# must stay on the same minor, for the same reason as tauri itself above.
+tauri-plugin-updater = "2.12"
+tauri-plugin-process = "2.3"
 serde.workspace = true
 serde_json.workspace = true
 tokio.workspace = true
