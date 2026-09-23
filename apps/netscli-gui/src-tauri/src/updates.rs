@@ -99,7 +99,9 @@ pub fn decide(probe: &Probe) -> InstallSupport {
 /// from an environment variable in any casing.
 fn under_scoop(exe: &Path, roots: &[PathBuf]) -> bool {
     let exe = lower(exe);
-    roots.iter().any(|root| exe.starts_with(lower(&root.join("apps"))))
+    roots
+        .iter()
+        .any(|root| exe.starts_with(lower(&root.join("apps"))))
 }
 
 fn lower(path: &Path) -> PathBuf {
@@ -181,13 +183,20 @@ mod tests {
 
     #[test]
     fn direct_msi_install_updates_itself() {
-        let exe = std::env::temp_dir().join("Program Files").join("NetsCLI").join("NetsCLI.exe");
+        let exe = std::env::temp_dir()
+            .join("Program Files")
+            .join("NetsCLI")
+            .join("NetsCLI.exe");
         assert!(run(Some(BundleType::Msi), &exe, None, &[root()], false).supported);
     }
 
     #[test]
     fn scoop_install_defers_to_scoop() {
-        let exe = root().join("apps").join("netscli-gui").join("current").join("NetsCLI.exe");
+        let exe = root()
+            .join("apps")
+            .join("netscli-gui")
+            .join("current")
+            .join("NetsCLI.exe");
         let got = run(Some(BundleType::Msi), &exe, None, &[root()], true);
         assert!(!got.supported);
         assert!(got.reason.unwrap().contains("scoop update"));
@@ -209,7 +218,9 @@ mod tests {
 
     #[test]
     fn appimage_in_a_writable_directory_updates_itself() {
-        let image = std::env::temp_dir().join("Apps").join("netscli-gui.AppImage");
+        let image = std::env::temp_dir()
+            .join("Apps")
+            .join("netscli-gui.AppImage");
         let got = run(Some(BundleType::AppImage), &image, Some(&image), &[], true);
         assert!(got.supported);
     }
@@ -255,7 +266,9 @@ mod tests {
 
     #[test]
     fn probe_reports_a_missing_directory_as_unwritable() {
-        let missing = std::env::temp_dir().join("netscli-definitely-not-here").join("nested");
+        let missing = std::env::temp_dir()
+            .join("netscli-definitely-not-here")
+            .join("nested");
         assert!(!probe_dir_writable(&missing));
     }
 }
