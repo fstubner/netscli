@@ -202,7 +202,7 @@ for pkg in "${published_names[@]}"; do
 done
 if ! got="$(node "${STAGING}/netscli/bin/netscli.js" --version 2>&1)"; then
   echo "ERROR: the launcher could not run a binary on this machine." >&2
-  echo "${got}" | sed 's/^/       /' >&2
+  while IFS= read -r line; do printf '       %s\n' "$line" >&2; done <<< "$got"
   exit 1
 fi
 if [[ "$got" != *"${VERSION}"* ]]; then
