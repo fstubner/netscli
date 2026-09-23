@@ -17,7 +17,7 @@
 #   netscli-linux-arm64/
 #   netscli-darwin-x64/
 #   netscli-darwin-arm64/
-#   netscli-win32-x64/
+#   netscli-windows-x64/
 #
 # The launcher declares the five as optionalDependencies pinned to the exact
 # same version; their `os`/`cpu` fields make npm install exactly one.
@@ -58,7 +58,7 @@ fi
 BASE="https://github.com/fstubner/netscli/releases/download/${TAG}"
 TEMPLATE_DIR="${REPO_ROOT}/packaging/npm/netscli"
 
-# npm package suffix : release asset name
+# package-name suffix : npm `os` : npm `cpu` : release asset
 #
 # linux-x64 takes the musl build and linux-arm64 the gnu one, which is an
 # inconsistency worth stating rather than hiding. musl is statically linked
@@ -66,12 +66,28 @@ TEMPLATE_DIR="${REPO_ROOT}/packaging/npm/netscli"
 # ubuntu-24.04 and therefore need glibc 2.39 or newer. There is no
 # aarch64-musl leg in release.yml to take instead, so arm64 carries that
 # floor until one is added.
+#
+# The name suffix and the `os` value are separate fields because they
+# disagree on exactly one platform. npm's `os` vocabulary is Node's
+# `process.platform`, where Windows is `win32` -- but npm's registry rejects
+# a package called `netscli-win32-x64` outright:
+#
+#   403 Forbidden - Package name triggered spam detection
+#
+# The four sibling names went up seconds earlier without complaint and a
+# re-run was rejected identically, so it is the string and not a rate limit.
+# Why that string is not knowable from here: the heuristic is undocumented,
+# and scoped names carrying it (`@esbuild/win32-x64`) exist happily, so it
+# is not the substring alone.
+#
+# So the package is `netscli-windows-x64` while its `os` field stays
+# `win32`, and bin/netscli.js maps the one to the other.
 PLATFORMS=(
-  "linux-x64:netscli-linux-x86_64-musl"
-  "linux-arm64:netscli-linux-aarch64"
-  "darwin-x64:netscli-macos-x86_64"
-  "darwin-arm64:netscli-macos-aarch64"
-  "win32-x64:netscli-windows-x86_64.exe"
+  "linux-x64:linux:x64:netscli-linux-x86_64-musl"
+  "linux-arm64:linux:arm64:netscli-linux-aarch64"
+  "darwin-x64:darwin:x64:netscli-macos-x86_64"
+  "darwin-arm64:darwin:arm64:netscli-macos-aarch64"
+  "windows-x64:win32:x64:netscli-windows-x86_64.exe"
 )
 
 STAGING="$(mktemp -d)"
@@ -82,10 +98,7 @@ echo "Staging npm packages for ${TAG} in ${STAGING}"
 published_names=()
 
 for entry in "${PLATFORMS[@]}"; do
-  suffix="${entry%%:*}"
-  asset="${entry#*:}"
-  os="${suffix%%-*}"
-  cpu="${suffix#*-}"
+  IFS=: read -r suffix os cpu asset <<< "$entry"
   pkg="netscli-${suffix}"
   exe="netscli"
   [[ "$os" == "win32" ]] && exe="netscli.exe"
@@ -169,22 +182,35 @@ fi
 
 # Prove the launcher can find and run the binary for THIS machine before
 # publishing anything, rather than discovering it from a user's bug report.
-# Skipped when no staged package matches the runner, which is normal --
-# there is no darwin runner in the publish workflow.
-self="netscli-$(node -p 'process.platform + "-" + process.arch')"
-if [[ -d "${STAGING}/${self}" ]]; then
-  echo "Smoke test: running the launcher against ${self}"
-  ( cd "${STAGING}/netscli" && mkdir -p node_modules && ln -sfn "../../${self}" "node_modules/${self}" )
-  got="$(node "${STAGING}/netscli/bin/netscli.js" --version)"
-  if [[ "$got" != *"${VERSION}"* ]]; then
-    echo "ERROR: launcher ran but reported '${got}', which does not contain ${VERSION}" >&2
-    exit 1
-  fi
-  echo "  ${got}"
-  rm -rf "${STAGING}/netscli/node_modules"
-else
-  echo "Smoke test skipped: no staged package for ${self}"
+#
+# Every staged package is linked in and the launcher is left to resolve its
+# own name. The obvious alternative -- work out which package this machine
+# needs and link only that one -- means writing the platform-to-package
+# mapping a second time, and the two promptly disagreed: this test built
+# `netscli-win32-x64` from process.platform while the launcher had moved to
+# `netscli-windows-x64`, so nothing matched and the check skipped itself on
+# the one platform that could have run it. A skip reads almost exactly like
+# a pass in a log.
+#
+# There is no skip now. If the launcher cannot resolve a binary for the
+# machine running this, that is a failure worth seeing: every platform this
+# script publishes is one it just staged.
+echo "Smoke test: the launcher resolving its own platform package"
+mkdir -p "${STAGING}/netscli/node_modules"
+for pkg in "${published_names[@]}"; do
+  ln -sfn "../../${pkg}" "${STAGING}/netscli/node_modules/${pkg}"
+done
+if ! got="$(node "${STAGING}/netscli/bin/netscli.js" --version 2>&1)"; then
+  echo "ERROR: the launcher could not run a binary on this machine." >&2
+  echo "${got}" | sed 's/^/       /' >&2
+  exit 1
 fi
+if [[ "$got" != *"${VERSION}"* ]]; then
+  echo "ERROR: launcher ran but reported '${got}', which does not contain ${VERSION}" >&2
+  exit 1
+fi
+echo "  ${got}"
+rm -rf "${STAGING}/netscli/node_modules"
 
 if [[ "$MODE" == "--build-only" ]]; then
   KEEP="$(mktemp -d)"

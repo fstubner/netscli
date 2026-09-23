@@ -24,12 +24,25 @@
 const { spawn } = require('node:child_process');
 const path = require('node:path');
 
-// The same string the platform packages are named with, and the same one
-// their `os`/`cpu` fields are written from. process.platform is already
-// npm's `os` vocabulary ('win32', 'darwin', 'linux') and process.arch is
-// already its `cpu` vocabulary ('x64', 'arm64'), so no mapping is needed --
-// which is the reason the packages are named this way.
-const pkg = `netscli-${process.platform}-${process.arch}`;
+/* The platform packages are named after process.platform and process.arch,
+ * which is also npm's own `os`/`cpu` vocabulary -- with one exception.
+ *
+ * npm's registry refuses to create a package called `netscli-win32-x64`:
+ *
+ *   403 Forbidden - Package name triggered spam detection
+ *
+ * The four sibling names published seconds earlier without complaint and a
+ * re-run was rejected identically, so it is the string and not a rate
+ * limit. Not the substring on its own either -- `@esbuild/win32-x64` is on
+ * the registry today. The heuristic is undocumented; this is the workaround
+ * for an observed rejection, not an explanation of it.
+ *
+ * So that one package is `netscli-windows-x64`. Its `os` field is still
+ * `win32`, because that is what npm matches against when deciding which
+ * optional dependency to install -- only the NAME changes, and only here. */
+const PACKAGE_PLATFORM = { win32: 'windows' };
+const platform = PACKAGE_PLATFORM[process.platform] ?? process.platform;
+const pkg = `netscli-${platform}-${process.arch}`;
 const exe = process.platform === 'win32' ? 'netscli.exe' : 'netscli';
 
 function resolveBinary() {
@@ -54,7 +67,7 @@ if (binary === null) {
       `or this platform is not one netscli publishes to npm.\n` +
       `\n` +
       `Published targets: linux-x64, linux-arm64, darwin-x64, darwin-arm64,\n` +
-      `win32-x64. Every other target, and the packet-capture builds, install\n` +
+      `windows-x64. Every other target, and the packet-capture builds, install\n` +
       `from https://netscli.com/docs/install/ instead.\n`,
   );
   process.exit(1);
