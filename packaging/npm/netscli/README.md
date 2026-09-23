@@ -42,7 +42,7 @@ of a 13 MB binary, and packet capture works, which it cannot here.
   [releases page](https://github.com/fstubner/netscli/releases) or a system
   package manager.
 - **Anything outside linux-x64, linux-arm64, darwin-x64, darwin-arm64 and
-  win32-x64.** Other targets are built, just not shipped here.
+  windows-x64.** Other targets are built, just not shipped here.
 
 For those, and for a copy on your PATH that your system updates:
 

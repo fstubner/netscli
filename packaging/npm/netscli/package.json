@@ -37,6 +37,6 @@
     "netscli-darwin-x64": "@@VERSION@@",
     "netscli-linux-arm64": "@@VERSION@@",
     "netscli-linux-x64": "@@VERSION@@",
-    "netscli-win32-x64": "@@VERSION@@"
+    "netscli-windows-x64": "@@VERSION@@"
   }
 }
