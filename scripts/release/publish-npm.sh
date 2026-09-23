@@ -137,9 +137,30 @@ for entry in "${PLATFORMS[@]}"; do
   "author": "Felix Stubner",
   "os": ["${os}"],
   "cpu": ["${cpu}"],
-  "files": ["${exe}"],
+  "files": ["${exe}", "README.md"],
   "preferUnplugged": true
 }
+EOF
+
+  # Nobody installs these by name, but npmjs.com shows each one as a page of
+  # its own, and without a README that page is blank. A blank page on a
+  # package that ships an executable reads as abandoned at best. v0.3.3 went
+  # out that way, five of six packages with nothing to show.
+  cat > "${STAGING}/${pkg}/README.md" <<EOF
+# ${pkg}
+
+The prebuilt \`netscli\` binary for ${os} ${cpu}.
+
+You don't need to install this package yourself. Install
+[\`netscli\`](https://www.npmjs.com/package/netscli) and npm will pick the
+matching platform package for your machine:
+
+\`\`\`bash
+npx netscli --help
+\`\`\`
+
+Documentation: [netscli.com](https://netscli.com) ·
+Source: [github.com/fstubner/netscli](https://github.com/fstubner/netscli)
 EOF
 
   published_names+=("$pkg")
