@@ -14,6 +14,7 @@ NetsCLI publishes command-line binaries and desktop installers through GitHub Re
 | macOS | Homebrew or install script | CLI and TUI |
 | Linux | Install script, Homebrew, AUR, or release artifact | CLI and TUI |
 | Rust users | `cargo install netscli` | CLI and TUI from crates.io |
+| Node users | `npx netscli` | CLI and TUI from npm, no install step |
 
 ## Windows
 
@@ -47,7 +48,11 @@ Or the PowerShell install script, which picks the right asset for your machine:
 iwr -useb https://netscli.com/install.ps1 | iex
 ```
 
-Direct Windows installers are attached to GitHub Releases. They are not Authenticode-signed yet, so Windows may show a publisher warning when installing outside winget. The winget manifests verify release asset hashes.
+Direct Windows downloads are attached to GitHub Releases. From 0.3.3 on, both
+`.exe` builds and the `.msi` installer are Authenticode-signed, so Windows shows
+a named publisher rather than an unknown one. Releases before 0.3.3 are
+unsigned. A new certificate still has to build reputation with SmartScreen,
+so you may see a warning for a while regardless.
 
 ## macOS
 
@@ -130,6 +135,34 @@ cargo install netscli
 
 Cargo installs the CLI/TUI binary. It does not install the desktop app.
 
+## npm
+
+If Node 18 or newer is installed, you can run NetsCLI without installing
+anything:
+
+```bash
+npx netscli --help
+```
+
+Or install it globally:
+
+```bash
+npm install -g netscli
+```
+
+npm downloads only the prebuilt binary for your platform. Published targets
+are Linux x64 and arm64, macOS x64 and Apple Silicon, and Windows x64. The
+Linux arm64 binary needs glibc 2.39 or newer.
+
+What the npm build leaves out:
+
+- **Packet capture.** It needs libpcap or Npcap on the machine, which npm
+  cannot arrange. Use a package from the sections above if you need it.
+- **The desktop app.** npm installs the CLI and TUI only.
+
+If you mainly want the MCP server, see [MCP server](/docs/mcp/) — the npm
+package is one of three ways to connect it.
+
 ## Updating
 
 Use the same package manager you installed with.
@@ -151,6 +184,15 @@ Update a Homebrew install:
 ```bash
 brew upgrade netscli
 ```
+
+Update a global npm install:
+
+```bash
+npm update -g netscli
+```
+
+`npx netscli` may reuse a copy it has cached. To be sure you get the newest
+release, run `npx netscli@latest`.
 
 For direct release artifacts, download the [latest GitHub release](https://github.com/fstubner/netscli/releases/latest) and replace the previous install with the matching package for your platform.
 
@@ -205,9 +247,10 @@ CLI](https://docs.sigstore.dev/cosign/system_config/installation/). A pass
 confirms the asset was built and signed by this repository's release workflow
 and has not been altered since.
 
-This is separate from platform code signing, which the installers do not yet
-have — see the Windows and macOS sections above for what your OS will say on
-first run.
+This is separate from platform code signing. From 0.3.3 on, the Windows
+executables and installer also carry an Authenticode signature. The macOS
+`.dmg` is not notarized yet. See the Windows and macOS sections above for
+what your OS will say on first run.
 
 ## Packet capture
 

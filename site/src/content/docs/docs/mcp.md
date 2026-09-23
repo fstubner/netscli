@@ -46,9 +46,11 @@ client often has a different PATH from your shell.
 ```
 
 npm fetches the prebuilt binary for your platform on first launch. You need
-Node 18 or newer. `latest` is resolved each time the client starts the
-server, so the version can change under you, and the npm builds leave out
-packet capture because it needs libpcap or Npcap present on the machine.
+Node 18 or newer. Which version runs is up to npx: it may pick up a newer
+release or reuse one it has cached, so the version can differ from the one
+you have elsewhere. Write `netscli@0.3.3` in the args to pin one. The npm
+builds leave out packet capture, because it needs libpcap or Npcap present on
+the machine.
 
 ### You would rather not edit a config file
 
