@@ -309,6 +309,10 @@ jobs:
     name: Build GUI installer
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
+    # For TAURI_SIGNING_PRIVATE_KEY, the in-app updater's signing key. Same
+    # environment as sign-windows, no protection rules, for the same reason:
+    # it scopes the secret rather than gating the job.
+    environment: release-signing
     permissions:
       contents: write
       id-token: write
@@ -375,9 +379,35 @@ jobs:
       # CLI job above already has. Without it a signed .msi/.dmg could be
       # built against resolved-at-CI-time dependency versions that no
       # committed Cargo.lock ever pinned. `npm ci` covers the frontend half.
+      # The public key is compiled into the app, and every copy of it will
+      # only ever accept updates signed by the matching private key. Shipping
+      # the placeholder would build an app that can check for updates but
+      # never install one -- and that app could not be fixed by an update.
+      - name: Refuse to build with the placeholder updater key
+        shell: bash
+        run: |
+          if grep -q '@@UPDATER_PUBKEY@@' apps/netscli-gui/src-tauri/tauri.conf.json; then
+            echo "::error::plugins.updater.pubkey in tauri.conf.json is still the placeholder. Set it to the public key from 'tauri signer generate'."
+            exit 1
+          fi
+
+      # createUpdaterArtifacts is switched on by tauri.release.conf.json
+      # rather than in tauri.conf.json, so a local `tauri build` still works
+      # without the private key. It makes the bundler emit the macOS
+      # .app.tar.gz the updater installs from, plus a signature for every
+      # update file. A file rather than inline JSON because this also runs
+      # in PowerShell, where quotes inside an argument do not survive the
+      # trip through `npm run`.
+      #
+      # Only the macOS signatures survive as-is. The AppImage is repacked
+      # below and the MSI is Authenticode-signed in sign-windows, and both
+      # change the bytes, so those two are signed again after that.
       - name: tauri build
-        run: npm run tauri -- build --target ${{ matrix.target }} -- --locked
+        run: npm run tauri -- build --target ${{ matrix.target }} --config src-tauri/tauri.release.conf.json -- --locked
         working-directory: apps/netscli-gui
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
       # linuxdeploy bundles a copy of the wayland/xcb client stack and puts
       # it ahead of the host's on LD_LIBRARY_PATH, which aborts the app on
@@ -437,6 +467,59 @@ jobs:
             done
           done
           ls -la "${OUT_DIR}"
+
+      # The update file and its signature, for latest.json.
+      #
+      # macOS updates install from a .app.tar.gz, a separate file from the
+      # .dmg people download; it joins the release assets here so the digest
+      # and sigstore steps below cover it like everything else. Its bundler
+      # signature is final, since nothing touches the tarball afterwards.
+      #
+      # Linux updates install the AppImage itself, which the host-library
+      # fix above has already rewritten, so it is signed again now, on the
+      # bytes that ship. The Windows MSI is handled in sign-windows.
+      #
+      # The signatures go to a workflow artifact, never to the release: the
+      # sigstore sidecars below are also named `<asset>.sig`, and one would
+      # overwrite the other.
+      - name: Sign the update file for the in-app updater
+        if: runner.os != 'Windows'
+        shell: bash
+        env:
+          ASSET_PREFIX: ${{ matrix.asset_prefix }}
+          TARGET: ${{ matrix.target }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          OUT_DIR="${RUNNER_TEMP}/gui-out"
+          SIG_DIR="${RUNNER_TEMP}/updater-sigs"
+          mkdir -p "${SIG_DIR}"
+          shopt -s nullglob
+          if [ "${RUNNER_OS}" = "macOS" ]; then
+            tarballs=(target/"${TARGET}"/release/bundle/macos/*.app.tar.gz)
+            if [ ${#tarballs[@]} -ne 1 ] || [ ! -f "${tarballs[0]}.sig" ]; then
+              echo "::error::expected one .app.tar.gz with a .sig under target/${TARGET}/release/bundle/macos/, found ${#tarballs[@]}"
+              exit 1
+            fi
+            cp "${tarballs[0]}" "${OUT_DIR}/${ASSET_PREFIX}.app.tar.gz"
+            cp "${tarballs[0]}.sig" "${SIG_DIR}/${ASSET_PREFIX}.app.tar.gz.sig"
+          else
+            image="${OUT_DIR}/${ASSET_PREFIX}.AppImage"
+            [ -f "${image}" ] || { echo "::error::${image} missing"; exit 1; }
+            (cd apps/netscli-gui && npm run tauri -- signer sign "${image}")
+            mv "${image}.sig" "${SIG_DIR}/${ASSET_PREFIX}.AppImage.sig"
+          fi
+          ls -la "${SIG_DIR}"
+
+      - name: Hand the updater signature to latest.json
+        if: runner.os != 'Windows'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: updater-sig-${{ matrix.asset_prefix }}
+          path: ${{ runner.temp }}/updater-sigs/*
+          retention-days: 1
+          if-no-files-found: error
 
       # The Windows leg stops here, for the same reason the CLI job's does:
       # Authenticode signing rewrites the .msi, so a digest or a sigstore
@@ -613,6 +696,37 @@ jobs:
           CERTUM_OTP: ${{ secrets.CERTUM_OTP }}
         run: bash scripts/release/sign-windows.sh "${RUNNER_TEMP}/win"
 
+      # The in-app updater's signature, over the Authenticode-signed MSI.
+      #
+      # It has to come after Authenticode: that rewrites the file, so the
+      # signature Tauri made at build time covers bytes nobody downloads.
+      # And it goes to a workflow artifact, not the release, because the
+      # sigstore step below writes `<asset>.sig` too.
+      #
+      # The CLI version is pinned to match apps/netscli-gui/package.json;
+      # this job checks out tooling only and does not install the app's
+      # dependencies.
+      - name: Sign the MSI for the in-app updater
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          msi="${RUNNER_TEMP}/win/netscli-gui-windows-x86_64.msi"
+          [ -f "${msi}" ] || { echo "::error::${msi} missing"; exit 1; }
+          npx --yes @tauri-apps/cli@2.11.5 signer sign "${msi}"
+          mkdir -p "${RUNNER_TEMP}/updater-sigs"
+          mv "${msi}.sig" "${RUNNER_TEMP}/updater-sigs/"
+
+      - name: Hand the updater signature to latest.json
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: updater-sig-netscli-gui-windows-x86_64
+          path: ${{ runner.temp }}/updater-sigs/*
+          retention-days: 1
+          if-no-files-found: error
+
       # From here on it is the same tail the other matrix legs run, against
       # the signed bytes.
       - name: Generate SHA256
@@ -662,3 +776,79 @@ jobs:
           tag_name: ${{ github.event.inputs.tag || github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ─── latest.json for the in-app updater ───────────────────────────────
+  # Runs once every update file is final and signed: the macOS tarballs and
+  # the Linux AppImage in the gui legs, the MSI in sign-windows.
+  #
+  # Before uploading anything it downloads each update file from the
+  # release and checks its signature against the public key compiled into
+  # the app at this tag. That is the only place a mismatched signing secret
+  # is visible before users meet it -- and once the app ships with a key,
+  # it accepts nothing else, so a bad release there would be one every
+  # install fails to update to.
+  updater-manifest:
+    name: Publish latest.json
+    needs: [gui, sign-windows]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+    steps:
+      # Default branch for the script, as elsewhere. The public key is read
+      # from the tag below, because that is the one the shipped app holds.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Collect the updater signatures
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          pattern: updater-sig-*
+          path: ${{ runner.temp }}/updater-sigs
+          merge-multiple: true
+
+      - name: Build latest.json
+        run: node scripts/release/updater-manifest.mjs "${TAG}" "${RUNNER_TEMP}/updater-sigs" > "${RUNNER_TEMP}/latest.json"
+
+      - name: Check every signature against the app's public key
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq || true
+          sudo apt-get install -y -qq minisign
+          git fetch --quiet --depth 1 origin "refs/tags/${TAG}:refs/tags/${TAG}"
+          conf="$(git show "${TAG}:apps/netscli-gui/src-tauri/tauri.conf.json")"
+          pubkey="$(node -e 'process.stdout.write(JSON.parse(process.argv[1]).plugins.updater.pubkey)' "${conf}")"
+          printf '%s' "${pubkey}" | base64 -d > "${RUNNER_TEMP}/pub.minisign"
+          work="${RUNNER_TEMP}/verify"
+          mkdir -p "${work}"
+          node -e '
+            const m = require(process.argv[1]);
+            for (const [key, p] of Object.entries(m.platforms)) console.log(key, p.url);
+          ' "${RUNNER_TEMP}/latest.json" | while read -r key url; do
+            asset="${url##*/}"
+            gh release download "${TAG}" --pattern "${asset}" --dir "${work}" --clobber
+            node -e '
+              const m = require(process.argv[1]);
+              process.stdout.write(Buffer.from(m.platforms[process.argv[2]].signature, "base64"));
+            ' "${RUNNER_TEMP}/latest.json" "${key}" > "${work}/${asset}.minisig"
+            minisign -Vm "${work}/${asset}" -p "${RUNNER_TEMP}/pub.minisign" -x "${work}/${asset}.minisig" -q
+            echo "  ${key}: signature matches the app's public key"
+          done
+
+      # --clobber so a re-run replaces the file rather than failing on it.
+      - name: Attach latest.json to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release upload "${TAG}" "${RUNNER_TEMP}/latest.json" --clobber

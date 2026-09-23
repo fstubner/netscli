@@ -29,7 +29,7 @@ export function useWorkspaceToast(options: WorkspaceOptions) {
     setToast(null);
   }
 
-  function showUpdateToast(version: string, url: string) {
+  function showUpdateToast(version: string, url: string, opensUpdateDialog = false) {
     if (!isAllowedExternalUrl(url)) return;
 
     setToast({
@@ -39,6 +39,7 @@ export function useWorkspaceToast(options: WorkspaceOptions) {
       persistent: true,
       actionUrl: url,
       releaseVersion: version,
+      opensUpdateDialog,
     });
   }
 

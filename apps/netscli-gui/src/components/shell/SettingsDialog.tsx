@@ -148,7 +148,7 @@ export function SettingsDialog({
             <SettingsSwitch
               checked={releaseNotifications}
               label="Release Notifications"
-              note="Check GitHub for newer NetsCLI releases."
+              note="Checks GitHub for a newer release when the app opens. Nothing downloads or installs unless you choose to."
               testId="settings-release-notifications-toggle"
               onClick={() => preferences.setReleaseNotifications((prev) => !prev)}
             />

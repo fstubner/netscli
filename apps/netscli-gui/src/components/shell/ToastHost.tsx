@@ -1,14 +1,27 @@
+import { releasePageUrl, type ReleaseUpdates } from '../../hooks/useReleaseNotifications';
 import { openAllowedExternalUrl } from '../../services/externalLinks';
+import { installUpdate } from '../../services/updater';
 import type { WorkspaceToast } from '../../workspace/types';
+import { UpdateDialog } from './UpdateDialog';
 
 interface ToastHostProps {
+  appVersion: string;
   dismissToast: () => void;
   setActiveTabId: (tabId: string) => void;
   toast: WorkspaceToast | null;
+  /** The update dialog opens from the update toast, so it lives here. */
+  updates: ReleaseUpdates;
 }
 
-export function ToastHost({ dismissToast, setActiveTabId, toast }: ToastHostProps) {
-  const actionLabel = toast?.actionUrl ? 'View release' : toast?.tabId ? 'Open tab' : null;
+export function ToastHost({ appVersion, dismissToast, setActiveTabId, toast, updates }: ToastHostProps) {
+  const actionLabel = toast?.opensUpdateDialog
+    ? 'View update'
+    : toast?.actionUrl
+      ? 'View release'
+      : toast?.tabId
+        ? 'Open tab'
+        : null;
+  const update = updates.pendingUpdate;
 
   // The live region is rendered unconditionally, even with no toast (B-21).
   //
@@ -24,9 +37,25 @@ export function ToastHost({ dismissToast, setActiveTabId, toast }: ToastHostProp
       {toast && <ToastButton
         actionLabel={actionLabel}
         dismissToast={dismissToast}
+        openUpdateDialog={updates.openDialog}
         setActiveTabId={setActiveTabId}
         toast={toast}
       />}
+      {updates.dialogOpen && update && (
+        <UpdateDialog
+          currentVersion={appVersion}
+          notes={update.body}
+          version={update.version}
+          onInstall={(onProgress) => installUpdate(update, onProgress)}
+          onLater={updates.closeDialog}
+          onOpenReleasePage={() => {
+            openAllowedExternalUrl(releasePageUrl(update.version)).catch((error: unknown) =>
+              console.error('Opening the link failed', error),
+            );
+          }}
+          onSkip={() => updates.skipVersion(update.version)}
+        />
+      )}
     </div>
   );
 }
@@ -34,11 +63,13 @@ export function ToastHost({ dismissToast, setActiveTabId, toast }: ToastHostProp
 function ToastButton({
   actionLabel,
   dismissToast,
+  openUpdateDialog,
   setActiveTabId,
   toast,
 }: {
   actionLabel: string | null;
   dismissToast: () => void;
+  openUpdateDialog: () => void;
   setActiveTabId: (tabId: string) => void;
   toast: WorkspaceToast;
 }) {
@@ -54,7 +85,11 @@ function ToastButton({
       key={toast.id}
       type="button"
       onClick={() => {
-        if (toast.actionUrl) {
+        if (toast.opensUpdateDialog) {
+          // Not marked dismissed: "Later" in the dialog should bring the
+          // notice back on the next launch, and "Skip" records it itself.
+          openUpdateDialog();
+        } else if (toast.actionUrl) {
           openAllowedExternalUrl(toast.actionUrl).catch((error: unknown) =>
             console.error('Opening the link failed', error),
           );

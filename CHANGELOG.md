@@ -16,6 +16,26 @@ them: it printed "24 Aug 2026" for 0.3.1 for four days on the strength of a
 date written here when the notes were drafted. An in-flight version keeps
 its heading and collects entries; the date and the link go on with the tag.
 
+## [Unreleased]
+
+### Added
+
+- **The desktop app can update itself.** It already told you when a newer
+  release was out and linked to the release page. Now, where it can, the
+  notice opens a dialog with the release notes and an **Install and
+  restart** button. The update is downloaded, checked against NetsCLI's
+  signing key, installed, and the app reopens. Nothing downloads unless you
+  click it, and the existing setting still turns the check off entirely.
+
+  Installs that a package manager owns keep the old link, because an update
+  from inside the app would fight it. That covers Scoop, the AUR package and
+  `.deb` installs. The Homebrew cask now declares `auto_updates`, so
+  Homebrew leaves updates to the app.
+
+  This takes effect from the version after this one. An app can only update
+  itself if it was built with the updater, so 0.3.4 is the first that can,
+  and 0.3.5 is the first update it will install.
+
 ## [0.3.3] — 2026-09-23
 
 ### Added

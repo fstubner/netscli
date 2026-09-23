@@ -22,7 +22,7 @@ export interface WorkspaceModel {
   setFilterText: (filterText: string) => void;
   setTrafficInterfaceName: (name: string) => void;
   dismissToast: () => void;
-  showUpdateToast: (version: string, url: string) => void;
+  showUpdateToast: (version: string, url: string, opensUpdateDialog?: boolean) => void;
   patchTab: (id: string, patch: Partial<WorkspaceTab>) => void;
   patchForm: (id: string, key: string, value: string) => void;
   selectRow: (index: number, mode?: RowSelectionMode) => void;
@@ -88,4 +88,7 @@ export interface WorkspaceToast {
   persistent?: boolean;
   actionUrl?: string;
   releaseVersion?: string;
+  /** The update can be installed in place: clicking opens the update
+   *  dialog rather than the release page. */
+  opensUpdateDialog?: boolean;
 }

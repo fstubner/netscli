@@ -34,6 +34,8 @@ import { dirname, join } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
+import { releaseSummary } from './release-summary.mjs';
+
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const REPO = 'https://github.com/fstubner/netscli';
 
@@ -57,36 +59,6 @@ function changelogSection(text, wanted) {
     .slice(start, end)
     .replace(/^###\s*Changed\s*\(\s*internal\s*\)\s*$[\s\S]*?(?=^#{1,3}\s|(?![\s\S]))/gim, '')
     .trim();
-}
-
-/* The summaries live in a .ts the site authors, and it imports from
- * './meta' without an extension -- Astro resolves that, node does not, so
- * the module cannot simply be imported. The export is an object of string
- * literals, so the literal is evaluated on its own instead. A shape change
- * throws here rather than quietly producing no summary. */
-function releaseSummary(wantedTag) {
-  const file = join(root, 'site', 'src', 'data', 'site-content', 'changelog.ts');
-  const source = readFileSync(file, 'utf8');
-  const marker = 'export const releaseSummaries';
-  const at = source.indexOf(marker);
-  if (at === -1) throw new Error(`no ${marker} in ${file}`);
-  const open = source.indexOf('{', at);
-  let depth = 0;
-  let close = -1;
-  for (let i = open; i < source.length; i += 1) {
-    if (source[i] === '{') depth += 1;
-    else if (source[i] === '}') {
-      depth -= 1;
-      if (depth === 0) {
-        close = i;
-        break;
-      }
-    }
-  }
-  if (close === -1) throw new Error(`unterminated releaseSummaries object in ${file}`);
-  // Our own source, read from disk at publish time, not input from anywhere.
-  const summaries = new Function(`return ${source.slice(open, close + 1)}`)();
-  return summaries[wantedTag] ?? null;
 }
 
 const changelog = readFileSync(join(root, 'CHANGELOG.md'), 'utf8');

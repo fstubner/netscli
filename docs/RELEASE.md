@@ -18,8 +18,28 @@ Before the first automated release runs, add these secrets at
 | `CARGO_REGISTRY_TOKEN` | [crates.io → Account Settings → API Tokens](https://crates.io/settings/tokens) → "New Token" with `publish-update` scope (limit to `netscli-core`, `netscli-mcp`, `netscli` if you want least-privilege) | `crates-io` job |
 | `HOMEBREW_TAP_TOKEN` | [github.com/settings/tokens](https://github.com/settings/tokens) → fine-grained or classic PAT with `Contents: Read & Write` on `fstubner/homebrew-tap` | `homebrew` job |
 | `SCOOP_BUCKET_TOKEN` | Same shape as Homebrew but for `fstubner/scoop-bucket`. May reuse the same PAT if scoped widely. | `scoop` job |
-| `WINGET_TOKEN` | Classic PAT with `public_repo` scope. The releaser action forks `microsoft/winget-pkgs` under your account and opens a PR — needs to write to your fork. | `winget` job |
+| `WINGET_TOKEN` | Classic PAT with the `workflow` scope, which GitHub's token page pairs with the whole `repo` group. `public_repo` alone is not enough: the releaser has to create a branch on your fork of `microsoft/winget-pkgs`, and without `workflow` that fails with "does not have the correct permissions to execute CreateRef". Fine-grained tokens are not supported by the releaser. | `winget` job |
 | `AUR_SSH_PRIVATE_KEY` | The private half of the `~/.ssh/aur` key already registered with your AUR account (we generated this earlier). Paste the full file content (`-----BEGIN OPENSSH PRIVATE KEY-----` through `-----END OPENSSH PRIVATE KEY-----` inclusive). | `aur` job |
+
+Four more are **environment** secrets, set on the `release-signing`
+environment (**Settings → Environments → release-signing**) rather than on
+the repository, so only the jobs that sign can read them. That environment
+must have no protection rules and no branch or tag restriction: it scopes the
+secrets, it does not gate anything, and a restriction would stall every
+release partway through its uploads.
+
+| Secret | Where to get it | Used by |
+|--------|-----------------|---------|
+| `CERTUM_EMAIL` | The e-mail address of your Certum account. | `sign-windows` job (Authenticode) |
+| `CERTUM_OTP` | The TOTP seed from SimplySign, base32, or the full `otpauth://` URI. Treat it like a private key. | `sign-windows` job |
+| `TAURI_SIGNING_PRIVATE_KEY` | The private key from `npm run tauri signer generate -- -w ~/.tauri/netscli-updater.key`, run in `apps/netscli-gui`. Its public half goes in `plugins.updater.pubkey` in `tauri.conf.json`. | `gui` and `sign-windows` jobs (updater signatures) |
+| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | The password you gave that command. | same |
+
+**Back up the updater private key somewhere other than this machine.** Every
+installed copy of the desktop app accepts updates signed by that key and no
+other. Lose it, and those copies can no longer update from inside the app.
+A new key means a new build, which everyone then has to install once
+themselves, by hand or through their package manager.
 
 ## The release flow
 

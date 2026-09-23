@@ -96,3 +96,53 @@
   border-color: color-mix(in srgb, var(--mint), transparent 35%);
   color: var(--mint);
 }
+
+/*
+ * Update dialog. Built on .confirm-dialog so it reads as the same family.
+ *
+ * The icon is mint, not the amber .confirm-dialog-icon uses: an available
+ * update is not a warning, and design-direction.md keeps amber for state
+ * that needs attention.
+ */
+.update-dialog-icon {
+  display: inline-grid;
+  place-items: center;
+  padding-top: 2px;
+  color: var(--mint);
+}
+
+/* Release notes are plain text from latest.json; keep their line breaks and
+   let a long entry scroll inside the dialog rather than past the window. */
+.update-dialog-notes {
+  max-height: 200px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+/* Always rendered, so the progress and failure messages are announced as
+   they change; empty until an install starts. */
+.update-dialog-status {
+  min-height: 1.5em;
+  padding: 10px 18px 0;
+  color: var(--text-secondary);
+}
+
+.update-dialog-status:empty {
+  padding-top: 0;
+}
+
+/* Skip sits apart from Later and Install: it is the one choice that
+   silences this version for good. */
+.confirm-dialog-actions .update-dialog-skip {
+  margin-right: auto;
+}
+
+.confirm-dialog-actions button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}

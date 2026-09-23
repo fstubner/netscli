@@ -4,6 +4,7 @@
 mod commands;
 mod render_mode;
 mod state;
+mod updates;
 
 use std::sync::Mutex;
 
@@ -49,6 +50,8 @@ fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .manage(Mutex::new(None::<NetworkMonitor>))
         .manage(OperationManager::default())
         .manage(ArtifactRegistry::default())
@@ -83,7 +86,8 @@ fn main() {
             list_monitorable_interfaces,
             get_default_interface,
             detect_netscli_cli,
-            render_mode::report_first_paint
+            render_mode::report_first_paint,
+            updates::update_install_support
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

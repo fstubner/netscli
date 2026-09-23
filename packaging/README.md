@@ -75,6 +75,14 @@ These are the parts that need more than "URL + SHA256 changed":
 | AUR CLI | Runtime ELF deps and generated completions/manpage must work on Arch. | `makepkg --printsrcinfo`; `makepkg -si`; `namcap`. |
 | AUR GUI | The AppImage wrapper should also install a launcher and icon. | `makepkg -si`; confirm `/usr/share/applications/netscli-gui.desktop` launches. |
 
+The desktop app updates itself from `latest.json`, which release.yml's
+`updater-manifest` job attaches to every release after checking each update
+file's signature against the public key compiled into the app. The update
+files are the MSI, the AppImage and a macOS `.app.tar.gz` that sits beside the
+`.dmg`. Their updater signatures travel between jobs as workflow artifacts
+and never become release assets, because the sigstore sidecars already use
+the `<asset>.sig` name.
+
 Windows Authenticode signing is handled by release.yml's `sign-windows`
 job, not by any manifest here: both `.exe` builds and the `.msi` are signed
 with a Certum cloud certificate and timestamped before they become release

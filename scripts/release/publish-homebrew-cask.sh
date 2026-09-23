@@ -68,6 +68,8 @@ cask "netscli-gui" do
   desc "NetsCLI desktop app for reviewing network scans, DNS, ARP, and local inventory"
   homepage "https://netscli.com"
 
+  auto_updates true
+
   app "NetsCLI.app"
 
   zap trash: [
