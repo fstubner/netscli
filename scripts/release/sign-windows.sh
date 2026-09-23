@@ -40,6 +40,21 @@ BASE="https://github.com/Le-Syl21/ssign/releases/download/${SSIGN_VERSION}"
 # three-year certificate to sign a release that outlives it.
 TIMESTAMP_URL="http://time.certum.pl/"
 
+# The intermediate that issued the signing certificate.
+#
+# `ssign` embeds the full chain itself -- both .exe files verified on the
+# first run that got this far. osslsigncode does not, and without `-ac` the
+# MSI's signature jumps from the leaf straight to Certum Trusted Network CA
+# 2, leaving out the CA that actually issued the leaf. Verification then
+# fails with "unable to get local issuer certificate" against a signature
+# that is otherwise correct and timestamped.
+#
+# Embedding it also means the MSI verifies on a machine that cannot fetch
+# the certificate over AIA, which is the case `-ac` exists for.
+INTERMEDIATE_URL="https://repository.certum.pl/ccsca2021.pem"
+INTERMEDIATE_SHA256="e0ed3e84cf358b694be16b2fec80a66ce9d32299ccf2ff6fcf8e2940c4f0858f"
+INTERMEDIATE_CN="Certum Code Signing 2021 CA"
+
 ART_DIR="${1:-}"
 if [[ -z "$ART_DIR" || ! -d "$ART_DIR" ]]; then
   echo "usage: $0 <directory of .exe/.msi to sign>" >&2
@@ -100,6 +115,31 @@ if [[ ${#exes[@]} -eq 0 && ${#msis[@]} -eq 0 ]]; then
   exit 1
 fi
 
+# Fetched rather than committed, pinned rather than trusted. A wrong
+# intermediate would fail the verification step below anyway, so the pin is a
+# second line of defence rather than the only one -- but it turns "Certum
+# rotated the CA" into a clear failure here instead of a confusing one three
+# steps later. Re-pin deliberately, after checking the subject.
+if [[ ${#msis[@]} -gt 0 ]]; then
+  echo "Fetching the signing intermediate"
+  curl -fsSL -o "${TOOLS}/intermediate.pem" "$INTERMEDIATE_URL"
+  got="$(sha256sum "${TOOLS}/intermediate.pem" | awk '{print $1}')"
+  if [[ "$got" != "$INTERMEDIATE_SHA256" ]]; then
+    echo "ERROR: ${INTERMEDIATE_URL} does not match its pinned digest." >&2
+    echo "       expected ${INTERMEDIATE_SHA256}" >&2
+    echo "       got      ${got}" >&2
+    echo "       If Certum rotated the intermediate, confirm its subject is" >&2
+    echo "       '${INTERMEDIATE_CN}' and re-pin." >&2
+    exit 1
+  fi
+  subject="$(openssl x509 -in "${TOOLS}/intermediate.pem" -noout -subject)"
+  if [[ "$subject" != *"$INTERMEDIATE_CN"* ]]; then
+    echo "ERROR: the pinned intermediate is not '${INTERMEDIATE_CN}'." >&2
+    echo "       subject: ${subject}" >&2
+    exit 1
+  fi
+fi
+
 echo "Fetching ssign ${SSIGN_VERSION}"
 fetch "ssign-linux-x86_64.tar.gz" "$SSIGN_SHA256"
 fetch "ssign-pkcs11-linux-x86_64.tar.gz" "$PKCS11_SHA256"
@@ -122,16 +162,9 @@ for msi in "${msis[@]}"; do
   # look for, so the workflow installs it explicitly and the failure it
   # prevents -- `Failed to find and load 'pkcs11' engine` -- names the
   # engine rather than the package.
-  # No `-ac`: that flag embeds the issuing CA certificate in the signature,
-  # and the correct intermediate is named by the signing certificate's own
-  # Authority Information Access extension rather than by anything knowable
-  # here. Without it the signature is still valid and timestamped, and a
-  # verifier builds the chain by following that same AIA, which is what
-  # Windows does by default. Worth revisiting once the real certificate can
-  # be read: an embedded chain also verifies on a machine with no outbound
-  # network.
   osslsigncode sign \
     -pkcs11module "${TOOLS}/libssign_pkcs11.so" \
+    -ac "${TOOLS}/intermediate.pem" \
     -pkcs11cert 'pkcs11:type=cert' \
     -key 'pkcs11:type=private' \
     -h sha256 \
