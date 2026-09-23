@@ -123,13 +123,39 @@ Settings control:
 - Theme.
 - CLI command bar visibility.
 - Toast and operation notifications.
-- Release notifications.
+- Release notifications and in-app updates.
 - Maximum concurrent probes for scan, discover, and sweep operations.
 - History persistence.
 - Default save folder and ask-before-save behavior.
 - Network interface used for local status indicators.
 - Address family preference for the selected interface display.
 - Traffic unit and precision display.
+
+## Updates
+
+When the app opens, it checks GitHub for a newer release. If there is one, a
+notice appears in the corner. The check fetches one small file and nothing
+else; turn it off under **Settings → Release Notifications**.
+
+Where the app can update itself, the notice opens a dialog with the new
+version's release notes and three choices: **Install and restart**, **Later**
+or **Skip this version**. Nothing downloads until you choose to install. The
+update is checked against NetsCLI's signing key before it is installed. On
+Windows the installer shows a progress bar and may ask for administrator
+permission, then the app reopens.
+
+These installs update themselves:
+
+- The Windows installer, whether downloaded directly or installed with winget
+- The Linux AppImage, when it is somewhere you can write to
+- The macOS app, including the Homebrew cask
+
+These installs belong to a package manager, so the notice links to the
+release page instead and the package manager does the update:
+
+- Scoop: `scoop update netscli-gui`
+- The AUR package: your AUR helper
+- A `.deb`: install the newer `.deb`
 
 ## Build and runtime availability
 
