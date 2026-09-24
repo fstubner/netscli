@@ -3,11 +3,12 @@ import type { Platform, PlatformInstall, SectionCopy, TryCommand } from './types
 export const installCopy: SectionCopy = {
   heading: 'Install, then opt a project in',
   leadHtml:
-    'The plugin makes the tools reachable from every project. Setup opts one project in and puts the handoff in front of the next agent without it having to ask.',
+    'Install the plugin in the agents you use: it makes the tools reachable from every project and writes nothing into any of them. Then opt each project in with setup, which puts the handoff in front of the next agent without it having to ask.',
 };
 
-// The same on every platform: nothing here is OS-specific, and there is no
-// desktop build.
+// Only used if install-clients.ts is emptied: the install section shows the
+// per-client grid from there instead. Kept so the per-OS layout still has
+// true content behind it.
 const cliEntries = [
   {
     label: 'Install the plugin',

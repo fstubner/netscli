@@ -9,6 +9,7 @@ export const surfacesCopy: SectionCopy = {
 export const surfaces: SurfaceCard[] = [
   {
     title: 'Five MCP tools',
+    wide: true,
     body:
       'The next agent lists recent sessions from any tool (<code>xtctx_recent_sessions</code>), opens the raw messages (<code>xtctx_session_detail</code>), and searches them by keyword or by meaning (<code>xtctx_search_sessions</code>). <code>xtctx_continuity_status</code> checks the wiring, and an orchestrator can ask <code>xtctx_handoff_manifest</code> for stable session references. Here Codex picks up where a Claude Code session in the same repo stopped.',
     // Captured 2026-09-24 with the built server (0.21.8) in a temporary

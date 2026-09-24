@@ -16,6 +16,9 @@ import type { Feedback } from './types';
 // prefilled body.
 export const feedback: Feedback = {
   enabled: true,
+  // Not on the landing page, where it read as part of the pitch; at the end
+  // of the docs and the changelog, where a reader who hit a problem is.
+  placement: ['docs', 'changelog'],
   prompt: 'Something wrong, or missing?',
   repo: 'fstubner/xtctx',
   problem: {
