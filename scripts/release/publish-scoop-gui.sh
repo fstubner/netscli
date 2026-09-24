@@ -32,12 +32,32 @@ cd "$WORKDIR/bucket"
 manifest="bucket/netscli-gui.json"
 asset_url="${BASE}/${ASSET}"
 
+# The layout fields are set here on every publish, not only version, url and
+# hash, because this edits the manifest already in the bucket -- the template
+# in packaging/scoop/ is never copied over. A fix made only to the template
+# would never reach anyone.
+#
+# Scoop does not run the MSI. It extracts it with an administrative install
+# (`msiexec /a`), which reproduces the MSI's directory table, so the app
+# lands at PFiles\NetsCLI\netscli-gui.exe. `extract_dir` lifts that folder
+# to the top of the app directory, where the shortcut can find it.
+#
+# Until this, the bucket's shortcut named NetsCLI.exe at the top level: a
+# file in no version of the package. Scoop reports that as "Creating shortcut
+# ... failed: Couldn't find ..." and carries on, so Scoop users got the app
+# with no Start-menu entry. The manifest also carried
+# `installer: {"type": "msi"}`, which is not a Scoop key -- Scoop only acts on
+# installer.file, .args and .script -- so it did nothing; it is removed rather
+# than left to suggest the MSI gets installed.
 jq --arg ver "$VERSION" \
    --arg url "$asset_url" \
    --arg sha "$sha" '
      .version = $ver
      | .architecture["64bit"].url  = $url
      | .architecture["64bit"].hash = $sha
+     | .extract_dir = "PFiles\\NetsCLI"
+     | .shortcuts = [["netscli-gui.exe", "NetsCLI"]]
+     | del(.installer)
    ' "$manifest" > "$manifest.tmp" && mv "$manifest.tmp" "$manifest"
 
 # Sanity check: jq wrote what we asked, and the hash is a real digest.
@@ -45,6 +65,9 @@ if ! jq -e --arg ver "$VERSION" --arg sha "$sha" '
        .version == $ver
        and .architecture["64bit"].hash == $sha
        and (.architecture["64bit"].hash | test("^[0-9a-f]{64}$"))
+       and .extract_dir == "PFiles\\NetsCLI"
+       and .shortcuts == [["netscli-gui.exe", "NetsCLI"]]
+       and (has("installer") | not)
      ' "$manifest" >/dev/null; then
   echo "ERROR: scoop-gui manifest render check failed" >&2
   cat "$manifest" >&2
