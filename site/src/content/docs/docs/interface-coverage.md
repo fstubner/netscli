@@ -58,7 +58,7 @@ server does not expose it as a tool.
   clearing only; the CLI and TUI also add and delete single entries.
 - **Result bundles** are the desktop app's own save format, for reopening a
   run later. The equivalent elsewhere is structured output: `--json`,
-  `--yaml` and `--csv` on the CLI, `/export` in the TUI, JSON-RPC results
+  `--yaml`, `--csv` and `--md` on the CLI, `/export` in the TUI, JSON-RPC results
   over MCP.
 - **First-run setup** (`netscli setup`) and **diagnostics**
   (`netscli doctor`) are two different commands and used to share a row here.
@@ -75,8 +75,8 @@ server does not expose it as a tool.
   [Installation](/docs/install/#packet-capture).
 - **Structured output** means something different on each surface, which is
   why it is one row rather than four: the desktop app exports files and
-  result bundles, the CLI takes `--json`, `--yaml` and `--csv`, the TUI
-  exports a session with `/export`, and the MCP server returns JSON-RPC
+  result bundles, the CLI takes `--json`, `--yaml`, `--csv` and `--md`, the
+  TUI exports a session with `/export`, and the MCP server returns JSON-RPC
   results.
 
 ## Desktop app
@@ -93,8 +93,8 @@ management — stays in the CLI, because none of it benefits from a window.
 Every shared network operation, plus the workflows that only make sense at a
 prompt:
 
-- `--json` and `--yaml` on every operation, and `--csv` on the ones that
-  return a list.
+- `--json` and `--yaml` on every operation, and `--csv` and `--md` on the
+  ones that return a list.
 - `netscli setup` for the first-run wizard, `netscli doctor` for a headless
   capability report.
 - `netscli serve` to start the MCP server, and `netscli mcp-service` to

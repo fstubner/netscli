@@ -47,11 +47,12 @@ Example script pattern:
 netscli discover --json | jq '.[].ip'
 ```
 
-### CSV
+### CSV and Markdown
 
 Commands that return a list also take `--csv`, for a spreadsheet or a script
-that wants columns: `discover`, `scan`, `sweep`, `dns`, `ping`, `arp`,
-`interfaces`, `mdns` and `pcap`.
+that wants columns, and `--md`, for a Markdown table to paste into an issue
+or a wiki: `discover`, `scan`, `sweep`, `dns`, `ping`, `arp`, `interfaces`,
+`mdns` and `pcap`.
 
 ```bash
 netscli discover 192.168.1.0/24 --csv > hosts.csv
@@ -62,10 +63,16 @@ netscli scan 192.168.1.1 -p 22,80,443 --csv
 $ netscli dns netscli.com --record MX --csv
 record_type,value,name,ttl_seconds,resolver_source
 MX,10 eforward1.registrar-servers.com,netscli.com,300,public_fallback
+
+$ netscli dns netscli.com --record MX --md
+| record_type | value | name | ttl_seconds | resolver_source |
+| --- | --- | --- | --- | --- |
+| MX | 10 eforward1.registrar-servers.com | netscli.com | 300 | public\_fallback |
 ```
 
 - **Columns are the JSON field names**, in the same order, so a script can
-  switch between `--json` and `--csv` without renaming anything.
+  switch between `--json` and `--csv` without renaming anything. Both table
+  formats have the same columns and rows.
 - **One row per result:** a host, a port, a DNS record, a packet. `ping` is
   one summary row. `sweep` is one row per open port, with the host's fields
   repeated on each, plus one row for a host that answered with nothing open.
@@ -73,10 +80,13 @@ MX,10 eforward1.registrar-servers.com,netscli.com,300,public_fallback
   port's HTTP or TLS details, is that value's JSON in a single cell.
 - **Columns come from the results.** A field no result has, like `error` on
   a clean scan, has no column, and an empty result prints nothing at all.
-- **Text from the network is made safe.** A cell that would start with `=`,
-  `+`, `-` or `@` gets a leading `'`, so a hostname or banner can't run as a
-  spreadsheet formula, and control characters become `.` so they can't
-  reach your terminal. Use `--json` when you need those bytes exactly.
+- **Text from the network is made safe.** In CSV, a cell that would start
+  with `=`, `+`, `-` or `@` gets a leading `'`, so a hostname or banner can't
+  run as a spreadsheet formula. In Markdown, characters that mean something
+  there, `|`, `<` and `*` among them, are backslash-escaped, so a banner can't
+  break the table or add HTML, and line breaks become `<br>`. In both,
+  control characters become `.` so they can't reach your terminal. Use
+  `--json` when you need those bytes exactly.
 
 ## Example output
 

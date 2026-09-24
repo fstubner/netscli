@@ -26,8 +26,8 @@ pub struct StructuredOutput {
     pub yaml: bool,
 }
 
-/// `--json` / `--yaml` / `--csv`, for commands that return a list: one CSV
-/// row per host, port, record or packet.
+/// `--json` / `--yaml` / `--csv` / `--md`, for commands that return a list:
+/// one table row per host, port, record or packet.
 #[derive(Args, Clone, Copy, Debug)]
 pub struct ListOutput {
     /// Output JSON
@@ -41,6 +41,10 @@ pub struct ListOutput {
     /// Output CSV, one row per result
     #[arg(long)]
     pub csv: bool,
+
+    /// Output a Markdown table, one row per result
+    #[arg(long)]
+    pub md: bool,
 }
 
 #[derive(Subcommand)]

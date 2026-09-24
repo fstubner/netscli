@@ -80,7 +80,8 @@ netscli interfaces
 ```
 
 Every non-interactive command takes `--json` or `--yaml`, so results pipe
-straight into `jq`, and the ones that return a list also take `--csv`.
+straight into `jq`, and the ones that return a list also take `--csv` and
+`--md`.
 
 Run `netscli` with no arguments for the terminal UI: slash commands with
 autocomplete, command history, scrollback and `/export`.

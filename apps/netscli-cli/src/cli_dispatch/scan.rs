@@ -1,7 +1,8 @@
 use super::CommandContext;
+use crate::args::ListOutput;
 use crate::cli_formatter::CliFormatter;
 use crate::commands;
-use crate::output::{output_format, output_format_with_csv, print_structured, OutputFormat};
+use crate::output::{list_output_format, output_format, print_structured, OutputFormat};
 use anyhow::Result;
 use netscli_core::{parse_ports_checked, Host, PortResult, SweepEntry};
 use serde::Serialize;
@@ -11,16 +12,14 @@ pub(super) async fn run_discover(
     ctx: CommandContext<'_>,
     subnet: &Option<String>,
     resolve: bool,
-    json: bool,
-    yaml: bool,
-    csv: bool,
+    flags: ListOutput,
 ) -> Result<()> {
-    let format = output_format_with_csv(json, yaml, csv)?;
+    let format = list_output_format(flags)?;
     let start = Instant::now();
     let (subnet_str, hosts) =
         commands::run_discover(ctx.ops, ctx.db, subnet.clone(), resolve, None).await?;
     match format {
-        OutputFormat::Json | OutputFormat::Yaml | OutputFormat::Csv => {
+        OutputFormat::Json | OutputFormat::Yaml | OutputFormat::Csv | OutputFormat::Markdown => {
             print_structured(format, &hosts)?
         }
         OutputFormat::Text => {
@@ -37,16 +36,14 @@ pub(super) async fn run_scan(
     ctx: CommandContext<'_>,
     host: &str,
     ports: &Option<String>,
-    json: bool,
-    yaml: bool,
-    csv: bool,
+    flags: ListOutput,
 ) -> Result<()> {
-    let format = output_format_with_csv(json, yaml, csv)?;
+    let format = list_output_format(flags)?;
     let start = Instant::now();
     let ports = parse_ports_checked(ports.as_deref())?;
     let results = commands::run_scan(ctx.ops, ctx.db, host, ports).await?;
     match format {
-        OutputFormat::Json | OutputFormat::Yaml | OutputFormat::Csv => {
+        OutputFormat::Json | OutputFormat::Yaml | OutputFormat::Csv | OutputFormat::Markdown => {
             // Every port, not just the open ones. Filtering here made "all
             // closed", "all filtered" and "every probe errored" the same
             // empty array, so a script could not tell a clean scan from a
@@ -77,7 +74,7 @@ pub(super) async fn run_inspect(
     let ports = parse_ports_checked(ports.as_deref())?;
     let data = commands::run_inspect(ctx.ops, ctx.db, host.to_string(), ports).await?;
     match format {
-        OutputFormat::Json | OutputFormat::Yaml | OutputFormat::Csv => {
+        OutputFormat::Json | OutputFormat::Yaml | OutputFormat::Csv | OutputFormat::Markdown => {
             print_structured(format, &data)?
         }
         OutputFormat::Text => {
@@ -95,18 +92,18 @@ pub(super) async fn run_sweep(
     subnet: &Option<String>,
     ports: &Option<String>,
     resolve: bool,
-    json: bool,
-    yaml: bool,
-    csv: bool,
+    flags: ListOutput,
 ) -> Result<()> {
-    let format = output_format_with_csv(json, yaml, csv)?;
+    let format = list_output_format(flags)?;
     let start = Instant::now();
     let ports = parse_ports_checked(ports.as_deref())?;
     let (subnet_str, results) =
         commands::run_sweep(ctx.ops, ctx.db, subnet.clone(), ports, resolve, None).await?;
     match format {
         OutputFormat::Json | OutputFormat::Yaml => print_structured(format, &results)?,
-        OutputFormat::Csv => print_structured(format, &sweep_csv_rows(&results))?,
+        OutputFormat::Csv | OutputFormat::Markdown => {
+            print_structured(format, &sweep_table_rows(&results))?
+        }
         OutputFormat::Text => {
             println!(
                 "{}",
@@ -117,22 +114,22 @@ pub(super) async fn run_sweep(
     Ok(())
 }
 
-/// A sweep row for `--csv`: one per open port, with the host's fields
+/// A sweep row for `--csv` and `--md`: one per open port, with the host's fields
 /// repeated on each, and one with empty port columns for a host that
 /// answered but had nothing open.
 ///
 /// The JSON nests each host's ports inside it. Kept that way, a CSV would put
-/// a whole JSON array in one cell, which is no use in a spreadsheet; this is
+/// a whole JSON array in one cell, which is no use in a table; this is
 /// the same data one level flatter, under the same field names.
 #[derive(Serialize)]
-struct SweepCsvRow<'a> {
+struct SweepTableRow<'a> {
     #[serde(flatten)]
     host: &'a Host,
     #[serde(flatten)]
     port: Option<&'a PortResult>,
 }
 
-fn sweep_csv_rows(results: &[SweepEntry]) -> Vec<SweepCsvRow<'_>> {
+fn sweep_table_rows(results: &[SweepEntry]) -> Vec<SweepTableRow<'_>> {
     results
         .iter()
         .flat_map(|entry| {
@@ -144,7 +141,7 @@ fn sweep_csv_rows(results: &[SweepEntry]) -> Vec<SweepCsvRow<'_>> {
             };
             ports
                 .into_iter()
-                .map(move |port| SweepCsvRow { host, port })
+                .map(move |port| SweepTableRow { host, port })
         })
         .collect()
 }
@@ -194,7 +191,7 @@ mod tests {
                 open_ports: vec![open(22), open(443)],
             },
         ];
-        let csv = csv_for_test(&sweep_csv_rows(&results));
+        let csv = csv_for_test(&sweep_table_rows(&results));
         let lines: Vec<&str> = csv.lines().collect();
         assert_eq!(
             lines[0],

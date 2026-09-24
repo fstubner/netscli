@@ -1,5 +1,6 @@
 use super::CommandContext;
-use crate::output::{output_format, output_format_with_csv, print_structured, OutputFormat};
+use crate::args::ListOutput;
+use crate::output::{list_output_format, output_format, print_structured, OutputFormat};
 use crate::trace;
 use anyhow::Result;
 use netscli_core::sanitize_for_terminal;
@@ -8,14 +9,12 @@ pub(super) async fn run_ping(
     ctx: CommandContext<'_>,
     host: &str,
     count: u32,
-    json: bool,
-    yaml: bool,
-    csv: bool,
+    flags: ListOutput,
 ) -> Result<()> {
-    let format = output_format_with_csv(json, yaml, csv)?;
+    let format = list_output_format(flags)?;
     let summary = ctx.ops.ping_host_summary(host, count).await?;
     match format {
-        OutputFormat::Json | OutputFormat::Yaml | OutputFormat::Csv => {
+        OutputFormat::Json | OutputFormat::Yaml | OutputFormat::Csv | OutputFormat::Markdown => {
             print_structured(format, &summary)?;
         }
         OutputFormat::Text => {
@@ -44,7 +43,7 @@ pub(super) async fn run_trace(
     let format = output_format(json, yaml)?;
     let res = trace::trace_route(host, max_hops, resolve, None).await?;
     match format {
-        OutputFormat::Json | OutputFormat::Yaml | OutputFormat::Csv => {
+        OutputFormat::Json | OutputFormat::Yaml | OutputFormat::Csv | OutputFormat::Markdown => {
             print_structured(format, &res)?
         }
         OutputFormat::Text => {
@@ -59,16 +58,11 @@ pub(super) async fn run_trace(
     Ok(())
 }
 
-pub(super) fn run_interfaces(
-    ctx: CommandContext<'_>,
-    json: bool,
-    yaml: bool,
-    csv: bool,
-) -> Result<()> {
-    let format = output_format_with_csv(json, yaml, csv)?;
+pub(super) fn run_interfaces(ctx: CommandContext<'_>, flags: ListOutput) -> Result<()> {
+    let format = list_output_format(flags)?;
     let ifaces = ctx.ops.list_interfaces();
     match format {
-        OutputFormat::Json | OutputFormat::Yaml | OutputFormat::Csv => {
+        OutputFormat::Json | OutputFormat::Yaml | OutputFormat::Csv | OutputFormat::Markdown => {
             print_structured(format, &ifaces)?
         }
         OutputFormat::Text => {

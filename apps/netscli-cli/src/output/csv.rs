@@ -1,70 +1,16 @@
-//! `--csv`: the same data `--json` prints, one row per result, for a
-//! spreadsheet or a script that wants columns.
-//!
-//! Columns are the JSON field names, so moving between `--json` and `--csv`
-//! renames nothing. They come from serializing the result, not from a list
-//! kept here, so a field added to a result type shows up in both formats at
-//! once and the two cannot drift.
-//!
-//! Cell rules:
-//!
-//! - null is an empty cell, numbers and booleans print as JSON writes them;
-//! - a list of plain values is joined with `;` (`22;80;443`);
-//! - anything nested -- an HTTP probe, a TLS probe, mDNS TXT properties -- is
-//!   the compact JSON of that value, in one cell, so the column set stays the
-//!   same from row to row and from run to run.
+//! `--csv`: the rows from [`super::rows`], quoted for a spreadsheet.
 //!
 //! JSON is still the lossless format. CSV has no escape for a control
 //! character, so the ones that can hurt are replaced; see [`escape`].
 
+use super::rows::{defuse_controls, header, rows_of, Row};
 use anyhow::Result;
-use serde::de::{Deserializer, MapAccess, Visitor};
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
-use std::fmt;
+use serde::Serialize;
 
-/// One serialized result, its fields in the order the struct declares them.
-///
-/// Deserialized by hand because `serde_json::Value` sorts object keys (this
-/// workspace does not enable `preserve_order`), and a CSV whose columns come
-/// out alphabetical -- `found_by` before `ip` -- reads as nobody's design.
-struct Row(Vec<(String, Value)>);
-
-impl<'de> Deserialize<'de> for Row {
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        struct RowVisitor;
-
-        impl<'de> Visitor<'de> for RowVisitor {
-            type Value = Row;
-
-            fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                f.write_str("a JSON object")
-            }
-
-            fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<Row, A::Error> {
-                let mut fields = Vec::new();
-                while let Some((key, value)) = map.next_entry::<String, Value>()? {
-                    fields.push((key, value));
-                }
-                Ok(Row(fields))
-            }
-        }
-
-        deserializer.deserialize_map(RowVisitor)
-    }
-}
-
-/// Render a result as CSV: a list becomes one row per item, a single object
-/// becomes one row. An empty list renders as an empty string -- there is no
-/// row to take the column names from.
+/// Render a result as CSV. An empty list renders as an empty string -- there
+/// is no row to take the column names from.
 pub(crate) fn to_csv<T: Serialize + ?Sized>(value: &T) -> Result<String> {
-    let json = serde_json::to_string(value)?;
-    let rows: Vec<Row> = if json.trim_start().starts_with('[') {
-        serde_json::from_str(&json)?
-    } else {
-        vec![serde_json::from_str(&json)?]
-    };
-    Ok(render(&rows))
+    Ok(render(&rows_of(value)?))
 }
 
 fn render(rows: &[Row]) -> String {
@@ -81,57 +27,10 @@ fn render(rows: &[Row]) -> String {
             .join(","),
     );
     for row in rows {
-        let cells = header.iter().map(|name| {
-            let cell = row
-                .0
-                .iter()
-                .find(|(key, _)| key == name)
-                .map_or_else(String::new, |(_, value)| cell_text(value));
-            escape(&cell)
-        });
+        let cells = header.iter().map(|name| escape(&row.cell(name)));
         lines.push(cells.collect::<Vec<_>>().join(","));
     }
     lines.join("\n")
-}
-
-/// Every key any row has, in declaration order.
-///
-/// Result types skip `None` fields when they serialize, so the first row is
-/// not a complete list: a host with no name has no `hostname` key at all.
-/// A key first seen in a later row goes in straight after the key that came
-/// before it in that row, which puts it back where the struct declares it
-/// rather than at the end.
-fn header(rows: &[Row]) -> Vec<String> {
-    let mut header: Vec<String> = Vec::new();
-    for row in rows {
-        let mut previous: Option<usize> = None;
-        for (key, _) in &row.0 {
-            match header.iter().position(|name| name == key) {
-                Some(index) => previous = Some(index),
-                None => {
-                    let at = previous.map_or(0, |index| index + 1);
-                    header.insert(at, key.clone());
-                    previous = Some(at);
-                }
-            }
-        }
-    }
-    header
-}
-
-fn cell_text(value: &Value) -> String {
-    match value {
-        Value::Null => String::new(),
-        Value::String(text) => text.clone(),
-        Value::Array(items) if items.iter().all(is_plain) => {
-            items.iter().map(cell_text).collect::<Vec<_>>().join(";")
-        }
-        Value::Bool(_) | Value::Number(_) | Value::Array(_) | Value::Object(_) => value.to_string(),
-    }
-}
-
-fn is_plain(value: &Value) -> bool {
-    !matches!(value, Value::Array(_) | Value::Object(_))
 }
 
 /// Quote a cell for CSV, and defuse the two ways a scanned host's own text
@@ -143,22 +42,11 @@ fn is_plain(value: &Value) -> bool {
 /// export applies (`csvEscape` in apps/netscli-gui). A cell that parses as a
 /// number is left alone, so a negative figure stays a number.
 ///
-/// Control characters: `--csv` often prints straight to a terminal, and an
-/// escape sequence in a banner would be run there -- the attack
-/// `sanitize_for_terminal` exists for. Every control character becomes `.`,
-/// as it does in text output, except tab, CR and LF, which CSV carries inside
-/// a quoted cell and a multi-line banner needs.
+/// Control characters become `.`, as they do in text output, except tab, CR
+/// and LF, which CSV carries inside a quoted cell and a multi-line banner
+/// needs.
 fn escape(cell: &str) -> String {
-    let cleaned: String = cell
-        .chars()
-        .map(|c| {
-            if c.is_control() && !matches!(c, '\t' | '\r' | '\n') {
-                '.'
-            } else {
-                c
-            }
-        })
-        .collect();
+    let cleaned = defuse_controls(cell, &['\t', '\r', '\n']);
     let numeric = cleaned.parse::<f64>().is_ok_and(f64::is_finite);
     let guarded = if !numeric && cleaned.starts_with(['=', '+', '-', '@', '\t', '\r']) {
         format!("'{cleaned}")

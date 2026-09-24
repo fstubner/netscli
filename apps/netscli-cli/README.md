@@ -20,7 +20,7 @@ netscli serve        # MCP server (JSON-RPC over stdio)
 
 - **CLI** — `netscli <cmd>` for scripts, cron, and piping into `jq`.
   `--json` and `--yaml` output on every non-interactive subcommand, and
-  `--csv` on the ones that return a list.
+  `--csv` and `--md` on the ones that return a list.
 - **TUI** — `netscli` alone opens a ratatui-based terminal UI with
   autocomplete, command history, in-place progress, status footer,
   and native scrollback/selection.

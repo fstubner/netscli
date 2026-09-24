@@ -1,7 +1,8 @@
 use super::CommandContext;
+use crate::args::ListOutput;
 use crate::cli_formatter::CliFormatter;
 use crate::commands;
-use crate::output::{output_format_with_csv, print_structured, OutputFormat};
+use crate::output::{list_output_format, print_structured, OutputFormat};
 use anyhow::Result;
 
 #[allow(clippy::too_many_arguments)]
@@ -14,20 +15,21 @@ pub(super) async fn run(
     max_packets: Option<usize>,
     output: &str,
     check: bool,
-    json: bool,
-    yaml: bool,
-    csv: bool,
+    flags: ListOutput,
 ) -> Result<()> {
-    let format = output_format_with_csv(json, yaml, csv)?;
-    if check && csv {
+    let format = list_output_format(flags)?;
+    if check && (flags.csv || flags.md) {
         // --check prints capture device names, not packets: no rows to write.
-        anyhow::bail!("--csv lists packets, so it doesn't apply to --check");
+        anyhow::bail!("--csv and --md list packets, so they don't apply to --check");
     }
     if check {
         let devs = ctx.ops.pcap_check_support()?;
         match format {
-            // Csv is refused above, before any capture work.
-            OutputFormat::Json | OutputFormat::Yaml | OutputFormat::Csv => {
+            // Csv and Markdown are refused above, before any capture work.
+            OutputFormat::Json
+            | OutputFormat::Yaml
+            | OutputFormat::Csv
+            | OutputFormat::Markdown => {
                 print_structured(format, &devs)?;
             }
             OutputFormat::Text => {
@@ -44,7 +46,9 @@ pub(super) async fn run(
         let parsed = ctx.ops.parse_pcap_file(input.clone(), max_packets)?;
         match format {
             OutputFormat::Json | OutputFormat::Yaml => print_structured(format, &parsed)?,
-            OutputFormat::Csv => print_structured(format, &parsed.packets)?,
+            OutputFormat::Csv | OutputFormat::Markdown => {
+                print_structured(format, &parsed.packets)?
+            }
             OutputFormat::Text => {
                 println!("{}", CliFormatter::format_pcap_parse_result(&parsed));
             }
@@ -77,7 +81,7 @@ pub(super) async fn run(
         OutputFormat::Json | OutputFormat::Yaml => print_structured(format, &res)?,
         // One row per packet. The capture's own summary (count, file) is
         // what the text output prints; a CSV wants the packets.
-        OutputFormat::Csv => print_structured(format, &res.packets)?,
+        OutputFormat::Csv | OutputFormat::Markdown => print_structured(format, &res.packets)?,
         OutputFormat::Text => {
             println!(
                 "Captured {} packets to {:?}",
