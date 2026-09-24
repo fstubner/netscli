@@ -35,7 +35,14 @@ const highlightIndex = compareColumns.findIndex((c) => c.highlight);
               <th scope="row">{row.feature}</th>
               {row.cells.map((cell, i) => (
                 <td class={`col${i === highlightIndex ? ' mine' : ''}${cell === '—' ? ' none' : ''}`}>
-                  {cell}
+                  {cell === '—' ? (
+                    <>
+                      <span aria-hidden="true">—</span>
+                      <span class="sr-only">Not offered</span>
+                    </>
+                  ) : (
+                    cell
+                  )}
                 </td>
               ))}
             </tr>
@@ -101,7 +108,12 @@ const highlightIndex = compareColumns.findIndex((c) => c.highlight);
 }
 
 /* A dash is an absence, so it recedes rather than competing with the answers. */
+/* A dash only marks an empty cell, so it sits well back: the ticks and the
+   words are what a reader scans for. It is aria-hidden and screen readers get
+   "Not offered" instead, so the faint glyph carries no information on its
+   own -- which is also why it can go below the text contrast floor. */
 .compare-table td.none{color:var(--ui-text-muted)}
+.compare-table td.none [aria-hidden]{opacity:.4}
 
 /* The column's cells read in the body colour; only its header is green, in
    --ui-accent-bright rather than --ui-accent, which is too dim for text on
