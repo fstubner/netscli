@@ -24,6 +24,7 @@ export const docsSidebar: DocsSection[] = [
       { label: 'Overview', link: '/docs/' },
       { label: 'Installation', link: '/docs/install/' },
       { label: 'Interface coverage', link: '/docs/interface-coverage/' },
+      { label: 'Compared with other scanners', link: '/docs/compare/' },
     ],
   },
   {
