@@ -19,6 +19,7 @@ src/data/site-content/faq.ts        merge=ours
 src/data/site-content/footer.ts     merge=ours
 src/data/site-content/hero.ts       merge=ours
 src/data/site-content/install.ts    merge=ours
+src/data/site-content/install-clients.ts merge=ours
 src/data/site-content/meta.ts       merge=ours
 src/data/site-content/surfaces.ts   merge=ours
 src/data/site-content/version.ts    merge=ours

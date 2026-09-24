@@ -20,9 +20,20 @@ export interface FeedbackRoute {
   issueLabels?: string[];
 }
 
+export type FeedbackPlacement = 'landing' | 'docs' | 'changelog';
+
 export interface Feedback {
   /** Whether the feedback block and its footer link render at all. */
   enabled: boolean;
+  /**
+   * Which pages show the block, above their footer. Defaults to the landing
+   * page alone, which is where it has always been. The footer's Feedback link
+   * is on every page whatever this says, so a site that finds the block too
+   * loud on its landing page can move it to where readers look for help
+   * instead -- the end of a docs page, the changelog -- without losing the
+   * route.
+   */
+  placement?: FeedbackPlacement[];
   /** The line above the buttons. */
   prompt: string;
   problem: FeedbackRoute;

@@ -15,7 +15,7 @@ const surfacesLeadHtml = modules.docs
 
     <div class="surfaces">
       {surfaces.map((s) => (
-        <div class={`surface${s.flip ? ' flip' : ''}`}>
+        <div class={`surface${s.wide ? ' wide' : s.flip ? ' flip' : ''}`}>
           <div class="surface-text">
             <h3>{s.title}</h3>
             <p set:html={s.body} />
@@ -140,6 +140,10 @@ const surfacesLeadHtml = modules.docs
   box-shadow:var(--ui-lift-md);
   position:relative;
 }
+/* Text above, visual across the row: for a visual whose panes need the
+   width more than they need to sit beside the text. */
+.surface.wide{grid-template-columns:1fr;gap:28px}
+.surface.wide .surface-text{max-width:720px}
 @media(max-width:720px){
   .surface{grid-template-columns:1fr}
   .surface.flip{direction:ltr}

@@ -3,6 +3,7 @@ import EditLink from 'virtual:starlight/components/EditLink';
 import LastUpdated from 'virtual:starlight/components/LastUpdated';
 import Pagination from 'virtual:starlight/components/Pagination';
 import { site } from '../../data/site';
+import Feedback from '../Feedback.astro';
 
 const { meta, hero, builtWith } = site;
 const year = new Date().getFullYear();
@@ -26,6 +27,8 @@ const year = new Date().getFullYear();
     <LastUpdated />
     <EditLink />
   </div>
+
+  <Feedback on="docs" />
 
   <div class="docs-footer-inner">
     <div>&copy; {year} {meta.author.name} · MIT</div>

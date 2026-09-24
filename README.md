@@ -27,7 +27,14 @@ that what you delete is obvious. Everything else is the shell.
 - Visuals: a surface card or the hero takes `visual`, one of the kinds in
   `src/data/site-content/visual-types.ts` -- an image, a code block, the
   terminal panel, or an agent session (a project, an open file, and a chat
-  in which an agent calls your tool). The sample surfaces show each.
+  in which an agent calls your tool). The sample surfaces show each. Set
+  `wide: true` on a card to put its visual across the row, under the text.
+- `src/data/site-content/install-clients.ts` -- install routes per client
+  (an agent, an editor, a marketplace) for a product that installs into
+  other tools. Non-empty, it replaces the per-OS tabs with a grid of cards.
+- `feedback.ts` -> `placement` -- which pages show the feedback block:
+  `landing` (the default), `docs`, `changelog`. The footer link stays on
+  every page.
 - `CHANGELOG.md` -- the changelog page's local fallback; it also reads
   GitHub Releases at runtime.
 - `src/styles/tokens.css` -- the brand palette, both themes. Then
