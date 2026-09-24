@@ -94,7 +94,9 @@ site-search button {
 }
 
 /* ---- Mobile menu button -------------------------------------------- */
-starlight-menu-button button {
+/* Open state: Starlight 0.42 opens the menu as a popover and sets no
+   aria-expanded, so the state is read from the popover itself. */
+nav.sidebar .sl-menu-button {
   border: 1px solid var(--sl-color-hairline-light);
   border-radius: 6px;
   background: rgba(var(--ui-lift-rgb), 0.035);
@@ -102,23 +104,23 @@ starlight-menu-button button {
   box-shadow: none;
 }
 
-starlight-menu-button button:hover,
-starlight-menu-button button:focus-visible,
-starlight-menu-button[aria-expanded='true'] button {
+nav.sidebar .sl-menu-button:hover,
+nav.sidebar .sl-menu-button:focus-visible,
+nav.sidebar:has(#starlight__sidebar:popover-open) .sl-menu-button {
   background: rgba(var(--ui-accent-rgb), 0.12);
   border-color: rgba(var(--ui-accent-rgb), 0.28);
   color: var(--sl-color-white);
 }
 
-html[data-theme='light'] starlight-menu-button button {
+html[data-theme='light'] nav.sidebar .sl-menu-button {
   background: rgba(var(--ui-hairline-rgb), 0.035);
 }
 
 /* Restated for the light theme: the light resting rule above outranks the
    theme-neutral state rule, so without this the light button never lit. */
-html[data-theme='light'] starlight-menu-button button:hover,
-html[data-theme='light'] starlight-menu-button button:focus-visible,
-html[data-theme='light'] starlight-menu-button[aria-expanded='true'] button {
+html[data-theme='light'] nav.sidebar .sl-menu-button:hover,
+html[data-theme='light'] nav.sidebar .sl-menu-button:focus-visible,
+html[data-theme='light'] nav.sidebar:has(#starlight__sidebar:popover-open) .sl-menu-button {
   background: rgba(var(--ui-accent-rgb), 0.12);
   color: var(--sl-color-white);
 }

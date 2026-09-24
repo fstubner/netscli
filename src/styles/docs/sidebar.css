@@ -30,8 +30,19 @@
   font-size: 0.72rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  font-weight: 760;
+  font-weight: 650;
   padding-inline-end: 0;
+}
+
+/* A section label, not a heading. Starlight wraps a top-level group's name
+   in `.large`, which sets its own size, weight and colour, so the rule above
+   only ever reached the wrapper: the label rendered at 16px, weight 600, in
+   full white, and uppercased by the rule above into a shout. Inheriting puts
+   it back at the 0.72rem muted small caps that rule describes. */
+.sidebar-content summary .large {
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
 }
 
 /* The group's list: a hairline down its left, with the links pulled back

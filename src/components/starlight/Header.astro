@@ -298,11 +298,10 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
 
     }
 
-    /* 72rem, matching the hamburger -- see the note on .docs-nav-links below
-       for why this is no longer 900px. The theme control moves into the
-       mobile menu's footer at this point (MobileMenuFooter.astro), so it is
-       relocated rather than lost. */
-    @media (max-width: 72rem) {
+    /* Where the hamburger appears -- see the note on .docs-nav-links below.
+       The theme control moves into the mobile menu's footer at this point
+       (MobileMenuFooter.astro), so it is relocated rather than lost. */
+    @media (max-width: 49.99rem) {
       .docs-header-theme {
         display: none !important;
       }
@@ -311,8 +310,6 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
     @media (max-width: 72rem) {
       .docs-topbar {
         gap: 0.75rem;
-        width: min(100%, calc(100vw - 5.25rem));
-        max-width: calc(100vw - 5.25rem);
         justify-content: flex-start;
         margin-inline: 0 auto;
         padding-inline-start: 1.5rem;
@@ -338,27 +335,24 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
 
     }
 
-    /* 72rem, matching the hamburger and the sidebar.
+    /* Where the hamburger appears, which since Starlight 0.42 is 50rem.
      *
-     * This was 900px, to collapse at the same width as the landing bar
-     * (Nav.astro). That traded one inconsistency for a worse one: the
-     * hamburger appears at 72rem (header.css) and the sidebar leaves at 72rem
-     * (sidebar.css), so between 901 and 1152 the docs bar showed the full six
-     * links AND a hamburger whose menu -- MobileMenuFooter.astro -- lists
-     * those same six links and the theme control. Two navigations on one
-     * screen, one of them a duplicate of the other.
+     * Two earlier numbers are worth not repeating. 72rem matched the
+     * hamburger while this site styled Starlight's <starlight-menu-button>
+     * to show up to that width. 0.42 replaced that element with a plain
+     * popover button that Starlight hides from 50rem up, so the styling
+     * stopped reaching anything, and between 50rem and 72rem the bar showed
+     * neither these links nor a menu holding them: the only way to Features,
+     * Install, FAQ or the changelog was the wordmark. 900px was the older
+     * choice, to match the landing bar, and it put these links on screen
+     * beside a hamburger listing the same links.
      *
-     * The earlier note is right that there is ROOM for the links at 901px
-     * (476px of content against 842px). Room was never the question; the
-     * question is whether a reader sees one navigation or two. Matching the
-     * hamburger wins over matching the landing bar, because the duplication
-     * is visible on a single screen and the cross-page difference is only
-     * visible by navigating between them.
+     * The rule is the one both mistakes point at: exactly one navigation at
+     * every width. The links go when the menu that lists them arrives.
      *
      * Nav.astro keeps its own 900px: the landing page has no sidebar and no
-     * hamburger, so nothing there duplicates its links. The two numbers are
-     * deliberately different now, and are no longer a pair to keep in step. */
-    @media (max-width: 72rem) {
+     * hamburger, so nothing there duplicates its links. */
+    @media (max-width: 49.99rem) {
       .docs-nav-links {
         display: none;
       }
