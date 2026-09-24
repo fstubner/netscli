@@ -51,7 +51,9 @@ export function initLandingPage(repo: string, cratesIoCrate?: string): void {
       fetch(`https://api.github.com/repos/${repo}`)
         .then((r) => (r.ok ? r.json() : null))
         .then((d) => {
-          if (!d || typeof d.stargazers_count !== "number") return;
+          // Zero is hidden, not shown. A new repo's "0★" says nothing a
+          // visitor can use and reads as a verdict on the product.
+          if (!d || typeof d.stargazers_count !== "number" || d.stargazers_count === 0) return;
           const stars = document.getElementById("stars");
           const count = document.getElementById("stars-count");
           if (count) count.textContent = fmt(d.stargazers_count);
@@ -87,6 +89,11 @@ export function initLandingPage(repo: string, cratesIoCrate?: string): void {
       const renderDownloads = () => {
         if (githubDownloads === null && cratesDownloads === null) return;
         const total = (githubDownloads ?? 0) + (cratesDownloads ?? 0);
+        // A product that ships through a registry these two sources do not
+        // count -- npm, PyPI -- has no release assets, and printed "0
+        // downloads" beside a package installed daily. Nothing is better
+        // than a number that is wrong in the direction that matters.
+        if (total === 0) return;
         // "total" is a claim about both sources, so only make it once both
         // have reported. Measured on this page: "Downloads: 178 total" with
         // only GitHub in, then "Downloads: 2,635 total" once crates.io

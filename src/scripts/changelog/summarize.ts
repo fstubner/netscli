@@ -4,9 +4,22 @@ export function normalizeMarkdown(markdown: string | undefined): string {
   return (markdown || '').replace(/<!--[\s\S]*?-->/g, '').replace(/\r\n/g, '\n');
 }
 
+/**
+ * The `vX.Y.Z` a tag, release name or changelog heading refers to.
+ *
+ * Everything that pairs a GitHub release with its CHANGELOG.md entry keys on
+ * this, so the two have to agree on a spelling. They did only for plain `v`
+ * tags: release-please tags a package release `xtctx-v0.21.8` and names it
+ * `xtctx: v0.21.8`, which this turned into `vxtctx-v0.21.8`, so no release
+ * matched its own entry and the page labelled every one "Not yet released".
+ * A trailing version is taken wherever it appears; anything without one is
+ * returned with a `v` as before.
+ */
 export function normalizeTag(value: string | undefined): string {
   const text = String(value || '').trim();
   if (!text) return '';
+  const version = text.match(/(?:^|[^\w.])v?(\d+\.\d+\.\d+(?:[-+][\w.-]+)?)$/);
+  if (version) return `v${version[1]}`;
   return text.startsWith('v') ? text : `v${text}`;
 }
 

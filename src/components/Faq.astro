@@ -1,15 +1,12 @@
 ---
 import { site } from '../data/site';
 const { faq, copy } = site;
-const faqOrder = [
-  'What it is',
-  'Install and updates',
-  'Interfaces and integrations',
-  'Network workflows',
-  'Limits and dependencies',
-];
 
-const grouped = faq.reduce<Array<{ title: string; items: typeof faq }>>((groups, item) => {
+// Groups render in the order they first appear in faq.ts. This used to sort
+// by a list of netscli's group names hard-coded here, which put every other
+// product's groups in an order nobody chose: a name missing from the list
+// sorts as -1, ahead of the ones on it.
+const faqGroups = faq.reduce<Array<{ title: string; items: typeof faq }>>((groups, item) => {
   const existing = groups.find((group) => group.title === item.group);
   if (existing) {
     existing.items.push(item);
@@ -18,10 +15,6 @@ const grouped = faq.reduce<Array<{ title: string; items: typeof faq }>>((groups,
   }
   return groups;
 }, []);
-
-const faqGroups = grouped.sort(
-  (a, b) => faqOrder.indexOf(a.title) - faqOrder.indexOf(b.title),
-);
 ---
 <section id="faq">
   <div class="w">

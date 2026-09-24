@@ -43,7 +43,10 @@ const stripInternalSection = (body: string): string =>
   body.replace(/^###\s*Changed\s*\(\s*internal\s*\)\s*$[\s\S]*?(?=^#{1,3}\s|(?![\s\S]))/gim, '').trim();
 
 const parseLocalChangelog = (text: string) => {
-  const headings = [...text.matchAll(/^## \[([^\]]+)\](?:\s+(?:—|-)\s+(\d{4}-\d{2}-\d{2}))?/gm)];
+  // Two heading styles: Keep a Changelog's `## [0.3.0] — 2026-08-20`, and
+  // release-please's `## [0.3.0](compare-url) (2026-08-20)`. The second
+  // parsed as undated, so every release it wrote read as never published.
+  const headings = [...text.matchAll(/^## \[([^\]]+)\](?:\([^)]*\))?(?:\s+(?:(?:—|-)\s+(\d{4}-\d{2}-\d{2})|\((\d{4}-\d{2}-\d{2})\)))?/gm)];
   return headings
     .map((heading, index) => {
       const version = heading[1]?.trim();
@@ -53,7 +56,8 @@ const parseLocalChangelog = (text: string) => {
       const start = (heading.index ?? 0) + heading[0].length;
       const end = headings[index + 1]?.index ?? text.length;
       const body = stripInternalSection(text.slice(start, end).trim());
-      const date = heading[2] ? `${heading[2]}T00:00:00.000Z` : '';
+      const dated = heading[2] || heading[3];
+      const date = dated ? `${dated}T00:00:00.000Z` : '';
       return {
         name: tag,
         tag_name: tag,
