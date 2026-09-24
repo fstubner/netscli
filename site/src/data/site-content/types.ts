@@ -212,6 +212,18 @@ export interface Analytics {
   cloudflareToken?: string;
 }
 
+/** A comparison column. `highlight` marks this product's, which is tinted. */
+export interface ComparisonColumn {
+  name: string;
+  highlight?: boolean;
+}
+
+/** A capability row. `cells` is one per column, in order: '✓', '—', or a word. */
+export interface ComparisonRow {
+  feature: string;
+  cells: string[];
+}
+
 export interface SectionCopy {
   heading: string;
   /** HTML allowed — typically short tagline with an anchor link. */
@@ -223,7 +235,7 @@ export type LandingLayout = 'centered' | 'split';
 
 /** A section the landing page can render. Adding one here means adding a
  *  component for it in src/pages/index.astro's map. */
-export type LandingSection = 'hero' | 'surfaces' | 'install' | 'faq';
+export type LandingSection = 'hero' | 'surfaces' | 'compare' | 'install' | 'faq';
 
 /** One group in the docs sidebar, as Starlight expects it. */
 export interface DocsSection {
