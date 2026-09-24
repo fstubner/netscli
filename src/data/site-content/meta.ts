@@ -5,7 +5,7 @@ export const meta: Meta = {
   // Aim for a title under about 60 characters: that is what a search result
   // shows. Lead with the product name, then what it is, in the words someone
   // would actually search for.
-  title: 'xtctx — Cross-tool handoff for AI coding agents',
+  title: 'xtctx: cross-tool handoff for AI coding agents',
   // 150-160 characters. Longer gets truncated mid-sentence, and the end of
   // the sentence is usually the part worth reading.
   description:
