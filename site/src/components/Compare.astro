@@ -12,7 +12,9 @@ const highlightIndex = compareColumns.findIndex((c) => c.highlight);
 <section id="compare">
   <div class="w">
     <h2>{compareCopy.heading}</h2>
-    <p class="lead" set:html={compareCopy.leadHtml} />
+    {/* Optional: netscli's table stands on its heading, and a lead that only
+        listed what was compared and which versions was filler. */}
+    {compareCopy.leadHtml && <p class="lead" set:html={compareCopy.leadHtml} />}
 
     <!-- Focusable because it scrolls: six columns do not fit a phone, and axe
          wants a scrollable region reachable by keyboard. A table of text has no
@@ -98,8 +100,9 @@ const highlightIndex = compareColumns.findIndex((c) => c.highlight);
 /* A dash is an absence, so it recedes rather than competing with the answers. */
 .compare-table td.none{color:var(--ui-text-muted)}
 
-/* Text in this column uses --ui-accent-bright, not --ui-accent, which is too
-   dim for body text on the page ground in the dark theme. The outline is
+/* The column's cells read in the body colour; only its header is green, in
+   --ui-accent-bright rather than --ui-accent, which is too dim for text on
+   the page ground in the dark theme. The outline is
    four borders on the column's cells: border-collapse lets the left cell's
    border win a tie, so its right edge is not lost to the next column's
    hairline. */
@@ -109,7 +112,7 @@ const highlightIndex = compareColumns.findIndex((c) => c.highlight);
   border-left:var(--compare-outline);
   border-right:var(--compare-outline);
   padding-right:18px;
-  color:var(--ui-accent-bright);
+  color:var(--ui-text);
   font-weight:600;
 }
 .compare-table thead th.mine{border-top:var(--compare-outline);padding-top:10px}
