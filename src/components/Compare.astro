@@ -12,7 +12,7 @@ const highlightIndex = compareColumns.findIndex((c) => c.highlight);
 <section id="compare">
   <div class="w">
     <h2>{compareCopy.heading}</h2>
-    <p class="lead" set:html={compareCopy.leadHtml} />
+    {compareCopy.leadHtml && <p class="lead" set:html={compareCopy.leadHtml} />}
 
     <!-- Focusable because it scrolls: six columns do not fit a phone, and axe
          wants a scrollable region reachable by keyboard. A table of text has no
@@ -42,7 +42,7 @@ const highlightIndex = compareColumns.findIndex((c) => c.highlight);
       </table>
     </div>
 
-    <p class="compare-note" set:html={compareNoteHtml} />
+    <div class="compare-note" set:html={compareNoteHtml} />
   </div>
 </section>
 
@@ -109,13 +109,16 @@ const highlightIndex = compareColumns.findIndex((c) => c.highlight);
 .compare-table thead th.mine{color:var(--ui-accent-bright)}
 .compare-table td.mine.none{color:var(--ui-text-muted);font-weight:400}
 
+/* The table's footnotes: as wide as the table they annotate. At 62ch they
+   ran down the page under the first two columns, a narrow block of small
+   print beside a wide table. Each <p> in the HTML is one note. */
 .compare-note{
   font-size:.75rem;
   line-height:1.6;
   color:var(--ui-text-muted);
   margin:0;
-  max-width:62ch;
 }
+.compare-note p{margin:0 0 4px}
 
 @media(max-width:720px){
   .compare-table th,
