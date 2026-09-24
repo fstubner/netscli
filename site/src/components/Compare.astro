@@ -49,9 +49,10 @@ const highlightIndex = compareColumns.findIndex((c) => c.highlight);
 <style is:global>
 /* ─── COMPARISON MATRIX ─── */
 
-/* Drawn the way Supabase and Linear draw one: hairlines, no boxes, no capsules,
-   and the compared column marked by a tint and a single left rule rather than
-   ruled on four sides. */
+/* Drawn the way Supabase and Linear draw one: hairlines, no boxes, no capsules.
+   The compared column is outlined in the accent rather than tinted: netscli
+   tried the tint (nvx's version) on 2026-09-24 and found it read as a
+   highlighted row of cells, not as the product the table is about. */
 .compare-scroll{overflow-x:auto;margin-bottom:14px}
 .compare-table{
   width:100%;
@@ -97,15 +98,22 @@ const highlightIndex = compareColumns.findIndex((c) => c.highlight);
 /* A dash is an absence, so it recedes rather than competing with the answers. */
 .compare-table td.none{color:var(--ui-text-muted)}
 
-/* The tint composites to rgb(41,40,55) in the dark theme, where --ui-accent
-   measures 4.30:1 and fails the contrast floor. Text in this column uses
-   --ui-accent-bright instead: 8.83:1 dark, 8.23:1 light. */
+/* Text in this column uses --ui-accent-bright, not --ui-accent, which is too
+   dim for body text on the page ground in the dark theme. The outline is
+   four borders on the column's cells: border-collapse lets the left cell's
+   border win a tie, so its right edge is not lost to the next column's
+   hairline. */
 .compare-table th.mine,
 .compare-table td.mine{
-  background:rgba(var(--ui-accent-rgb),.055);
+  --compare-outline:1px solid rgba(var(--ui-accent-rgb),.7);
+  border-left:var(--compare-outline);
+  border-right:var(--compare-outline);
+  padding-right:18px;
   color:var(--ui-accent-bright);
   font-weight:600;
 }
+.compare-table thead th.mine{border-top:var(--compare-outline);padding-top:10px}
+.compare-table tbody tr:last-child td.mine{border-bottom:var(--compare-outline)}
 .compare-table thead th.mine{color:var(--ui-accent-bright)}
 .compare-table td.mine.none{color:var(--ui-text-muted);font-weight:400}
 
