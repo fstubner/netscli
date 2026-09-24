@@ -11,6 +11,18 @@ import type { Feedback } from './feedback-types';
 export type { Hero, HeroCommands, HeroDownload } from './hero-types';
 import type { Hero, HeroCommands, HeroDownload } from './hero-types';
 
+// The shared picture-slot type; see ./visual-types.
+export type {
+  AgentSession,
+  AgentSessionVisual,
+  AgentTurn,
+  CodeVisual,
+  ImageVisual,
+  TerminalVisual,
+  Visual,
+} from './visual-types';
+import type { Visual } from './visual-types';
+
 // Shared type definitions for the site content modules under
 // site/src/data/site-content/. Assembled into the public `SiteData` shape
 // by site/src/data/site.ts — that's the only module other files should
@@ -95,6 +107,9 @@ export interface SurfaceCard {
   };
   /** If set instead of image, renders a stylised code block. HTML allowed. */
   codeHtml?: string;
+  /** Any visual kind -- see visual-types.ts. Takes the place of `image`
+   *  and `codeHtml` when set; those two stay for sites written before it. */
+  visual?: Visual;
   /** If true, flips text and visual sides for alternating rhythm. */
   flip?: boolean;
   /** Optional per-platform download buttons rendered below the body.

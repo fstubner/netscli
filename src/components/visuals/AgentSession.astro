@@ -1,0 +1,186 @@
+---
+// A coding agent at work, drawn as an editor window: the project's files, one
+// file open, and the chat in which the agent calls tools. Content comes from
+// an AgentSession in data/site-content/ -- see visual-types.ts for the shape
+// and surfaces.ts in the template for a sample.
+//
+// Markup rather than a picture. It sits below the fold, so it is not the
+// page's largest paint, and as markup it follows the theme tokens, can be
+// read by a screen reader, and can lose panes on a narrow screen instead of
+// shrinking three columns of text to an unreadable size: the chat is the part
+// that tells the story, so it is the one that always stays.
+//
+// Everything here is rendered as text. Nothing in a session is HTML, so a
+// file's contents or a tool result cannot inject markup.
+import type { AgentSession } from '../../data/site-content/visual-types';
+
+interface Props {
+  session: AgentSession;
+}
+
+const { session } = Astro.props;
+
+// Folders from the paths, listed before root files, as an editor lists them.
+// A nested path shows its whole folder path as one entry: the tree is a
+// sketch of the project, not a navigable one.
+const folders = new Map<string, string[]>();
+const rootFiles: string[] = [];
+for (const path of session.files) {
+  const slash = path.lastIndexOf('/');
+  if (slash === -1) {
+    rootFiles.push(path);
+    continue;
+  }
+  const folder = path.slice(0, slash);
+  if (!folders.has(folder)) folders.set(folder, []);
+  folders.get(folder)!.push(path.slice(slash + 1));
+}
+const openName = session.open.path.split('/').pop() ?? session.open.path;
+
+// Splits text into plain and highlighted runs. Longest term first, so a term
+// that contains another is matched whole.
+const terms = [...(session.open.highlight ?? [])].sort((a, b) => b.length - a.length);
+const pattern = terms.length
+  ? new RegExp(`(${terms.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'g')
+  : null;
+const runs = (text: string) =>
+  pattern
+    ? text.split(pattern).filter(Boolean).map((part) => ({ part, hit: terms.includes(part) }))
+    : [{ part: text, hit: false }];
+
+const userLabel = session.userLabel ?? 'You';
+const agentLabel = session.agentLabel ?? 'Agent';
+---
+<figure class="agent-session">
+  <figcaption class="as-titlebar">
+    <span class="as-dots" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="as-title">{session.title}</span>
+  </figcaption>
+  <div class="as-body">
+    <div class="as-tree" role="group" aria-label="Project files">
+      <p class="as-pane-label" aria-hidden="true">Explorer</p>
+      <ul>
+        {[...folders].map(([folder, names]) => (
+          <li>
+            <span class="as-folder">{folder}</span>
+            <ul>
+              {names.map((name) => (
+                <li class:list={['as-file', { 'as-open': `${folder}/${name}` === session.open.path }]}>{name}</li>
+              ))}
+            </ul>
+          </li>
+        ))}
+        {rootFiles.map((name) => (
+          <li class:list={['as-file', { 'as-open': name === session.open.path }]}>{name}</li>
+        ))}
+      </ul>
+    </div>
+    <div class="as-editor" role="group" aria-label={`${openName}, open in the editor`}>
+      <p class="as-tab" aria-hidden="true">{openName}</p>
+      <pre><code>{runs(session.open.text).map(({ part, hit }) => (hit ? <mark>{part}</mark> : part))}</code></pre>
+    </div>
+    <div class="as-chat" role="group" aria-label="Agent chat">
+      <p class="as-pane-label" aria-hidden="true">Chat</p>
+      <ol class="as-turns">
+        {session.turns.map((turn) =>
+          turn.role === 'tool' ? (
+            <li class="as-tool">
+              <p class="as-call"><span class="as-call-label">Tool call</span> <code>{turn.call}</code></p>
+              <pre class="as-result">{turn.result.join('\n')}</pre>
+            </li>
+          ) : (
+            <li class:list={['as-message', `as-${turn.role}`]}>
+              <p class="as-who">{turn.role === 'user' ? userLabel : agentLabel}</p>
+              <p class="as-text">{runs(turn.text).map(({ part, hit }) => (hit ? <mark>{part}</mark> : part))}</p>
+            </li>
+          ),
+        )}
+      </ol>
+    </div>
+  </div>
+</figure>
+
+<style>
+/* Dark in both themes, like every code surface: see the note in
+   styles/code-surface.css. So the ink is the on-dark ramp from
+   landing/tokens.css, never the page's own text colours. */
+.agent-session{
+  container-type:inline-size;
+  margin:0;
+  background:var(--ui-code-bg);
+  border:1px solid var(--ui-code-border);
+  border-radius:10px;
+  box-shadow:var(--ui-lift-md);
+  overflow:hidden;
+  color:var(--ui-ondark-text);
+  font-size:.75rem;
+  line-height:1.55;
+  text-align:left;
+}
+.as-titlebar{
+  display:flex;align-items:center;gap:12px;
+  padding:9px 14px;
+  border-bottom:1px solid var(--ui-code-border);
+  background:rgba(255,255,255,.03);
+}
+.as-dots{display:flex;gap:6px}
+.as-dots span{width:9px;height:9px;border-radius:50%;background:var(--ui-code-divider)}
+.as-title{flex:1;text-align:center;color:var(--ui-ondark-text-muted);font-size:.6875rem;margin-right:39px}
+.as-body{
+  display:grid;
+  grid-template-columns:7.5rem minmax(0,1fr) minmax(0,1.1fr);
+  min-height:20rem;
+}
+.as-body>*{min-width:0}
+.as-tree,.as-editor{border-right:1px solid var(--ui-code-border)}
+.as-pane-label,.as-tab{
+  margin:0;padding:8px 12px;
+  font-size:.625rem;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ui-ondark-text-muted);
+  border-bottom:1px solid var(--ui-code-border);
+}
+.as-tab{text-transform:none;letter-spacing:0;font-size:.6875rem;color:var(--ui-ondark-text-strong)}
+.as-tree ul{list-style:none;margin:0;padding:6px 0}
+.as-tree ul ul{padding:0 0 0 12px}
+.as-folder,.as-file{display:block;padding:2px 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.as-folder{color:var(--ui-ondark-text-muted)}
+.as-open{background:rgba(var(--ui-ondark-accent-rgb),.14);color:var(--ui-ondark-text-strong)}
+.as-editor pre{
+  margin:0;padding:10px 12px;
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.6875rem;line-height:1.6;
+  white-space:pre-wrap;overflow-wrap:anywhere;
+  color:var(--ui-ondark-text);
+}
+mark{background:none;color:var(--ui-ondark-accent);font-weight:600}
+/* The page's inline-code chip is global and light in the light theme; inside
+   this dark panel code is just type. */
+.agent-session code{all:unset;font:inherit;color:inherit;white-space:inherit}
+.as-turns{list-style:none;margin:0;padding:10px 12px;display:grid;gap:10px}
+.as-who{margin:0 0 2px;font-size:.625rem;color:var(--ui-ondark-text-muted);text-transform:uppercase;letter-spacing:.06em}
+.as-text{margin:0}
+.as-user .as-text{
+  padding:6px 9px;border-radius:8px;
+  background:rgba(var(--ui-ondark-accent-rgb),.12);
+  color:var(--ui-ondark-text-strong);
+}
+.as-tool{
+  border:1px solid var(--ui-code-border);border-radius:6px;
+  background:rgba(255,255,255,.03);
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.6875rem;
+}
+.as-call{margin:0;padding:6px 9px;border-bottom:1px solid var(--ui-code-border);overflow-wrap:anywhere}
+.as-call-label{color:var(--ui-ondark-text-muted)}
+.agent-session .as-call code{color:var(--ui-ondark-accent)}
+.as-result{margin:0;padding:6px 9px;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--ui-ondark-text)}
+
+/* Panes leave in order of how little of the story they carry: the file tree
+   first, then the open file. The chat always stays. */
+@container (max-width:480px){
+  .as-body{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .as-tree{display:none}
+}
+@container (max-width:380px){
+  .as-body{grid-template-columns:minmax(0,1fr);min-height:0}
+  .as-editor{display:none}
+}
+</style>
