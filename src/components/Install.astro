@@ -1,7 +1,7 @@
 ---
 import { site } from '../data/site';
 const { install, copy } = site;
-const { byPlatform, tryCommands, binariesNote } = install;
+const { byPlatform, clients, tryCommands, binariesNote } = install;
 const oses = ['windows', 'macos', 'linux'] as const;
 const labels = { windows: 'Windows', macos: 'macOS', linux: 'Linux' };
 // Desktop first: most visitors landing here want the app, and the CLI
@@ -19,6 +19,36 @@ const groups = [
     <h2>{copy.install.heading}</h2>
     <p class="lead" set:html={copy.install.leadHtml} />
 
+    {clients.length > 0 ? (
+      <div class="install-by-client">
+        {/* By client rather than by OS: see install-clients.ts. Every card is
+            visible at once, because which clients are supported is itself
+            part of the answer. */}
+        <ul class="client-grid">
+          {clients.map((client) => (
+            <li class="client-card">
+              <h3 class="client-name">{client.name}</h3>
+              {client.commands.map((command) => (
+                <div class="client-cmd has-copy" data-copy={command}><code>{command}</code></div>
+              ))}
+              {client.note && <p class="client-note">{client.note}</p>}
+            </li>
+          ))}
+        </ul>
+        <div class="client-after">
+          <div class="try">
+            <h3 class="try-title">Then</h3>
+            {tryCommands.map((c) => (
+              <div class="try-cmd has-copy" data-copy={c.command}>
+                <span class="try-comment"># {c.comment}</span>
+                <span class="try-line"><span class="p">$</span><span class="t">{c.command}</span></span>
+              </div>
+            ))}
+          </div>
+          <p class="footer-note" set:html={binariesNote} />
+        </div>
+      </div>
+    ) : (
     <div class="install-grid">
       <div class="os-tabs" role="tablist" aria-label="Choose operating system">
         {oses.map((os) => (
@@ -106,10 +136,36 @@ const groups = [
         ))}
       </div>
     </div>
+    )}
   </div>
 </section>
 
 <style is:global>
+/* ─── BY CLIENT ─── */
+.client-grid{
+  list-style:none;margin:8px 0 0;padding:0;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:16px;
+}
+.client-card{
+  background:var(--ui-chip-bg);border:1px solid var(--ui-chip-border);border-radius:10px;
+  padding:16px 18px;display:flex;flex-direction:column;gap:8px;min-width:0;
+}
+.client-name{font-size:.9375rem;font-weight:700;color:var(--ui-chip-fg);margin:0 0 2px}
+/* Commands wrap rather than scroll: a long plugin command cut off behind a
+   scrollbar is the command someone came here to read. */
+.client-cmd{
+  position:relative;padding:8px 40px 8px 10px;border-radius:6px;
+  background:rgba(var(--ui-chip-lift-rgb),.04);border:1px solid var(--ui-chip-divider);
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.75rem;line-height:1.5;
+  color:var(--ui-chip-fg);
+}
+.client-cmd code{all:unset;font:inherit;color:inherit;white-space:pre-wrap;overflow-wrap:anywhere}
+.client-note{font-size:.75rem;line-height:1.5;color:var(--ui-chip-fg-muted);margin:0}
+.client-after{margin-top:24px;max-width:560px}
+/* The per-OS layout pins .try to its second column; here it is in a stack. */
+.client-after .try{grid-column:auto;grid-row:auto}
+.client-after .footer-note{margin-top:14px}
+
 /* ─── GET STARTED ─── */
 .install-grid{
   display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:8px;

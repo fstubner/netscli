@@ -14,6 +14,7 @@ import {
   installNotes,
   tryCommands,
 } from './site-content/install';
+import { installClients } from './site-content/install-clients';
 import { faq, faqCopy } from './site-content/faq';
 import { feedback } from './site-content/feedback';
 import { analytics, builtWith, social } from './site-content/footer';
@@ -55,6 +56,7 @@ export const site: SiteData = {
   surfaces,
   install: {
     byPlatform: installByPlatform,
+    clients: installClients,
     tryCommands,
     binariesNote: installBinariesNote,
     fromSource: installFromSource,

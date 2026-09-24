@@ -1,8 +1,18 @@
 ---
 import { site } from '../data/site';
 
+import type { FeedbackPlacement } from '../data/site-content/types';
+
+interface Props {
+  /** The page this is rendered on; the block shows only where
+   *  `feedback.placement` lists it. */
+  on: FeedbackPlacement;
+}
+
+const { on } = Astro.props;
 const { feedback, social } = site;
 const repo = feedback.repo ?? social.repo;
+const shown = feedback.enabled && (feedback.placement ?? ['landing']).includes(on);
 
 /**
  * GitHub's issue-creation URL. `template` selects an issue form from
@@ -19,7 +29,7 @@ function issueUrl(route: { template?: string; issueLabels?: string[] }): string 
 }
 ---
 
-{feedback.enabled && (
+{shown && (
   <section class="feedback" aria-labelledby="feedback-heading">
     <div class="feedback-inner">
       <p id="feedback-heading" class="feedback-prompt">{feedback.prompt}</p>

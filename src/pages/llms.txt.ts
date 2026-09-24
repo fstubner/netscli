@@ -34,11 +34,19 @@ export async function GET() {
     macos: 'macOS',
     linux: 'Linux',
   };
-  const quickstart = Object.entries(install.byPlatform).flatMap(([platform, entry]) => {
-    const first = entry.cli?.[0];
-    if (!first?.command) return [];
-    return [`- **${platformNames[platform] ?? platform}**: \`${first.command}\``];
-  });
+  // By client when the site installs that way (install-clients.ts), by OS
+  // otherwise: the same grouping the install section shows.
+  const quickstart = install.clients.length
+    ? install.clients.map((client) =>
+        client.commands.length
+          ? `- **${client.name}**: ${client.commands.map((c) => `\`${c}\``).join(', then ')}${client.note ? `. ${client.note}` : ''}`
+          : `- **${client.name}**: ${client.note ?? ''}`,
+      )
+    : Object.entries(install.byPlatform).flatMap(([platform, entry]) => {
+        const first = entry.cli?.[0];
+        if (!first?.command) return [];
+        return [`- **${platformNames[platform] ?? platform}**: \`${first.command}\``];
+      });
 
   const lines = [
     `# ${meta.siteName}`,
