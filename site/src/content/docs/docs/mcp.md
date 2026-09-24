@@ -1,6 +1,9 @@
 ---
 title: MCP server
 description: NetsCLI MCP server guide for AI-agent network tools over JSON-RPC.
+head:
+  - tag: title
+    content: Network scanning MCP server for AI agents | NetsCLI docs
 ---
 
 The MCP server exposes NetsCLI operations to clients such as Claude Code, Cursor, and other MCP-compatible tools. It communicates over stdio using JSON-RPC 2.0.

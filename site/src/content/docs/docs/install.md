@@ -1,6 +1,9 @@
 ---
 title: Installation
 description: Install NetsCLI through package managers, direct release artifacts, scripts, or Cargo.
+head:
+  - tag: title
+    content: Install NetsCLI on Windows, macOS and Linux | NetsCLI docs
 ---
 
 NetsCLI publishes command-line binaries and desktop installers through GitHub Releases. The CLI/TUI binary is named `netscli`. The desktop app is distributed as NetsCLI Desktop.
