@@ -299,12 +299,6 @@ const defaultDownload = heroDownloads[0];
   justify-self:center;
   gap:28px;
 }
-/* With no wide row above it, this row is the whole CTA, and 78% of the
-   column clipped the install command in the split hero: measured at a
-   1000px window, `irm https://nvx.run/install.ps1 | iex` lost 39px to the
-   ellipsis with a fifth of the column empty beside it. The 78% exists to sit
-   narrower than a wide row that is not there. */
-.hero-cta:not(:has(.hero-command-wide, .hero-primary-wrap)) .hero-cta-sub{width:100%}
 .hero-primary-wrap{
   position:relative;
   display:grid;grid-template-columns:minmax(0,1fr) 34px;
@@ -656,8 +650,9 @@ const defaultDownload = heroDownloads[0];
 
 /* The narrow end of the split hero. The column is 46% of the frame, so
    between 900 and 1100px it is too narrow for the install command and the
-   "more install options" link side by side: measured at 1000px, a 433px
-   column left the command 289px and clipped 39px of it. The link goes under
+   "more install options" link side by side: measured on nvx's site at
+   1000px, a 433px column left `irm https://nvx.run/install.ps1 | iex` 289px
+   and clipped 39px of it. The link goes under
    the command instead, where it still reads as the next step. */
 @media (min-width:900px) and (max-width:1099px){
   .landing-split .hero-cta-sub{grid-template-columns:minmax(0,1fr);gap:10px}
