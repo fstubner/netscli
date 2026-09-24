@@ -50,6 +50,23 @@ if ($extension -eq '.msi') {
     exit 0
 }
 
+# The bundler also hands over two files from the WiX toolset it builds the
+# MSI with -- WixUtilExtension.dll and WixUIExtension.dll, from its local copy
+# under target\...\wix\ -- without saying why. They are third-party build
+# tools: not ours, unsigned by their publisher, and not in the MSI (it holds
+# netscli-gui.exe and the OUI data file, nothing else). Signing them would
+# put this project's certificate on someone else's code, and cost two more
+# round-trips to Certum per build. The MSI builds the same without it --
+# measured with a local build whose signer skipped them.
+#
+# Observed calls, from that build: target\release\netscli-gui.exe, the two
+# WiX DLLs, then the finished .msi.
+$segments = ($Path -replace '/', '\').ToLowerInvariant().Split('\')
+if ($segments -contains 'wix') {
+    Write-Host "sign-windows-pe: leaving $name alone (WiX toolset, not part of the app)"
+    exit 0
+}
+
 $ssign = $env:NETSCLI_SSIGN
 if (-not $ssign -or -not (Test-Path -LiteralPath $ssign -PathType Leaf)) {
     Fail "NETSCLI_SSIGN does not point at ssign.exe ('$ssign')"
