@@ -10,12 +10,70 @@ export const surfaces: SurfaceCard[] = [
   {
     title: 'Five MCP tools',
     body:
-      'The next agent lists recent sessions from any tool, opens the raw messages, and searches them by keyword or by meaning. An orchestrator can ask for a manifest of stable session references instead.',
-    codeHtml: `<span style="color:var(--ui-code-comment)">list</span>     xtctx_recent_sessions
-<span style="color:var(--ui-code-comment)">read</span>     xtctx_session_detail
-<span style="color:var(--ui-code-comment)">search</span>   xtctx_search_sessions
-<span style="color:var(--ui-code-comment)">check</span>    xtctx_continuity_status
-<span style="color:var(--ui-code-comment)">hand off</span> xtctx_handoff_manifest`,
+      'The next agent lists recent sessions from any tool, opens the raw messages, and searches them by keyword or by meaning. Here Codex picks up where a Claude Code session in the same repo stopped. An orchestrator can ask for a manifest of stable session references instead.',
+    // Captured 2026-09-24 with the built server (0.21.8) in a temporary
+    // project, `my-app`. The earlier Claude Code session is synthetic, two
+    // messages written for this, like the public demo's. The AGENTS.md text
+    // is the block setup wrote there, edited only by removing lines (the
+    // generated notice, the temp project path, and the sections below
+    // Session Retrieval). Both tool results are what the server returned,
+    // edited only by removing lines. The agent's own sentences are written
+    // for this panel.
+    visual: {
+      kind: 'agent-session',
+      session: {
+        title: 'my-app: Codex',
+        files: ['.xtctx/config.yaml', 'src/routes/login.ts', 'AGENTS.md', 'CLAUDE.md', 'package.json'],
+        open: {
+          path: 'AGENTS.md',
+          text: `<!-- xtctx:begin -->
+# xtctx Handoff
+
+Tool: codex
+Integration mode: instruction-only
+
+## Session Retrieval
+- Call \`xtctx_recent_sessions\` to list recent local sessions.
+- Call \`xtctx_session_detail\` with a \`session_ref\` for the raw transcript messages.
+- Call \`xtctx_search_sessions\` only when you need semantic or keyword search across chronological transcript windows.
+- Use \`xtctx_continuity_status\` for wiring and freshness diagnostics.
+- External orchestrators can call \`xtctx_handoff_manifest\` for stable session references and raw-detail pointers; it does not persist task state.
+<!-- xtctx:end -->`,
+          highlight: [
+            'xtctx_recent_sessions',
+            'xtctx_session_detail',
+            'xtctx_search_sessions',
+            'xtctx_continuity_status',
+            'xtctx_handoff_manifest',
+          ],
+        },
+        agentLabel: 'Codex',
+        turns: [
+          { role: 'user', text: 'Pick up where Claude Code left off.' },
+          { role: 'agent', text: 'AGENTS.md says to call xtctx_recent_sessions first.' },
+          {
+            role: 'tool',
+            call: 'xtctx_recent_sessions(limit: 3)',
+            result: [
+              '### 1. claude-code:a41c-login-limit',
+              '- Preview: Add a rate limit to POST /login: 5 attempts a minute per IP.',
+            ],
+          },
+          { role: 'agent', text: 'One recent session. Opening it.' },
+          {
+            role: 'tool',
+            call: 'xtctx_session_detail(session_ref: "claude-code:a41c-login-limit")',
+            result: [
+              'Added the limiter in src/routes/login.ts with a default of 5 per minute. Tests pass. Not done yet: reading the limit from RATE_LIMIT_PER_MIN.',
+            ],
+          },
+          {
+            role: 'agent',
+            text: 'The limiter is done. Next: read the limit from RATE_LIMIT_PER_MIN.',
+          },
+        ],
+      },
+    },
   },
   {
     title: 'Setup writes files you can read',
