@@ -31,6 +31,21 @@ function portResult(port: number, status: PortStatus, latency_ms?: number, banne
 }
 
 describe('row building', () => {
+  it('shows the product and version a port announced, and nothing when it did not', () => {
+    const result: ToolResult = {
+      kind: 'scan',
+      data: [
+        { ...portResult(22, 'open', 3), product: 'OpenSSH', version: '9.6p1' },
+        { ...portResult(80, 'open', 4), product: 'cloudflare' },
+        portResult(443, 'open', 5),
+      ],
+    };
+
+    const versions = buildRows(result).map((row) => row.data.version);
+
+    expect(versions).toEqual(['OpenSSH 9.6p1', 'cloudflare', '']);
+  });
+
   it('normalizes port rows across statuses and latency states', () => {
     const result: ToolResult = {
       kind: 'scan',

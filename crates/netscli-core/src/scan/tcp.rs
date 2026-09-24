@@ -137,6 +137,10 @@ impl PortScanner {
                     .with_latency(latency_ms);
                 self.enrich_open_port(target, port, stream, timeout_ms, &mut result)
                     .await;
+                if let Some((product, version)) = super::version::identify(&result) {
+                    result.product = Some(product);
+                    result.version = version;
+                }
                 result
             }
             Ok(Err(e)) => match classify_connect_error(e.kind()) {

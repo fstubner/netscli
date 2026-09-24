@@ -52,6 +52,10 @@ export interface PortResult {
   open: boolean;
   status: PortStatus;
   service?: string | null;
+  /** The software on the port, when it named itself (SSH, HTTP Server, mail/FTP greeting). */
+  product?: string | null;
+  /** That software's version, when it gave one. */
+  version?: string | null;
   latency_ms?: number | null;
   banner?: string | null;
   http?: HttpProbe | null;

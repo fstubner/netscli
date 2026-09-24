@@ -30,6 +30,16 @@ its heading and collects entries; the date and the link go on with the tag.
   desktop app's CSV export already does it, and one containing Markdown or
   HTML is escaped.
 
+- **Port scans show the software and version where a service states them.**
+  An SSH server's identification line, a web server's `Server` header and
+  an FTP or mail server's greeting usually name the software, often with its
+  version: `OpenSSH 9.6p1`, `nginx 1.25.3`, `Exim 4.96`. Scans now report
+  that as `product` and `version` in the JSON, and in a Version column in
+  the CLI, the terminal UI and the desktop app. It reads what the scan
+  already received, so it sends nothing extra over the network. It's far
+  narrower than nmap's `-sV`: a service that doesn't announce itself gets no
+  version.
+
 - **The desktop app can update itself.** It already told you when a newer
   release was out and linked to the release page. Now, where it can, the
   notice opens a dialog with the release notes and an **Install and

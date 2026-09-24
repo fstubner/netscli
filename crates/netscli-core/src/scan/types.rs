@@ -39,6 +39,14 @@ pub struct PortResult {
     pub open: bool,
     pub status: PortStatus,
     pub service: Option<String>,
+    /// The software on the port, when it named itself: the SSH
+    /// identification line, an HTTP `Server` header, or a mail/FTP greeting.
+    /// See `scan/version.rs`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub product: Option<String>,
+    /// That software's version, when it gave one.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub latency_ms: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -63,6 +71,8 @@ impl PortResult {
             open: matches!(status, PortStatus::Open),
             status,
             service,
+            product: None,
+            version: None,
             latency_ms: None,
             banner: None,
             http: None,
@@ -70,6 +80,16 @@ impl PortResult {
             raw: None,
             error: None,
         }
+    }
+
+    /// `OpenSSH 9.6p1` for display, or just `cloudflare` when the service
+    /// named itself without a version. `None` when it did neither.
+    pub fn product_and_version(&self) -> Option<String> {
+        let product = self.product.as_deref()?;
+        Some(match self.version.as_deref() {
+            Some(version) => format!("{product} {version}"),
+            None => product.to_string(),
+        })
     }
 
     pub(super) fn with_latency(mut self, latency_ms: u64) -> Self {

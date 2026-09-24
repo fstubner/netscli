@@ -201,6 +201,8 @@ mod tests {
                 open: true,
                 status: PortStatus::Open,
                 service: Some("https".to_string()),
+                product: None,
+                version: None,
                 latency_ms: Some(3),
                 banner: None,
                 http: None,

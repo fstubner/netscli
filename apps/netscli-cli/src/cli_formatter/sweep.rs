@@ -53,7 +53,15 @@ impl CliFormatter {
             out.push('\n');
             for port in &entry.open_ports {
                 let service = port.service.as_deref().unwrap_or("unknown");
-                out.push_str(&format!("  {:>5} {}\n", port.port, dim(service),));
+                match port.product_and_version() {
+                    Some(version) => out.push_str(&format!(
+                        "  {:>5} {} {}\n",
+                        port.port,
+                        dim(service),
+                        version
+                    )),
+                    None => out.push_str(&format!("  {:>5} {}\n", port.port, dim(service))),
+                }
             }
         }
         out
