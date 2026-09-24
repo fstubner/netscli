@@ -164,7 +164,13 @@ export function initLandingPage(repo: string, cratesIoCrate?: string): void {
           // blanking it or naming a version nothing confirmed.
           const badge = document.getElementById("hero-release-badge");
           if (latest?.tag_name && badge) {
-            badge.textContent = `${latest.tag_name} · What changed →`;
+            // The version, not the raw tag: release-please tags a package
+            // `name-v1.2.3`, which read "xtctx-v0.21.8 · What changed". The
+            // same rule as normalizeTag in scripts/changelog/summarize.ts,
+            // written out because that directory is deleted on a site with
+            // the changelog off, and this script runs on every site.
+            const version = latest.tag_name.match(/v?(\d+\.\d+\.\d+(?:[-+][\w.-]+)?)$/);
+            badge.textContent = `${version ? `v${version[1]}` : latest.tag_name} · What changed →`;
           }
         })
         .catch(() => {})
