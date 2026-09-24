@@ -19,10 +19,14 @@ pub(super) async fn run(
     csv: bool,
 ) -> Result<()> {
     let format = output_format_with_csv(json, yaml, csv)?;
+    if check && csv {
+        // --check prints capture device names, not packets: no rows to write.
+        anyhow::bail!("--csv lists packets, so it doesn't apply to --check");
+    }
     if check {
         let devs = ctx.ops.pcap_check_support()?;
         match format {
-            // args.rs makes --csv conflict with --check, so no Csv here.
+            // Csv is refused above, before any capture work.
             OutputFormat::Json | OutputFormat::Yaml | OutputFormat::Csv => {
                 print_structured(format, &devs)?;
             }

@@ -24,74 +24,71 @@ pub(crate) async fn run_command(command: &Commands, ctx: CommandContext<'_>) -> 
         Commands::Setup { print, execute } => {
             setup::run_setup(*execute, *print).await?;
         }
-        Commands::Doctor { json, yaml } => {
-            setup::print_status(*json, *yaml).await?;
+        Commands::Doctor { format } => {
+            setup::print_status(format.json, format.yaml).await?;
         }
         Commands::Discover {
             subnet,
             resolve,
-            json,
-            yaml,
-            csv,
+            format,
         } => {
-            scan::run_discover(ctx, subnet, *resolve, *json, *yaml, *csv).await?;
+            scan::run_discover(ctx, subnet, *resolve, format.json, format.yaml, format.csv).await?;
         }
         Commands::Scan {
             host,
             ports,
-            json,
-            yaml,
-            csv,
+            format,
         } => {
-            scan::run_scan(ctx, host, ports, *json, *yaml, *csv).await?;
+            scan::run_scan(ctx, host, ports, format.json, format.yaml, format.csv).await?;
         }
         Commands::Inspect {
             host,
             ports,
-            json,
-            yaml,
+            format,
         } => {
-            scan::run_inspect(ctx, host, ports, *json, *yaml).await?;
+            scan::run_inspect(ctx, host, ports, format.json, format.yaml).await?;
         }
         Commands::Sweep {
             subnet,
             ports,
             resolve,
-            json,
-            yaml,
-            csv,
+            format,
         } => {
-            scan::run_sweep(ctx, subnet, ports, *resolve, *json, *yaml, *csv).await?;
+            scan::run_sweep(
+                ctx,
+                subnet,
+                ports,
+                *resolve,
+                format.json,
+                format.yaml,
+                format.csv,
+            )
+            .await?;
         }
         Commands::Dns {
             host,
             record,
-            json,
-            yaml,
-            csv,
+            format,
         } => {
-            dns::run_lookup(ctx, host, record, *json, *yaml, *csv).await?;
+            dns::run_lookup(ctx, host, record, format.json, format.yaml, format.csv).await?;
         }
-        Commands::Reverse { ip, json, yaml } => {
-            dns::run_reverse(ctx, ip, *json, *yaml).await?;
+        Commands::Reverse { ip, format } => {
+            dns::run_reverse(ctx, ip, format.json, format.yaml).await?;
         }
         Commands::Ping {
             host,
             count,
-            json,
-            yaml,
-            csv,
+            format,
         } => {
-            host::run_ping(ctx, host, *count, *json, *yaml, *csv).await?;
+            host::run_ping(ctx, host, *count, format.json, format.yaml, format.csv).await?;
         }
         Commands::Trace {
             host,
             resolve,
             max_hops,
-            json,
-            yaml,
+            format,
         } => {
-            host::run_trace(host, *resolve, *max_hops, *json, *yaml).await?;
+            host::run_trace(host, *resolve, *max_hops, format.json, format.yaml).await?;
         }
         Commands::Arp {
             add,
@@ -99,11 +96,20 @@ pub(crate) async fn run_command(command: &Commands, ctx: CommandContext<'_>) -> 
             clear,
             ip,
             mac,
-            json,
-            yaml,
-            csv,
+            format,
         } => {
-            arp::run(ctx, *add, *delete, *clear, ip, mac, *json, *yaml, *csv).await?;
+            arp::run(
+                ctx,
+                *add,
+                *delete,
+                *clear,
+                ip,
+                mac,
+                format.json,
+                format.yaml,
+                format.csv,
+            )
+            .await?;
         }
         #[cfg(feature = "pcap")]
         Commands::Pcap {
@@ -114,9 +120,7 @@ pub(crate) async fn run_command(command: &Commands, ctx: CommandContext<'_>) -> 
             max_packets,
             output,
             check,
-            json,
-            yaml,
-            csv,
+            format,
         } => {
             pcap::run(
                 ctx,
@@ -127,23 +131,29 @@ pub(crate) async fn run_command(command: &Commands, ctx: CommandContext<'_>) -> 
                 *max_packets,
                 output,
                 *check,
-                *json,
-                *yaml,
-                *csv,
+                format.json,
+                format.yaml,
+                format.csv,
             )
             .await?;
         }
-        Commands::Interfaces { json, yaml, csv } => {
-            host::run_interfaces(ctx, *json, *yaml, *csv)?;
+        Commands::Interfaces { format } => {
+            host::run_interfaces(ctx, format.json, format.yaml, format.csv)?;
         }
         Commands::Mdns {
             timeout_ms,
             service_types,
-            json,
-            yaml,
-            csv,
+            format,
         } => {
-            mdns::run(ctx, *timeout_ms, service_types, *json, *yaml, *csv).await?;
+            mdns::run(
+                ctx,
+                *timeout_ms,
+                service_types,
+                format.json,
+                format.yaml,
+                format.csv,
+            )
+            .await?;
         }
         Commands::Completions { shell } => {
             docs::print_completions::<Cli>(*shell);

@@ -1,4 +1,4 @@
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand};
 use clap_complete::Shell;
 
 #[derive(Parser)]
@@ -12,6 +12,35 @@ pub struct Cli {
 
     #[command(subcommand)]
     pub command: Option<Commands>,
+}
+
+/// `--json` / `--yaml`, for commands whose result is not a list of rows.
+#[derive(Args, Clone, Copy, Debug)]
+pub struct StructuredOutput {
+    /// Output JSON
+    #[arg(long)]
+    pub json: bool,
+
+    /// Output YAML
+    #[arg(long)]
+    pub yaml: bool,
+}
+
+/// `--json` / `--yaml` / `--csv`, for commands that return a list: one CSV
+/// row per host, port, record or packet.
+#[derive(Args, Clone, Copy, Debug)]
+pub struct ListOutput {
+    /// Output JSON
+    #[arg(long)]
+    pub json: bool,
+
+    /// Output YAML
+    #[arg(long)]
+    pub yaml: bool,
+
+    /// Output CSV, one row per result
+    #[arg(long)]
+    pub csv: bool,
 }
 
 #[derive(Subcommand)]
@@ -29,13 +58,8 @@ pub enum Commands {
 
     /// Dependency and capability diagnostics (headless)
     Doctor {
-        /// Output JSON
-        #[arg(long)]
-        json: bool,
-
-        /// Output YAML
-        #[arg(long)]
-        yaml: bool,
+        #[command(flatten)]
+        format: StructuredOutput,
     },
 
     /// Discover live hosts on a network subnet
@@ -47,17 +71,8 @@ pub enum Commands {
         #[arg(long)]
         resolve: bool,
 
-        /// Output JSON
-        #[arg(long)]
-        json: bool,
-
-        /// Output YAML
-        #[arg(long)]
-        yaml: bool,
-
-        /// Output CSV, one row per result
-        #[arg(long)]
-        csv: bool,
+        #[command(flatten)]
+        format: ListOutput,
     },
 
     /// Scan TCP ports on a host
@@ -69,17 +84,8 @@ pub enum Commands {
         #[arg(short, long)]
         ports: Option<String>,
 
-        /// Output JSON
-        #[arg(long)]
-        json: bool,
-
-        /// Output YAML
-        #[arg(long)]
-        yaml: bool,
-
-        /// Output CSV, one row per result
-        #[arg(long)]
-        csv: bool,
+        #[command(flatten)]
+        format: ListOutput,
     },
 
     /// Comprehensive host inspection
@@ -91,13 +97,8 @@ pub enum Commands {
         #[arg(short, long)]
         ports: Option<String>,
 
-        /// Output JSON
-        #[arg(long)]
-        json: bool,
-
-        /// Output YAML
-        #[arg(long)]
-        yaml: bool,
+        #[command(flatten)]
+        format: StructuredOutput,
     },
 
     /// Network sweep (discover hosts then scan ports)
@@ -113,17 +114,8 @@ pub enum Commands {
         #[arg(long)]
         resolve: bool,
 
-        /// Output JSON
-        #[arg(long)]
-        json: bool,
-
-        /// Output YAML
-        #[arg(long)]
-        yaml: bool,
-
-        /// Output CSV, one row per result
-        #[arg(long)]
-        csv: bool,
+        #[command(flatten)]
+        format: ListOutput,
     },
 
     /// DNS lookup
@@ -135,17 +127,8 @@ pub enum Commands {
         #[arg(long)]
         record: Option<String>,
 
-        /// Output JSON
-        #[arg(long)]
-        json: bool,
-
-        /// Output YAML
-        #[arg(long)]
-        yaml: bool,
-
-        /// Output CSV, one row per result
-        #[arg(long)]
-        csv: bool,
+        #[command(flatten)]
+        format: ListOutput,
     },
 
     /// Reverse DNS lookup
@@ -153,13 +136,8 @@ pub enum Commands {
         /// IP address to reverse lookup
         ip: String,
 
-        /// Output JSON
-        #[arg(long)]
-        json: bool,
-
-        /// Output YAML
-        #[arg(long)]
-        yaml: bool,
+        #[command(flatten)]
+        format: StructuredOutput,
     },
 
     /// Ping a host (basic)
@@ -171,17 +149,8 @@ pub enum Commands {
         #[arg(short = 'c', long, default_value_t = 4)]
         count: u32,
 
-        /// Output JSON
-        #[arg(long)]
-        json: bool,
-
-        /// Output YAML
-        #[arg(long)]
-        yaml: bool,
-
-        /// Output CSV, one row per result
-        #[arg(long)]
-        csv: bool,
+        #[command(flatten)]
+        format: ListOutput,
     },
 
     /// Trace route to a host (hops)
@@ -197,13 +166,8 @@ pub enum Commands {
         #[arg(long, default_value_t = 30)]
         max_hops: u32,
 
-        /// Output JSON
-        #[arg(long)]
-        json: bool,
-
-        /// Output YAML
-        #[arg(long)]
-        yaml: bool,
+        #[command(flatten)]
+        format: StructuredOutput,
     },
 
     /// Show or manage ARP table
@@ -233,17 +197,8 @@ pub enum Commands {
         #[arg(long)]
         mac: Option<String>,
 
-        /// Output JSON
-        #[arg(long)]
-        json: bool,
-
-        /// Output YAML
-        #[arg(long)]
-        yaml: bool,
-
-        /// Output CSV, one row per result
-        #[arg(long)]
-        csv: bool,
+        #[command(flatten)]
+        format: ListOutput,
     },
 
     /// Capture network packets to PCAP file
@@ -285,31 +240,14 @@ pub enum Commands {
         #[arg(long)]
         check: bool,
 
-        /// Output JSON
-        #[arg(long)]
-        json: bool,
-
-        /// Output YAML
-        #[arg(long)]
-        yaml: bool,
-
-        /// Output CSV, one row per packet (not with --check)
-        #[arg(long, conflicts_with = "check")]
-        csv: bool,
+        #[command(flatten)]
+        format: ListOutput,
     },
 
     /// List interfaces
     Interfaces {
-        #[arg(long)]
-        json: bool,
-
-        /// Output YAML
-        #[arg(long)]
-        yaml: bool,
-
-        /// Output CSV, one row per result
-        #[arg(long)]
-        csv: bool,
+        #[command(flatten)]
+        format: ListOutput,
     },
 
     /// Discover devices on the local network via mDNS/DNS-SD (Bonjour)
@@ -324,15 +262,8 @@ pub enum Commands {
         #[arg(long = "type", short = 't')]
         service_types: Vec<String>,
 
-        #[arg(long)]
-        json: bool,
-
-        #[arg(long)]
-        yaml: bool,
-
-        /// Output CSV, one row per result
-        #[arg(long)]
-        csv: bool,
+        #[command(flatten)]
+        format: ListOutput,
     },
 
     /// Start MCP server for AI agents
