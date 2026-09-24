@@ -27,4 +27,36 @@ export const surfaces: SurfaceCard[] = [
   <span style="color:var(--ui-code-key)">"items"</span>: <span style="color:var(--ui-code-punct)">12</span>
 }`,
   },
+  {
+    title: 'In an agent',
+    body: 'A card with an agent-session visual: the project, one file open, and the chat in which a coding agent calls your tool. Set <code>visual</code> on any card, or on the hero, to use any visual kind.',
+    // The tool calls and their results are claims about what your product
+    // returns, and a reader takes them for a capture. Run the session for
+    // real and paste what came back; edit only by removing lines. The same
+    // rule as terminal.ts, for the same reason.
+    visual: {
+      kind: 'agent-session',
+      session: {
+        title: 'example-project',
+        files: ['src/main.ts', 'src/report.ts', 'AGENTS.md', 'package.json'],
+        open: {
+          path: 'AGENTS.md',
+          text: `# Agent notes
+
+Use the example tool for reports:
+
+- example_run returns the latest report as JSON.
+- example_status says whether it is configured.
+`,
+          highlight: ['example_run', 'example_status'],
+        },
+        turns: [
+          { role: 'user', text: 'What did the last report say?' },
+          { role: 'agent', text: 'AGENTS.md says to use example_run for reports.' },
+          { role: 'tool', call: 'example_run(format: "json")', result: ['{ "status": "ok", "items": 12 }'] },
+          { role: 'agent', text: 'The last report was ok, with 12 items.' },
+        ],
+      },
+    },
+  },
 ];

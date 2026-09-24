@@ -24,6 +24,10 @@ that what you delete is obvious. Everything else is the shell.
   somewhere else with `repo`, name your issue forms in `template`, or set
   `enabled: false` to remove the block and its footer link entirely.
 - `public/assets/*` -- wordmark, hero screenshot, favicon, OG image.
+- Visuals: a surface card or the hero takes `visual`, one of the kinds in
+  `src/data/site-content/visual-types.ts` -- an image, a code block, the
+  terminal panel, or an agent session (a project, an open file, and a chat
+  in which an agent calls your tool). The sample surfaces show each.
 - `CHANGELOG.md` -- the changelog page's local fallback; it also reads
   GitHub Releases at runtime.
 - `src/styles/tokens.css` -- the brand palette, both themes. Then
@@ -43,6 +47,7 @@ src/styles/theme-control.css the light/dark/system control
 src/styles/docs/             the docs shell, one file per region
 src/styles/landing/          the landing page's character and base rules
 src/components/*.astro       Nav, Hero, Surfaces, Install, Faq, Footer
+src/components/Visual.astro  the picture slot: image, code, terminal, agent session
 src/components/starlight/    the Starlight overrides
 src/layouts/Page.astro       meta, OG, JSON-LD, the stylesheet order
 src/pages/                   index, 404, changelog, robots.txt

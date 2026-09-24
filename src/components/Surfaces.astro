@@ -1,5 +1,6 @@
 ---
 import { site } from '../data/site';
+import Visual from './Visual.astro';
 const { surfaces, copy, modules } = site;
 const surfacesLeadHtml = modules.docs
   ? `${copy.surfaces.leadHtml} <a href="/docs/">Full docs →</a>`
@@ -30,7 +31,9 @@ const surfacesLeadHtml = modules.docs
             )}
           </div>
           <div class="surface-visual">
-            {s.image ? (
+            {s.visual ? (
+              <Visual visual={s.visual} />
+            ) : s.image ? (
               <picture>
                 {s.image.webp && <source type="image/webp" srcset={s.image.webp} />}
                 <img

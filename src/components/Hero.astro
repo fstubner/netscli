@@ -1,6 +1,7 @@
 ---
 import { site } from '../data/site';
 import { sections } from '../data/site-content/sections';
+import Visual from './Visual.astro';
 const { hero, heroDownloads, social } = site;
 // The jump link only exists if there is an install section to jump to.
 // sections.ts can drop one, and a link to a section the page does not render
@@ -128,18 +129,22 @@ const defaultDownload = heroDownloads[0];
 <!-- Big hero screenshot -->
 <div class="w hero-shot">
   <div class="bigshot">
-    <picture>
-      {hero.heroImageWebp && (
-        <source type="image/webp" srcset={hero.heroImageWebp} />
-      )}
-      <img
-        src={hero.heroImage}
-        alt={hero.heroImageAlt}
-        width={hero.heroImageWidth}
-        height={hero.heroImageHeight}
-        fetchpriority="high"
-      />
-    </picture>
+    {hero.visual ? (
+      <Visual visual={hero.visual} priority />
+    ) : (
+      <picture>
+        {hero.heroImageWebp && (
+          <source type="image/webp" srcset={hero.heroImageWebp} />
+        )}
+        <img
+          src={hero.heroImage}
+          alt={hero.heroImageAlt}
+          width={hero.heroImageWidth}
+          height={hero.heroImageHeight}
+          fetchpriority="high"
+        />
+      </picture>
+    )}
   </div>
 </div>
 </div>

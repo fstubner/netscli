@@ -1,0 +1,50 @@
+---
+// One picture slot, whatever kind of visual fills it. The kinds and their
+// fields are in data/site-content/visual-types.ts; a new kind is a new branch
+// here and a new member of that union, and every slot gets it at once.
+import type { Visual } from '../data/site-content/visual-types';
+import AgentSession from './visuals/AgentSession.astro';
+
+interface Props {
+  visual: Visual;
+  /** The page's largest early paint -- the hero -- loads eagerly and first;
+   *  anything further down loads lazily. */
+  priority?: boolean;
+}
+
+const { visual, priority = false } = Astro.props;
+
+// Where `npm run assets:terminal` writes the panel it renders from
+// terminal.ts. One file, so the kind needs no path of its own.
+const TERMINAL_SRC = '/assets/hero.png';
+
+const image =
+  visual.kind === 'image'
+    ? visual
+    : visual.kind === 'terminal'
+      ? { src: TERMINAL_SRC, webp: undefined, alt: visual.alt, width: visual.width, height: visual.height }
+      : null;
+---
+{image && (
+  <picture>
+    {image.webp && <source type="image/webp" srcset={image.webp} />}
+    <img
+      src={image.src}
+      alt={image.alt}
+      width={image.width}
+      height={image.height}
+      loading={priority ? 'eager' : 'lazy'}
+      fetchpriority={priority ? 'high' : undefined}
+    />
+  </picture>
+)}
+{visual.kind === 'code' && (
+  <div
+    class="codeblock has-copy"
+    tabindex="0"
+    role="region"
+    aria-label={visual.label ?? 'Code example'}
+    set:html={visual.html}
+  />
+)}
+{visual.kind === 'agent-session' && <AgentSession session={visual.session} />}

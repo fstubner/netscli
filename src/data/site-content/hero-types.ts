@@ -10,6 +10,7 @@
 // at compile time, so the cycle is a spelling detail rather than a runtime one.
 
 import type { Platform } from './types';
+import type { Visual } from './visual-types';
 
 /** The hero's two command rows, per platform. */
 export type HeroCommands = Record<
@@ -82,6 +83,9 @@ export interface Hero {
   heroImageHeight: number;
   /** Optional WebP source for <picture>. */
   heroImageWebp?: string;
+  /** Any visual kind -- see visual-types.ts -- shown in place of the
+   *  heroImage fields above when set. */
+  visual?: Visual;
   /** Link to the source repo for the "View source" pill. */
   sourceUrl: string;
   /** Label on the desktop-download button. Only rendered when
