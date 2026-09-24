@@ -10,13 +10,13 @@ export const surfaces: SurfaceCard[] = [
   {
     title: 'Five MCP tools',
     body:
-      'The next agent lists recent sessions from any tool, opens the raw messages, and searches them by keyword or by meaning. Here Codex picks up where a Claude Code session in the same repo stopped. An orchestrator can ask for a manifest of stable session references instead.',
+      'The next agent lists recent sessions from any tool (<code>xtctx_recent_sessions</code>), opens the raw messages (<code>xtctx_session_detail</code>), and searches them by keyword or by meaning (<code>xtctx_search_sessions</code>). <code>xtctx_continuity_status</code> checks the wiring, and an orchestrator can ask <code>xtctx_handoff_manifest</code> for stable session references. Here Codex picks up where a Claude Code session in the same repo stopped.',
     // Captured 2026-09-24 with the built server (0.21.8) in a temporary
     // project, `my-app`. The earlier Claude Code session is synthetic, two
     // messages written for this, like the public demo's. The AGENTS.md text
     // is the block setup wrote there, edited only by removing lines (the
-    // generated notice, the temp project path, and the sections below
-    // Session Retrieval). Both tool results are what the server returned,
+    // generated notice, the temp project path, the last three Session
+    // Retrieval bullets, and the sections below it). Both tool results are what the server returned,
     // edited only by removing lines. The agent's own sentences are written
     // for this panel.
     visual: {
@@ -35,17 +35,8 @@ Integration mode: instruction-only
 ## Session Retrieval
 - Call \`xtctx_recent_sessions\` to list recent local sessions.
 - Call \`xtctx_session_detail\` with a \`session_ref\` for the raw transcript messages.
-- Call \`xtctx_search_sessions\` only when you need semantic or keyword search across chronological transcript windows.
-- Use \`xtctx_continuity_status\` for wiring and freshness diagnostics.
-- External orchestrators can call \`xtctx_handoff_manifest\` for stable session references and raw-detail pointers; it does not persist task state.
 <!-- xtctx:end -->`,
-          highlight: [
-            'xtctx_recent_sessions',
-            'xtctx_session_detail',
-            'xtctx_search_sessions',
-            'xtctx_continuity_status',
-            'xtctx_handoff_manifest',
-          ],
+          highlight: ['xtctx_recent_sessions', 'xtctx_session_detail'],
         },
         agentLabel: 'Codex',
         turns: [
