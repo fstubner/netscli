@@ -2,6 +2,7 @@ import type { Hero, HeroCommands, HeroDownload } from './types';
 
 export const hero: Hero = {
   badge: 'Local · MCP · Seven coding agents',
+  releaseLink: '/changelog/',
   heading: 'Switch coding agents without re-explaining the work.',
   subhead:
     'xtctx indexes the transcripts your coding agents already write and serves them over MCP, so the next agent you open can read what the last one did. By default nothing leaves your machine.',

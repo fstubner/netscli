@@ -7,5 +7,5 @@ import type { Modules } from './types';
 // lists which directories.
 export const modules: Modules = {
   docs: true,
-  changelog: false,
+  changelog: true,
 };
