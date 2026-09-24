@@ -32,7 +32,7 @@
   --ui-code-divider: #232a34;
   /* Inline `code` ink. The dark accent-bright in both themes, because the
      chip behind it is dark in both. */
-  --ui-code-inline-fg: #86efac;
+  --ui-code-inline-fg: #f0c890;
 
   /* ---- Code sample colours -------------------------------------------
    *

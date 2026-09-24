@@ -1,62 +1,59 @@
 import type { Platform, PlatformInstall, SectionCopy, TryCommand } from './types';
 
 export const installCopy: SectionCopy = {
-  heading: 'Install',
-  leadHtml: 'Pick a platform. Position 0 in each list is the recommended route and renders as the card; the rest are alternatives.',
+  heading: 'Install, then opt a project in',
+  leadHtml:
+    'The plugin makes the tools reachable from every project. Setup opts one project in and puts the handoff in front of the next agent without it having to ask.',
 };
 
-const RELEASE = 'https://github.com/your-org/example/releases/latest/download';
+// The same on every platform: nothing here is OS-specific, and there is no
+// desktop build.
+const cliEntries = [
+  {
+    label: 'Install the plugin',
+    command: 'claude plugin marketplace add fstubner/xtctx && claude plugin install xtctx@xtctx',
+    hint:
+      'Registers the MCP server and the handoff skill for every project, and writes nothing into any of them. Codex, Copilot, Cursor and Antigravity install from this repository too; the README has their commands.',
+  },
+  {
+    label: 'Opt a project in',
+    command: 'npx -y xtctx setup',
+    hint:
+      'Writes managed blocks into the instruction files each agent already reads, the Claude Code SessionStart hook, MCP config per tool, and the handoff skill. The only route for opencode.',
+  },
+  {
+    label: 'Check what is wired',
+    command: 'npx -y xtctx status',
+    hint: 'Configured tools, indexed sessions per tool, skill drift, and what to run next.',
+  },
+  {
+    label: 'Stop managing one tool',
+    command: 'npx -y xtctx disconnect cursor',
+    hint:
+      'Removes that tool’s xtctx wiring from this project and leaves your transcripts untouched. The machine-global Antigravity and Copilot CLI configs need --global-mcp as well.',
+  },
+];
 
 export const installByPlatform: Record<Platform, PlatformInstall> = {
-  windows: {
-    cli: [
-      { label: 'winget', command: 'winget install example' },
-      { label: 'Scoop', command: 'scoop install example' },
-      { label: 'Install script', command: 'iwr -useb https://example.com/install.ps1 | iex' },
-    ],
-    desktop: [
-      {
-        label: 'Windows installer',
-        href: `${RELEASE}/example-windows-x86_64.msi`,
-        hint: 'Unsigned: SmartScreen will ask before it runs.',
-      },
-    ],
-  },
-  macos: {
-    cli: [
-      { label: 'Homebrew', command: 'brew install example' },
-      { label: 'Install script', command: 'curl -fsSL https://example.com/install.sh | bash' },
-    ],
-    desktop: [
-      { label: 'Apple silicon', href: `${RELEASE}/example-macos-aarch64.dmg` },
-      { label: 'Intel', href: `${RELEASE}/example-macos-x86_64.dmg` },
-    ],
-  },
-  linux: {
-    cli: [
-      { label: 'apt', command: 'apt install example' },
-      { label: 'Install script', command: 'curl -fsSL https://example.com/install.sh | bash' },
-      { label: 'Binary', href: `${RELEASE}/example-linux-x86_64.tar.gz`, hint: 'x86_64' },
-    ],
-    desktop: [{ label: 'AppImage', href: `${RELEASE}/example-linux-x86_64.AppImage` }],
-  },
+  windows: { cli: cliEntries, desktop: [] },
+  macos: { cli: cliEntries, desktop: [] },
+  linux: { cli: cliEntries, desktop: [] },
 };
 
-// The "try it" block: the first few commands someone runs after installing.
 export const tryCommands: TryCommand[] = [
-  { comment: 'Run it once', command: 'example run' },
-  { comment: 'Read the output from a script', command: 'example run --json' },
-  { comment: 'See every flag', command: 'example --help' },
+  { comment: 'Opt this project in', command: 'npx -y xtctx setup' },
+  { comment: 'See what is wired and indexed', command: 'npx -y xtctx status' },
+  { comment: 'Every command', command: 'npx -y xtctx --help' },
 ];
 
 export const installBinariesNote =
-  'Prebuilt binaries are attached to every GitHub release for Windows, macOS and Linux.';
+  'Needs Node 24 or later. The <a href="https://github.com/fstubner/xtctx#readme">README</a> covers every agent’s plugin command and where each one keeps its transcripts.';
 
-// Two things /llms.txt says that no page does: a build-from-source route and
-// any caveat a reader acting on the install list needs. One line each.
-export const installFromSource = 'cargo install example';
+export const installFromSource =
+  'git clone https://github.com/fstubner/xtctx && cd xtctx && npm ci && npm run build && node dist/src/cli/index.js --help';
 
-export const installNotes = [
-  'Example needs no runtime: the binary is self-contained on all three',
-  'platforms.',
+export const installNotes: string[] = [
+  'Requires Node.js 24 or later.',
+  'The plugin writes nothing into a project; run `npx -y xtctx setup` in each project you want handoff in.',
+  'Copilot CLI has only a global MCP config; add `--global-mcp` to setup to write it.',
 ];

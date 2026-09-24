@@ -10,7 +10,8 @@ import type { LandingLayout, LandingSection } from './types';
 // A name that appears twice renders twice; a name whose content is empty
 // renders nothing. Dropping the last section is fine -- the footer is not in
 // this list, and neither is the nav.
-export const sections: LandingSection[] = ['hero', 'surfaces', 'compare', 'install', 'faq'];
+// Source has no compare table; workflow has no template section — omit compare.
+export const sections: LandingSection[] = ['hero', 'surfaces', 'install', 'faq'];
 
 // How the landing page is laid out above the fold, and the rhythm that
 // follows from it.
@@ -26,4 +27,4 @@ export const sections: LandingSection[] = ['hero', 'surfaces', 'compare', 'insta
 // Both use the same content and the same components. Below 900px they are
 // the same page, because there is only one sensible arrangement of a
 // headline and a picture on a phone.
-export const landingLayout: LandingLayout = 'centered';
+export const landingLayout: LandingLayout = 'split';

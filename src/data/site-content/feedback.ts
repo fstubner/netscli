@@ -17,14 +17,13 @@ import type { Feedback } from './types';
 export const feedback: Feedback = {
   enabled: true,
   prompt: 'Something wrong, or missing?',
+  repo: 'fstubner/xtctx',
   problem: {
     label: 'Report a problem',
-    template: 'bug.yml',
     issueLabels: ['bug'],
   },
   idea: {
     label: 'Suggest something',
-    template: 'idea.yml',
     issueLabels: ['enhancement'],
   },
 };

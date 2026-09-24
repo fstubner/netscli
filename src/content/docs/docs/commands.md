@@ -1,51 +1,48 @@
 ---
 title: Commands
-description: Every Example command and flag, with the output formats each one prints.
+description: Every xtctx command and flag, and the five MCP tools agents call.
 ---
-
-A sample reference page, showing the table treatments and callouts this docs shell provides.
 
 ## Commands
 
-The marker above a table turns its first column into row headers — useful when
-the left column names the thing each row is about. It is a `div` with a data
-attribute, and it applies to the table immediately after it.
-
-<div data-ui-table="row-headers"></div>
-
 | Command | What it does |
 | --- | --- |
-| `run` | Does the one thing, and prints the result. |
-| `check` | Validates the configuration without doing anything. |
-| `version` | Prints the version, the build date and the target triple. |
+| `xtctx setup` | Opts this project in: managed instruction blocks, MCP config per tool, the Claude Code hook, and skill sync. |
+| `xtctx status` | Reports what is wired and indexed here, and what to run next if something is not. |
+| `xtctx scan` | Indexes this project's transcripts now, instead of waiting for an agent to ask. |
+| `xtctx calibrate` | Measures which device on this machine embeds fastest, and uses it. |
+| `xtctx disconnect <tool>` | Stops managing one tool in this project. Transcripts are left untouched. |
+| `xtctx` | With no command, over non-interactive stdio, starts the MCP server. In a terminal it prints help. |
 
-Without the marker, a table renders with a plain header row:
+Every command except `calibrate`, which is about the machine rather than a project, takes `-p, --project <path>` to act on a project other than the current directory.
 
-| Flag | Default | Meaning |
+## Flags
+
+| Flag | Command | Effect |
 | --- | --- | --- |
-| `--json` | off | Print machine-readable output on stdout. |
-| `--quiet` | off | Suppress progress; errors still go to stderr. |
-| `--timeout <s>` | 30 | Give up after this many seconds. |
+| `-y, --yes` | setup, disconnect | Apply without prompting. Non-interactive setup syncs the built-in skill plus any already selected. |
+| `--repair` | setup | Replace stale or duplicated generated blocks before writing. |
+| `--global-mcp` | setup | Also write Copilot CLI's machine-wide MCP config. |
+| `--global-mcp` | disconnect | Also remove xtctx from the machine-wide Antigravity and Copilot CLI configs. |
+| `--all` | disconnect | Every supported tool. Also deletes `.xtctx/skills`. |
+| `--embed` | scan | Vectorize every window still missing one, however long it takes. |
+| `--no-calibrate` | scan | Skip the automatic device measurement. |
+| `--force` | calibrate | Measure again even if this machine already has a result. |
 
-On a narrow screen a wide table scrolls sideways inside its own frame rather
-than pushing the page out of shape. Nothing is needed in the Markdown for
-that; the shell wraps every table as the page loads.
+## Indexing and devices
 
-## Output
+The MCP server indexes when it starts and on each call, reading only what each tool has appended since the last pass. It also vectorizes the backlog in the background when this machine's measured rate says the rest fits in fifteen minutes. Above that, `xtctx status` says so and names `xtctx scan --embed`.
 
-Human-readable by default, machine-readable on request:
+The first time a machine embeds anything, xtctx times the model on each device available and remembers the fastest in `~/.xtctx/device.json`. You do not need to run `calibrate` for that; it is there to re-measure after a hardware change, or to see the numbers. The vectors are the same whichever device wins.
 
-```sh
-example run --json | jq '.items[]'
-```
+## MCP tools
 
-:::note
-Callouts come from Starlight. `note`, `tip`, `caution` and `danger` are
-available, and each takes an optional title after the type.
-:::
+| Tool | What it returns |
+| --- | --- |
+| `xtctx_recent_sessions` | Recent sessions in this project, from every indexed tool. |
+| `xtctx_session_detail` | The raw messages of one session, by `session_ref`. |
+| `xtctx_search_sessions` | Transcript windows matching a query, by meaning and keyword. `mode: "literal"` matches exact text straight in the transcript files, before indexing has finished. |
+| `xtctx_continuity_status` | Wiring and index diagnostics. |
+| `xtctx_handoff_manifest` | Stable session references and pointers to their detail, for an orchestrator. Stores no task state. |
 
-:::caution[Exit codes are part of the contract]
-`0` means it worked, `1` means it ran and found a problem, and `2` means the
-arguments were wrong. A script can tell those apart; changing them is a
-breaking change.
-:::
+Search falls back to keyword whenever vectors are missing or the embedding model is unavailable, and says so in its answer.

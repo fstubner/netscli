@@ -6,10 +6,11 @@ import type { DocsSection } from './types';
 // Nothing checks that a `link` resolves: Starlight builds an entry pointing
 // at a page that does not exist without complaining, so an entry left behind
 // after deleting its page becomes a dead link in every page's sidebar.
-export const docsTitle = 'Example docs';
+// Source landing has no Starlight docs title/sidebar; titles use siteName only.
+export const docsTitle = 'xtctx docs';
 
 export const docsDescription =
-  'Documentation for Example, a small command-line tool for Windows, macOS and Linux.';
+  'xtctx writes local MCP config and managed instructions so AI coding tools can read recent transcript sessions from the current repo.';
 
 export const docsLogo = './public/assets/wordmark.png';
 

@@ -16,9 +16,5 @@ export const changelogCopy: SectionCopy = {
 /** Shown when the page is shared. */
 export const changelogOgDescription = `Versioned ${meta.siteName} release notes and shipped changes.`;
 
-export const releaseSummaries: Record<string, string> = {
-  // Keyed by tag, exactly as the release is named on GitHub. Say what the
-  // release meant for someone using the product -- the generated notes below
-  // each summary already list the commits.
-  'v0.1.0': 'The first release: one binary, three platforms, and JSON output for scripts.',
-};
+// No source release summaries in landing/src/data/site.ts.
+export const releaseSummaries: Record<string, string> = {};

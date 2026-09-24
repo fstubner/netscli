@@ -65,7 +65,7 @@
      different components with their own scoped styles, and this is one
      decision, not two. */
   --ui-mark-filter: none;
-  --ui-mark-inset-ratio: 0.0513;
+  --ui-mark-inset-ratio: 0.0839;
 
   /* Tells the browser which way to draw the controls it renders itself: the
    * <select> popup in the theme control, native focus rings, and form
@@ -74,29 +74,23 @@
    * never loads that reset -- was drawn white over a near-black bar. */
   color-scheme: dark;
 
-  /* Brand accent.
-   *
-   * Was #0aae7a, which sits at hue 160 -- right on the green/teal boundary.
-   * In large areas it read green, but at 15px on the near-black background,
-   * with thin antialiased strokes, it read blue: inline links looked like a
-   * different colour from the buttons above them. #22c55e is hue 142 and
-   * reads green at any size. Contrast on the dark background went from
-   * 6.6:1 to 8.2:1 with it.
+  /* Brand accent: xtctx amber (#e8b878 from the live landing / branding
+   * gradient), not the template's green #22c55e. styles/xtctx-tokens.css
+   * still declares teal #31d4ab; the shipped landing uses amber.
    *
    * The -rgb form is the same colour as a bare triple, for the rgba() call
-   * sites that need an alpha. There were 108 hard-coded copies of the old
-   * value across 20 files before this; changing it should be one edit here.
-   * The light theme's darker accent is in the light block below. */
-  --ui-accent: #22c55e;
-  --ui-accent-rgb: 34, 197, 94;
+   * sites that need an alpha. The light theme's darker accent is in the
+   * light block below. */
+  --ui-accent: #e8b878;
+  --ui-accent-rgb: 232, 184, 120;
   /* Hover and other lifted states.
    *
    * #4ade80 was only a 1.31x luminance step up from the accent, against the
    * 1.52x the old teal pair had, so hovering a link looked like nothing
    * happened. #86efac restores a visible step at 1.63x. */
-  --ui-accent-bright: #86efac;
+  --ui-accent-bright: #f5e1c6;
   /* Pale tint for active text on dark surfaces. */
-  --ui-accent-high: #a7f3c6;
+  --ui-accent-high: #fcf6ee;
   /* Hover border for interactive chrome: the theme control in both bars, and
      the pagination links in the docs. Was declared only in the docs stack, so
      the landing bar's copy of the same control could not reach it and hovered
@@ -123,10 +117,11 @@
    * near-invisible either way.
    *
    * Every stop now clears 4.5:1 on its own theme's page: 5.73 / 8.29 / 11.45
-   * dark, 8.18 / 6.40 / 7.02 light. scripts/design-tokens.mjs checks them. */
-  --ui-brand-gradient-from: #16a34a;
-  --ui-brand-gradient-via: #22c55e;
-  --ui-brand-gradient-to: #1edcff;
+   * dark, 8.18 / 6.40 / 7.02 light. scripts/design-tokens.mjs checks them.
+   * xtctx stops follow branding.accentGradient (#e8dfc8 -> #e8b878). */
+  --ui-brand-gradient-from: #df9c44;
+  --ui-brand-gradient-via: #e8b878;
+  --ui-brand-gradient-to: #f0b06f;
 
   /* ---- Cross-stack role channels -------------------------------------
    *
@@ -141,8 +136,9 @@
    * Channels rather than colours because every call site is an rgba() with
    * its own alpha. */
 
-  /* Hairlines, dividers, and the neutral washes drawn from them. */
-  --ui-hairline-rgb: 140, 149, 166;
+  /* Hairlines, dividers, and the neutral washes drawn from them.
+     Blueprint line from styles/xtctx-tokens.css --xt-line (72, 107, 170). */
+  --ui-hairline-rgb: 72, 107, 170;
   /* The direction "raised" points: white on a dark surface. */
   --ui-lift-rgb: 255, 255, 255;
 
@@ -163,10 +159,13 @@
    * There is no fourth, dimmer step. One was tried, borrowing Starlight's
    * gray-4, and axe caught it on both themes at 3.04:1 and 3.50:1 against a
    * 4.5 floor -- gray-4 is a BORDER colour there, and using it for text was
-   * the mistake. The dimmest text this site draws is --ui-text-muted. */
-  --ui-text-strong: #f4f4f4;
-  --ui-text: #c2cad8;
-  --ui-text-muted: #8c95a6;
+   * the mistake. The dimmest text this site draws is --ui-text-muted.
+   *
+   * xtctx values from styles/xtctx-tokens.css (--xt-text / soft / muted)
+   * and design-tokens.json. */
+  --ui-text-strong: #e8f1ff;
+  --ui-text: #b8c7df;
+  --ui-text-muted: #91a8cf;
 
   /* ---- Surfaces -------------------------------------------------------
    *
@@ -179,15 +178,17 @@
    *
    * Values are the docs' --sl-color-bg, gray-6 and the panel surface, so a
    * card on the landing page and a card in the docs are finally the same
-   * colour. */
-  --ui-bg: #111111;
-  --ui-surface: #191d25;
-  --ui-surface-raised: #20242b;
+   * colour.
+   *
+   * xtctx: --xt-bg / --xt-bg-soft / card rgb(15,30,52) from xtctx-tokens.css. */
+  --ui-bg: #040a16;
+  --ui-surface: #091325;
+  --ui-surface-raised: #0f1e34;
   /* The page background as channels, for the translucent bars drawn over
      content: the sticky nav, the mobile menu, the lightbox scrim. Those were
      four slightly different near-black rgba() values -- 17/17/17, 22/24/26,
      25/25/25, 8/8/8 -- none of which could follow a theme. */
-  --ui-bg-rgb: 17, 17, 17;
+  --ui-bg-rgb: 4, 10, 22;
 }
 
 /* The wordmark's one size step, for both bars.
@@ -250,10 +251,13 @@ html[data-theme='light'] {
    * Depth inverts with the theme here as it does for surfaces: "bright" is a
    * hover state, which means further from the page, so on white it is DARKER
    * than the base accent rather than lighter. */
-  --ui-accent: #146b2e;
-  --ui-accent-rgb: 20, 107, 46;
-  --ui-accent-bright: #0e5122;
-  --ui-accent-high: #0a3d19;
+  /* Light accent: darker amber so it clears on #f3f7ff (xtctx light bg).
+     Derived from #e8b878; --ui-warning #a9642d in xtctx-tokens light is the
+     same amber family. */
+  --ui-accent: #945f19;
+  --ui-accent-rgb: 148, 95, 25;
+  --ui-accent-bright: #714913;
+  --ui-accent-high: #57380f;
   /* White on the accent fill: 6.62:1 against #146b2e, where the dark theme's
      near-black would be 1.7:1. */
   --ui-on-accent: #ffffff;
@@ -263,37 +267,32 @@ html[data-theme='light'] {
      together. */
   --ui-hover-border: color-mix(in srgb, var(--ui-accent) 42%, rgba(var(--ui-lift-rgb), 0.1));
   /* The same arc, walked in the direction that stays legible on white. */
-  --ui-brand-gradient-from: #005a1e;
-  --ui-brand-gradient-via: #146b2e;
-  --ui-brand-gradient-to: #155e75;
+  --ui-brand-gradient-from: #694312;
+  --ui-brand-gradient-via: #945f19;
+  --ui-brand-gradient-to: #a9642d;
 
-  --ui-hairline-rgb: 17, 24, 39;
+  --ui-hairline-rgb: 68, 95, 141;
   /* On a light surface, raised is DARKER. See the note in the docs' token
      file for the 27 rules that had this backwards. */
-  --ui-lift-rgb: 17, 24, 39;
+  --ui-lift-rgb: 20, 38, 64;
 
   /* The light ramp, again matching the docs. Starlight inverts its own
      naming here -- --sl-color-white is #111827 in the light theme -- which is
      why "strong" is the darkest of these rather than the lightest.
      --sl-color-gray-3 carries a note about not lightening it; the same
      applies to --ui-text-muted, which is the same value and is checked
-     against every surface by scripts/design-tokens.mjs. */
-  --ui-text-strong: #111827;
-  --ui-text: #44516a;
-  --ui-text-muted: #596478;
+     against every surface by scripts/design-tokens.mjs.
+     Values from styles/xtctx-tokens.css :root.light-mode and design-tokens.json. */
+  --ui-text-strong: #142640;
+  --ui-text: #3b5278;
+  --ui-text-muted: #4e6386;
 
-  /* Light surfaces, again the docs' own: --sl-color-bg, gray-6, and the
-     panel. Depth inverts with the theme -- a raised surface is lighter than
-     the page in the dark theme and darker than it here -- which is why these
-     are named for depth rather than for a colour. */
-  --ui-bg: #fbfbfb;
-  /* Blue-grey, not neutral grey. The alternating band and the cards standing
-     on it were #f4f6f8/#f6f8fa, which is the page with the colour taken out
-     -- so the "Get started" section read as a slightly dirty white rather
-     than as its own surface. A navy cast gives it somewhere to be without
-     touching a single piece of text: the ramp measures 15.68 / 7.05 / 5.27
-     on the band and 16.23 / 7.30 / 5.46 on a card. */
-  --ui-surface: #eef1f7;
-  --ui-surface-raised: #f2f5fa;
-  --ui-bg-rgb: 251, 251, 251;
+  /* Light surfaces from styles/xtctx-tokens.css light-mode. Depth inverts
+     with the theme -- a raised surface is lighter than the page in the dark
+     theme and darker than it here -- which is why these are named for depth
+     rather than for a colour. */
+  --ui-bg: #f3f7ff;
+  --ui-surface: #e6efff;
+  --ui-surface-raised: #f6faff;
+  --ui-bg-rgb: 243, 247, 255;
 }

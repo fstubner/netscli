@@ -15,82 +15,80 @@
 /* ---- Colour, dark ---------------------------------------------------- */
 html[data-theme='dark'],
 html[data-theme='dark'] ::backdrop {
-  --sl-color-accent-low: #0a2a13;
+  --sl-color-accent-low: #2a1f12;
   --sl-color-accent: var(--ui-accent);
   --sl-color-accent-high: var(--ui-accent-high);
-  --sl-color-white: #f4f4f4;
-  --sl-color-gray-1: #e7edf6;
-  --sl-color-gray-2: #c2cad8;
-  --sl-color-gray-3: #8c95a6;
-  --sl-color-gray-4: #586174;
-  --sl-color-gray-5: #2b313d;
-  --sl-color-gray-6: #191d25;
-  --sl-color-black: #111111;
-  --sl-color-bg: #111111;
-  --sl-color-bg-nav: rgba(17, 17, 17, 0.92);
-  --sl-color-bg-sidebar: #111111;
+  --sl-color-white: #e8f1ff;
+  --sl-color-gray-1: #d5e0f2;
+  --sl-color-gray-2: #b8c7df;
+  --sl-color-gray-3: #91a8cf;
+  --sl-color-gray-4: #486baa;
+  --sl-color-gray-5: #0f1e34;
+  --sl-color-gray-6: #091325;
+  --sl-color-black: #040a16;
+  --sl-color-bg: #040a16;
+  --sl-color-bg-nav: rgba(4, 10, 22, 0.92);
+  --sl-color-bg-sidebar: #040a16;
   /* Neutral, not green: inline code is dense and frequent, and a green wash
      behind every identifier made the accent a fill colour instead of a
      state colour. */
   --sl-color-bg-inline-code: rgba(var(--ui-hairline-rgb), 0.13);
   --sl-color-hairline: rgba(255, 255, 255, 0.08);
   --sl-color-hairline-light: rgba(255, 255, 255, 0.1);
-  --sl-color-hairline-shade: #070707;
+  --sl-color-hairline-shade: #02060e;
   --sl-content-width: 64rem;
 
   /* Table surfaces. Three roles, and the striping is a real distinction --
      odd and even rows differ on purpose, so these must not be collapsed into
      one value however close they look. */
-  --ui-table-bg: #20242b;
-  --ui-table-stripe: #242932;
-  --ui-table-head: #252b36;
+  --ui-table-bg: #0f1e34;
+  --ui-table-stripe: #122440;
+  --ui-table-head: #152848;
 
   /* The raised panel that content sits on: search results and their tag
      rows, and the frame and body of a code block. */
-  --ui-panel-bg: #20242b;
+  --ui-panel-bg: #0f1e34;
 
   /* The floating menu surface: the mobile section menu and the mobile table
      of contents dropdown, which are the same panel. */
-  --ui-menu-bg: #1b2028;
+  --ui-menu-bg: #0b1627;
 }
 
 /* ---- Colour, light --------------------------------------------------- */
 html[data-theme='light'],
 html[data-theme='light'] ::backdrop {
-  --sl-color-accent-low: #dcf8e4;
-  --sl-color-accent: #146b2e;
-  --sl-color-accent-high: #0b4a1f;
-  --sl-color-white: #111827;
-  --sl-color-gray-1: #243044;
-  --sl-color-gray-2: #44516a;
+  --sl-color-accent-low: #f7ecd8;
+  --sl-color-accent: #8a5a28;
+  --sl-color-accent-high: #553718;
+  --sl-color-white: #142640;
+  --sl-color-gray-1: #243a5c;
+  --sl-color-gray-2: #3b5278;
   /* gray-3 is the secondary/small-text colour used by the docs footer,
      built-with row, and mobile section labels -- much of it at 12px. It has
      been re-picked three times, twice to a value that merely cleared 4.5:1
      on a declared surface and then failed on a composite one (the
      changelog's release header lays a 1.8% wash over a card that lays a
-     2.8% wash over the page). #596478 is chosen with margin instead: 5.77
-     on bg, 5.27 through both changelog washes. The contrast gate compares
-     declared colours and cannot see a composite, so the margin stands in
-     for the surfaces it will never enumerate. Do not lighten this. */
-  --sl-color-gray-3: #596478;
+     2.8% wash over the page). #4e6386 is xtctx light muted from
+     design-tokens.json / xtctx-tokens.css. Do not lighten this. */
+  --sl-color-gray-3: #4e6386;
   --sl-color-gray-4: #c6d0dd;
-  --sl-color-gray-5: #e3e8ef;
-  --sl-color-gray-6: #f4f6f8;
-  --sl-color-gray-7: #fbfbfb;
+  --sl-color-gray-5: #e6efff;
+  --sl-color-gray-6: #eef3ff;
+  --sl-color-gray-7: #f3f7ff;
   --sl-color-black: #ffffff;
-  --sl-color-bg: #fbfbfb;
-  --sl-color-bg-nav: rgba(251, 251, 251, 0.92);
-  --sl-color-bg-sidebar: #fbfbfb;
+  --sl-color-bg: #f3f7ff;
+  --sl-color-bg-nav: rgba(243, 247, 255, 0.92);
+  --sl-color-bg-sidebar: #f3f7ff;
   --sl-color-bg-inline-code: rgba(var(--ui-hairline-rgb), 0.07);
-  --sl-color-hairline: rgba(17, 24, 39, 0.1);
-  --sl-color-hairline-light: rgba(17, 24, 39, 0.12);
-  --sl-color-hairline-shade: rgba(17, 24, 39, 0.04);
+  --sl-color-hairline: rgba(20, 38, 64, 0.1);
+  --sl-color-hairline-light: rgba(20, 38, 64, 0.12);
+  --sl-color-hairline-shade: rgba(20, 38, 64, 0.04);
   --sl-content-width: 64rem;
 
-  --ui-table-bg: #f7faf9;
-  --ui-table-stripe: #f6f8fa;
-  --ui-table-head: #eef2f4;
-  --ui-panel-bg: #f6f8fa;
+  --ui-table-bg: #f6faff;
+  --ui-table-stripe: #eef3ff;
+  --ui-table-head: #e6efff;
+  --ui-panel-bg: #f6faff;
   /* Plain white, which this theme also calls --sl-color-black. Named for
      the role so both themes read the same way at the call site. */
   --ui-menu-bg: #ffffff;

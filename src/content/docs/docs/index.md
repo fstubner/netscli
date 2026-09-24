@@ -1,21 +1,35 @@
 ---
 title: Overview
-description: What Example is, and where to go next in these docs.
+description: What xtctx is, what it deliberately does not do, and where to go next.
 ---
 
-Example is a small command-line tool for doing one thing. It runs on Windows, macOS and Linux, and it has no runtime to install alongside it.
+xtctx is local cross-tool handoff for AI coding agents. Your agents already write transcripts of every session. xtctx indexes those files and serves them over MCP, so the next agent you open in a repo can list the recent sessions there, from any supported tool, and read the raw messages.
 
-These three pages are samples. They exist so a fresh clone of this template has a docs section that builds, renders every feature of the docs shell, and passes the link and contrast checks. Replace them with your own.
+It is for a developer who switches between coding agents and wants the next one to pick up the work without a pasted recap.
+
+## What it does not do
+
+- **No summaries.** Agents read the raw transcript messages, which stay the source of truth.
+- **No memory layer.** Nothing is curated or kept beyond an index that can be deleted and rebuilt.
+- **No service.** There is no daemon, API server, dashboard or watcher. Each agent starts its own xtctx server over stdio, and it stops with the agent.
+- **No upload by default.** Search runs a small embedding model on your machine. A project can opt into a remote embedding endpoint, but only by writing one into its config.
 
 ## Where to start
 
 | If you want to | Go to |
 | --- | --- |
-| Install it | [Installation](/docs/install/) |
-| Look up a command or a flag | [Commands](/docs/commands/) |
+| Install it and opt a project in | [Installation](/docs/install/) |
+| Look up a command, a flag, or an MCP tool | [Commands](/docs/commands/) |
 
-## How these pages are built
+## Supported agents
 
-Docs pages are Markdown files under `src/content/docs/docs/`. The sidebar that lists them is **not** derived from the files — it is written out in `src/data/site-content/docs.ts`, and nothing warns you when the two disagree. Delete a page and its sidebar entry becomes a link to nothing.
+Claude Code, Codex, Cursor, GitHub Copilot in VS Code, GitHub Copilot CLI, Google Antigravity, and opencode. Some get native MCP config or a startup hook; others get MCP config plus managed instructions. `xtctx status` shows which mode each one is in.
 
-Every page needs a `title` and a `description` in its frontmatter. The description is what search engines show and what `/llms.txt` lists, so write it for a reader who has not seen the page.
+## Where data lives
+
+| File | What it is |
+| --- | --- |
+| `.xtctx/config.yaml` | The project's xtctx configuration. |
+| `.xtctx/skills/<id>/SKILL.md` | Project skills that setup syncs to each tool. |
+| `.xtctx/state/xtctx.db` | The index. A rebuildable cache; never commit it. |
+| `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, and others | Managed handoff blocks. Everything outside the `xtctx:begin` / `xtctx:end` fences is left as you wrote it. |

@@ -53,9 +53,9 @@
   --ui-ondark-text: #d7dce5;
   --ui-ondark-text-strong: #f4f4f4;
   --ui-ondark-text-muted: #9aa4b8;
-  --ui-ondark-accent: #22c55e;
-  --ui-ondark-accent-rgb: 34, 197, 94;
-  --ui-ondark-accent-bright: #86efac;
+  --ui-ondark-accent: #e8b878;
+  --ui-ondark-accent-rgb: 232, 184, 120;
+  --ui-ondark-accent-bright: #f5e1c6;
 
   /* Status ink for a terminal panel's own glyphs -- the tick, the cross, the
      warning and the info mark -- and nothing else.
@@ -126,16 +126,15 @@ html[data-theme='light'] {
   --ui-chip-bg: #f2f5fa;
   --ui-chip-border: rgba(17, 24, 39, 0.2);
   --ui-chip-divider: rgba(17, 24, 39, 0.14);
-  --ui-chip-fg: #44516a;
-  --ui-chip-fg-muted: #596478;
-  --ui-chip-raised: #f2f5fa;
-  --ui-chip-lift-rgb: 17, 24, 39;
-  /* 8.66:1 on the light chip. The dark theme's #86efac is a light-on-dark
-     green and measures 1.5:1 there, so it cannot simply carry over. */
-  --ui-chip-code-fg: #0e5122;
-  --ui-chip-accent: #146b2e;
-  --ui-chip-accent-rgb: 20, 107, 46;
-  --ui-chip-accent-bright: #0e5122;
+  --ui-chip-fg: #3b5278;
+  --ui-chip-fg-muted: #4e6386;
+  --ui-chip-raised: #f6faff;
+  --ui-chip-lift-rgb: 20, 38, 64;
+  /* Light-theme chip accent: darker amber matching --ui-accent on light. */
+  --ui-chip-code-fg: #6e4720;
+  --ui-chip-accent: #945f19;
+  --ui-chip-accent-rgb: 148, 95, 25;
+  --ui-chip-accent-bright: #714913;
 
   /* Elevation on a light page: the hairline channel, not black, and much
      shallower. See the scale above. */
