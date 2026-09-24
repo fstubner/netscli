@@ -44,7 +44,7 @@ const highlightIndex = compareColumns.findIndex((c) => c.highlight);
       </table>
     </div>
 
-    <p class="compare-note" set:html={compareNoteHtml} />
+    {compareNoteHtml && <p class="compare-note" set:html={compareNoteHtml} />}
   </div>
 </section>
 
@@ -68,9 +68,12 @@ const highlightIndex = compareColumns.findIndex((c) => c.highlight);
   text-align:left;
   padding:12px 18px 12px 0;
   border-bottom:1px solid rgba(var(--ui-hairline-rgb),.14);
-  vertical-align:middle;
-  white-space:nowrap;
+  vertical-align:top;
 }
+/* Headers stay on one line; answer cells wrap. netscli's answers are short
+   phrases ("CLI, terminal UI, desktop app, AI agents"), and unwrapped they
+   pushed the table past a 1024px window. */
+.compare-table thead th{white-space:nowrap}
 .compare-table thead th{
   padding-bottom:10px;
   border-bottom:1px solid rgba(var(--ui-hairline-rgb),.26);
@@ -87,7 +90,7 @@ const highlightIndex = compareColumns.findIndex((c) => c.highlight);
   color:var(--ui-text);
   white-space:normal;
   padding-right:28px;
-  min-width:15rem;
+  min-width:11rem;
 }
 
 .compare-table th.col,
@@ -135,6 +138,6 @@ const highlightIndex = compareColumns.findIndex((c) => c.highlight);
   .compare-table td{padding:10px 12px 10px 0}
   .compare-table th.col,
   .compare-table td.col{padding-left:12px}
-  .compare-table tbody th{min-width:12rem}
+  .compare-table tbody th{min-width:9rem}
 }
 </style>
