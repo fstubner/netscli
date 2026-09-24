@@ -202,9 +202,9 @@ html[data-theme='light'] #install .reco{
   --ui-text:#44516a;
   --ui-text-strong:#111827;
   --ui-text-muted:#596478;
-  --ui-accent:#945f19;
-  --ui-accent-rgb:148, 95, 25;
-  --ui-accent-bright:#714913;
+  --ui-accent:var(--ui-chip-accent);
+  --ui-accent-rgb:var(--ui-chip-accent-rgb);
+  --ui-accent-bright:var(--ui-chip-accent-bright);
   --ui-hairline-rgb:17, 24, 39;
   --ui-lift-rgb:17, 24, 39;
 }

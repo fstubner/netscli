@@ -20,7 +20,10 @@
 // says so and uses the nearest lightness that does, rather than writing the
 // failure and leaving the contrast gate to find it later.
 //
-// It rewrites src/styles/tokens.css only. Run the real gates afterwards:
+// It rewrites src/styles/tokens.css, the landing tier's copies in
+// landing/tokens.css, and the inline-code ink in code-surface.css; the docs
+// and landing rules read the accent through those tokens rather than
+// repeating its value. Run the real gates afterwards:
 // `npm run check:contrast` measures what the browser actually paints, which
 // is the thing that counts.
 
@@ -37,6 +40,7 @@ const tokensPath = path.join(root, 'src', 'styles', 'tokens.css');
 // surfaces that do not follow the page theme -- so a re-brand that skipped
 // this file left every command chip and install band still the old colour.
 const landingTokensPath = path.join(root, 'src', 'styles', 'landing', 'tokens.css');
+const codeSurfacePath = path.join(root, 'src', 'styles', 'code-surface.css');
 
 const argv = process.argv.slice(2);
 const flag = (name) => {
@@ -285,6 +289,23 @@ const landingWrites = [
 ].filter(([token, value, theme]) => setLanding(token, value, theme)).length;
 fs.writeFileSync(landingTokensPath, landing);
 console.log(`Rewrote ${landingWrites} accent tokens in src/styles/landing/tokens.css.`);
+
+// Inline `code` ink is the dark theme's hover accent in BOTH themes, because
+// the chip behind it is dark in both. It lives with the code surface, which
+// this script did not open, so a re-brand left every inline identifier in the
+// docs the template's green.
+let codeSurface = fs.readFileSync(codeSurfacePath, 'utf8');
+const inlineAt = codeSurface.indexOf('--ui-code-inline-fg:');
+if (inlineAt === -1) {
+  console.error('No --ui-code-inline-fg in src/styles/code-surface.css; it has moved on from this script.');
+  process.exit(1);
+}
+codeSurface =
+  codeSurface.slice(0, inlineAt) +
+  `--ui-code-inline-fg: ${rgbToHex(darkBright)}` +
+  codeSurface.slice(codeSurface.indexOf(';', inlineAt));
+fs.writeFileSync(codeSurfacePath, codeSurface);
+console.log('Rewrote --ui-code-inline-fg in src/styles/code-surface.css.');
 
 console.log('\nThe wordmark gradient still ends on its third stop (--ui-brand-gradient-to);');
 console.log('set that by hand if the new accent clashes with it. So does the inline-code');

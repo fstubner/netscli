@@ -68,7 +68,8 @@ docs link from the nav, footer, 404 page and surfaces copy. Delete
 `src/content/docs/`, `content.config.ts`, `src/styles/docs/` and
 `src/components/starlight/` as well when a product will never have docs.
 `changelog: false` removes the changelog links; delete
-`src/pages/changelog.astro` and `src/scripts/changelog/` with it.
+`src/pages/changelog.astro`, `src/scripts/changelog-page.ts` and
+`src/scripts/changelog/` with it; `astro check` fails on the page script otherwise.
 
 ## Local development
 

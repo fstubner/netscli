@@ -48,11 +48,13 @@ if (!fs.existsSync(built)) {
   process.exit(1);
 }
 
-/** `## [0.3.0] — 2026-08-20` -> { version: '0.3.0', date: '2026-08-20' }. */
+/** `## [0.3.0] — 2026-08-20` -> { version: '0.3.0', date: '2026-08-20' }.
+ *  Also release-please's `## [0.3.0](compare-url) (2026-08-20)`; the same
+ *  two styles changelog.astro reads, so the two cannot disagree. */
 const declared = [...fs.readFileSync(changelog, 'utf8').matchAll(
-  /^## \[([^\]]+)\](?:\s+(?:—|-)\s+(\d{4}-\d{2}-\d{2}))?/gm
+  /^## \[([^\]]+)\](?:\([^)]*\))?(?:\s+(?:(?:—|-)\s+(\d{4}-\d{2}-\d{2})|\((\d{4}-\d{2}-\d{2})\)))?/gm
 )]
-  .map(([, version, date]) => ({ version, date }))
+  .map(([, version, dashed, parenthesised]) => ({ version, date: dashed || parenthesised }))
   .filter(({ version }) => version.toLowerCase() !== 'unreleased')
   .slice(0, 8);
 
@@ -147,7 +149,9 @@ if (anyDated && (tags === null || tags.size === 0)) {
 }
 
 for (const { version, date } of declared) {
-  if (date && tags && !tags.has(`v${version}`)) {
+  // `v0.3.0`, or a prefixed `name-v0.3.0` as release-please tags a package.
+  const tagged = tags && [...tags].some((tag) => tag === `v${version}` || tag.endsWith(`-v${version}`));
+  if (date && tags && !tagged) {
     failures.push(
       `${version}: CHANGELOG.md dates it ${date}, but there is no v${version} tag. ` +
         `The date goes on with the tag, not with the version bump.`

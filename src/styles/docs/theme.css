@@ -58,7 +58,10 @@ html[data-theme='dark'] ::backdrop {
 html[data-theme='light'],
 html[data-theme='light'] ::backdrop {
   --sl-color-accent-low: #f7ecd8;
-  --sl-color-accent: #8a5a28;
+  /* The token, as in the dark block, not its value written out: a literal
+     here is one `npm run theme` never reaches, so a re-branded site kept the
+     template's green on every docs link in the light theme. */
+  --sl-color-accent: var(--ui-accent);
   --sl-color-accent-high: #553718;
   --sl-color-white: #142640;
   --sl-color-gray-1: #243a5c;
