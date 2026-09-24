@@ -13,10 +13,7 @@ import type { ComparisonColumn, ComparisonRow, SectionCopy } from './types';
 // Where a feature exists but is undocumented -- Advanced IP Scanner's console
 // version, which Famatech confirms but never describes -- the cell says so
 // rather than guessing either way.
-//
-// Remote actions (RDP, Radmin, shutdown, Wake-on-LAN) were a row on
-// 2026-09-24 and went into the note instead: they are remote management, not
-// scanning, the one row comparing a different kind of thing.
+
 export const compareCopy: SectionCopy = {
   heading: 'How NetsCLI compares',
   // No lead. One that listed what was compared and which versions said
@@ -32,34 +29,40 @@ export const compareColumns: ComparisonColumn[] = [
   { name: 'Advanced IP Scanner' },
 ];
 
-// Only rows that tell the tools apart. Platforms-by-name, command line,
-// desktop app and TCP ports were rows on 2026-09-24 and came out: most tools
-// ticked them, so they took space without giving anyone a reason to choose.
+// One row per question someone choosing a network scanner asks, in the order
+// they ask it. An earlier cut (2026-09-24) kept only rows netscli won -- MCP,
+// JSON, DNS records, mDNS -- and read as narrow and cherry-picked. Here every
+// tool gets its strengths credited: nmap owns "Open ports" and "Going
+// deeper", Advanced IP Scanner's remote actions are under "Tools built in".
 export const compareRows: ComparisonRow[] = [
   { feature: 'Windows, macOS and Linux', cells: ['✓', '✓', '✓', 'Windows only'] },
   // NetsCLI's CLI, TUI and MCP server are one binary; the desktop app is a
-  // separate download on the same core.
-  { feature: 'Command line, terminal UI and desktop app', cells: ['All three', 'CLI and Zenmap', 'GUI and CLI', 'GUI, undocumented console'] },
-  { feature: 'AI agents (MCP server)', cells: ['✓', '—', '—', '—'] },
-  // nmap writes XML (and normal/grepable text) but no JSON. Angry IP Scanner
-  // exports CSV, TXT, XML, IP:port lists and SQL; Advanced IP Scanner CSV,
-  // XML and HTML. Neither has JSON.
-  { feature: 'JSON output for scripts', cells: ['✓', 'XML only', '—', '—'] },
-  // nmap resolves targets and does reverse DNS built in; other record types
-  // come from specific NSE scripts (dns-srv-enum and others), not a general
-  // lookup.
-  { feature: 'DNS record lookups', cells: ['✓', 'Via scripts', '—', '—'] },
-  // nmap: broadcast-dns-service-discovery. Angry IP Scanner queries mDNS only
-  // to name a local host when reverse DNS has no answer.
-  { feature: 'mDNS / Bonjour devices', cells: ['✓', 'Via script', 'Hostnames only', '—'] },
-  // Advanced IP Scanner is free, but no source code or licence text is
-  // published anywhere official.
-  { feature: 'Open source', cells: ['MIT', 'NPSL', 'GPLv2', '—'] },
-  // There because NetsCLI loses it: this is why people pick nmap, and a table
-  // without it would be an advert.
-  { feature: 'UDP, OS and version detection', cells: ['—', '✓', '—', '—'] },
+  // separate download on the same core. Advanced IP Scanner also installs an
+  // undocumented console exe; Famatech has never said what it does.
+  { feature: 'Ways to use it', cells: ['CLI, terminal UI, desktop app, AI agents', 'CLI, desktop app (Zenmap)', 'Desktop app, CLI', 'Desktop app'] },
+  // nmap: ARP/ND by default on a local network, plus ICMP, TCP SYN/ACK, UDP,
+  // SCTP and IP-protocol pings. Angry IP Scanner: six pingers, ARP added
+  // alongside on a LAN since 3.8.2. Advanced IP Scanner never says how.
+  { feature: 'Finding devices', cells: ['ICMP or TCP probe, plus the ARP table', 'ARP, ICMP, TCP, UDP and more', 'ICMP, UDP, TCP, ARP', 'Not documented'] },
+  // NetsCLI on Windows can also get a name over LLMNR/NetBIOS (it asks
+  // `ping -a`), but that hasn't been observed end to end, so it isn't
+  // claimed. nmap's NetBIOS names come from the nbstat script.
+  { feature: 'Naming devices', cells: ['Reverse DNS, mDNS, MAC vendor', 'Reverse DNS, MAC vendor; NetBIOS via script', 'Reverse DNS, mDNS, NetBIOS, MAC vendor', 'NetBIOS, MAC vendor'] },
+  // Advanced IP Scanner's docs cover checks for HTTP, HTTPS, FTP, RDP, Radmin
+  // and shared folders; Famatech sells port scanning as Advanced Port Scanner.
+  { feature: 'Open ports', cells: ['TCP, with banners and HTTP/TLS details', 'TCP and UDP, with service versions', 'TCP', 'Common services only'] },
+  { feature: 'Going deeper', cells: ['—', 'OS detection, 600+ scripts', 'Plugins', '—'] },
+  // NetsCLI's packet capture is left out: only the separate -pcap builds have
+  // it. nmap's Ncat, Nping and Ndiff are separate tools in its suite. Angry IP
+  // Scanner's "openers" launch the system's own tools against a host.
+  { feature: 'Tools built in', cells: ['DNS lookups, ping, traceroute, ARP table', 'Traceroute', 'Opens system tools', 'RDP, remote shutdown, Wake-on-LAN'] },
+  // NetsCLI: JSON/YAML/CSV/Markdown from the CLI, JSON/CSV from the desktop
+  // app. nmap has no JSON. Angry IP Scanner also writes IP:port lists.
+  { feature: 'Getting results out', cells: ['JSON, YAML, CSV, Markdown', 'XML, text', 'CSV, XML, text, SQL', 'CSV, XML, HTML'] },
+  // Advanced IP Scanner publishes no source code or licence text.
+  { feature: 'Price and source', cells: ['Free, MIT', 'Free, NPSL', 'Free, GPLv2', 'Free, no source published'] },
 ];
 
-/** Shown under the table: where the other tools are the better choice. */
-export const compareNoteHtml =
-  'nmap is the deeper tool for audits and security work, with SYN and UDP scans, service and OS detection, and over 600 scripts. Advanced IP Scanner is built around acting on the Windows machines it finds: RDP and Radmin sessions, remote shutdown and Wake-on-LAN.';
+// No note: the rows now say where each of the others is stronger, which is
+// all the note under the earlier table was for.
+export const compareNoteHtml = '';
