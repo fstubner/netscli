@@ -46,6 +46,13 @@ its heading and collects entries; the date and the link go on with the tag.
   way to launch it but finding the folder. The manifest now flattens that
   folder and names the real executable, and the publish job sets both on every
   release.
+- **The desktop app itself is signed, not only its installer.** Since 0.3.3 the
+  `.msi` has carried an Authenticode signature, but `netscli-gui.exe` inside it
+  did not, and that is the file SmartScreen and antivirus look at when the app
+  runs. It is now signed during the build, before it is packed into the
+  installer, and the release checks the finished MSI's contents before
+  shipping it. Measured on the published 0.3.3 installer: the MSI's signature
+  is valid, the app inside it is unsigned.
 
 ## [0.3.3] — 2026-09-23
 

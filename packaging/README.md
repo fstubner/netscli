@@ -86,7 +86,12 @@ the `<asset>.sig` name.
 Windows Authenticode signing is handled by release.yml's `sign-windows`
 job, not by any manifest here: both `.exe` builds and the `.msi` are signed
 with a Certum cloud certificate and timestamped before they become release
-assets. See `scripts/release/sign-windows.sh`.
+assets. See `scripts/release/sign-windows.sh`. The desktop app's own
+executable is signed earlier, inside the Windows build, by
+`scripts/release/sign-windows-pe.ps1` through Tauri's `signCommand`, because
+it can only be signed before WiX packs it into the MSI;
+`scripts/release/check-msi-signed.ps1` then unpacks the MSI and fails the
+build if anything inside is unsigned.
 
 macOS notarization is still open. The `.dmg` ships unsigned and users see
 "unverified developer" on first launch.
