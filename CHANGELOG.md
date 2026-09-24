@@ -36,6 +36,17 @@ its heading and collects entries; the date and the link go on with the tag.
   itself if it was built with the updater, so 0.3.4 is the first that can,
   and 0.3.5 is the first update it will install.
 
+### Fixed
+
+- **Installing the desktop app with Scoop now adds it to the Start menu.** The
+  manifest's shortcut pointed at `NetsCLI.exe`, a file that is in no version of
+  the package: Scoop extracts the MSI rather than running it, which leaves the
+  app at `PFiles\NetsCLI\netscli-gui.exe`. Scoop reported "Creating shortcut
+  ... failed" and finished the install anyway, so the app was installed with no
+  way to launch it but finding the folder. The manifest now flattens that
+  folder and names the real executable, and the publish job sets both on every
+  release.
+
 ## [0.3.3] — 2026-09-23
 
 ### Added

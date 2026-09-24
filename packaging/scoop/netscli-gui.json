@@ -9,12 +9,10 @@
       "hash": "@@SHA256_WINDOWS_GUI@@"
     }
   },
-  "installer": {
-    "type": "msi"
-  },
+  "extract_dir": "PFiles\\NetsCLI",
   "shortcuts": [
     [
-      "NetsCLI.exe",
+      "netscli-gui.exe",
       "NetsCLI"
     ]
   ],
