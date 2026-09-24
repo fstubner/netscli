@@ -47,6 +47,37 @@ Example script pattern:
 netscli discover --json | jq '.[].ip'
 ```
 
+### CSV
+
+Commands that return a list also take `--csv`, for a spreadsheet or a script
+that wants columns: `discover`, `scan`, `sweep`, `dns`, `ping`, `arp`,
+`interfaces`, `mdns` and `pcap`.
+
+```bash
+netscli discover 192.168.1.0/24 --csv > hosts.csv
+netscli scan 192.168.1.1 -p 22,80,443 --csv
+```
+
+```console
+$ netscli dns netscli.com --record MX --csv
+record_type,value,name,ttl_seconds,resolver_source
+MX,10 eforward1.registrar-servers.com,netscli.com,300,public_fallback
+```
+
+- **Columns are the JSON field names**, in the same order, so a script can
+  switch between `--json` and `--csv` without renaming anything.
+- **One row per result:** a host, a port, a DNS record, a packet. `ping` is
+  one summary row. `sweep` is one row per open port, with the host's fields
+  repeated on each, plus one row for a host that answered with nothing open.
+- **Lists are joined with `;`** (`22;80;443`). Anything nested, such as a
+  port's HTTP or TLS details, is that value's JSON in a single cell.
+- **Columns come from the results.** A field no result has, like `error` on
+  a clean scan, has no column, and an empty result prints nothing at all.
+- **Text from the network is made safe.** A cell that would start with `=`,
+  `+`, `-` or `@` gets a leading `'`, so a hostname or banner can't run as a
+  spreadsheet formula, and control characters become `.` so they can't
+  reach your terminal. Use `--json` when you need those bytes exactly.
+
 ## Example output
 
 Captured from a real run against loopback, so every port reads `filtered` —

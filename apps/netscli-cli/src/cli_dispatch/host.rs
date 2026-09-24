@@ -1,5 +1,5 @@
 use super::CommandContext;
-use crate::output::{output_format, print_structured, OutputFormat};
+use crate::output::{output_format, output_format_with_csv, print_structured, OutputFormat};
 use crate::trace;
 use anyhow::Result;
 use netscli_core::sanitize_for_terminal;
@@ -10,11 +10,12 @@ pub(super) async fn run_ping(
     count: u32,
     json: bool,
     yaml: bool,
+    csv: bool,
 ) -> Result<()> {
-    let format = output_format(json, yaml)?;
+    let format = output_format_with_csv(json, yaml, csv)?;
     let summary = ctx.ops.ping_host_summary(host, count).await?;
     match format {
-        OutputFormat::Json | OutputFormat::Yaml => {
+        OutputFormat::Json | OutputFormat::Yaml | OutputFormat::Csv => {
             print_structured(format, &summary)?;
         }
         OutputFormat::Text => {
@@ -43,7 +44,9 @@ pub(super) async fn run_trace(
     let format = output_format(json, yaml)?;
     let res = trace::trace_route(host, max_hops, resolve, None).await?;
     match format {
-        OutputFormat::Json | OutputFormat::Yaml => print_structured(format, &res)?,
+        OutputFormat::Json | OutputFormat::Yaml | OutputFormat::Csv => {
+            print_structured(format, &res)?
+        }
         OutputFormat::Text => {
             // Hop names come from PTR records of routers on the path, which
             // whoever runs those routers controls. This was the one plain-text
@@ -56,11 +59,18 @@ pub(super) async fn run_trace(
     Ok(())
 }
 
-pub(super) fn run_interfaces(ctx: CommandContext<'_>, json: bool, yaml: bool) -> Result<()> {
-    let format = output_format(json, yaml)?;
+pub(super) fn run_interfaces(
+    ctx: CommandContext<'_>,
+    json: bool,
+    yaml: bool,
+    csv: bool,
+) -> Result<()> {
+    let format = output_format_with_csv(json, yaml, csv)?;
     let ifaces = ctx.ops.list_interfaces();
     match format {
-        OutputFormat::Json | OutputFormat::Yaml => print_structured(format, &ifaces)?,
+        OutputFormat::Json | OutputFormat::Yaml | OutputFormat::Csv => {
+            print_structured(format, &ifaces)?
+        }
         OutputFormat::Text => {
             for iface in ifaces {
                 println!(

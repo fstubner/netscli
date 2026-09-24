@@ -54,6 +54,10 @@ pub enum Commands {
         /// Output YAML
         #[arg(long)]
         yaml: bool,
+
+        /// Output CSV, one row per result
+        #[arg(long)]
+        csv: bool,
     },
 
     /// Scan TCP ports on a host
@@ -72,6 +76,10 @@ pub enum Commands {
         /// Output YAML
         #[arg(long)]
         yaml: bool,
+
+        /// Output CSV, one row per result
+        #[arg(long)]
+        csv: bool,
     },
 
     /// Comprehensive host inspection
@@ -112,6 +120,10 @@ pub enum Commands {
         /// Output YAML
         #[arg(long)]
         yaml: bool,
+
+        /// Output CSV, one row per result
+        #[arg(long)]
+        csv: bool,
     },
 
     /// DNS lookup
@@ -130,6 +142,10 @@ pub enum Commands {
         /// Output YAML
         #[arg(long)]
         yaml: bool,
+
+        /// Output CSV, one row per result
+        #[arg(long)]
+        csv: bool,
     },
 
     /// Reverse DNS lookup
@@ -162,6 +178,10 @@ pub enum Commands {
         /// Output YAML
         #[arg(long)]
         yaml: bool,
+
+        /// Output CSV, one row per result
+        #[arg(long)]
+        csv: bool,
     },
 
     /// Trace route to a host (hops)
@@ -220,6 +240,10 @@ pub enum Commands {
         /// Output YAML
         #[arg(long)]
         yaml: bool,
+
+        /// Output CSV, one row per result
+        #[arg(long)]
+        csv: bool,
     },
 
     /// Capture network packets to PCAP file
@@ -268,6 +292,10 @@ pub enum Commands {
         /// Output YAML
         #[arg(long)]
         yaml: bool,
+
+        /// Output CSV, one row per packet (not with --check)
+        #[arg(long, conflicts_with = "check")]
+        csv: bool,
     },
 
     /// List interfaces
@@ -278,6 +306,10 @@ pub enum Commands {
         /// Output YAML
         #[arg(long)]
         yaml: bool,
+
+        /// Output CSV, one row per result
+        #[arg(long)]
+        csv: bool,
     },
 
     /// Discover devices on the local network via mDNS/DNS-SD (Bonjour)
@@ -297,6 +329,10 @@ pub enum Commands {
 
         #[arg(long)]
         yaml: bool,
+
+        /// Output CSV, one row per result
+        #[arg(long)]
+        csv: bool,
     },
 
     /// Start MCP server for AI agents

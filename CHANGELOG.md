@@ -20,6 +20,14 @@ its heading and collects entries; the date and the link go on with the tag.
 
 ### Added
 
+- **The CLI can write CSV.** `--csv` works on every command that returns a
+  list: `discover`, `scan`, `sweep`, `dns`, `ping`, `arp`, `interfaces`,
+  `mdns` and `pcap`. The columns are the same field names `--json` uses, one
+  row per host, port, record or packet, so a result opens straight in a
+  spreadsheet without going through `jq`. A hostname or banner that starts
+  like a spreadsheet formula is defused, the same way the desktop app's CSV
+  export already does it.
+
 - **The desktop app can update itself.** It already told you when a newer
   release was out and linked to the release page. Now, where it can, the
   notice opens a dialog with the release notes and an **Install and
