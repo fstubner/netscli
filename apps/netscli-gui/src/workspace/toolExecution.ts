@@ -4,6 +4,7 @@ import * as netscli from '../services/netscli';
 import type { ToolResult } from '../types/app';
 import type { DnsRecord } from '../types/netscli';
 import { TOOL_CONFIG } from '../tools/registry';
+import { scanRequest } from '../tools/scanRequest';
 import { emptyToUndefined, numberOrUndefined } from '../tools/presentation';
 import type { WorkspaceTab } from '../tools/types';
 
@@ -43,16 +44,13 @@ export async function executeTool(
   }
 
   switch (tab.kind) {
-    case 'scan':
+    case 'scan': {
+      const { ports, udp } = scanRequest(tab.form);
       return {
         kind: 'scan',
-        data: await netscli.scanPorts(
-          tab.form.host.trim(),
-          emptyToUndefined(tab.form.ports),
-          opId,
-          maxConcurrentProbes,
-        ),
+        data: await netscli.scanPorts(tab.form.host.trim(), ports, opId, maxConcurrentProbes, udp),
       };
+    }
     case 'ping':
       return {
         kind: 'ping',

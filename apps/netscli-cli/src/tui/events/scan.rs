@@ -60,8 +60,16 @@ pub(super) async fn handle_scan(
     progress: Option<watch::Sender<String>>,
 ) -> Vec<Line<'static>> {
     let mut out = Vec::new();
-    if let Some(host) = parts.get(1) {
-        let ports = match parse_ports_checked(parts.get(2).copied()) {
+    // `--udp` can go anywhere after the command; the rest are positional.
+    let udp = parts.iter().skip(1).any(|part| *part == "--udp");
+    let args: Vec<&str> = parts
+        .iter()
+        .skip(1)
+        .copied()
+        .filter(|part| *part != "--udp")
+        .collect();
+    if let Some(host) = args.first() {
+        let ports = match parse_ports_checked(args.get(1).copied()) {
             Ok(ports) => ports,
             Err(e) => {
                 out.push(Formatter::format_error(&format!("{e}")));
@@ -91,7 +99,13 @@ pub(super) async fn handle_scan(
             }) as std::sync::Arc<dyn Fn(netscli_core::PortScanProgress) + Send + Sync>
         });
 
-        match ops.scan_ports_with_progress(host, ports, progress_cb).await {
+        let scan = if udp {
+            ops.scan_udp_ports_with_progress(host, ports, progress_cb)
+                .await
+        } else {
+            ops.scan_ports_with_progress(host, ports, progress_cb).await
+        };
+        match scan {
             Ok((ip, res)) => {
                 if let Some(db) = db {
                     commands::db_add_scan_history_safe(db, "scan", 0, &res).await;

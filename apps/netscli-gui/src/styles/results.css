@@ -305,7 +305,7 @@
   background: var(--red);
 }
 
-.status-filtered .status-dot,
+.status-filtered .status-dot, .status-open-filtered .status-dot,
 .status-timeout .status-dot {
   background: var(--amber);
 }

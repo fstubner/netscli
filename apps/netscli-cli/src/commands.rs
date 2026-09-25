@@ -109,8 +109,13 @@ pub async fn run_scan(
     db: Option<&Database>,
     host: &str,
     ports: Option<Vec<u16>>,
+    udp: bool,
 ) -> Result<Vec<netscli_core::PortResult>> {
-    let (_ip, results) = ops.scan_ports(host, ports).await?;
+    let (_ip, results) = if udp {
+        ops.scan_udp_ports(host, ports).await?
+    } else {
+        ops.scan_ports(host, ports).await?
+    };
     if let Some(db) = db {
         db_add_scan_history_safe(db, "scan", 0, &results).await;
     }

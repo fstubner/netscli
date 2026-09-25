@@ -1,4 +1,4 @@
-use netscli_core::scan::{PortResult, PortStatus};
+use netscli_core::scan::{PortResult, PortStatus, Protocol};
 use std::time::Instant;
 
 use super::style::cyan;
@@ -31,6 +31,7 @@ fn format_scan_result_no_ports() {
 fn format_scan_result_with_open_port() {
     let results = vec![PortResult {
         port: 22,
+        protocol: Protocol::Tcp,
         open: true,
         status: PortStatus::Open,
         service: Some("ssh".to_string()),
@@ -86,6 +87,7 @@ fn port_result(
 ) -> PortResult {
     PortResult {
         port,
+        protocol: Protocol::Tcp,
         open,
         status,
         service: None,

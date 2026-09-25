@@ -26,7 +26,7 @@ pub fn tools_list() -> serde_json::Value {
         }),
         json!({
             "name": "scan_ports",
-            "description": "Scan TCP ports on a host",
+            "description": "Scan TCP ports on a host, or UDP ports with udp: true. UDP without ports probes DNS, NTP, NetBIOS, SSDP and mDNS; a UDP port that neither replies nor refuses is open|filtered.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -36,6 +36,7 @@ pub fn tools_list() -> serde_json::Value {
                         "items": { "type": "number", "minimum": 1, "maximum": 65535 },
                         "maxItems": 4096
                     },
+                    "udp": { "type": "boolean", "default": false },
                     "timeout": { "type": "number", "default": 500, "minimum": 10, "maximum": 600000 },
                     "maxConcurrent": { "type": "number", "default": 256, "minimum": 1, "maximum": 1024 }
                 },

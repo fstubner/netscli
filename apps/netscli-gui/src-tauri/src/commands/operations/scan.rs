@@ -139,6 +139,7 @@ pub(crate) async fn scan_ports(
     host: String,
     ports: Option<String>,
     max_concurrent: Option<usize>,
+    udp: Option<bool>,
     manager: tauri::State<'_, OperationManager>,
 ) -> JsonResult {
     let progress = op_id.clone().map(|op_id| {
@@ -166,10 +167,13 @@ pub(crate) async fn scan_ports(
     run_json_operation(op_id, manager, None, move || async move {
         let ops = ops_with_concurrency(max_concurrent);
         let ports = parse_ports_checked(ports.as_deref()).map_err(|e| e.to_string())?;
-        let (_ip, res) = ops
-            .scan_ports_with_progress(&host, ports, progress)
-            .await
-            .map_err(|e| e.to_string())?;
+        let scan = if udp.unwrap_or(false) {
+            ops.scan_udp_ports_with_progress(&host, ports, progress)
+                .await
+        } else {
+            ops.scan_ports_with_progress(&host, ports, progress).await
+        };
+        let (_ip, res) = scan.map_err(|e| e.to_string())?;
         serde_json::to_value(res).map_err(|e| e.to_string())
     })
     .await

@@ -88,6 +88,10 @@ pub enum Commands {
         #[arg(short, long)]
         ports: Option<String>,
 
+        /// Scan UDP: DNS, NTP, NetBIOS, SSDP and mDNS, or --ports
+        #[arg(long)]
+        udp: bool,
+
         #[command(flatten)]
         format: ListOutput,
     },

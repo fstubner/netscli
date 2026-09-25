@@ -55,7 +55,7 @@ Tabs show the operation name and a short identifier such as host, subnet, interf
 
 Supported operations include:
 
-- Port Scan
+- Port Scan, over TCP or UDP (the Protocol control next to Ports)
 - Ping
 - Trace route
 - Discover

@@ -55,6 +55,11 @@ export function portRawPreview(port: PortResult): string {
 }
 
 function bannerReason(port: PortResult): string {
+  if (port.protocol === 'udp') {
+    return port.status === 'open'
+      ? 'The UDP service replied, but with nothing that reads as a banner.'
+      : 'UDP services only reply to a probe they understand, so there is no banner to read.';
+  }
   switch (port.status) {
     case 'open':
       return 'The TCP connection opened, but the service did not send plaintext before the probe timeout.';
@@ -64,6 +69,8 @@ function bannerReason(port: PortResult): string {
       return 'The TCP connect attempt timed out before application data could be read.';
     case 'error':
       return port.error || 'The probe failed before banner capture completed.';
+    case 'open|filtered':
+      return 'No reply to the probe.';
   }
 }
 
@@ -108,6 +115,18 @@ function inferredProtocolLabel(port: PortResult): string {
 export { latencyOf as latencyOfPort };
 
 export function portStatusMeaning(port: PortResult): string {
+  if (port.protocol === 'udp') {
+    switch (port.status) {
+      case 'open':
+        return 'The UDP service replied to the probe.';
+      case 'closed':
+        return 'The host reported the port unreachable.';
+      case 'open|filtered':
+        return 'No reply and no refusal: the service may be there and ignored the probe, or a firewall dropped it.';
+      default:
+        return port.error || 'The probe failed before classification completed.';
+    }
+  }
   switch (port.status) {
     case 'open':
       return 'TCP connect succeeded.';
@@ -117,5 +136,7 @@ export function portStatusMeaning(port: PortResult): string {
       return 'The probe timed out or was blocked before connect.';
     case 'error':
       return port.error || 'The probe failed before classification completed.';
+    case 'open|filtered':
+      return 'No reply and no refusal.';
   }
 }

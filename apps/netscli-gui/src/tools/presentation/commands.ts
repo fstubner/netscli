@@ -1,3 +1,4 @@
+import { scanRequest } from '../scanRequest';
 import type { WorkspaceTab } from '../types';
 
 export function buildCommand(tab: WorkspaceTab): string {
@@ -11,7 +12,10 @@ export function buildCommand(tab: WorkspaceTab): string {
       // 22,80,443 — so the preview claimed five ports, three were scanned,
       // and that wrong string was what Ctrl+Shift+C copied, what the History
       // menu recorded, and what got stored with the saved result.
-      return `netscli scan ${form.host || '<host>'}${form.ports ? ` -p ${form.ports}` : ''} --json`;
+    {
+      const { ports, udp } = scanRequest(form);
+      return `netscli scan ${form.host || '<host>'}${ports ? ` -p ${ports}` : ''}${udp ? ' --udp' : ''} --json`;
+    }
     case 'ping':
       return `netscli ping ${form.host || '<host>'}${form.count ? ` --count ${form.count}` : ''} --json`;
     case 'trace': {

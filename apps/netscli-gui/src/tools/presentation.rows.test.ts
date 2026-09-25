@@ -46,6 +46,22 @@ describe('row building', () => {
     expect(versions).toEqual(['OpenSSH 9.6p1', 'cloudflare', '']);
   });
 
+  it('labels each port row with its protocol, TCP when the result predates UDP', () => {
+    const result: ToolResult = {
+      kind: 'scan',
+      data: [
+        { ...portResult(53, 'open', 9), protocol: 'udp' },
+        { ...portResult(123, 'open|filtered'), protocol: 'udp' },
+        portResult(80, 'open', 4),
+      ],
+    };
+
+    const rows = buildRows(result);
+
+    expect(rows.map((row) => row.data.proto)).toEqual(['udp', 'udp', 'tcp']);
+    expect(rows[1].data.status).toBe('open|filtered');
+  });
+
   it('normalizes port rows across statuses and latency states', () => {
     const result: ToolResult = {
       kind: 'scan',

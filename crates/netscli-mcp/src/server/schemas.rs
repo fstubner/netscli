@@ -111,6 +111,9 @@ pub(super) struct ScanParams {
     pub(super) timeout: Option<u64>,
     #[serde(rename = "maxConcurrent")]
     pub(super) max_concurrent: Option<usize>,
+    /// `scan_ports` only: probe UDP instead of TCP. `inspect_host` shares
+    /// this struct and ignores it.
+    pub(super) udp: Option<bool>,
 }
 
 #[derive(Deserialize)]

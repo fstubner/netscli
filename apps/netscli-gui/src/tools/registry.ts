@@ -61,6 +61,7 @@ export const TOOL_CONFIG: Record<ToolKind, ToolConfig> = {
     fields: [
       { key: 'host', label: 'Host', placeholder: '127.0.0.1', required: true },
       { key: 'ports', label: 'Ports', placeholder: DEFAULT_PORTS },
+      { key: 'protocol', label: 'Protocol', type: 'select', compact: true, options: ['TCP', 'UDP'] },
     ],
   },
   ping: {
@@ -186,7 +187,7 @@ export const TOOL_CONFIG: Record<ToolKind, ToolConfig> = {
 };
 
 export const DEFAULT_FORM: Record<ToolKind, Record<string, string>> = {
-  scan: { host: '127.0.0.1', ports: DEFAULT_PORTS },
+  scan: { host: '127.0.0.1', ports: DEFAULT_PORTS, protocol: 'TCP' },
   ping: { host: '127.0.0.1', count: '4' },
   trace: { host: '1.1.1.1', max_hops: '30', resolve: 'Off' },
   discover: { subnet: '' },

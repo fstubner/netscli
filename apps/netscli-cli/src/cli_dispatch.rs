@@ -37,9 +37,10 @@ pub(crate) async fn run_command(command: &Commands, ctx: CommandContext<'_>) -> 
         Commands::Scan {
             host,
             ports,
+            udp,
             format,
         } => {
-            scan::run_scan(ctx, host, ports, *format).await?;
+            scan::run_scan(ctx, host, ports, *udp, *format).await?;
         }
         Commands::Inspect {
             host,

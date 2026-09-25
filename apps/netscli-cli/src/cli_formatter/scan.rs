@@ -1,4 +1,4 @@
-use netscli_core::scan::{PortResult, PortStatus};
+use netscli_core::scan::{PortResult, PortStatus, Protocol};
 use std::time::Instant;
 
 use super::style::{cyan, dim, duration_tag, green, red, source_tag, yellow};
@@ -20,7 +20,13 @@ impl CliFormatter {
         }
 
         let open_count = results.iter().filter(|p| p.open).count();
-        let noun = if results.len() == 1 { "port" } else { "ports" };
+        let udp = results.iter().any(|p| p.protocol == Protocol::Udp);
+        let noun = match (udp, results.len() == 1) {
+            (true, true) => "UDP port",
+            (true, false) => "UDP ports",
+            (false, true) => "port",
+            (false, false) => "ports",
+        };
         let mut header_parts = vec![format!(
             "{} on {}",
             green(&format!(
@@ -45,10 +51,10 @@ impl CliFormatter {
 
     fn format_scan_table(ports: &[PortResult]) -> String {
         let header = dim(&format!(
-            "{:<8} {:<10} {:<9} {:<14} {:<22} {}",
+            "{:<8} {:<14} {:<9} {:<14} {:<22} {}",
             "Port", "State", "Latency", "Service", "Version", "Banner"
         ));
-        let separator = dim(&"-".repeat(84));
+        let separator = dim(&"-".repeat(88));
 
         let mut rows = vec![header, separator];
         for port in ports {
@@ -77,10 +83,11 @@ impl CliFormatter {
                 PortStatus::Closed => red("CLOSED"),
                 PortStatus::Filtered => yellow("FILTERED"),
                 PortStatus::Error => red("ERROR"),
+                PortStatus::OpenFiltered => yellow("OPEN|FILTERED"),
             };
             rows.push(format!(
-                "{:<8} {:<10} {:<9} {:<14} {:<22} {}",
-                port.port,
+                "{:<8} {:<14} {:<9} {:<14} {:<22} {}",
+                port.port_label(),
                 state,
                 dim(&latency),
                 dim(service),

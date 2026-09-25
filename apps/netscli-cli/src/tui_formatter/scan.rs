@@ -27,11 +27,12 @@ impl Formatter {
                 PortStatus::Closed => (Color::Red, "closed"),
                 PortStatus::Filtered => (Color::Yellow, "filtered"),
                 PortStatus::Error => (Color::Red, "error"),
+                PortStatus::OpenFiltered => (Color::Yellow, "open|filtered"),
             };
             let is_last = idx + 1 == results.len();
             let mut spans: Vec<Span<'static>> = vec![
                 Span::styled(tree_prefix(is_last), Style::default().fg(Color::DarkGray)),
-                Span::styled(port.port.to_string(), Style::default().fg(Color::White)),
+                Span::styled(port.port_label(), Style::default().fg(Color::White)),
                 Span::styled(" ", Style::default().fg(Color::DarkGray)),
                 Span::styled(state, Style::default().fg(state_color)),
             ];

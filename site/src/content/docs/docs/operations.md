@@ -11,6 +11,7 @@ Each NetsCLI operation answers a different question. Choose the operation by wha
 | --- | --- |
 | Which hosts are alive on this subnet? | `discover` |
 | Which TCP ports are open, closed, filtered, or errored on this host? | `scan` |
+| Which UDP services answer on this host? | `scan --udp` |
 | What is the basic profile of this host? | `inspect` |
 | Which discovered hosts expose selected ports? | `sweep` |
 | Is this host reachable and how stable is it? | `ping` |
@@ -52,6 +53,35 @@ Port statuses are:
 | `error` | NetsCLI hit an unexpected probe error. |
 
 `filtered` is intentionally technical. It usually means a firewall, router, host policy, or dropped packet prevented a definitive open or closed answer.
+
+### UDP
+
+Add `--udp` to probe UDP instead. With no port list it checks the services
+that answer an unauthenticated request on most networks: DNS (53), NTP (123),
+NetBIOS (137), SSDP (1900) and mDNS (5353).
+
+```bash
+netscli scan 192.168.1.254 --udp
+netscli scan 192.168.1.254 --udp -p 53,123
+```
+
+UDP has no handshake, so a port only answers a request its service
+understands. Each of those ports gets the request its service expects; any
+other port you list gets an empty datagram. Ports read as `53/udp`, and the
+statuses mean something slightly different:
+
+<div data-ui-table="row-headers"></div>
+
+| Status | Meaning |
+| --- | --- |
+| `open` | The service replied. The banner says what came back, such as `NTP v4, stratum 2` or the SSDP server string. |
+| `closed` | The host answered with an ICMP port-unreachable. |
+| `open\|filtered` | No reply and no refusal. The service may be there and ignored the probe, or a firewall dropped it. UDP can't tell those apart. |
+| `error` | NetsCLI hit an unexpected probe error. |
+
+UDP scanning needs no administrator rights. SNMP isn't probed: getting an
+answer means sending the default community string `public`, which some
+networks log as a login attempt.
 
 ## Inspect
 

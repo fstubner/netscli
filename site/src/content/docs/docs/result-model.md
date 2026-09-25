@@ -22,12 +22,13 @@ Port scans include the existing compatibility fields plus richer status data.
 
 | Field | Meaning |
 | --- | --- |
-| `port` | TCP port number. |
+| `port` | Port number. |
+| `protocol` | `tcp` or `udp`. Results from before UDP scanning have no other kind. |
 | `open` | Compatibility boolean for older consumers. |
 | `service` | Best-effort service guess, from the port number. |
 | `product` | The software on the port, when it named itself: from the SSH identification line, an HTTP `Server` header, an FTP or mail greeting, or MySQL's connection greeting; or when it answered the one read-only question netscli asks Redis (`INFO server`) and Memcached (`version`). Omitted otherwise. |
 | `version` | That software's version, when it gave one (`9.6p1` for OpenSSH). Omitted otherwise. |
-| `status` | `open`, `closed`, `filtered`, or `error`. |
+| `status` | `open`, `closed`, `filtered`, or `error`; for UDP also `open\|filtered`, meaning no reply and no refusal. |
 | `latency_ms` | TCP connect/probe latency where available. |
 | `banner` | Bounded plaintext banner when captured. |
 | `http` | HTTP status/header data when a HTTP-like probe succeeds. |

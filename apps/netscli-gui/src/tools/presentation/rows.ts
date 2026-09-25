@@ -9,7 +9,7 @@ function portRow(port: PortResult, index: number, kind: ToolKind): ResultRow {
   const status = statusOf(port);
   const data = {
     port: port.port,
-    proto: 'tcp',
+    proto: port.protocol ?? 'tcp',
     service: port.service ?? '',
     version: [port.product, port.version].filter(Boolean).join(' '),
     status,

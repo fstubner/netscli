@@ -44,7 +44,8 @@ pub use pcap::{
 };
 pub use ping::{PingResult, PingScanner};
 pub use scan::{
-    HttpHeader, HttpProbe, PortResult, PortScanProgress, PortScanner, PortStatus, TlsProbe,
+    HttpHeader, HttpProbe, PortResult, PortScanProgress, PortScanner, PortStatus, Protocol,
+    TlsProbe, UdpScanner, DEFAULT_UDP_PORTS,
 };
 pub use stats::{NetworkMonitor, NetworkStats};
 pub use sweep::{SweepEngine, SweepEntry, SweepPhase, SweepProgress};

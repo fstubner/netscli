@@ -7,6 +7,20 @@ pub enum PortStatus {
     Closed,
     Filtered,
     Error,
+    /// UDP only: no reply and no port-unreachable. The service may be there
+    /// and ignored a probe it didn't understand, or a firewall dropped it;
+    /// UDP can't tell which. Serialized as nmap writes it.
+    #[serde(rename = "open|filtered")]
+    OpenFiltered,
+}
+
+/// Which transport a port result is for.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Protocol {
+    #[default]
+    Tcp,
+    Udp,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -36,6 +50,9 @@ pub struct TlsProbe {
 #[derive(Debug, Clone, Serialize)]
 pub struct PortResult {
     pub port: u16,
+    /// `tcp` or `udp`. Added with UDP scanning; every result before that was
+    /// TCP, which is what a consumer that ignores the field still assumes.
+    pub protocol: Protocol,
     pub open: bool,
     pub status: PortStatus,
     pub service: Option<String>,
@@ -68,6 +85,7 @@ impl PortResult {
     pub(super) fn new(port: u16, status: PortStatus, service: Option<String>) -> Self {
         Self {
             port,
+            protocol: Protocol::Tcp,
             open: matches!(status, PortStatus::Open),
             status,
             service,
@@ -90,6 +108,15 @@ impl PortResult {
             Some(version) => format!("{product} {version}"),
             None => product.to_string(),
         })
+    }
+
+    /// `53/udp` for a UDP result, the bare number for TCP, which is what
+    /// every port meant before UDP scanning existed.
+    pub fn port_label(&self) -> String {
+        match self.protocol {
+            Protocol::Udp => format!("{}/udp", self.port),
+            Protocol::Tcp => self.port.to_string(),
+        }
     }
 
     pub(super) fn with_latency(mut self, latency_ms: u64) -> Self {

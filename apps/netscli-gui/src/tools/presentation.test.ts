@@ -32,6 +32,14 @@ function portResult(port: number, status: PortStatus, latency_ms?: number, banne
 }
 
 describe('buildCommand', () => {
+  it('previews a UDP scan with --udp', () => {
+    const scan = createTab('scan');
+    scan.form.host = '192.168.1.254';
+    scan.form.protocol = 'UDP';
+    scan.form.ports = '53,123';
+    expect(buildCommand(scan)).toBe('netscli scan 192.168.1.254 -p 53,123 --udp --json');
+  });
+
   it('builds command previews for every tool', () => {
     const scan = createTab('scan');
     scan.form.host = '1.1.1.1';

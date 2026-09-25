@@ -8,7 +8,7 @@ export function StatusPill({ value }: StatusPillProps) {
   const label = statusExplanation(value);
   return (
     <span
-      className={`status-pill status-${String(value || '').toLowerCase()}`}
+      className={`status-pill status-${String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
       data-tooltip={label}
     >
       <span className="status-dot" />
@@ -21,6 +21,8 @@ function statusExplanation(value: unknown): string {
   switch (String(value || '').toLowerCase()) {
     case 'filtered':
       return 'Filtered: timed out or blocked before connect.';
+    case 'open|filtered':
+      return 'Open or filtered: the UDP probe got no reply and no refusal, so the port may be open or blocked.';
     case 'closed':
       return 'Closed: connection refused by the host.';
     case 'open':

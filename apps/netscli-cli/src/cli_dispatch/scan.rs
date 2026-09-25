@@ -36,12 +36,13 @@ pub(super) async fn run_scan(
     ctx: CommandContext<'_>,
     host: &str,
     ports: &Option<String>,
+    udp: bool,
     flags: ListOutput,
 ) -> Result<()> {
     let format = list_output_format(flags)?;
     let start = Instant::now();
     let ports = parse_ports_checked(ports.as_deref())?;
-    let results = commands::run_scan(ctx.ops, ctx.db, host, ports).await?;
+    let results = commands::run_scan(ctx.ops, ctx.db, host, ports, udp).await?;
     match format {
         OutputFormat::Json | OutputFormat::Yaml | OutputFormat::Csv | OutputFormat::Markdown => {
             // Every port, not just the open ones. Filtering here made "all
@@ -150,7 +151,7 @@ fn sweep_table_rows(results: &[SweepEntry]) -> Vec<SweepTableRow<'_>> {
 mod tests {
     use super::*;
     use crate::output::csv_for_test;
-    use netscli_core::{FoundBy, PortStatus};
+    use netscli_core::{FoundBy, PortStatus, Protocol};
 
     fn host(ip: &str) -> Host {
         Host {
@@ -167,6 +168,7 @@ mod tests {
     fn open(port: u16) -> PortResult {
         PortResult {
             port,
+            protocol: Protocol::Tcp,
             open: true,
             status: PortStatus::Open,
             service: None,
@@ -197,11 +199,11 @@ mod tests {
         let lines: Vec<&str> = csv.lines().collect();
         assert_eq!(
             lines[0],
-            "ip,hostname,mac,vendor,rtt_ms,found_by,hostname_source,port,open,status,service"
+            "ip,hostname,mac,vendor,rtt_ms,found_by,hostname_source,port,protocol,open,status,service"
         );
-        assert_eq!(lines[1], "10.0.0.1,,,,2,probe,,,,,");
-        assert_eq!(lines[2], "10.0.0.2,,,,2,probe,,22,true,open,");
-        assert_eq!(lines[3], "10.0.0.2,,,,2,probe,,443,true,open,");
+        assert_eq!(lines[1], "10.0.0.1,,,,2,probe,,,,,,");
+        assert_eq!(lines[2], "10.0.0.2,,,,2,probe,,22,tcp,true,open,");
+        assert_eq!(lines[3], "10.0.0.2,,,,2,probe,,443,tcp,true,open,");
         assert_eq!(lines.len(), 4);
     }
 }

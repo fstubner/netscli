@@ -80,6 +80,37 @@ impl Ops {
         Ok((ip, results))
     }
 
+    /// Probe `ports` on `host` over UDP, or [`crate::DEFAULT_UDP_PORTS`] when
+    /// none are given. See `scan/udp.rs` for what each status means.
+    pub async fn scan_udp_ports_with_progress(
+        &self,
+        host: &str,
+        ports: Option<Vec<u16>>,
+        progress: Option<Arc<dyn Fn(crate::scan::PortScanProgress) + Send + Sync>>,
+    ) -> Result<(IpAddr, Vec<PortResult>)> {
+        let ip = self.resolve_host_ip(host).await?;
+        let ports = match ports {
+            Some(ports) => {
+                validate_ports(&ports)?;
+                ports
+            }
+            None => crate::DEFAULT_UDP_PORTS.to_vec(),
+        };
+        let scanner = crate::UdpScanner::new(self.cfg.concurrency);
+        let results = scanner
+            .scan_host_with_progress(ip, ports, self.cfg.scan_timeout_ms, progress)
+            .await?;
+        Ok((ip, results))
+    }
+
+    pub async fn scan_udp_ports(
+        &self,
+        host: &str,
+        ports: Option<Vec<u16>>,
+    ) -> Result<(IpAddr, Vec<PortResult>)> {
+        self.scan_udp_ports_with_progress(host, ports, None).await
+    }
+
     pub async fn inspect_host(
         &self,
         host: String,
