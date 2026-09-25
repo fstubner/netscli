@@ -30,6 +30,17 @@ its heading and collects entries; the date and the link go on with the tag.
   desktop app's CSV export already does it, and one containing Markdown or
   HTML is escaped.
 
+- **Port scans show the software and version where a service states them.**
+  An SSH server's identification line, a web server's `Server` header, an
+  FTP or mail server's greeting and a MySQL or MariaDB server's connection
+  greeting usually name the software, often with its version:
+  `OpenSSH 9.6p1`, `nginx 1.25.3`, `MariaDB 10.11.6`. Redis, Valkey and
+  Memcached say nothing until asked, so each gets the one read-only question
+  that returns its version. Scans report this as `product` and `version` in
+  the JSON, and in a Version column in the CLI, the terminal UI and the
+  desktop app. It's far narrower than nmap's `-sV`: a service that doesn't
+  announce itself, and isn't one of those three, gets no version.
+
 - **The desktop app can update itself.** It already told you when a newer
   release was out and linked to the release page. Now, where it can, the
   notice opens a dialog with the release notes and an **Install and
@@ -48,6 +59,11 @@ its heading and collects entries; the date and the link go on with the tag.
 
 ### Fixed
 
+- **Redis, DNS, NFS, SOCKS and Prometheus ports were probed as if they
+  spoke TLS.** The scanner treated any service name ending in "s" as a TLS
+  variant, a rule meant for `imaps` and `pop3s`, so these ports got a TLS
+  handshake instead of having their greeting read. The TLS services are now
+  listed by name.
 - **Installing the desktop app with Scoop now adds it to the Start menu.** The
   manifest's shortcut pointed at `NetsCLI.exe`, a file that is in no version of
   the package: Scoop extracts the MSI rather than running it, which leaves the

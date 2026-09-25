@@ -105,10 +105,19 @@ pub(super) fn is_https_port(port: u16, service: Option<&str>) -> bool {
     matches!(port, 443 | 8443 | 9443) || service.map(|s| s.contains("https")).unwrap_or(false)
 }
 
+/// Ports where the service speaks TLS from the first byte.
+///
+/// This used to treat any service name ending in `s` as a TLS variant, meant
+/// for `imaps`, `pop3s` and friends. It also caught `dns`, `nfs`, `redis`,
+/// `socks`, `prometheus` and `netbios-ns`, so those ports got a TLS
+/// handshake instead of having their greeting read, and a Redis port was
+/// never asked for its version. The TLS names are listed instead.
 pub(super) fn is_tls_port(port: u16, service: Option<&str>) -> bool {
     is_https_port(port, service)
         || matches!(port, 465 | 636 | 993 | 995 | 5061 | 2376)
         || service
-            .map(|s| s.ends_with('s') || s.contains("tls"))
+            .map(|s| {
+                matches!(s, "imaps" | "ldaps" | "pop3s" | "sips" | "smtps") || s.contains("tls")
+            })
             .unwrap_or(false)
 }

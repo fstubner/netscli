@@ -9,7 +9,7 @@ use tokio::net::TcpStream;
 use tokio::sync::Semaphore;
 use tokio::time::timeout;
 
-use super::probes::{first_banner_line, probe_http, probe_tls, read_banner};
+use super::probes::{as_text, ask, first_banner_line, probe_http, probe_tls, read_greeting, Quiet};
 use super::services::{classify_connect_error, guess_service, is_http_port, is_tls_port};
 use super::types::{PortResult, PortStatus};
 use crate::error::Result;
@@ -137,6 +137,12 @@ impl PortScanner {
                     .with_latency(latency_ms);
                 self.enrich_open_port(target, port, stream, timeout_ms, &mut result)
                     .await;
+                if result.product.is_none() {
+                    if let Some((product, version)) = super::version::identify(&result) {
+                        result.product = Some(product);
+                        result.version = version;
+                    }
+                }
                 result
             }
             Ok(Err(e)) => match classify_connect_error(e.kind()) {
@@ -187,9 +193,38 @@ impl PortScanner {
         }
 
         let mut stream = stream;
-        if let Some(raw) = read_banner(&mut stream, timeout_ms).await {
-            result.banner = Some(first_banner_line(&raw));
+        if let Some(bytes) = read_greeting(&mut stream, timeout_ms).await {
+            // MySQL's greeting is a binary packet; read it before the bytes
+            // become text. Anything that greets in text is identified from
+            // `raw` afterwards, in `check_port`.
+            let raw = as_text(&bytes);
+            if let Some((product, version)) = super::version::from_mysql_greeting(&bytes) {
+                // The greeting is binary, so as a banner it's a row of dots;
+                // the Version column already says what it is.
+                result.product = Some(product);
+                result.version = version;
+            } else {
+                result.banner = Some(first_banner_line(&raw));
+            }
             result.raw = Some(raw);
+            return;
+        }
+
+        // Silent so far. Redis and Memcached say nothing until asked; each
+        // gets the one read-only question that returns its version.
+        if let Some(quiet) = Quiet::on(port, service) {
+            if let Some(bytes) = ask(&mut stream, quiet, timeout_ms).await {
+                let reply = as_text(&bytes);
+                let found = match quiet {
+                    Quiet::Redis => super::version::from_redis_info(&reply),
+                    Quiet::Memcached => super::version::from_memcached(&reply),
+                };
+                if let Some((product, version)) = found {
+                    result.product = Some(product);
+                    result.version = version;
+                }
+                result.raw = Some(reply);
+            }
         }
     }
 

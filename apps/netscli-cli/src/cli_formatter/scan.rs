@@ -45,14 +45,15 @@ impl CliFormatter {
 
     fn format_scan_table(ports: &[PortResult]) -> String {
         let header = dim(&format!(
-            "{:<8} {:<10} {:<9} {:<14} {}",
-            "Port", "State", "Latency", "Service", "Banner"
+            "{:<8} {:<10} {:<9} {:<14} {:<22} {}",
+            "Port", "State", "Latency", "Service", "Version", "Banner"
         ));
-        let separator = dim(&"-".repeat(60));
+        let separator = dim(&"-".repeat(84));
 
         let mut rows = vec![header, separator];
         for port in ports {
             let service = port.service.as_deref().unwrap_or("unknown");
+            let version = port.product_and_version();
             let latency = port
                 .latency_ms
                 .map(|ms| format!("{ms}ms"))
@@ -78,11 +79,12 @@ impl CliFormatter {
                 PortStatus::Error => red("ERROR"),
             };
             rows.push(format!(
-                "{:<8} {:<10} {:<9} {:<14} {}",
+                "{:<8} {:<10} {:<9} {:<14} {:<22} {}",
                 port.port,
                 state,
                 dim(&latency),
                 dim(service),
+                version.as_deref().unwrap_or("-"),
                 dim(banner)
             ));
         }

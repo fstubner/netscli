@@ -52,6 +52,10 @@ impl Formatter {
                     Style::default().fg(Color::Gray),
                 ));
             }
+            if let Some(version) = port.product_and_version() {
+                spans.push(Span::styled("  ", Style::default().fg(Color::DarkGray)));
+                spans.push(Span::styled(version, Style::default().fg(Color::White)));
+            }
             if let Some(banner) = &port.banner {
                 spans.push(Span::styled("  ", Style::default().fg(Color::DarkGray)));
                 spans.push(Span::styled(

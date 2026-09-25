@@ -11,6 +11,7 @@ function portRow(port: PortResult, index: number, kind: ToolKind): ResultRow {
     port: port.port,
     proto: 'tcp',
     service: port.service ?? '',
+    version: [port.product, port.version].filter(Boolean).join(' '),
     status,
     latency: latencyOf(port),
     banner: port.banner ?? port.error ?? '',

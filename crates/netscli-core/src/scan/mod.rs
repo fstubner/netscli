@@ -2,6 +2,7 @@ mod probes;
 mod services;
 mod tcp;
 mod types;
+mod version;
 
 #[cfg(test)]
 mod tests;

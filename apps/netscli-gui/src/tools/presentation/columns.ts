@@ -34,6 +34,7 @@ export function columnsFor(
         { key: 'port', label: 'Port', mono: true, width: 90 },
         { key: 'proto', label: 'Proto', width: 110 },
         { key: 'service', label: 'Service', mono: true, width: 170 },
+        { key: 'version', label: 'Version', mono: true, width: 190 },
         { key: 'status', label: 'Status', width: 150 },
         { key: 'latency', label: 'Latency', mono: true, width: 150 },
         hasBanner
