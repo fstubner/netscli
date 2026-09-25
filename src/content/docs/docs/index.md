@@ -11,7 +11,7 @@ It is for a developer who switches between coding agents and wants the next one 
 
 - **No summaries.** Agents read the raw transcript messages, which stay the source of truth.
 - **No memory layer.** Nothing is curated or kept beyond an index that can be deleted and rebuilt.
-- **No service.** There is no daemon, API server, dashboard or watcher. Each agent starts its own xtctx server over stdio, and it stops with the agent.
+- **No service.** There is no daemon, API server, dashboard or watcher. Each MCP client (Claude Code, Codex, Cursor and the rest) starts its own xtctx server over stdio, shared by every chat in that client, and it stops when the client exits.
 - **No upload by default.** Search runs a small embedding model on your machine. A project can opt into a remote embedding endpoint, but only by writing one into its config.
 
 ## Where to start

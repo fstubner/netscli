@@ -34,7 +34,7 @@ export const faq: FaqItem[] = [
   {
     group: 'Setup',
     q: 'Does xtctx run a background service?',
-    a: 'No. There is no daemon, API server, dashboard or watcher. Each agent starts its own xtctx MCP server, which indexes when it starts and when it is called, and stops when the agent does.',
+    a: 'No. There is no daemon, API server, dashboard or watcher. Each MCP client (Claude Code, Codex, Cursor and the rest) starts its own xtctx MCP server, which indexes when it starts and when it is called, and stops when the client exits.',
   },
   {
     group: 'Setup',

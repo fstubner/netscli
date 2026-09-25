@@ -97,11 +97,11 @@ Integration mode: instruction-only
   {
     title: 'No service to run',
     body:
-      'You never start xtctx. In a project that has been set up, each agent launches its own xtctx in the background when it opens and stops it when it closes. It reads whatever the agents have written since last time, measures once which device on this machine embeds fastest, and leaves nothing running.',
+      'You never start xtctx. Each MCP client (Claude Code, Codex, Cursor and the rest) launches its own xtctx in the background when it starts, shares it across every chat in that client, and stops it when it exits. It reads whatever your agents have written since last time, measures once which device on this machine embeds fastest, and leaves nothing running.',
     flip: true,
-    codeHtml: `<span style="color:var(--ui-code-comment)">you open an agent</span>    xtctx starts with it
-<span style="color:var(--ui-code-comment)">you ask for context</span>  xtctx reads what is new, answers
-<span style="color:var(--ui-code-comment)">you switch agents</span>    the next one starts its own
-<span style="color:var(--ui-code-comment)">you close them</span>       xtctx stops with each`,
+    codeHtml: `<span style="color:var(--ui-code-comment)">you open Claude Code</span>  it starts its xtctx
+<span style="color:var(--ui-code-comment)">you ask for context</span>   xtctx reads what is new, answers
+<span style="color:var(--ui-code-comment)">you open Codex</span>        it starts its own
+<span style="color:var(--ui-code-comment)">you close a client</span>    its xtctx stops with it`,
   },
 ];
