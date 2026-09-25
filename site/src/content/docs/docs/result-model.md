@@ -25,7 +25,7 @@ Port scans include the existing compatibility fields plus richer status data.
 | `port` | TCP port number. |
 | `open` | Compatibility boolean for older consumers. |
 | `service` | Best-effort service guess, from the port number. |
-| `product` | The software on the port, when it named itself: from the SSH identification line, an HTTP `Server` header, or an FTP or mail greeting. Omitted otherwise. |
+| `product` | The software on the port, when it named itself: from the SSH identification line, an HTTP `Server` header, an FTP or mail greeting, or MySQL's connection greeting; or when it answered the one read-only question netscli asks Redis (`INFO server`) and Memcached (`version`). Omitted otherwise. |
 | `version` | That software's version, when it gave one (`9.6p1` for OpenSSH). Omitted otherwise. |
 | `status` | `open`, `closed`, `filtered`, or `error`. |
 | `latency_ms` | TCP connect/probe latency where available. |
@@ -40,7 +40,7 @@ Port scans include the existing compatibility fields plus richer status data.
 Banner, HTTP, TLS, and raw preview data are probe results. They are useful diagnostics, not proof that a service is trustworthy.
 
 `product` and `version` come only from what the service said about itself,
-with no extra probes, so they are exactly as trustworthy as that: a server
+so they are exactly as trustworthy as that: a server
 can claim any name, and many hide their version on purpose. A port with no
 `product` didn't name itself; it doesn't mean nothing is there.
 

@@ -2,10 +2,12 @@ use std::time::Duration;
 use tokio::io::{AsyncRead, AsyncReadExt};
 use tokio::time::timeout;
 
+mod asked;
 mod http;
 mod tls;
 
-pub(super) use http::{first_banner_line, probe_http, read_banner};
+pub(super) use asked::{as_text, ask, read_greeting, Quiet};
+pub(super) use http::{first_banner_line, probe_http};
 pub(super) use tls::probe_tls;
 
 const ENRICH_MAX_BYTES: usize = 4096;

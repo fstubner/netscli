@@ -17,6 +17,9 @@
 
 use super::types::PortResult;
 
+mod answers;
+pub(super) use answers::{from_memcached, from_mysql_greeting, from_redis_info};
+
 /// Longest product name kept. Real ones are short (`Microsoft-IIS`,
 /// `FileZilla Server`); anything longer is not a product name.
 const MAX_PRODUCT: usize = 40;
@@ -81,6 +84,9 @@ fn from_server_header(value: &str) -> Option<(String, Option<String>)> {
     let first = value.split_whitespace().next()?;
     match first.split_once('/') {
         Some((name, version)) => product_and_version(name, Some(version)),
+        // No product/version token anywhere: the whole value is the name
+        // (`HTTP Server` on a router, not `HTTP`).
+        None if !value.contains('/') => product_and_version(value, None),
         None => product_and_version(first, None),
     }
 }
@@ -201,6 +207,7 @@ mod tests {
             found("Microsoft-IIS", Some("10.0"))
         );
         assert_eq!(identify(&web("cloudflare")), found("cloudflare", None));
+        assert_eq!(identify(&web("HTTP Server")), found("HTTP Server", None));
     }
 
     #[test]

@@ -1,7 +1,7 @@
 use tokio::io::{AsyncRead, AsyncWrite, AsyncWriteExt};
 use tokio::time::timeout;
 
-use super::{probe_timeout, read_once, read_until, sanitize, single_line_display};
+use super::{probe_timeout, read_until, sanitize, single_line_display};
 use crate::scan::types::{HttpHeader, HttpProbe};
 
 const HTTP_METHOD: &[u8] = b"HEAD / HTTP/1.1";
@@ -31,15 +31,6 @@ where
     let http = parse_http(&raw)?;
     let banner = http_banner(&http);
     Some((http, banner, Some(raw)))
-}
-
-pub(in crate::scan) async fn read_banner<S>(stream: &mut S, timeout_ms: u64) -> Option<String>
-where
-    S: AsyncRead + Unpin,
-{
-    read_once(stream, timeout_ms)
-        .await
-        .map(|bytes| sanitize(&bytes))
 }
 
 async fn read_until_headers<S>(stream: &mut S, timeout_ms: u64) -> Option<String>

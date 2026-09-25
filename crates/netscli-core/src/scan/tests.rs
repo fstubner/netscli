@@ -198,3 +198,22 @@ async fn test_scan_captures_tls_metadata() {
         .contains("netscli-tls-test"));
     assert!(http.is_some());
 }
+
+#[test]
+fn only_real_tls_services_get_a_tls_handshake() {
+    use super::services::{guess_service, is_tls_port};
+    for port in [443, 465, 636, 993, 995, 2376, 5061, 8443] {
+        assert!(
+            is_tls_port(port, guess_service(port).as_deref()),
+            "port {port}"
+        );
+    }
+    // Service names that merely end in "s". These used to be sent a TLS
+    // handshake instead of having their greeting read.
+    for port in [53, 137, 1080, 2049, 6379, 9090] {
+        assert!(
+            !is_tls_port(port, guess_service(port).as_deref()),
+            "port {port}"
+        );
+    }
+}
