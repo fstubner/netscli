@@ -1,6 +1,7 @@
 {
   "name": "netscli",
   "version": "@@VERSION@@",
+  "mcpName": "io.github.fstubner/netscli",
   "description": "Network diagnostics CLI, terminal UI, and MCP server. Written in Rust.",
   "keywords": [
     "network",
