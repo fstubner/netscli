@@ -57,7 +57,7 @@
    *
    * scripts/wordmark-inset.mjs re-derives the ratio from the PNG itself and
    * fails if this value has drifted from it. */
-  --ui-mark-width: 160px;
+  --ui-mark-width: 118px;
 
   /* Both bars filter the wordmark through this. Dark leaves it alone; the
      light theme darkens it -- see the override below for why. A token rather
@@ -65,7 +65,7 @@
      different components with their own scoped styles, and this is one
      decision, not two. */
   --ui-mark-filter: none;
-  --ui-mark-inset-ratio: 0.0839;
+  --ui-mark-inset-ratio: 0.0000;
 
   /* Tells the browser which way to draw the controls it renders itself: the
    * <select> popup in the theme control, native focus rings, and form
@@ -208,7 +208,7 @@
  * custom property resolving where it is declared. */
 @media (max-width: 600px) {
   :root {
-    --ui-mark-width: 132px;
+    --ui-mark-width: 104px;
   }
 }
 

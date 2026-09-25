@@ -1,16 +1,9 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!-- The xtctx mark: the favicon's crossed stroke without its plate, so it sits
-     on the site's own bar in both themes. scripts/wordmark.mjs renders this
-     beside the site name into public/assets/wordmark*.png; re-run
-     `npm run assets:wordmark` after changing it. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="xtctx">
-  <defs>
-    <linearGradient id="stroke" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#22d3ee" />
-      <stop offset="100%" stop-color="#f59e0b" />
-    </linearGradient>
-  </defs>
-  <path d="M18 18 L28 18 L32 26 L36 18 L46 18 L36 32 L46 46 L36 46 L32 38 L28 46 L18 46 L28 32 Z"
-        fill="none" stroke="url(#stroke)" stroke-width="4"
-        stroke-linecap="round" stroke-linejoin="round" />
+  <!-- Not used by the xtctx site. The template's `npm run assets:wordmark`
+       would set this beside the typed name; xtctx's wordmark is drawn
+       instead (brand/wordmark-*.svg, rasterised by brand/render.mjs), so do
+       not run it. Kept as the tc join so anything that does read it gets the
+       right mark. -->
+  <path d="M20 12 V40 Q20 48 28 48 M12 24 H44 A11 11 0 0 0 33 35 A11 11 0 0 0 44 46 A11 11 0 0 0 51.8 42.8"
+        fill="none" stroke="#e8b878" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

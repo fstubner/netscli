@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="3 13 126 40" role="img" aria-label="xtctx">
+  <!-- xtctx wordmark, drawn rather than typeset: x (cross) · t (tool) · ctx
+       (context). The first t's crossbar runs on into the c of ctx, in the
+       accent: the tool's context, carried across. One stroke weight
+       throughout. Rasterised to public/assets/wordmark*.png by
+       brand/render.mjs; do not run the template's assets:wordmark, which
+       would replace these with the icon-beside-typed-name lockup. -->
+  <g fill="none" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6 28 L24 50 M24 28 L6 50" stroke="#e8dfc8"/>
+    <path d="M38 16 V44 Q38 50 44 50 H46" stroke="#e8dfc8"/>
+    <path d="M32 28 H70 A11 11 0 0 0 59 39 A11 11 0 0 0 70 50 A11 11 0 0 0 77.8 46.8" stroke="#e8b878"/>
+    <path d="M92 16 V44 Q92 50 98 50 H100 M86 28 H100" stroke="#e8dfc8"/>
+    <path d="M108 28 L126 50 M126 28 L108 50" stroke="#e8dfc8"/>
+  </g>
+</svg>
