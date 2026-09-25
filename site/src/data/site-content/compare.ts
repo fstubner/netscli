@@ -32,8 +32,9 @@ export const compareColumns: ComparisonColumn[] = [
 // Ticks, not phrases. A version with a short phrase in every cell (one row
 // per question a buyer asks, 2026-09-24) was accurate and unreadable: too much
 // to take in, nothing to scan. A tick table is only honest if some rows go to
-// the other tools, so three do: UDP/OS/version detection (nmap) and remote
-// actions (Advanced IP Scanner), and "Open source" is a tick for three of four.
+// the other tools, so some do: service versions and OS detection (nmap),
+// remote actions (Advanced IP Scanner), and "Open source" is a tick for three
+// of four.
 // Rows every tool ticks (desktop app, naming devices by MAC vendor) are left
 // out: they tell nobody anything.
 export const compareRows: ComparisonRow[] = [
@@ -47,7 +48,17 @@ export const compareRows: ComparisonRow[] = [
   // docs cover checks for HTTP, HTTPS, FTP, RDP, Radmin and shared folders;
   // Famatech sells port scanning as Advanced Port Scanner.
   { feature: 'TCP port scan', cells: ['✓', '✓', '✓', 'Some services'] },
-  { feature: 'UDP, OS and version detection', cells: ['—', '✓', '—', '—'] },
+  // UDP: NetsCLI probes DNS, NTP, NetBIOS, SSDP and mDNS with the request
+  // each expects (#475). Angry IP Scanner can ping over UDP but scans only
+  // TCP ports (PortsFetcher). Advanced IP Scanner documents no UDP.
+  { feature: 'UDP port scan', cells: ['✓', '✓', '—', '—'] },
+  // NetsCLI reads the software and version a service announces -- SSH
+  // identification, HTTP Server header, FTP/mail greeting (#474) -- with no
+  // extra probes; nmap's -sV actively probes against its own database. Angry
+  // IP Scanner's "Web detect" fetcher reads the HTTP Server header only.
+  { feature: 'Service versions', cells: ['From banners', '✓', 'Web servers only', '—'] },
+  // nmap's -O fingerprints the TCP/IP stack; none of the others try.
+  { feature: 'OS detection', cells: ['—', '✓', '—', '—'] },
   // nmap: reverse DNS built in, other record types and DNS-SD from specific
   // NSE scripts. Angry IP Scanner asks mDNS only to name a local host.
   { feature: 'DNS and mDNS lookups', cells: ['✓', 'Via scripts', '—', '—'] },
