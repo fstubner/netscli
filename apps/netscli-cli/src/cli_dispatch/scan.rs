@@ -170,6 +170,8 @@ mod tests {
             open: true,
             status: PortStatus::Open,
             service: None,
+            product: None,
+            version: None,
             latency_ms: None,
             banner: None,
             http: None,
