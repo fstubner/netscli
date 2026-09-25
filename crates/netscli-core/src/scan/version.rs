@@ -9,7 +9,9 @@
 //! This is deliberately smaller than nmap's `-sV`, which sends thousands of
 //! probes from a database under nmap's own licence. What a service announces
 //! unprompted covers the common cases on a LAN -- SSH, web servers, mail and
-//! FTP -- and costs nothing extra on the wire.
+//! FTP -- and costs nothing extra on the wire. `answers.rs` adds the few that
+//! don't announce themselves as text: MySQL's binary greeting, and Redis and
+//! Memcached, which are asked one read-only question (`probes/asked.rs`).
 //!
 //! Everything here is text the scanned host chose. Products and versions are
 //! capped in length and restricted to the characters a version string uses, so
