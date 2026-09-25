@@ -76,6 +76,13 @@ export function selectedRowsRawPreview(rows: ResultRow[]): string {
   return JSON.stringify(rows.map((row) => row.raw), null, 2);
 }
 
+/** Same wording as `OsHint::summary` in the core: `Linux, Debian`, `Windows 11 or Server 2025 (build 26100)`. */
+function osHintSummary(hint: InspectResult['os_hint']): string {
+  if (!hint) return '-';
+  if (!hint.detail) return hint.family;
+  return hint.detail.includes(hint.family) ? hint.detail : `${hint.family}, ${hint.detail}`;
+}
+
 export function inspectOverviewLines(result: InspectResult): DetailLine[] {
   const ports = result.ports ?? result.open_ports;
   const open = result.open_ports.length;
@@ -85,6 +92,9 @@ export function inspectOverviewLines(result: InspectResult): DetailLine[] {
     { label: 'Host', value: result.host },
     { label: 'Resolved IP', value: result.ip || ping?.ip || '-' },
     { label: 'Reverse DNS', value: result.hostname || '-' },
+    { label: 'MAC', value: result.mac ? `${result.mac}${result.vendor ? ` (${result.vendor})` : ''}` : '-' },
+    { label: 'OS Hint', value: osHintSummary(result.os_hint) },
+    { label: 'OS Clues', value: result.os_hint?.evidence.join('; ') || '-' },
     { label: 'Host Status', value: ping ? (ping.alive ? 'up' : 'down') : 'not checked' },
     { label: 'Ping Method', value: ping?.method || '-' },
     { label: 'RTT', value: ping?.rtt_ms == null ? '-' : `${ping.rtt_ms} ms` },

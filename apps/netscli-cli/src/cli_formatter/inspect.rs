@@ -38,6 +38,30 @@ impl CliFormatter {
             lines.push(format!("{} {}", dim("Ping:"), ping_info.join(" ")));
         }
 
+        if let Some(mac) = &result.mac {
+            let vendor = result.vendor.as_deref().map(|v| format!(" ({v})"));
+            lines.push(format!(
+                "{} {}{}",
+                dim("MAC:"),
+                white(mac),
+                dim(&vendor.unwrap_or_default())
+            ));
+        }
+        if let Some(hint) = &result.os_hint {
+            // A guess from clues, not a fingerprint; the clues are printed
+            // under it so the reader can judge. SMB computer names in the
+            // evidence are remote-chosen and already reduced to plain text.
+            lines.push(format!(
+                "{} {} {}",
+                dim("OS:"),
+                white(&hint.summary()),
+                dim("(hint)")
+            ));
+            for clue in &hint.evidence {
+                lines.push(format!("    {}", dim(&sanitize_for_terminal(clue))));
+            }
+        }
+
         if !result.open_ports.is_empty() {
             lines.push(String::new());
             lines.push(green("Open Ports:"));

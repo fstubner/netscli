@@ -27,6 +27,26 @@ impl Formatter {
             ]));
         }
 
+        if let Some(vendor) = &res.vendor {
+            lines.push(Line::from(vec![
+                Span::styled("MAC:  ", Style::default().fg(Color::Cyan)),
+                Span::raw(format!("{} ({vendor})", res.mac.as_deref().unwrap_or("-"))),
+            ]));
+        }
+        if let Some(hint) = &res.os_hint {
+            lines.push(Line::from(vec![
+                Span::styled("OS:   ", Style::default().fg(Color::Cyan)),
+                Span::raw(hint.summary()),
+                Span::styled(" (hint)", Style::default().fg(Color::DarkGray)),
+            ]));
+            for clue in &hint.evidence {
+                lines.push(Line::from(Span::styled(
+                    format!("      {clue}"),
+                    Style::default().fg(Color::DarkGray),
+                )));
+            }
+        }
+
         if !res.open_ports.is_empty() {
             lines.push(Line::from(""));
             lines.push(Span::styled("Open Ports:", Style::default().fg(Color::Yellow)).into());

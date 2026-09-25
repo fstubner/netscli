@@ -82,7 +82,7 @@ pub struct PortResult {
 }
 
 impl PortResult {
-    pub(super) fn new(port: u16, status: PortStatus, service: Option<String>) -> Self {
+    pub(crate) fn new(port: u16, status: PortStatus, service: Option<String>) -> Self {
         Self {
             port,
             protocol: Protocol::Tcp,
