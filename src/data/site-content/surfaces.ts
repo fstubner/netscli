@@ -97,11 +97,11 @@ Integration mode: instruction-only
   {
     title: 'No service to run',
     body:
-      'Each agent starts its own xtctx server over stdio and stops it when it exits. The server indexes when it starts and when it is asked, measures once which device on this machine embeds fastest, and keeps nothing running afterwards.',
+      'You never start xtctx. In a project that has been set up, each agent launches its own xtctx in the background when it opens and stops it when it closes. It reads whatever the agents have written since last time, measures once which device on this machine embeds fastest, and leaves nothing running.',
     flip: true,
-    codeHtml: `<span style="color:var(--ui-code-comment)">agent starts</span>  npx -y xtctx      <span style="color:var(--ui-code-comment)">(stdio)</span>
-<span style="color:var(--ui-code-comment)">server</span>        indexes what is new
-<span style="color:var(--ui-code-comment)">agent asks</span>    xtctx_recent_sessions
-<span style="color:var(--ui-code-comment)">agent exits</span>   server exits with it`,
+    codeHtml: `<span style="color:var(--ui-code-comment)">you open an agent</span>    xtctx starts with it
+<span style="color:var(--ui-code-comment)">you ask for context</span>  xtctx reads what is new, answers
+<span style="color:var(--ui-code-comment)">you switch agents</span>    the next one starts its own
+<span style="color:var(--ui-code-comment)">you close them</span>       xtctx stops with each`,
   },
 ];
