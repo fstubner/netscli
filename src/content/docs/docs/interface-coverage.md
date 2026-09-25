@@ -26,6 +26,7 @@ server does not expose it as a tool.
 | --- | --- | --- | --- | --- |
 | Discover hosts | ✓ | ✓ | ✓ | ✓ |
 | Scan TCP ports | ✓ | ✓ | ✓ | ✓ |
+| Scan UDP services | ✓ | ✓ | ✓ | ✓ |
 | Inspect host | ✓ | ✓ | ✓ | ✓ |
 | Sweep subnet | ✓ | ✓ | ✓ | ✓ |
 | Ping | ✓ | ✓ | ✓ | ✓ |
