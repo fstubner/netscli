@@ -30,7 +30,8 @@ impl Drop for IcmpHandle {
     }
 }
 
-pub fn send_echo(target: IpAddr, timeout_ms: u64) -> anyhow::Result<u64> {
+/// Returns the round trip and the reply's TTL.
+pub fn send_echo(target: IpAddr, timeout_ms: u64) -> anyhow::Result<(u64, Option<u8>)> {
     let IpAddr::V4(v4) = target else {
         anyhow::bail!("IcmpSendEcho supports IPv4 only");
     };
@@ -81,7 +82,7 @@ pub fn send_echo(target: IpAddr, timeout_ms: u64) -> anyhow::Result<u64> {
     let echo = unsafe { reply.as_ptr().cast::<ICMP_ECHO_REPLY>().read_unaligned() };
 
     match echo.Status {
-        IP_SUCCESS => Ok(u64::from(echo.RoundTripTime)),
+        IP_SUCCESS => Ok((u64::from(echo.RoundTripTime), Some(echo.Options.Ttl))),
         IP_REQ_TIMED_OUT => anyhow::bail!("Timeout"),
         // Unreachable, TTL expired and friends all land here. The host did
         // not answer, which is all the caller needs; the code identifies

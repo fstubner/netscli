@@ -96,10 +96,39 @@ Inspect combines:
 - Target host and resolved IP.
 - Reverse DNS name when available.
 - Reachability status and method.
+- MAC address and vendor, for a host on the same network segment.
+- An OS hint, with the clues behind it.
 - Optional checked ports and open-port count.
 - Raw result data for troubleshooting.
 
 If no ports are supplied, Inspect is a host-only check. If ports are supplied, the port table uses the same status model as `scan`.
+
+### OS hint
+
+The OS hint is a best guess from clues the inspection already has, each
+listed with where it came from:
+
+```text
+OS: Windows 11 or Server 2025 (build 26100) (hint)
+    SMB: Windows 10.0 build 26100, name WORKSTATION
+    TTL 128
+```
+
+<div data-ui-table="row-headers"></div>
+
+| Clue | What it says |
+| --- | --- |
+| SMB | A Windows host states its exact version, build and computer name at the start of an SMB connection, before any login. Inspect asks port 445 for it whether or not 445 is in your port list; no credentials are sent. |
+| SSH banner | OpenSSH usually names the distribution: `Ubuntu`, `Debian`, `Raspbian`, `FreeBSD`, or `for_Windows`. |
+| HTTP server | `(Ubuntu)`, `(Debian)` and similar in a `Server` header, or IIS, which only runs on Windows. |
+| Open ports | 135 and 445 together are Windows' RPC and file sharing. |
+| MAC vendor | An Apple or Raspberry Pi network card. |
+| Ping TTL | Hosts start at 64 (Linux, macOS, most Unix), 128 (Windows) or 255 (network equipment). Only Windows reports the TTL today. |
+
+The strongest clue sets the family and the rest are listed under it, including
+any that disagree. It is a hint, not a fingerprint: nmap's `-O` sends crafted
+packets and needs administrator rights; this needs neither, and a host can
+still run anything behind any of these clues.
 
 ## Sweep
 

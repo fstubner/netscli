@@ -70,6 +70,8 @@ export interface PortResult {
 export interface PingResult {
   ip: string;
   rtt_ms?: number | null;
+  /** The reply's TTL, where the platform reports it (Windows ICMP does). */
+  ttl?: number | null;
   alive: boolean;
   seq: number;
   // Present when the ping failed; omitted otherwise (serde skip_serializing_if = "Option::is_none").
@@ -109,6 +111,17 @@ export interface InspectResult {
   ports?: PortResult[];
   open_ports: PortResult[];
   hostname?: string | null;
+  /** From the local ARP table, so only for a host on the same network segment. */
+  mac?: string | null;
+  vendor?: string | null;
+  /** A best guess at the OS from clues the scan collected; `evidence` names each clue's source. */
+  os_hint?: OsHint | null;
+}
+
+export interface OsHint {
+  family: string;
+  detail?: string | null;
+  evidence: string[];
 }
 
 export interface MdnsService {

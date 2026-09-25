@@ -51,6 +51,17 @@ its heading and collects entries; the date and the link go on with the tag.
   `/scan <host> --udp`, the MCP server's `scan_ports` takes `udp: true`, and
   the desktop app's Port Scan has a TCP/UDP switch.
 
+- **Inspect gives an OS hint.** `netscli inspect` now says what the host
+  probably runs, with the clues behind it: a Windows machine's exact version
+  and build from the start of an SMB connection (no login), the
+  distribution an SSH banner names, an `(Ubuntu)` or IIS web server header,
+  Windows' RPC and file-sharing ports, an Apple or Raspberry Pi network card,
+  and the ping reply's TTL. It also shows the host's MAC address and vendor
+  when it's on the same network. It's a hint, not nmap's packet
+  fingerprinting, and needs no administrator rights. The same hint is in the
+  terminal UI, the desktop app's Inspect details and the MCP server's
+  `inspect_host`.
+
 - **The desktop app can update itself.** It already told you when a newer
   release was out and linked to the release page. Now, where it can, the
   notice opens a dialog with the release notes and an **Install and

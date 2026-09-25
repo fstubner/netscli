@@ -102,7 +102,7 @@ pub fn tools_list() -> serde_json::Value {
         }),
         json!({
             "name": "inspect_host",
-            "description": "Inspect a host (ping + port scan + optional DNS resolution)",
+            "description": "Inspect a host: ping, port scan, reverse DNS, MAC vendor on the local segment, and an OS hint (family, detail and the evidence behind it, from SMB, SSH/HTTP banners, open ports, MAC vendor and ping TTL). The hint is a guess, not a fingerprint.",
             "inputSchema": {
                 "type": "object",
                 "properties": {

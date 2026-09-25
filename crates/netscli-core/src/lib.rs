@@ -9,6 +9,7 @@ pub mod inspect;
 #[cfg(feature = "mdns")]
 pub mod mdns;
 pub mod ops;
+pub mod os_hint;
 pub mod oui;
 pub mod pcap;
 pub mod ping;
@@ -37,6 +38,7 @@ pub use mdns::{MdnsEngine, MdnsService, COMMON_SERVICE_TYPES};
 pub use ops::{
     resolve_host_ip, resolve_host_ip_with_timeout, Ops, OpsConfig, PingSummary, MAX_CONCURRENCY,
 };
+pub use os_hint::OsHint;
 pub use oui::lookup_vendor;
 pub use pcap::{
     PcapCancelToken, PcapConfig, PcapEngine, PcapPacketSummary, PcapParseResult, PcapResult,

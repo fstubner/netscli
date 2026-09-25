@@ -40,6 +40,13 @@ static RAW_ICMP_OK: OnceLock<bool> = OnceLock::new();
 pub struct PingResult {
     pub ip: IpAddr,
     pub rtt_ms: Option<u64>,
+    /// The reply's IP time-to-live, where the platform exposes it: Windows'
+    /// ICMP API does, the raw-socket path on Unix strips the IP header before
+    /// the reply is parsed, and the TCP fallback has no reply packet at all.
+    /// A starting TTL of 64, 128 or 255 hints at the OS family; see
+    /// `os_hint`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ttl: Option<u8>,
     pub alive: bool,
     /// Sequence number actually used for this ping (monotonic per process).
     /// Useful for debugging concurrent scans against logging-enabled targets.
@@ -86,6 +93,7 @@ impl PingScanner {
                 return PingResult {
                     ip: target,
                     rtt_ms: None,
+                    ttl: None,
                     alive: false,
                     seq,
                     error: Some("ping concurrency semaphore closed".to_string()),
@@ -121,9 +129,10 @@ async fn ping_icmpv4(target: IpAddr, timeout_ms: u64, seq: u16) -> PingResult {
     // Use tokio::spawn_blocking for pnet operations since they are synchronous.
     let handle = tokio::task::spawn_blocking(move || send_icmp_echo_v4(target, timeout_ms, seq));
     match handle.await {
-        Ok(Ok(rtt)) => PingResult {
+        Ok(Ok((rtt, ttl))) => PingResult {
             ip: target,
             rtt_ms: Some(rtt),
+            ttl,
             alive: true,
             seq,
             error: None,
@@ -132,6 +141,7 @@ async fn ping_icmpv4(target: IpAddr, timeout_ms: u64, seq: u16) -> PingResult {
         Ok(Err(e)) => PingResult {
             ip: target,
             rtt_ms: None,
+            ttl: None,
             alive: false,
             seq,
             error: Some(e.to_string()),
@@ -140,6 +150,7 @@ async fn ping_icmpv4(target: IpAddr, timeout_ms: u64, seq: u16) -> PingResult {
         Err(e) => PingResult {
             ip: target,
             rtt_ms: None,
+            ttl: None,
             alive: false,
             seq,
             error: Some(format!("ping task failed: {e}")),
@@ -161,6 +172,7 @@ async fn ping_icmpv6(target: std::net::Ipv6Addr, timeout_ms: u64, seq: u16) -> P
         ip: IpAddr::V6(target),
         alive: rtt_ms.is_some(),
         rtt_ms,
+        ttl: None,
         seq,
         error,
         method: Some("icmpv6".to_string()),
@@ -187,6 +199,7 @@ async fn ping_tcp_probe(target: IpAddr, timeout_ms: u64, seq: u16) -> PingResult
                 return PingResult {
                     ip: target,
                     rtt_ms: Some(start.elapsed().as_millis() as u64),
+                    ttl: None,
                     alive: true,
                     seq,
                     error: None,
@@ -202,6 +215,7 @@ async fn ping_tcp_probe(target: IpAddr, timeout_ms: u64, seq: u16) -> PingResult
                     return PingResult {
                         ip: target,
                         rtt_ms: Some(start.elapsed().as_millis() as u64),
+                        ttl: None,
                         alive: true,
                         seq,
                         error: None,
@@ -219,6 +233,7 @@ async fn ping_tcp_probe(target: IpAddr, timeout_ms: u64, seq: u16) -> PingResult
     PingResult {
         ip: target,
         rtt_ms: None,
+        ttl: None,
         alive: false,
         seq,
         error: last_err,
@@ -244,7 +259,11 @@ async fn ping_tcp_probe(target: IpAddr, timeout_ms: u64, seq: u16) -> PingResult
 /// local addresses. Unix keeps the raw socket, where loopback ICMP is
 /// observable and this dependency would buy nothing.
 #[cfg(windows)]
-fn send_icmp_echo_v4(target: IpAddr, timeout_ms: u64, seq: u16) -> anyhow::Result<u64> {
+fn send_icmp_echo_v4(
+    target: IpAddr,
+    timeout_ms: u64,
+    seq: u16,
+) -> anyhow::Result<(u64, Option<u8>)> {
     // `seq` is unused here: IcmpSendEcho owns its own request/reply matching
     // per handle, which is the job the identifier and sequence do on the raw
     // path. `PingResult` still reports the process-wide counter so the field

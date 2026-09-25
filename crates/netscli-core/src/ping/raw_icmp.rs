@@ -25,7 +25,13 @@ pub(super) fn can_use_raw_icmpv4() -> bool {
 /// from other tasks on the same host don't steal each other's replies. The
 /// Windows backend needs no equivalent: `IcmpSendEcho` matches replies to
 /// requests itself, per handle.
-pub(super) fn send_icmp_echo_v4(target: IpAddr, timeout_ms: u64, seq: u16) -> anyhow::Result<u64> {
+/// Returns the round trip and, always `None` here, the reply's TTL: the ICMP
+/// iterator hands over the packet with its IP header already stripped.
+pub(super) fn send_icmp_echo_v4(
+    target: IpAddr,
+    timeout_ms: u64,
+    seq: u16,
+) -> anyhow::Result<(u64, Option<u8>)> {
     let protocol = TransportChannelType::Layer3(IpNextHeaderProtocols::Icmp);
     let (mut tx, mut rx) = transport_channel(4096, protocol)?;
     configure_read_timeout(&rx, Duration::from_millis(10))?;
@@ -63,7 +69,7 @@ pub(super) fn send_icmp_echo_v4(target: IpAddr, timeout_ms: u64, seq: u16) -> an
                 // here, not `.payload()`.
                 if let Some(reply) = echo_reply::EchoReplyPacket::new(packet.packet()) {
                     if reply.get_identifier() == identifier && reply.get_sequence_number() == seq {
-                        return Ok(start.elapsed().as_millis() as u64);
+                        return Ok((start.elapsed().as_millis() as u64, None));
                     }
                     // Not ours — keep reading until the timeout.
                 }

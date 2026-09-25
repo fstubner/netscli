@@ -31,6 +31,31 @@ function portResult(port: number, status: PortStatus, latency_ms?: number, banne
   };
 }
 
+describe('inspect overview', () => {
+  it('shows the OS hint with its clues, and dashes when there is none', () => {
+    const base = { host: '192.168.1.10', ip: '192.168.1.10', open_ports: [], ports: [] };
+    const hinted = inspectOverviewLines({
+      ...base,
+      mac: '04:D9:F5:F9:4D:40',
+      vendor: 'ASUSTek',
+      os_hint: {
+        family: 'Windows',
+        detail: 'Windows 11 or Server 2025 (build 26100)',
+        evidence: ['SMB: Windows 10.0 build 26100, name WORKSTATION', 'TTL 128'],
+      },
+    }).map((line) => [line.label, line.value]);
+    expect(hinted).toEqual(
+      expect.arrayContaining([
+        ['MAC', '04:D9:F5:F9:4D:40 (ASUSTek)'],
+        ['OS Hint', 'Windows 11 or Server 2025 (build 26100)'],
+        ['OS Clues', 'SMB: Windows 10.0 build 26100, name WORKSTATION; TTL 128'],
+      ]),
+    );
+    const bare = inspectOverviewLines(base).map((line) => [line.label, line.value]);
+    expect(bare).toEqual(expect.arrayContaining([['OS Hint', '-'], ['MAC', '-']]));
+  });
+});
+
 describe('buildCommand', () => {
   it('previews a UDP scan with --udp', () => {
     const scan = createTab('scan');
