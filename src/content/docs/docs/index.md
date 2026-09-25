@@ -10,8 +10,8 @@ It is for a developer who switches between coding agents and wants the next one 
 ## What it does not do
 
 - **No summaries.** Agents read the raw transcript messages, which stay the source of truth.
-- **No memory layer.** Nothing is curated or kept beyond an index that can be deleted and rebuilt.
-- **No service.** There is no daemon, API server, dashboard or watcher. Each MCP client (Claude Code, Codex, Cursor and the rest) starts its own xtctx server over stdio, shared by every chat in that client, and it stops when the client exits.
+- **No memory layer.** Nothing is curated or summarised: the index holds the raw messages, in order.
+- **No service.** There is no daemon, API server, dashboard or watcher. Each MCP client (Claude Code, Codex, Cursor and the rest) starts xtctx itself over stdio, and xtctx exits when that client disconnects.
 - **No upload by default.** Search runs a small embedding model on your machine. A project can opt into a remote embedding endpoint, but only by writing one into its config.
 
 ## Where to start
@@ -31,5 +31,5 @@ Claude Code, Codex, Cursor, GitHub Copilot in VS Code, GitHub Copilot CLI, Googl
 | --- | --- |
 | `.xtctx/config.yaml` | The project's xtctx configuration. |
 | `.xtctx/skills/<id>/SKILL.md` | Project skills that setup syncs to each tool. |
-| `.xtctx/state/xtctx.db` | The index. A rebuildable cache; never commit it. |
+| `.xtctx/state/xtctx.db` | The index. Never commit it. Keep it: once an agent deletes old transcripts (Claude Code does after 30 days by default), the index is the only copy of those sessions. |
 | `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, and others | Managed handoff blocks. Everything outside the `xtctx:begin` / `xtctx:end` fences is left as you wrote it. |

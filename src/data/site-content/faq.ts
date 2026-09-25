@@ -46,9 +46,9 @@ export const faq: FaqItem[] = [
   {
     group: 'Data',
     q: 'Where does data live?',
-    a: 'Project config is .xtctx/config.yaml and the index is .xtctx/state/xtctx.db, both in the project. The index can be deleted and rebuilt. Transcripts stay wherever each agent keeps them.',
+    a: 'Project config is .xtctx/config.yaml and the index is .xtctx/state/xtctx.db, both in the project. Transcripts stay wherever each agent keeps them. Keep it: once an agent deletes old transcripts (Claude Code does after 30 days by default), the index is the only copy of those sessions.',
     aHtml:
-      'Project config is <code>.xtctx/config.yaml</code> and the index is <code>.xtctx/state/xtctx.db</code>, both in the project. The index can be deleted and rebuilt. Transcripts stay wherever each agent keeps them.',
+      'Project config is <code>.xtctx/config.yaml</code> and the index is <code>.xtctx/state/xtctx.db</code>, both in the project. Transcripts stay wherever each agent keeps them. Keep it: once an agent deletes old transcripts (Claude Code does after 30 days by default), the index is the only copy of those sessions.',
   },
   {
     group: 'Data',

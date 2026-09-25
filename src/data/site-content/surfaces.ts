@@ -86,7 +86,7 @@ Integration mode: instruction-only
   {
     title: 'Local by default',
     body:
-      'Transcripts stay where each agent wrote them and remain the source of truth. The index is a SQLite file in the project that can be deleted and rebuilt. Semantic search runs a small embedding model on this machine; sending text to a remote embedding endpoint is something a project has to configure by hand.',
+      'Transcripts stay where each agent wrote them and remain the source of truth. The index is a SQLite file in the project. Keep it: once an agent deletes old transcripts (Claude Code does after 30 days by default), the index is the only copy of those sessions. Semantic search runs a small embedding model on this machine; sending text to a remote embedding endpoint is something a project has to configure by hand.',
     codeHtml: `<span style="color:var(--ui-code-key)">index</span> <span>.xtctx/state/xtctx.db</span>
 ├── <span>sessions</span>
 ├── <span>messages</span>
@@ -97,7 +97,7 @@ Integration mode: instruction-only
   {
     title: 'No service to run',
     body:
-      'You never start xtctx. Each MCP client (Claude Code, Codex, Cursor and the rest) launches its own xtctx in the background when it starts, shares it across every chat in that client, and stops it when it exits. It reads whatever your agents have written since last time, measures once which device on this machine embeds fastest, and leaves nothing running.',
+      'You never start xtctx. Each MCP client (Claude Code, Codex, Cursor and the rest) launches xtctx itself, in the background, and it exits when that client disconnects. It reads whatever your agents have written since last time, measures once which device on this machine embeds fastest, and leaves nothing running.',
     flip: true,
     codeHtml: `<span style="color:var(--ui-code-comment)">you open Claude Code</span>  it starts its xtctx
 <span style="color:var(--ui-code-comment)">you ask for context</span>   xtctx reads what is new, answers
