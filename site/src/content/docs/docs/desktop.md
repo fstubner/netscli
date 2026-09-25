@@ -1,6 +1,9 @@
 ---
 title: Desktop app
 description: NetsCLI Desktop guide for tabs, filters, details, history, settings, exports, and command previews.
+head:
+  - tag: title
+    content: Desktop network scanner app | NetsCLI docs
 ---
 
 NetsCLI Desktop is the interactive interface for reviewing network results. It is built for users who want tables, filters, row details, history, exports, and multiple operation tabs open at once.
