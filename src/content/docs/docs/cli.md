@@ -1,6 +1,9 @@
 ---
 title: CLI
 description: NetsCLI command-line usage for scripts, terminals, JSON, YAML, and repeatable diagnostics.
+head:
+  - tag: title
+    content: Command-line network scanner (CLI) | NetsCLI docs
 ---
 
 The CLI is the best interface for repeatable diagnostics, automation, and machine-readable output.

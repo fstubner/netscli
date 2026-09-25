@@ -1,6 +1,9 @@
 ---
 title: Terminal UI
-description: NetsCLI terminal UI guide for keyboard-first network diagnostics.
+description: Scan your network from the terminal. The NetsCLI TUI discovers hosts, scans ports, and looks up DNS and mDNS, with command history, autocomplete and live results.
+head:
+  - tag: title
+    content: Terminal network scanner (TUI) | NetsCLI docs
 ---
 
 The terminal UI is for interactive, keyboard-first diagnostics inside a terminal. It uses the same core operations as the CLI, desktop app, and MCP server.
