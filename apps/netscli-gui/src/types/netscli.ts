@@ -29,7 +29,8 @@ export interface Host {
   hostname_source?: NameSource | null;
 }
 
-export type PortStatus = 'open' | 'closed' | 'filtered' | 'error';
+/** `open|filtered` is UDP only: no reply and no refusal, so the port may be open or blocked. */
+export type PortStatus = 'open' | 'closed' | 'filtered' | 'error' | 'open|filtered';
 
 export interface HttpHeader {
   name: string;
@@ -49,6 +50,8 @@ export interface TlsProbe {
 
 export interface PortResult {
   port: number;
+  /** Absent from results produced before UDP scanning existed; those are TCP. */
+  protocol?: 'tcp' | 'udp';
   open: boolean;
   status: PortStatus;
   service?: string | null;

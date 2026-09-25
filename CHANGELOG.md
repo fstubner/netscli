@@ -41,6 +41,16 @@ its heading and collects entries; the date and the link go on with the tag.
   desktop app. It's far narrower than nmap's `-sV`: a service that doesn't
   announce itself, and isn't one of those three, gets no version.
 
+- **UDP scanning.** `netscli scan <host> --udp` checks the UDP services most
+  networks run: DNS, NTP, NetBIOS, SSDP and mDNS, each sent the request it
+  expects, or the ports you give with `-p`. A reply reads as open, with what
+  came back (`NTP v4, stratum 2`, a UPnP device's server string, a Windows
+  machine's NetBIOS name); a port-unreachable reads as closed; and silence
+  reads as `open|filtered`, because UDP can't tell a quiet service from a
+  firewall. It needs no administrator rights. The terminal UI takes
+  `/scan <host> --udp`, the MCP server's `scan_ports` takes `udp: true`, and
+  the desktop app's Port Scan has a TCP/UDP switch.
+
 - **The desktop app can update itself.** It already told you when a newer
   release was out and linked to the release page. Now, where it can, the
   notice opens a dialog with the release notes and an **Install and

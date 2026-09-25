@@ -84,7 +84,7 @@ there is nothing to look at until a client connects.
 | Tool | Purpose |
 | --- | --- |
 | `discover_network` | Discover reachable hosts on a subnet. |
-| `scan_ports` | Scan TCP ports on a host. |
+| `scan_ports` | Scan TCP ports on a host, or UDP services with `udp: true`. |
 | `ping_host` | Check reachability and latency. |
 | `dns_lookup` | Query DNS records. |
 | `get_arp_table` | Read the local ARP neighbor cache. |

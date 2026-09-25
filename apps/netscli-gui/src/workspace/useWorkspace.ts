@@ -16,6 +16,7 @@ import { useTabLifecycle } from './useTabLifecycle';
 import type { WorkspaceModel, WorkspaceOptions } from './types';
 import { useNetworkStatus } from './useNetworkStatus';
 import { useWorkspaceToast } from './useWorkspaceToast';
+import { applyFormChange } from '../tools/scanRequest';
 
 export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
   const demoScreenshotMode = isDemoScreenshotMode();
@@ -176,7 +177,7 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
           ...tab,
           detailTab: defaultDetailTab(tab.kind),
           error: null,
-          form: { ...tab.form, [key]: value },
+          form: applyFormChange(tab.kind, tab.form, key, value),
           result: null,
           selectedIndex: 0,
           selectedIndices: [0],

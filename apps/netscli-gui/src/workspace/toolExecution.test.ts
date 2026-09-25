@@ -10,6 +10,7 @@ vi.mock('../services/env', () => ({
 vi.mock('../services/netscli', () => ({
   dnsLookup: vi.fn(),
   discoverMdns: vi.fn(() => Promise.resolve([])),
+  scanPorts: vi.fn(() => Promise.resolve([])),
 }));
 
 describe('validateTab', () => {
@@ -126,5 +127,23 @@ describe('numeric form bounds', () => {
     tab.form.timeout_ms = '3000';
     await executeTool(tab, 'op-mdns-3', 64);
     expect(lastTimeout()).toBe(3000);
+  });
+});
+
+describe('executeTool port scan protocol', () => {
+  it('scans TCP by default, with the ports in the field', async () => {
+    const netscli = await import('../services/netscli');
+    const tab = createTab('scan');
+    await executeTool(tab, 'op-1', 256);
+    expect(netscli.scanPorts).toHaveBeenLastCalledWith('127.0.0.1', '22,80,443,8080,8443', 'op-1', 256, false);
+  });
+
+  it('scans UDP when the switch says so, with the ports in the field', async () => {
+    const netscli = await import('../services/netscli');
+    const tab = createTab('scan');
+    tab.form.protocol = 'UDP';
+    tab.form.ports = '53,161';
+    await executeTool(tab, 'op-1', 256);
+    expect(netscli.scanPorts).toHaveBeenLastCalledWith('127.0.0.1', '53,161', 'op-1', 256, true);
   });
 });

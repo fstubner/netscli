@@ -198,6 +198,7 @@ mod tests {
             },
             open_ports: vec![PortResult {
                 port: 443,
+                protocol: crate::scan::Protocol::Tcp,
                 open: true,
                 status: PortStatus::Open,
                 service: Some("https".to_string()),

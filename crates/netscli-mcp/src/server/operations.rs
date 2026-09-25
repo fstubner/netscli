@@ -80,10 +80,12 @@ pub(super) async fn op_scan_ports(
     // see `ensure_host_allowed` for why the two can differ.
     let ip = ensure_host_allowed(&p.host, netscli_core::DEFAULT_DNS_TIMEOUT_MS).await?;
     let ops = netscli_core::Ops::new(cfg);
-    let (_ip, res) = ops
-        .scan_ports(&ip.to_string(), ports)
-        .await
-        .map_err(|e| RpcError::ToolError(e.to_string()))?;
+    let scan = if p.udp.unwrap_or(false) {
+        ops.scan_udp_ports(&ip.to_string(), ports).await
+    } else {
+        ops.scan_ports(&ip.to_string(), ports).await
+    };
+    let (_ip, res) = scan.map_err(|e| RpcError::ToolError(e.to_string()))?;
     Ok(res)
 }
 

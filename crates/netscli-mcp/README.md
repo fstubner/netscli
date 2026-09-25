@@ -12,7 +12,7 @@ same MCP surface inside a different host process.
 ## Exposed tools
 
 - `discover_network` — live hosts on a subnet.
-- `scan_ports` — TCP port scan on a host.
+- `scan_ports` — TCP port scan on a host, or UDP with `udp: true`.
 - `ping_host` — ping with packet-loss and RTT statistics.
 - `dns_lookup` — forward DNS, all record types. Reverse lookups are
   not exposed over MCP.

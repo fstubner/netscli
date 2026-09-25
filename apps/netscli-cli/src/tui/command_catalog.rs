@@ -30,8 +30,8 @@ pub(super) const COMMAND_DEFS: &[CommandDef] = &[
     },
     CommandDef {
         cmd: "/scan",
-        desc: "Scan TCP ports on host",
-        args: "<host> [ports]",
+        desc: "Scan TCP ports on host, or UDP with --udp",
+        args: "<host> [ports] [--udp]",
     },
     CommandDef {
         cmd: "/inspect",
@@ -114,8 +114,8 @@ pub(super) const COMMAND_DEFS: &[CommandDef] = &[
     },
     CommandDef {
         cmd: "/scan",
-        desc: "Scan TCP ports on host",
-        args: "<host> [ports]",
+        desc: "Scan TCP ports on host, or UDP with --udp",
+        args: "<host> [ports] [--udp]",
     },
     CommandDef {
         cmd: "/inspect",

@@ -149,7 +149,7 @@ impl PortScanner {
                 PortStatus::Closed => PortResult::new(port, PortStatus::Closed, service)
                     .with_latency(started.elapsed().as_millis() as u64),
                 PortStatus::Filtered => PortResult::new(port, PortStatus::Filtered, service),
-                PortStatus::Error | PortStatus::Open => {
+                PortStatus::Error | PortStatus::Open | PortStatus::OpenFiltered => {
                     PortResult::new(port, PortStatus::Error, service)
                         .with_latency(started.elapsed().as_millis() as u64)
                         .with_error(e.to_string())

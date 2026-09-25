@@ -45,8 +45,9 @@ export async function scanPorts(
   ports?: string,
   op_id?: string,
   max_concurrent?: number,
+  udp = false,
 ): Promise<PortResult[]> {
-  return invoke<PortResult[]>('scan_ports', { opId: op_id, host, ports, maxConcurrent: max_concurrent });
+  return invoke<PortResult[]>('scan_ports', { opId: op_id, host, ports, maxConcurrent: max_concurrent, udp });
 }
 
 export async function pingHost(
