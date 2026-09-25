@@ -32,9 +32,9 @@ export const compareColumns: ComparisonColumn[] = [
 // Ticks, not phrases. A version with a short phrase in every cell (one row
 // per question a buyer asks, 2026-09-24) was accurate and unreadable: too much
 // to take in, nothing to scan. A tick table is only honest if some rows go to
-// the other tools, so some do: service versions and OS detection (nmap),
-// remote actions (Advanced IP Scanner), and "Open source" is a tick for three
-// of four.
+// the other tools, so some do: service versions and OS detection, where nmap
+// goes further than netscli's partial answers; remote actions (Advanced IP
+// Scanner); and "Open source" is a tick for three of four.
 // Rows every tool ticks (desktop app, naming devices by MAC vendor) are left
 // out: they tell nobody anything.
 export const compareRows: ComparisonRow[] = [
@@ -52,13 +52,15 @@ export const compareRows: ComparisonRow[] = [
   // each expects (#475). Angry IP Scanner can ping over UDP but scans only
   // TCP ports (PortsFetcher). Advanced IP Scanner documents no UDP.
   { feature: 'UDP port scan', cells: ['✓', '✓', '—', '—'] },
-  // NetsCLI reads the software and version a service announces -- SSH
-  // identification, HTTP Server header, FTP/mail greeting (#474) -- with no
-  // extra probes; nmap's -sV actively probes against its own database. Angry
-  // IP Scanner's "Web detect" fetcher reads the HTTP Server header only.
-  { feature: 'Service versions', cells: ['From banners', '✓', 'Web servers only', '—'] },
-  // nmap's -O fingerprints the TCP/IP stack; none of the others try.
-  { feature: 'OS detection', cells: ['—', '✓', '—', '—'] },
+  // NetsCLI reads what SSH, web, FTP/mail and MySQL servers announce, and
+  // asks Redis/Valkey and Memcached one read-only question (#474): the
+  // common services, not nmap's -sV probe database. Angry IP Scanner's "Web
+  // detect" fetcher reads the HTTP Server header only.
+  { feature: 'Service versions', cells: ['Common services', '✓', 'Web servers only', '—'] },
+  // nmap's -O fingerprints the TCP/IP stack with crafted packets (admin
+  // rights). NetsCLI's inspect gives a labelled hint from SMB, banners, MAC
+  // vendor and TTL instead (#476). Neither of the others tries.
+  { feature: 'OS detection', cells: ['Hints', '✓', '—', '—'] },
   // nmap: reverse DNS built in, other record types and DNS-SD from specific
   // NSE scripts. Angry IP Scanner asks mDNS only to name a local host.
   { feature: 'DNS and mDNS lookups', cells: ['✓', 'Via scripts', '—', '—'] },
