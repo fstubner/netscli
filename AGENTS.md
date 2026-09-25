@@ -182,7 +182,7 @@ All network operations are async (tokio). Long-running operations accept progres
 | `args.rs` | Clap argument definitions and subcommand enums |
 | `cli_dispatch.rs` + `cli_dispatch/` | Subcommand dispatch and per-command handlers |
 | `commands.rs` | Per-command business logic shared by the CLI and TUI |
-| `output.rs` | `--json`/`--yaml` output-format selection |
+| `output.rs` + `output/` | `--json`/`--yaml`/`--csv`/`--md` output-format selection; `output/rows.rs` reads a serialized result back as rows, which `csv.rs` and `markdown.rs` render |
 | `tui/` | Interactive TUI (state, events, runtime, widgets, command catalog) |
 | `tui_formatter.rs` + `tui_formatter/` | TUI output formatting (ratatui Spans/Lines) |
 | `cli_formatter.rs` + `cli_formatter/` | Plain-text CLI output formatting |
@@ -217,7 +217,7 @@ Enforced in `ops/validation.rs` (subnet size) and `common/ports/` (port count), 
 - Crates use `kebab-case` names (e.g., `netscli-core`)
 - GUI frontend: TypeScript with React functional components, no class components
 - GUI lint: ESLint via `apps/netscli-gui/eslint.config.js` (`npm run lint`)
-- Output formats: CLI subcommands support `--json` and `--yaml` flags
+- Output formats: CLI subcommands support `--json` and `--yaml` flags; list-shaped ones also take `--csv` and `--md`
 
 ## Testing
 

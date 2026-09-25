@@ -1,6 +1,7 @@
 use super::CommandContext;
+use crate::args::ListOutput;
 use crate::commands;
-use crate::output::{output_format, print_structured, OutputFormat};
+use crate::output::{list_output_format, output_format, print_structured, OutputFormat};
 use anyhow::Result;
 use netscli_core::sanitize_for_terminal;
 
@@ -8,13 +9,12 @@ pub(super) async fn run_lookup(
     ctx: CommandContext<'_>,
     host: &str,
     record: &Option<String>,
-    json: bool,
-    yaml: bool,
+    flags: ListOutput,
 ) -> Result<()> {
-    let format = output_format(json, yaml)?;
+    let format = list_output_format(flags)?;
     let records = commands::run_dns(ctx.ops, ctx.db, host, record.clone()).await?;
     match format {
-        OutputFormat::Json | OutputFormat::Yaml => {
+        OutputFormat::Json | OutputFormat::Yaml | OutputFormat::Csv | OutputFormat::Markdown => {
             print_structured(format, &records)?;
         }
         OutputFormat::Text => {
@@ -33,7 +33,9 @@ pub(super) async fn run_reverse(
     let format = output_format(json, yaml)?;
     let res = commands::run_reverse(ctx.ops, ctx.db, ip).await?;
     match format {
-        OutputFormat::Json | OutputFormat::Yaml => print_structured(format, &res)?,
+        OutputFormat::Json | OutputFormat::Yaml | OutputFormat::Csv | OutputFormat::Markdown => {
+            print_structured(format, &res)?
+        }
         OutputFormat::Text => match res {
             // `netscli reverse` prints the remote-chosen name and nothing
             // else, so it is the shortest path from a hostile name to the

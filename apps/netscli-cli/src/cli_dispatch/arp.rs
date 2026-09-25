@@ -1,5 +1,6 @@
 use super::CommandContext;
-use crate::output::{output_format, print_structured, OutputFormat};
+use crate::args::ListOutput;
+use crate::output::{list_output_format, print_structured, OutputFormat};
 use anyhow::Result;
 use mac_address::MacAddress;
 use netscli_core::NetworkManager;
@@ -15,10 +16,9 @@ pub(super) async fn run(
     clear: bool,
     ip: &Option<String>,
     mac: &Option<String>,
-    json: bool,
-    yaml: bool,
+    flags: ListOutput,
 ) -> Result<()> {
-    let format = output_format(json, yaml)?;
+    let format = list_output_format(flags)?;
 
     #[derive(Serialize)]
     struct ArpActionResult<'a> {
@@ -30,7 +30,10 @@ pub(super) async fn run(
     if clear {
         NetworkManager::clear_table()?;
         match format {
-            OutputFormat::Json | OutputFormat::Yaml => {
+            OutputFormat::Json
+            | OutputFormat::Yaml
+            | OutputFormat::Csv
+            | OutputFormat::Markdown => {
                 print_structured(
                     format,
                     &ArpActionResult {
@@ -55,7 +58,10 @@ pub(super) async fn run(
         let mac = MacAddress::from_str(mac)?;
         NetworkManager::add_entry(ip, mac)?;
         match format {
-            OutputFormat::Json | OutputFormat::Yaml => {
+            OutputFormat::Json
+            | OutputFormat::Yaml
+            | OutputFormat::Csv
+            | OutputFormat::Markdown => {
                 print_structured(
                     format,
                     &ArpActionResult {
@@ -76,7 +82,10 @@ pub(super) async fn run(
         let ip: IpAddr = ip.parse()?;
         NetworkManager::delete_entry(ip)?;
         match format {
-            OutputFormat::Json | OutputFormat::Yaml => {
+            OutputFormat::Json
+            | OutputFormat::Yaml
+            | OutputFormat::Csv
+            | OutputFormat::Markdown => {
                 print_structured(
                     format,
                     &ArpActionResult {
@@ -93,7 +102,9 @@ pub(super) async fn run(
 
     let entries = ctx.ops.get_arp_table().await?;
     match format {
-        OutputFormat::Json | OutputFormat::Yaml => print_structured(format, &entries)?,
+        OutputFormat::Json | OutputFormat::Yaml | OutputFormat::Csv | OutputFormat::Markdown => {
+            print_structured(format, &entries)?
+        }
         OutputFormat::Text => {
             for e in entries {
                 let vendor = e.vendor.as_deref().unwrap_or("-");

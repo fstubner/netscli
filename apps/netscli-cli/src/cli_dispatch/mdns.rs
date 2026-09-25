@@ -1,5 +1,6 @@
 use super::CommandContext;
-use crate::output::{output_format, print_structured, OutputFormat};
+use crate::args::ListOutput;
+use crate::output::{list_output_format, print_structured, OutputFormat};
 use anyhow::Result;
 use netscli_core::sanitize_for_terminal;
 use std::time::Duration;
@@ -8,16 +9,17 @@ pub(super) async fn run(
     ctx: CommandContext<'_>,
     timeout_ms: u64,
     service_types: &[String],
-    json: bool,
-    yaml: bool,
+    flags: ListOutput,
 ) -> Result<()> {
-    let format = output_format(json, yaml)?;
+    let format = list_output_format(flags)?;
     let services = ctx
         .ops
         .discover_mdns(service_types, Duration::from_millis(timeout_ms))
         .await?;
     match format {
-        OutputFormat::Json | OutputFormat::Yaml => print_structured(format, &services)?,
+        OutputFormat::Json | OutputFormat::Yaml | OutputFormat::Csv | OutputFormat::Markdown => {
+            print_structured(format, &services)?
+        }
         OutputFormat::Text => print_services(timeout_ms, &services),
     }
     Ok(())
