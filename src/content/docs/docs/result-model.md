@@ -118,9 +118,11 @@ Inspect is a host profile. It combines host-level data with optional port scan d
 | `host` | Original target. |
 | `ip` | Resolved IP address. |
 | `hostname` | Reverse DNS name when available. |
-| `ping` | Reachability object with `alive`, `method`, `rtt_ms`, `seq`, and optional `error`. |
+| `ping` | Reachability object with `alive`, `method`, `rtt_ms`, `seq`, and optional `error` and `ttl` (the reply's time-to-live, where the platform reports it; Windows does). |
 | `ports` | Port scan rows using the same model as `scan`. |
 | `open_ports` | Convenience list containing only open port rows. |
+| `mac`, `vendor` | From the local ARP table, so only for a host on the same network segment. |
+| `os_hint` | A best guess at the OS: `family` (`Windows`, `Linux`, `macOS or iOS`, `FreeBSD`, `Unix-like`, `Network device`), an optional `detail` such as `Windows 11 or Server 2025 (build 26100)` or `Ubuntu`, and `evidence`, the clues behind it, strongest first. Omitted when no clue pointed anywhere. |
 
 ## mDNS services
 
