@@ -9,7 +9,11 @@ export const installCopy: SectionCopy = {
 
 const RELEASE_DOWNLOAD = 'https://github.com/fstubner/netscli/releases/latest/download';
 
-/** Shown on the direct .dmg rows.
+/** Shown on the direct .dmg rows and on the Homebrew cask.
+ *
+ *  The cask too: Homebrew quarantines what a cask downloads, and 5.0
+ *  deprecated `--no-quarantine`, the flag that skipped it. A cask install
+ *  meets the same Gatekeeper block as a browser download.
  *
  *  The macOS app is not notarized (that needs a paid Apple Developer
  *  account). Warning up front is better than someone hitting a Gatekeeper
@@ -21,6 +25,7 @@ const RELEASE_DOWNLOAD = 'https://github.com/fstubner/netscli/releases/latest/do
  *  an unknown developer gives only the System Settings route, which is what
  *  this names now. */
 const MACOS_UNSIGNED_HINT = 'Unsigned — open it once, then System Settings → Privacy & Security → Open Anyway';
+
 export const installByPlatform: Record<Platform, PlatformInstall> = {
   windows: {
     cli: [
@@ -75,6 +80,7 @@ export const installByPlatform: Record<Platform, PlatformInstall> = {
         // scoop, AUR and winget already name the two artifacts.
         label: 'Homebrew',
         command: 'brew install --cask fstubner/tap/netscli-gui',
+        hint: MACOS_UNSIGNED_HINT,
       },
       {
         label: 'Apple Silicon',
@@ -165,7 +171,7 @@ export const tryCommands: TryCommand[] = [
  * alternative route for every platform, which is what made it read as a wall
  * rather than a choice. */
 export const installBinariesNote =
-  'Rust users can <code>cargo install netscli</code>. Every asset is checksummed and signed with <a href="https://docs.sigstore.dev/cosign/overview/">Sigstore cosign</a> — see <a href="/docs/install/#verifying-a-download">how to verify a download</a>, plus standalone binaries and packet-capture builds.';
+  'Rust users can <code>cargo install netscli</code>. Every binary and installer is checksummed and signed with <a href="https://docs.sigstore.dev/cosign/overview/">Sigstore cosign</a> — see <a href="/docs/install/#verifying-a-download">how to verify a download</a>, plus standalone binaries and packet-capture builds.';
 
 // Two things /llms.txt says that no page does: a build-from-source route,
 // listed after the per-platform quickstart, and any caveat a reader acting
