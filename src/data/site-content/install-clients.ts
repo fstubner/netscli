@@ -4,6 +4,10 @@ import type { InstallClient } from './types';
 // plugin registers the MCP server and the handoff skill for every project;
 // `npx -y xtctx setup` then opts a project in, which is the "Then" block
 // below the grid (tryCommands in install.ts).
+//
+// opencode is not a card: it has no plugin format xtctx can use, so its
+// whole install is that setup step, and the note under the grid says so. As a
+// seventh card it sat alone on a third row, repeating the command below it.
 export const installClients: InstallClient[] = [
   {
     name: 'Claude Code',
@@ -30,10 +34,5 @@ export const installClients: InstallClient[] = [
     name: 'VS Code',
     commands: [],
     note: 'No command-line route: install from the Chat view, with the chat.plugins.enabled setting on.',
-  },
-  {
-    name: 'opencode',
-    commands: ['npx -y xtctx setup'],
-    note: 'opencode has no plugin format xtctx can use, so setup is its route.',
   },
 ];

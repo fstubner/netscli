@@ -27,4 +27,7 @@ export const sections: LandingSection[] = ['hero', 'surfaces', 'install', 'faq']
 // Both use the same content and the same components. Below 900px they are
 // the same page, because there is only one sensible arrangement of a
 // headline and a picture on a phone.
-export const landingLayout: LandingLayout = 'split';
+// Centred: the hero visual is the agent-session panel, which needs the full
+// width for its three panes. In the split layout's right column it had
+// about 600px, enough for the chat alone.
+export const landingLayout: LandingLayout = 'centered';

@@ -1,107 +1,76 @@
 import type { SectionCopy, SurfaceCard } from './types';
 
+// The problem first. The page went from the headline straight to how xtctx
+// works, and never said why switching agents costs anything.
 export const surfacesCopy: SectionCopy = {
-  heading: 'What it does, and what it leaves alone',
+  heading: 'Each agent keeps its own history',
   leadHtml:
-    'xtctx reads the transcript files your agents already write. It adds an index and some wiring; it does not summarise, store memory, or run a service.',
+    'Claude Code, Codex, Cursor and the rest each keep transcripts in their own place, and none of them reads the others’. Open a different agent and it starts from nothing, so you paste context in or explain the work again. xtctx indexes those transcripts and lets the next agent read them. It does not summarise them, keep a memory, or run a service.',
 };
 
+// Lines in the code visuals stay under 40 characters where they are written
+// for this page, so they fit a phone without scrolling. The setup excerpt is
+// real output and is left at its own width.
 export const surfaces: SurfaceCard[] = [
   {
     title: 'Five MCP tools',
-    wide: true,
     body:
-      'The next agent lists recent sessions from any tool (<code>xtctx_recent_sessions</code>), opens the raw messages (<code>xtctx_session_detail</code>), and searches them by keyword or by meaning (<code>xtctx_search_sessions</code>). <code>xtctx_continuity_status</code> checks the wiring, and an orchestrator can ask <code>xtctx_handoff_manifest</code> for stable session references. Here Codex picks up where a Claude Code session in the same repo stopped.',
-    // Captured 2026-09-24 with the built server (0.21.8) in a temporary
-    // project, `my-app`. The earlier Claude Code session is synthetic, two
-    // messages written for this, like the public demo's. The AGENTS.md text
-    // is the block setup wrote there, edited only by removing lines (the
-    // generated notice, the temp project path, the last three Session
-    // Retrieval bullets, and the sections below it). Both tool results are what the server returned,
-    // edited only by removing lines. The agent's own sentences are written
-    // for this panel.
-    visual: {
-      kind: 'agent-session',
-      session: {
-        title: 'my-app: Codex',
-        files: ['.xtctx/config.yaml', 'src/routes/login.ts', 'AGENTS.md', 'CLAUDE.md', 'package.json'],
-        open: {
-          path: 'AGENTS.md',
-          text: `<!-- xtctx:begin -->
-# xtctx Handoff
-
-Tool: codex
-Integration mode: instruction-only
-
-## Session Retrieval
-- Call \`xtctx_recent_sessions\` to list recent local sessions.
-- Call \`xtctx_session_detail\` with a \`session_ref\` for the raw transcript messages.
-<!-- xtctx:end -->`,
-          highlight: ['xtctx_recent_sessions', 'xtctx_session_detail'],
-        },
-        agentLabel: 'Codex',
-        turns: [
-          { role: 'user', text: 'Pick up where Claude Code left off.' },
-          { role: 'agent', text: 'AGENTS.md says to call xtctx_recent_sessions first.' },
-          {
-            role: 'tool',
-            call: 'xtctx_recent_sessions(limit: 3)',
-            result: [
-              '### 1. claude-code:a41c-login-limit',
-              '- Preview: Add a rate limit to POST /login: 5 attempts a minute per IP.',
-            ],
-          },
-          { role: 'agent', text: 'One recent session. Opening it.' },
-          {
-            role: 'tool',
-            call: 'xtctx_session_detail(session_ref: "claude-code:a41c-login-limit")',
-            result: [
-              'Added the limiter in src/routes/login.ts with a default of 5 per minute. Tests pass. Not done yet: reading the limit from RATE_LIMIT_PER_MIN.',
-            ],
-          },
-          {
-            role: 'agent',
-            text: 'The limiter is done. Next: read the limit from RATE_LIMIT_PER_MIN.',
-          },
-        ],
-      },
-    },
+      'The block setup writes into each agent’s instruction file tells it when to call them. They return what the transcripts say, not a summary of it.',
+    // One line of purpose per tool, from the tool descriptions in the
+    // managed block setup writes (see the project CLAUDE.md).
+    codeHtml: `xtctx_recent_sessions
+<span style="color:var(--ui-code-comment)">  recent sessions, from any agent</span>
+xtctx_session_detail
+<span style="color:var(--ui-code-comment)">  one session's raw messages</span>
+xtctx_search_sessions
+<span style="color:var(--ui-code-comment)">  keyword and semantic search</span>
+xtctx_continuity_status
+<span style="color:var(--ui-code-comment)">  is the wiring in place, and fresh</span>
+xtctx_handoff_manifest
+<span style="color:var(--ui-code-comment)">  stable session refs for orchestrators</span>`,
   },
   {
     title: 'Setup writes files you can read',
     body:
       'Managed blocks in the instruction files each agent already reads, MCP config per tool, and the handoff skill in each tool’s own format. Everything outside the managed blocks is left as you wrote it.',
     flip: true,
-    // Excerpt of real `xtctx setup -y` output in a fresh project, 2026-09-24.
-    // Setup printed absolute paths; they are shown here relative to the
-    // project. 18 files were written; five are shown.
+    // Excerpt of real `xtctx setup --yes` output in a fresh project,
+    // 2026-09-26, from the build of fix/cli-ux (1363d53, 23f3fea). Run on
+    // Windows; the backslashes in its paths are shown as slashes, and the
+    // kind column is padded to the widest kind shown here rather than to 34.
+    // 18 files were written; five are shown, and the coverage note and next
+    // steps after them are cut.
     codeHtml: `<span style="color:var(--ui-code-comment)">$</span> npx -y xtctx setup
-<span style="color:var(--ui-code-string)">xtctx setup complete</span> (18 changed, 0 unchanged)
-  updated config .xtctx/config.yaml
-  updated mcp:claude-code .mcp.json
-  updated mcp:codex .codex/config.toml
-  updated memory:claude-code CLAUDE.md
-  updated hook:claude-code .claude/settings.json`,
+<span style="color:var(--ui-code-string)">xtctx setup complete</span>: 18 created, 0 updated, 0 unchanged
+  created  config                    .xtctx/config.yaml
+  created  mcp:claude-code           .mcp.json
+  created  mcp:codex                 .codex/config.toml
+  created  instructions:claude-code  CLAUDE.md
+  created  instructions:codex        AGENTS.md`,
   },
   {
     title: 'Local by default',
     body:
-      'Transcripts stay where each agent wrote them and remain the source of truth. The index is a SQLite file in the project. Keep it: once an agent deletes old transcripts (Claude Code does after 30 days by default), the index is the only copy of those sessions. Semantic search runs a small embedding model on this machine; sending text to a remote embedding endpoint is something a project has to configure by hand.',
-    codeHtml: `<span style="color:var(--ui-code-key)">index</span> <span>.xtctx/state/xtctx.db</span>
-├── <span>sessions</span>
-├── <span>messages</span>
-├── <span>retrieval_units</span>
-├── <span>retrieval_units_fts</span>
-└── <span>retrieval_unit_vectors</span>`,
+      'Transcripts stay where each agent wrote them. The index is one SQLite file in the project, which setup keeps out of git. Keep it: agents delete old transcripts (Claude Code after 30 days by default), and after that the index is the only copy. Search runs a small embedding model on this machine; a remote embedding endpoint is something a project has to configure by hand.',
+    codeHtml: `<span style="color:var(--ui-code-comment)"># transcripts: read, never moved</span>
+~/.claude/projects/
+<span style="color:var(--ui-code-comment)">…and each other agent's own folder</span>
+
+<span style="color:var(--ui-code-comment)"># the index: one file, in the project</span>
+.xtctx/state/xtctx.db`,
   },
   {
     title: 'No service to run',
     body:
       'You never start xtctx. Each MCP client (Claude Code, Codex, Cursor and the rest) launches xtctx itself, in the background, and it exits when that client disconnects. It reads whatever your agents have written since last time, measures once which device on this machine embeds fastest, and leaves nothing running.',
     flip: true,
-    codeHtml: `<span style="color:var(--ui-code-comment)">you open Claude Code</span>  it starts its xtctx
-<span style="color:var(--ui-code-comment)">you ask for context</span>   xtctx reads what is new, answers
-<span style="color:var(--ui-code-comment)">you open Codex</span>        it starts its own
-<span style="color:var(--ui-code-comment)">you close a client</span>    its xtctx stops with it`,
+    codeHtml: `<span style="color:var(--ui-code-comment)">you open Claude Code</span>
+  → it starts its own xtctx
+<span style="color:var(--ui-code-comment)">you ask for context</span>
+  → xtctx reads what is new
+<span style="color:var(--ui-code-comment)">you open Codex</span>
+  → Codex starts its own
+<span style="color:var(--ui-code-comment)">you close a client</span>
+  → its xtctx exits with it`,
   },
 ];
