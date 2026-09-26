@@ -28,6 +28,7 @@ const groups = [
           {clients.map((client) => (
             <li class="client-card">
               <h3 class="client-name">{client.name}</h3>
+              {client.maker && <p class="client-maker">{client.maker}</p>}
               {client.commands.map((command) => (
                 <div class="client-cmd has-copy" data-copy={command}><code>{command}</code></div>
               ))}
@@ -155,6 +156,7 @@ const groups = [
   padding:16px 18px;display:flex;flex-direction:column;gap:8px;min-width:0;
 }
 .client-name{font-size:.9375rem;font-weight:700;color:var(--ui-ondark-text-strong);margin:0 0 2px}
+.client-maker{margin:-6px 0 4px;font-size:.75rem;color:var(--ui-ondark-text-muted)}
 /* Commands wrap rather than scroll: a long plugin command cut off behind a
    scrollbar is the command someone came here to read. */
 /* A code surface, like the Then panel below the grid, in both themes. */

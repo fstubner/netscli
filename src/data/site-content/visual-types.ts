@@ -44,7 +44,7 @@ export interface AgentSessionVisual {
   session: AgentSession;
 }
 
-export type Visual = ImageVisual | CodeVisual | TerminalVisual | AgentSessionVisual;
+export type Visual = ImageVisual | CodeVisual | TerminalVisual | AgentSessionVisual | HandoffVisual;
 
 export interface AgentSession {
   /** Centred in the window's title bar, e.g. the editor and project name. */
@@ -79,3 +79,34 @@ export type AgentTurn =
       /** What came back, one line each. Edit only by removing lines. */
       result: string[];
     };
+
+/** One session stopping and another, in a different agent, picking it up:
+ *  two chat windows side by side with an arrow between them. Simpler to read
+ *  than an agent-session, which shows a whole editor; this shows only what
+ *  was said and which tools were called. Stacks on a narrow screen. */
+export interface HandoffVisual {
+  kind: 'handoff';
+  /** The session that stopped. */
+  from: HandoffPane;
+  /** The session that picks the work up. */
+  to: HandoffPane;
+  /** On the arrow between the two, usually the product's name. */
+  bridge: string;
+}
+
+export interface HandoffPane {
+  /** The agent's name, in the window's title bar and over its messages. */
+  agent: string;
+  /** Beside the name in the title bar, e.g. "yesterday". */
+  when?: string;
+  /** Over the user's messages. Default "You". */
+  userLabel?: string;
+  turns: HandoffTurn[];
+}
+
+/** A tool call is one line: its name and, optionally, what it came back
+ *  with, in a few words. The full call and result are an agent-session's job. */
+export type HandoffTurn =
+  | { role: 'user'; text: string }
+  | { role: 'agent'; text: string }
+  | { role: 'tool'; name: string; summary?: string };

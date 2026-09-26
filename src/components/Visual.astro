@@ -4,6 +4,7 @@
 // here and a new member of that union, and every slot gets it at once.
 import type { Visual } from '../data/site-content/visual-types';
 import AgentSession from './visuals/AgentSession.astro';
+import Handoff from './visuals/Handoff.astro';
 
 interface Props {
   visual: Visual;
@@ -48,3 +49,4 @@ const image =
   />
 )}
 {visual.kind === 'agent-session' && <AgentSession session={visual.session} />}
+{visual.kind === 'handoff' && <Handoff visual={visual} />}

@@ -629,6 +629,9 @@ const hasSecondCommand = hero.quickInstall.trim() !== '';
 }
 .bigshot img{width:100%;height:auto;display:block}
 .bigshot img{cursor:zoom-in}
+/* A visual made of its own windows brings its own frame; the shot's frame
+   around it drew a second box round both windows and the gap between them. */
+.bigshot:has(> .handoff){border:0;border-radius:0;box-shadow:none;overflow:visible}
 
 
 @media(max-width:600px){

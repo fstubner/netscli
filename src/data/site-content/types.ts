@@ -167,6 +167,10 @@ export interface PlatformInstall {
 export interface InstallClient {
   /** The client as its users call it: "Claude Code", "VS Code". */
   name: string;
+  /** Under the name, so a visitor can tell what the client is without its
+   *  logo -- most vendors do not allow a third party to show theirs. Who
+   *  makes it and what kind of tool it is: "Anthropic · terminal agent". */
+  maker?: string;
   /** Commands, in order, each with its own copy button. Empty for a client
    *  whose route has no command -- say what to do in `note` instead. */
   commands: string[];
