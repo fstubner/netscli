@@ -33,7 +33,7 @@ export const compareColumns: ComparisonColumn[] = [
 // per question a buyer asks, 2026-09-24) was accurate and unreadable: too much
 // to take in, nothing to scan. A tick table is only honest if some rows go to
 // the other tools, so some do: service versions and OS detection, where nmap
-// goes further than netscli's partial answers; plugins and scripts (nmap,
+// goes further than netscli's partial answers; add-ons (nmap,
 // Angry IP Scanner); remote actions (Advanced IP Scanner); and "Open source"
 // is a tick for three of four.
 // Rows every tool ticks (desktop app, naming devices by MAC vendor) are left
@@ -65,8 +65,10 @@ export const compareRows: ComparisonRow[] = [
   // nmap's NSE runs Lua scripts (hundreds ship with it, vulnerability checks
   // among them). Angry IP Scanner takes Java plugins that add fetchers and
   // feeders (angryip.org documentation). NetsCLI and Advanced IP Scanner
-  // have no extension point.
-  { feature: 'Plugins or scripts', cells: ['—', '✓', '✓', '—'] },
+  // have no extension point. "Add-ons", not "Plugins or scripts": the
+  // latter read as "can't be scripted", and NetsCLI is driven from scripts
+  // through --json and the MCP server (the Command line and AI agents rows).
+  { feature: 'Add-ons (plugins, scripts)', cells: ['—', '✓', '✓', '—'] },
   // Record queries, not hostnames: all four name hosts by reverse DNS, so a
   // row that read as "resolves hostnames" would be wrong for the others.
   // nmap queries other record types and DNS-SD only from specific NSE
