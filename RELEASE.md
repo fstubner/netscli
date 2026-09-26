@@ -17,11 +17,19 @@ when someone runs it.
    script, which syncs the plugin manifests, the marketplace entry and the
    landing site), writes the CHANGELOG entry from GitHub's generated notes,
    then commits, tags and creates the GitHub Release.
-4. With `publish_npm` left on, it then reuses the `publish` workflow against
-   the tag it just created: tag check, `verify:release`, then
-   `npm publish --provenance` over OIDC trusted publishing — no long-lived
-   token. A `post-publish-smoke` job installs the published version from the
-   registry and runs `--help`/`--version` against it.
+4. With `publish_npm` left on, it then starts the `publish` workflow as a
+   separate run against the tag it just created: tag check,
+   `verify:release`, then `npm publish --provenance` over OIDC trusted
+   publishing — no long-lived token. A `post-publish-smoke` job installs the
+   published version from the registry and runs `--help`/`--version` against
+   it. Watch that run, not the release run: the release run finishes as soon
+   as it has started the publish.
+
+   A separate run, not a reusable-workflow call, because npm trusted
+   publishing checks the workflow that started the run. The trusted
+   publisher on npmjs.com is `publish.yml`; called from `release.yml`, npm
+   would see `release.yml` and refuse, after the tag was already pushed. If
+   the trusted publisher is ever changed, it must stay `publish.yml`.
 
 To publish a version that was tagged earlier but never reached npm, dispatch
 `publish` on its own against that tag, typing `publish` to confirm. That is

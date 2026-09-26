@@ -52,6 +52,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      # Only to start publish.yml at the end; see that step.
+      actions: write
     outputs:
       version: ${{ steps.bump.outputs.version }}
       tag: ${{ steps.bump.outputs.tag }}
@@ -110,6 +112,30 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             landing/package-lock.json
+
+      # Before the ten minutes of install and verify, and before anything is
+      # written: the push at the end is refused unless this token belongs to
+      # an admin (branch protection's only bypass), and an expired or
+      # under-scoped token otherwise shows up only there.
+      - name: Check the release token can push to main
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "$GH_TOKEN" ]; then
+            echo "The RELEASE_PLEASE_TOKEN secret is not set." >&2
+            exit 1
+          fi
+          login=$(gh api user --jq .login) || {
+            echo "The RELEASE_PLEASE_TOKEN secret is rejected by GitHub (expired or revoked?)." >&2
+            exit 1
+          }
+          permission=$(gh api "repos/${GITHUB_REPOSITORY}/collaborators/${login}/permission" --jq .permission)
+          echo "release token belongs to ${login} (${permission})"
+          if [ "$permission" != "admin" ]; then
+            echo "${login} is not an admin here, so the push to protected main will be refused." >&2
+            exit 1
+          fi
 
       - name: Install root dependencies
         run: npm ci
@@ -224,20 +250,23 @@ jobs:
           printf '%s\n' "$NOTES" > /tmp/notes.md
           gh release create "$TAG" --title "xtctx: v${VERSION}" --notes-file /tmp/notes.md
 
-  # Reuses publish.yml rather than repeating it: the tag check, the
-  # verify:release gate, the OIDC publish and the post-publish registry smoke
-  # all live there, and are equally correct when someone publishes an
-  # already-tagged version by hand.
-  publish:
-    needs: cut
-    if: github.event.inputs.publish_npm == 'true'
-    uses: ./.github/workflows/publish.yml
-    permissions:
-      contents: read
-      id-token: write
-    with:
-      confirm: publish
-      # The tag this run just created. Without it the publish job checks out
-      # the caller's commit — the one from before the bump — whose version is
-      # not the tagged one, so its tag check fails and nothing publishes.
-      ref: ${{ needs.cut.outputs.tag }}
+      # Starts publish.yml as a run of its own, against the tag just pushed,
+      # rather than calling it as a reusable workflow. npm trusted publishing
+      # checks the workflow that started the run: called from here that would
+      # be release.yml, which is not the trusted publisher, and the publish
+      # would fail after the tag was already out. The tag check, the
+      # verify:release gate, the OIDC publish and the registry smoke all stay
+      # in publish.yml, the same as when someone publishes a tag by hand.
+      #
+      # A workflow_dispatch from GITHUB_TOKEN does start a run; it is the one
+      # event GitHub exempts from its no-recursion rule.
+      - name: Start the npm publish
+        if: github.event.inputs.publish_npm == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.bump.outputs.tag }}
+        run: |
+          set -euo pipefail
+          gh workflow run publish.yml --repo "$GITHUB_REPOSITORY" --ref "$TAG" -f confirm=publish
+          echo "Publish started against ${TAG}. It is done when post-publish-smoke is green:"
+          echo "  https://github.com/${GITHUB_REPOSITORY}/actions/workflows/publish.yml"

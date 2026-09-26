@@ -1,42 +1,34 @@
 name: publish
 
-# Publishing to npm, either on its own or as the second half of `release.yml`.
+# Publishing to npm. Dispatched against a release tag: by `release.yml` right
+# after it cuts one, or by hand for a version tagged earlier.
 #
 # Kept separate from cutting a release so an already-tagged version can be
-# published later — which is not hypothetical: this repo sat nine versions
+# published later — which is not hypothetical: this repo sat fifteen versions
 # tagged-but-unpublished, and recovering from that needs a publish that does
 # not also cut something new.
+#
+# Always its own run, never called as a reusable workflow. npm trusted
+# publishing checks the workflow that STARTED the run, and every publish that
+# ever succeeded ran as this file. Called from `release.yml` the identity npm
+# saw would be `release.yml`, which is not the trusted publisher, so the
+# publish half of a release would fail after the tag was already pushed:
+# another tagged-but-unpublished version. That path never ran once.
 #
 # Do not add a `release: published` trigger. It had one once, with releases
 # marked as drafts so nothing published itself, and that broke the release
 # process outright: GitHub's `releases/latest` endpoint hides drafts, the
 # release tooling read that endpoint to find the last release, so it saw the
 # last pre-draft version forever and proposed a release covering the entire
-# history. It cut 54 versions in an hour before anyone noticed. Releases are
-# published rather than drafted for that reason, and the gate is that someone
-# runs this.
+# history. It cut 76 versions over four days before anyone noticed. Releases
+# are published rather than drafted for that reason, and the gate is that
+# someone, or the release workflow they started, runs this.
 on:
   workflow_dispatch:
     inputs:
       confirm:
         description: "Type publish to publish package.json version from this ref via OIDC"
         required: true
-        type: string
-  # Called by release.yml so cutting a release and publishing it are one
-  # action, without duplicating the tag check, verify:release gate, OIDC
-  # publish and post-publish smoke that live here.
-  workflow_call:
-    inputs:
-      confirm:
-        required: true
-        type: string
-      # The ref to publish from. A reusable workflow checks out its *caller's*
-      # commit by default, and release.yml's caller commit is the one from
-      # before the version bump — so the tag check below could never pass, and
-      # the publish half of a release could never run. The caller passes the
-      # tag it just created.
-      ref:
-        required: false
         type: string
 
 permissions:
@@ -62,10 +54,8 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # The tag check below needs tags; the default shallow clone has none.
+          # The dispatched ref -- the release tag -- is what gets checked out.
           fetch-depth: 0
-          # Empty on a direct dispatch, where the dispatched ref is already
-          # right and checkout's own default applies.
-          ref: ${{ inputs.ref }}
 
       - name: Setup Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0

@@ -53,11 +53,9 @@ describe("release gate", () => {
     const publish = await readWorkflow("publish.yml");
     const triggers = topLevelTriggers(publish);
 
-    // `workflow_call` is how `release.yml` reuses this job rather than
-    // duplicating the tag check, the verify gate and the OIDC publish. It adds
-    // no automatic path of its own: a called workflow only runs when its
-    // caller does, and the caller is manual.
-    expect(triggers.sort()).toEqual(["workflow_call", "workflow_dispatch"]);
+    // Dispatch only. `release.yml` starts it with a dispatch too, never as a
+    // reusable workflow: see the npm trusted publishing test below.
+    expect(triggers).toEqual(["workflow_dispatch"]);
     for (const trigger of AUTOMATIC_TRIGGERS) {
       expect(triggers, `publish.yml must not run on ${trigger}`).not.toContain(trigger);
     }
@@ -85,17 +83,19 @@ describe("release gate", () => {
     expect(release).toMatch(/github\.ref[^\n]*refs\/heads\/main/);
   });
 
-  it("publishes the commit it just tagged, not the one it started from", async () => {
-    // A reusable workflow checks out its *caller's* commit by default, and
-    // release.yml calls publish.yml after bumping and committing — so without
-    // an explicit ref the publish job checks out the pre-bump commit, whose
-    // version is not the tagged one. `publish.yml`'s "is this commit tagged
-    // for its version" step then fails by construction and nothing publishes.
+  it("publishes as its own run of publish.yml, against the tag it just pushed", async () => {
+    // npm trusted publishing checks the workflow that started the run. Called
+    // from release.yml as a reusable workflow, that is release.yml, not the
+    // publish.yml every successful publish ran as, so the publish fails after
+    // the tag is out. A dispatch keeps publish.yml the identity, and the tag
+    // as the ref keeps its "is this commit tagged for its version" check
+    // true: the pre-bump commit the caller started from would fail it.
     const release = await readWorkflow("release.yml");
-    const publish = await readWorkflow("publish.yml");
 
-    expect(release).toMatch(/ref:\s*\$\{\{\s*needs\.cut\.outputs\.tag\s*\}\}/);
-    expect(publish).toMatch(/ref:\s*\$\{\{\s*inputs\.ref\s*\}\}/);
+    expect(release).not.toMatch(/uses:\s*\.\/\.github\/workflows\/publish\.ya?ml/);
+    expect(release).not.toMatch(/id-token:\s*write/);
+    expect(release).toMatch(/gh workflow run publish\.yml[^\n]*--ref "\$TAG"[^\n]*confirm=publish/);
+    expect(release).toMatch(/actions:\s*write/);
   });
 
   it("has no workflow that creates a release or tag on an automatic trigger", async () => {
