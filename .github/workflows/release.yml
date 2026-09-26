@@ -301,9 +301,10 @@ jobs:
   # requires libpcap/Npcap at runtime, and NetsCLI does not redistribute Npcap
   # inside the Windows desktop installer.
   #
-  # macOS .dmg ships UNSIGNED — users see "unverified developer" on first
-  # launch and must right-click → Open. Notarization (paid Apple Developer
-  # cert) is tracked separately. Linux ARM64 + Windows ARM64 GUI builds
+  # macOS .dmg ships ad-hoc signed and not notarized: Gatekeeper blocks the
+  # first launch until the user clicks Open Anyway in System Settings →
+  # Privacy & Security (macOS 15 removed right-click → Open). Notarization
+  # needs a paid Apple Developer membership. Linux ARM64 + Windows ARM64 GUI builds
   # are out of matrix scope for v0.2.1 to keep CI budget reasonable.
   gui:
     name: Build GUI installer
@@ -489,6 +490,34 @@ jobs:
           if ($msis.Count -ne 1) { Write-Error "expected one .msi, found $($msis.Count)"; exit 1 }
           pwsh -NoProfile -NonInteractive -File (Join-Path $env:NETSCLI_SIGN_TOOLS 'check-msi-signed.ps1') $msis[0].FullName
           exit $LASTEXITCODE
+
+      # The same check for macOS, where the failure was real: 0.3.3 shipped a
+      # NetsCLI.app whose only signature was the one Apple's linker puts on
+      # every arm64 executable. That signature says the bundle's resources
+      # are sealed, and nothing sealed them, so `codesign --verify` fails
+      # with "code has no resources but signature indicates they must be
+      # present" and Gatekeeper rejects the app as broken rather than as
+      # merely unnotarized (checked on a GitHub macOS runner against the
+      # released .dmg, 2026-09-26). `bundle.macOS.signingIdentity: "-"`
+      # makes Tauri ad-hoc sign the whole bundle, which seals it. This
+      # mounts the .dmg that ships and verifies the app inside it, so a
+      # config that stops applying fails the release instead of a user.
+      - name: Check the app inside the DMG is sealed (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          set -euo pipefail
+          dmgs=(target/"${TARGET}"/release/bundle/dmg/*.dmg)
+          if [ "${#dmgs[@]}" -ne 1 ] || [ ! -f "${dmgs[0]}" ]; then
+            echo "::error::expected one .dmg under target/${TARGET}/release/bundle/dmg/, found: ${dmgs[*]}"
+            exit 1
+          fi
+          mnt="$(mktemp -d)"
+          hdiutil attach -nobrowse -readonly "${dmgs[0]}" -mountpoint "$mnt" >/dev/null
+          trap 'hdiutil detach "$mnt" >/dev/null' EXIT
+          codesign --verify --deep --strict --verbose=2 "$mnt/NetsCLI.app"
 
       # linuxdeploy bundles a copy of the wayland/xcb client stack and puts
       # it ahead of the host's on LD_LIBRARY_PATH, which aborts the app on
