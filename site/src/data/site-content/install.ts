@@ -15,20 +15,6 @@ const RELEASE_DOWNLOAD = 'https://github.com/fstubner/netscli/releases/latest/do
  *  account). Warning up front is better than someone hitting a Gatekeeper
  *  dialog with no context and assuming the download is malware. */
 const MACOS_UNSIGNED_HINT = 'Unsigned — right-click → Open on first launch';
-/* Describes the row it is attached to, which is the direct .msi download.
- *
- * It said "Unsigned -- SmartScreen may warn. Checksums are published." until
- * after 0.3.3, the first release with an Authenticode-signed .msi: the one
- * place on the site still saying so once the install docs were corrected.
- * A new certificate has no SmartScreen reputation yet, so the warning stays,
- * as a "may". (Earlier still it ended "winget verifies the hash", true of
- * winget and not of a direct download.)
- *
- * Stated as the exception rather than labelling its opposite: the package
- * manager rows carry no "Signed" or "Hash-verified" tag, because that is the
- * norm there; only the row that differs says anything. */
-const WINDOWS_INSTALLER_HINT = 'Signed. SmartScreen may still warn while the certificate is new.';
-
 export const installByPlatform: Record<Platform, PlatformInstall> = {
   windows: {
     cli: [
@@ -60,7 +46,6 @@ export const installByPlatform: Record<Platform, PlatformInstall> = {
       {
         label: 'Installer',
         href: `${RELEASE_DOWNLOAD}/netscli-gui-windows-x86_64.msi`,
-        hint: WINDOWS_INSTALLER_HINT,
       },
     ],
   },
