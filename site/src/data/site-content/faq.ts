@@ -15,9 +15,9 @@ export const faq: FaqItem[] = [
   {
     group: 'What it is',
     q: 'What is NetsCLI?',
-    a: 'NetsCLI is an open-source network scanner written in Rust. It discovers hosts on a subnet, scans TCP ports, queries DNS, traces routes, reads local interfaces and the ARP neighbor cache, and can capture packets when packet-capture support and the required system library are available. You can use it from the desktop app, terminal UI, CLI, or Model Context Protocol (MCP) server.',
+    a: 'NetsCLI is an open-source network scanner written in Rust. It discovers hosts on a subnet, scans TCP and UDP ports, queries DNS, traces routes, reads local interfaces and the ARP neighbor cache, and can capture packets when packet-capture support and the required system library are available. You can use it from the desktop app, terminal UI, CLI, or Model Context Protocol (MCP) server.',
     aHtml:
-      'NetsCLI is an open-source network scanner written in Rust. It discovers hosts on a subnet, scans TCP ports, queries DNS, traces routes, reads local interfaces and the ARP neighbor cache, and can capture packets when packet-capture support and the required system library are available. You can use it from the desktop app, <a href="#surfaces">terminal UI</a>, CLI, or Model Context Protocol (MCP) server.',
+      'NetsCLI is an open-source network scanner written in Rust. It discovers hosts on a subnet, scans TCP and UDP ports, queries DNS, traces routes, reads local interfaces and the ARP neighbor cache, and can capture packets when packet-capture support and the required system library are available. You can use it from the desktop app, <a href="#surfaces">terminal UI</a>, CLI, or Model Context Protocol (MCP) server.',
   },
   {
     group: 'Install and updates',
@@ -123,9 +123,9 @@ export const faq: FaqItem[] = [
   {
     group: 'Network workflows',
     q: 'Can NetsCLI replace nmap, and does it have a TUI?',
-    a: 'NetsCLI covers the simpler cases nmap is often reached for: host discovery, basic TCP port scans, DNS lookups, and ARP-table inspection on a local network, with direct subcommands and structured output. It also ships a terminal UI — run netscli with no arguments to get an interactive, keyboard-driven scanner in the terminal, which nmap itself does not provide. For advanced service detection, NSE scripts, and OS fingerprinting, nmap remains the better tool.',
+    a: 'NetsCLI covers the simpler cases nmap is often reached for: host discovery, TCP and UDP port scans, DNS lookups, and ARP-table inspection on a local network, with direct subcommands and structured output. It also ships a terminal UI — run netscli with no arguments to get an interactive, keyboard-driven scanner in the terminal, which nmap itself does not provide. For advanced service detection, NSE scripts, and OS fingerprinting, nmap remains the better tool.',
     aHtml:
-      'NetsCLI covers the simpler cases nmap is often reached for: host discovery, basic TCP port scans, DNS lookups, and ARP-table inspection on a local network, with direct subcommands and structured output. It also ships a <a href="#surfaces">terminal UI</a> — run <code>netscli</code> with no arguments to get an interactive, keyboard-driven scanner in the terminal, which nmap itself does not provide. For advanced service detection, NSE scripts, and OS fingerprinting, nmap remains the better tool.',
+      'NetsCLI covers the simpler cases nmap is often reached for: host discovery, TCP and UDP port scans, DNS lookups, and ARP-table inspection on a local network, with direct subcommands and structured output. It also ships a <a href="#surfaces">terminal UI</a> — run <code>netscli</code> with no arguments to get an interactive, keyboard-driven scanner in the terminal, which nmap itself does not provide. For advanced service detection, NSE scripts, and OS fingerprinting, nmap remains the better tool.',
   },
   {
     group: 'Network workflows',
