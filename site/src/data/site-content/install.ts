@@ -13,8 +13,14 @@ const RELEASE_DOWNLOAD = 'https://github.com/fstubner/netscli/releases/latest/do
  *
  *  The macOS app is not notarized (that needs a paid Apple Developer
  *  account). Warning up front is better than someone hitting a Gatekeeper
- *  dialog with no context and assuming the download is malware. */
-const MACOS_UNSIGNED_HINT = 'Unsigned — right-click → Open on first launch';
+ *  dialog with no context and assuming the download is malware.
+ *
+ *  It said "right-click → Open on first launch" until 2026-09. macOS 15
+ *  Sequoia removed that override: Control-click → Open now shows the same
+ *  refusal with no Open button. Apple's support page for opening an app from
+ *  an unknown developer gives only the System Settings route, which is what
+ *  this names now. */
+const MACOS_UNSIGNED_HINT = 'Unsigned — open it once, then System Settings → Privacy & Security → Open Anyway';
 export const installByPlatform: Record<Platform, PlatformInstall> = {
   windows: {
     cli: [
