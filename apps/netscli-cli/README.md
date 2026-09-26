@@ -33,7 +33,7 @@ that shares the same Rust core but isn't published to crates.io
 
 ## Commands
 
-Host discovery, TCP port scan, subnet sweep, ping, traceroute, DNS
+Host discovery, TCP and UDP port scans, subnet sweep, ping, traceroute, DNS
 lookup (all record types), reverse DNS, ARP table with vendor
 resolution, interface listing, and optional packet capture.
 

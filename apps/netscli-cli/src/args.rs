@@ -79,7 +79,7 @@ pub enum Commands {
         format: ListOutput,
     },
 
-    /// Scan TCP ports on a host
+    /// Scan TCP ports on a host, or UDP with --udp
     Scan {
         /// Host to scan
         host: String,
