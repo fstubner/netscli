@@ -48,13 +48,21 @@ const groups = [
               return (
                 <div class="install-group">
                   <h3 class="install-group-title">{title}</h3>
-                  <div class="reco">
+                  <div class={`reco${recommended.command ? '' : ' reco-download'}`}>
                     <div class="reco-meta">{recommended.label}</div>
                     {recommended.command ? (
                       <div class="cmd big has-copy always-show">{recommended.command}</div>
                     ) : (
-                      <a class="cmd big install-download" href={recommended.href} download>
-                        Download {recommended.label}
+                      /* A button, not a command chip. It was drawn in the
+                         `.cmd big` box the other tabs use for their
+                         recommended command, so it read as a command that
+                         said "Download Debian / Ubuntu" -- the label above
+                         it, repeated, in a box made for copying. The label
+                         names the package type; the button just says
+                         Download, like the AppImage row's, and is styled like
+                         it (not green: see `a.install-download` below). */
+                      <a class="install-download" href={recommended.href} download>
+                        Download →
                       </a>
                     )}
                     {recommended.hint && <p class="install-hint">{recommended.hint}</p>}
@@ -217,6 +225,16 @@ html[data-theme='light'] #install .reco{
   box-shadow:var(--ui-lift-sm);
 }
 .reco-meta{font-size:.85rem;font-weight:500;color:var(--ui-text);margin-bottom:8px}
+/* A recommended download (Linux's .deb) lays out like the download rows
+   under it: label left, button on the right edge. Stacked, the button sat
+   under the label on the left while the AppImage button below it sat on the
+   right, so the two buttons in one group pointed in different directions.
+   16px sides match `.alt`, so labels and buttons line up down the group. */
+.reco-download{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;
+  gap:8px 16px;padding-inline:16px;
+}
+.reco-download .reco-meta{margin-bottom:0}
 .cmd.big{font-size:1.05rem;padding-right:74px}
 /* The container is the divider: the rows sit on it with a 1px gap, so its
    background shows through as the hairline between them. Chip tokens, so the
@@ -267,8 +285,8 @@ html[data-theme='light'] #install .reco{
  *
  * This was accent text on an accent tint inside an accent border -- the
  * loudest thing in the section, on the row that is the *least* recommended
- * route: a direct download is unsigned, unverified and unmanaged, while the
- * package-manager rows above it check a hash. The green was pointing at the
+ * route: a direct download is unmanaged and nothing checks it on the way
+ * in, while the package-manager rows above it check a hash. The green was pointing at the
  * wrong option. It reads as one route among several now, and keeps the
  * accent for hover and focus so it is still obviously a control. */
 a.install-download{

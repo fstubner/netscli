@@ -52,7 +52,7 @@ export const hero: Hero = {
     // it. "All on one Rust core" carries the same point as "each interface
     // calls the same Rust core, so results stay consistent" -- the reader who
     // needs the longer version is already reading /docs/.
-    'Discover LAN devices, scan TCP ports, query DNS, and inspect hosts from the desktop app, terminal UI, CLI, or MCP server — all on one Rust core.',
+    'Discover LAN devices, scan TCP and UDP ports, query DNS, and inspect hosts from the desktop app, terminal UI, CLI, or MCP server — all on one Rust core.',
   // `winget install netscli` leads, and the shell script follows.
   //
   // os-tabs.ts already swapped these per-OS at runtime -- Windows visitors
