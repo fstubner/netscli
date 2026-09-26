@@ -80,6 +80,16 @@ its heading and collects entries; the date and the link go on with the tag.
 
 ### Fixed
 
+- **The macOS app could be refused as broken on Apple Silicon.** Its only
+  signature was the one Apple's linker puts on every arm64 program, which
+  claims the app's files are sealed when nothing sealed them. macOS's own
+  checks fail it with "code has no resources but signature indicates they
+  must be present", a broken app rather than one from an unidentified
+  developer, so the Open Anyway route the site describes may never be
+  offered. The whole app is now ad-hoc signed, which seals it, and the
+  release checks the app inside the finished `.dmg` before shipping it. It is
+  still not notarized, so the first launch still goes through Open Anyway in
+  System Settings → Privacy & Security.
 - **Redis, DNS, NFS, SOCKS and Prometheus ports were probed as if they
   spoke TLS.** The scanner treated any service name ending in "s" as a TLS
   variant, a rule meant for `imaps` and `pop3s`, so these ports got a TLS
