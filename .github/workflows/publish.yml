@@ -2,8 +2,9 @@ name: Publish to package managers
 
 # Fans out from a single GitHub release to every downstream registry:
 # crates.io, Homebrew tap, Scoop bucket, Winget (microsoft/winget-pkgs),
-# AUR (netscli-bin). Each job is independent — one failure doesn't block
-# the others, and each is re-runnable from the Actions tab.
+# AUR (netscli-bin), npm and the MCP Registry. Each job is independent — one
+# failure doesn't block the others, and each is re-runnable from the Actions
+# tab. The one ordering is the MCP Registry after npm, which it points at.
 #
 # Triggers:
 #   - On `workflow_dispatch` with a tag input. The canonical path:
@@ -699,9 +700,46 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: gh release upload "$TAG" "${RUNNER_TEMP}"/mcpb/*.mcpb --clobber
 
+  # ─── MCP Registry ───────────────────────────────────────────────────
+  # The official directory MCP clients browse (registry.modelcontextprotocol.io).
+  # It lists metadata, not files: packaging/mcp-registry/server.json points
+  # at the npm launcher, run with `serve`. So this follows the npm job, and
+  # the script waits until npm serves the new version with its `mcpName`,
+  # which the registry checks before it accepts the listing.
+  #
+  # The `if` runs it after a successful npm job in a full fan-out, or alone
+  # when dispatched with only=mcp-registry (npm is then skipped, and a job
+  # whose need was skipped would otherwise be skipped too).
+  mcp-registry:
+    name: MCP Registry
+    needs: npm
+    if: >-
+      always() && (inputs.only == 'mcp-registry' ||
+      (inputs.only == '' && needs.npm.result == 'success'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      # `mcp-publisher login github-oidc` proves the io.github.fstubner
+      # namespace with this workflow's identity token. No secret exists.
+      id-token: write
+    steps:
+      # The default branch, as in the npm job: this checkout supplies the
+      # script and the server.json template, not anything that ships.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: List the release in the MCP Registry
+        run: bash scripts/release/publish-mcp-registry.sh "$TAG"
+
   # ─── Fan-out summary ───────────────────────────────────────────────
   #
-  # The nine jobs above are deliberately independent — crates.io landing
+  # The jobs above are deliberately independent — crates.io landing
   # while AUR fails is a normal, recoverable state, and each job re-runs on
   # its own. The cost of that independence was that "did this release
   # actually reach every registry?" could only be answered by opening nine
@@ -723,6 +761,7 @@ jobs:
     needs:
       - crates-io
       - npm
+      - mcp-registry
       - mcpb
       - homebrew
       - scoop
