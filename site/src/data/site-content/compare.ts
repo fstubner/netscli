@@ -33,8 +33,9 @@ export const compareColumns: ComparisonColumn[] = [
 // per question a buyer asks, 2026-09-24) was accurate and unreadable: too much
 // to take in, nothing to scan. A tick table is only honest if some rows go to
 // the other tools, so some do: service versions and OS detection, where nmap
-// goes further than netscli's partial answers; remote actions (Advanced IP
-// Scanner); and "Open source" is a tick for three of four.
+// goes further than netscli's partial answers; plugins and scripts (nmap,
+// Angry IP Scanner); remote actions (Advanced IP Scanner); and "Open source"
+// is a tick for three of four.
 // Rows every tool ticks (desktop app, naming devices by MAC vendor) are left
 // out: they tell nobody anything.
 export const compareRows: ComparisonRow[] = [
@@ -61,18 +62,27 @@ export const compareRows: ComparisonRow[] = [
   // rights). NetsCLI's inspect gives a labelled hint from SMB, banners, MAC
   // vendor and TTL instead (#476). Neither of the others tries.
   { feature: 'OS detection', cells: ['Hints', '✓', '—', '—'] },
-  // nmap: reverse DNS built in, other record types and DNS-SD from specific
-  // NSE scripts. Angry IP Scanner asks mDNS only to name a local host.
-  { feature: 'DNS and mDNS lookups', cells: ['✓', 'Via scripts', '—', '—'] },
+  // nmap's NSE runs Lua scripts (hundreds ship with it, vulnerability checks
+  // among them). Angry IP Scanner takes Java plugins that add fetchers and
+  // feeders (angryip.org documentation). NetsCLI and Advanced IP Scanner
+  // have no extension point.
+  { feature: 'Plugins or scripts', cells: ['—', '✓', '✓', '—'] },
+  // Record queries, not hostnames: all four name hosts by reverse DNS, so a
+  // row that read as "resolves hostnames" would be wrong for the others.
+  // nmap queries other record types and DNS-SD only from specific NSE
+  // scripts. Angry IP Scanner asks mDNS only to name a local host.
+  { feature: 'DNS record and mDNS queries', cells: ['✓', 'Via scripts', '—', '—'] },
   { feature: 'Remote desktop, shutdown, Wake-on-LAN', cells: ['—', '—', '—', '✓'] },
-  // nmap writes XML and text; Angry IP Scanner CSV, XML, text and SQL;
-  // Advanced IP Scanner CSV, XML and HTML. None writes JSON.
-  { feature: 'JSON output', cells: ['✓', '—', '—', '—'] },
+  // No output-format row. A "JSON output" row went to NetsCLI alone, but
+  // nmap writes XML, Angry IP Scanner CSV, XML, text and SQL, and Advanced
+  // IP Scanner CSV, XML and HTML: every tool has a machine-readable export,
+  // so singling out JSON read as a gotcha.
   // nmap calls itself "free and open source" (NPSL, source available).
   // Advanced IP Scanner publishes no source code or licence text.
   { feature: 'Open source', cells: ['✓', '✓', '✓', '—'] },
 ];
 
-// No note: the rows now say where each of the others is stronger, which is
-// all the note under the earlier table was for.
-export const compareNoteHtml = '';
+// When and against what, because every cell goes stale as the other tools
+// release. Keep the versions in step with the header comment when rechecking.
+export const compareNoteHtml =
+  'Compared in September 2026 against NetsCLI 0.3.4, nmap 7.991, Angry IP Scanner 3.10.0 and Advanced IP Scanner 2.5. Spot something wrong? <a href="https://github.com/fstubner/netscli/issues/new">Open an issue</a>.';
