@@ -10,10 +10,13 @@ of those tools — through a small read-only MCP server, so the next agent can
 pick up where the last one left off.
 
 Raw local transcripts are authoritative. xtctx never summarizes and never
-persists derived "memory"; the index is derived data that can always be
-deleted and rebuilt. It sends transcript content nowhere unless a project
-opts in to an external embedding endpoint, which is written into
-`.xtctx/config.yaml` by hand and reported by `xtctx status`.
+persists derived "memory". The index is built from the transcripts, but it
+keeps sessions whose transcripts have since been deleted, so it is not
+disposable and xtctx never deletes it. It sends transcript content nowhere
+unless a project opts in to an external embedding endpoint, written into
+`.xtctx/config.yaml` by hand, trusted by the user in
+`XTCTX_TRUSTED_EMBEDDING_ENDPOINTS` (a repository cannot set that), and
+reported by `xtctx status`.
 
 ## Users
 

@@ -74,8 +74,11 @@ covers CI publishes only). After rolling back, revert or fix forward on
 `main`; the next release supersedes the deprecation.
 
 If the bad release also wrote broken config via `setup`, users recover with
-`npx -y xtctx@latest setup --repair --yes` (rebuilds `.xtctx/state`, including
-the transcript index, which is derived data).
+`npx -y xtctx@<good-version> setup --yes`, which rewrites every managed block,
+skill copy and MCP entry. Do not tell anyone to delete `.xtctx/state` or to
+run `--repair` on 0.19.0 or earlier: those versions delete the index there,
+and the index is the only copy of sessions whose transcripts are gone (Claude
+Code deletes them after 30 days by default).
 
 ## Post-release checklist
 

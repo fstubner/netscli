@@ -11,6 +11,15 @@ import type { EmbeddingConfig } from "../types/config.js";
 const DEFAULT_BATCH_SIZE = 32;
 const DEFAULT_TIMEOUT_MS = 30_000;
 
+/**
+ * Where the user, not the project, says which embedding endpoints xtctx may
+ * send transcript text to: a comma-separated list of origins.
+ */
+export const TRUSTED_ENDPOINTS_ENV = "XTCTX_TRUSTED_EMBEDDING_ENDPOINTS";
+
+/** The one variable a remote embedding key is read from, and only for a trusted endpoint. */
+export const EMBEDDING_KEY_ENV = "XTCTX_EMBEDDING_API_KEY";
+
 export function defaultEmbeddingConfig(): EmbeddingConfig {
   return {
     provider: "local",
@@ -24,11 +33,15 @@ export function defaultEmbeddingConfig(): EmbeddingConfig {
 /**
  * Parse the optional `embedding:` block from `.xtctx/config.yaml`.
  *
- * Throws on a literal `apiKey` (the file is committable), an unknown
- * provider, or an incomplete openai-compatible block. Missing block → local
+ * Throws on a literal `apiKey` or an `apiKeyEnv` (the file is committable),
+ * an unknown provider, an incomplete openai-compatible block, or an endpoint
+ * the user has not trusted (see endpointTrust). Missing block → local
  * defaults; never inferred from environment alone.
  */
-export function parseEmbeddingConfig(input: unknown): EmbeddingConfig {
+export function parseEmbeddingConfig(
+  input: unknown,
+  env: NodeJS.ProcessEnv = process.env,
+): EmbeddingConfig {
   if (input === undefined || input === null) {
     return defaultEmbeddingConfig();
   }
@@ -70,10 +83,15 @@ export function parseEmbeddingConfig(input: unknown): EmbeddingConfig {
     ),
   };
 
-  if (typeof raw.apiKeyEnv === "string" && raw.apiKeyEnv.trim().length > 0) {
-    config.apiKeyEnv = raw.apiKeyEnv.trim();
-  } else if (raw.apiKeyEnv !== undefined) {
-    throw new Error("embedding.apiKeyEnv must be a non-empty string when set");
+  if (Object.prototype.hasOwnProperty.call(raw, "apiKeyEnv")) {
+    // The file is committed, so the repository would choose which of the
+    // user's environment variables to send, and a GitHub or cloud token is
+    // as easy to name as an embedding key. The key comes from the user's own
+    // environment instead, under a name a repository cannot pick.
+    throw new Error(
+      "embedding.apiKeyEnv is not read from .xtctx/config.yaml: a repository could name any " +
+        `environment variable. Put the key in ${EMBEDDING_KEY_ENV} in your own environment instead`,
+    );
   }
 
   if (providerRaw === "openai-compatible") {
@@ -83,11 +101,93 @@ export function parseEmbeddingConfig(input: unknown): EmbeddingConfig {
     if (typeof raw.model !== "string" || raw.model.trim().length === 0) {
       throw new Error('embedding.model is required when provider is "openai-compatible"');
     }
-    config.baseUrl = raw.baseUrl.trim();
+    config.baseUrl = raw.baseUrl.trim().replace(/\/+$/, "");
     config.model = raw.model.trim();
+    if (endpointTrust(config.baseUrl, env) === "trusted") {
+      // Sent only to an endpoint the user listed. A loopback endpoint that is
+      // allowed without being listed gets no key at all.
+      config.apiKeyEnv = EMBEDDING_KEY_ENV;
+    }
   }
 
   return config;
+}
+
+/**
+ * Whether the user, outside the repository, has allowed this endpoint.
+ *
+ * `.xtctx/config.yaml` is committed with the project, so whoever wrote the
+ * repository chose `baseUrl`. Honoured as written, a cloned repo could send
+ * the user's transcript text to any host as soon as an agent searched in it;
+ * the plugin makes xtctx live in every repository, so no setup step stands in
+ * between.
+ *
+ * A loopback endpoint is allowed without being listed, but gets no key: a
+ * local model server is the case the feature was written for. Anything else
+ * must fall under a base URL listed in XTCTX_TRUSTED_EMBEDDING_ENDPOINTS,
+ * matched by whole path segments rather than by origin, because on a shared
+ * gateway the account is in the path: trusting
+ * `https://gateway.example/v1/mine` must not also trust
+ * `https://gateway.example/v1/theirs`.
+ */
+function endpointTrust(baseUrl: string, env: NodeJS.ProcessEnv): "trusted" | "loopback" {
+  const url = parseEndpoint(baseUrl, "embedding.baseUrl");
+  const trusted = (env[TRUSTED_ENDPOINTS_ENV] ?? "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .flatMap((entry) => {
+      try {
+        return [parseEndpoint(entry, TRUSTED_ENDPOINTS_ENV)];
+      } catch {
+        return [];
+      }
+    });
+  if (trusted.some((prefix) => underBase(url, prefix))) {
+    return "trusted";
+  }
+  if (isLoopback(url.hostname)) {
+    return "loopback";
+  }
+  throw new Error(
+    `embedding endpoint ${url.href.replace(/\/$/, "")} is not trusted: this project's config asks ` +
+      "xtctx to send transcript text there. If you set this up, add it to " +
+      `${TRUSTED_ENDPOINTS_ENV} in the environment your agents start from; a repository cannot ` +
+      "set that for you.",
+  );
+}
+
+/** An http(s) base URL with no credentials, query or fragment to smuggle a path through. */
+function parseEndpoint(value: string, label: string): URL {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error(`${label} is not a valid URL: ${JSON.stringify(value)}`);
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    throw new Error(`${label} must be http or https, got ${url.protocol}`);
+  }
+  // Checked on the raw string too: an empty `?` or `#` parses to nothing but
+  // still cuts off the `/embeddings` appended to it.
+  if (url.username || url.password || /[?#]/.test(value)) {
+    throw new Error(`${label} must not carry credentials, a query or a fragment: ${JSON.stringify(value)}`);
+  }
+  return url;
+}
+
+function underBase(url: URL, base: URL): boolean {
+  if (url.origin !== base.origin) {
+    return false;
+  }
+  const basePath = base.pathname.replace(/\/+$/, "");
+  const path = url.pathname.replace(/\/+$/, "");
+  return path === basePath || path.startsWith(`${basePath}/`);
+}
+
+function isLoopback(hostname: string): boolean {
+  const host = hostname.replace(/^\[|\]$/g, "").toLowerCase();
+  return host === "localhost" || host === "::1" || /^127(?:\.\d{1,3}){3}$/.test(host);
 }
 
 export function createEmbeddingProvider(

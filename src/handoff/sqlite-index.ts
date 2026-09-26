@@ -28,7 +28,9 @@ import { scanTool, waitWithBudget } from "./scan.js";
 import { literalSearch } from "./literal-search.js";
 import {
   type PreparedStatements,
+  SchemaVersionError,
   clearSetting,
+  isCorruptDatabaseError,
   openDatabase,
   placeholders,
   prepareStatements,
@@ -251,8 +253,10 @@ function canonicalRoot(projectRoot: string): string {
 
 export class SqliteHandoffIndex implements SessionService {
   private db: DatabaseHandle | null = null;
+  /** Set by close(); an open still in flight then closes what it opened. */
+  private closed = false;
   private stmts: PreparedStatements | null = null;
-  private readonly initialized: Promise<void>;
+  private initialized: Promise<void>;
   private refreshPromise: Promise<void> | null = null;
   private lastRefreshMs = 0;
   /**
@@ -411,7 +415,7 @@ export class SqliteHandoffIndex implements SessionService {
    * stale context instantly beats priming with fresh context late.
    */
   async listIndexedSessions(limit: number): Promise<SessionSummary[]> {
-    await this.initialized;
+    await this.whenReady();
     const db = this.getDb();
     const rows = db
       .prepare(
@@ -575,13 +579,15 @@ export class SqliteHandoffIndex implements SessionService {
   }
 
   async close(): Promise<void> {
+    // Set first, so a retry that starts after this cannot open the database
+    // again, and one already running closes what it opened (see initialize).
+    this.closed = true;
     await this.initialized.catch(() => {});
     // A scan may still be running because a caller stopped waiting for it.
     // Closing the database underneath it would turn an ordinary shutdown into
     // a write to a closed handle.
     await this.whenScanSettled();
-    this.db?.close();
-    this.db = null;
+    this.discardHandle();
   }
 
   private async refresh(reason: {
@@ -603,7 +609,7 @@ export class SqliteHandoffIndex implements SessionService {
      */
     noWait?: boolean;
   }): Promise<void> {
-    await this.initialized;
+    await this.whenReady();
     if (reason.statusOnly) {
       return;
     }
@@ -1112,19 +1118,53 @@ export class SqliteHandoffIndex implements SessionService {
 
     await mkdir(dirname(this.dbPath), { recursive: true });
     try {
-      this.db = openDatabase(this.dbPath);
+      await this.openAndPrepare();
     } catch (error) {
-      // A database that will not open -- corrupt, or from another schema
-      // version -- is set aside and a fresh one rebuilt from the transcript
+      // Only a file that is itself unusable -- corrupt, or from an OLDER
+      // schema -- is set aside and a fresh one rebuilt from the transcript
       // stores. Set aside, not deleted: the index keeps sessions whose
       // transcripts are gone (Claude Code deletes them after 30 days by
-      // default), so for those it is the only copy, and every schema bump
-      // used to delete it. If it cannot be moved -- another xtctx server has
-      // it open, which is normal with one server per client -- nothing is
-      // touched and the error stands.
+      // default), so for those it is the only copy.
+      //
+      // Anything else stands, and the next call retries (see whenReady): a
+      // lock held by another xtctx server is normal with one server per
+      // client, and setting the file aside for it moved the live index out
+      // from under the servers still writing to it on macOS and Linux, where
+      // an open file can be renamed. A NEWER schema is refused rather than
+      // set aside, so an older install cannot hide a newer one's history.
+      const olderSchema = error instanceof SchemaVersionError && !error.newer;
+      // Whatever was opened before the failure is closed: a retry opens a new
+      // handle, and on Windows a leaked one also keeps the file locked.
+      this.discardHandle();
+      if (!olderSchema && !isCorruptDatabaseError(error)) {
+        throw error;
+      }
       await this.setDatabaseAside(error);
-      this.db = openDatabase(this.dbPath);
+      try {
+        await this.openAndPrepare();
+      } catch (rebuildError) {
+        this.discardHandle();
+        throw rebuildError;
+      }
     }
+    if (this.closed) {
+      this.discardHandle();
+    }
+  }
+
+  /** Close and forget the handle, if one is open. */
+  private discardHandle(): void {
+    this.db?.close();
+    this.db = null;
+  }
+
+  /**
+   * Open the database and do the first reads and writes on it, inside the
+   * same failure handling as the open itself: a file whose first page is fine
+   * but whose data pages are damaged opens, and only fails here.
+   */
+  private async openAndPrepare(): Promise<void> {
+    this.db = openDatabase(this.dbPath);
 
     // One rule covers every way the index can end up empty — deleted by a
     // user (the recovery the docs invite), rebuilt after corruption, or
@@ -1148,6 +1188,26 @@ export class SqliteHandoffIndex implements SessionService {
     }
 
     dropVectorsFromOtherModels(this.getDb(), this.embeddingProvider.model);
+  }
+
+  /**
+   * Resolves once the index is open. An open that failed for a reason that
+   * says nothing about the file -- a lock, a permission, a full disk -- is
+   * retried on the next call instead of failing every call for the life of
+   * the server. A newer schema is final: retrying cannot change it.
+   */
+  private whenReady(): Promise<void> {
+    const attempt = this.initialized;
+    return attempt.catch((error: unknown) => {
+      if (this.closed || (error instanceof SchemaVersionError && error.newer)) {
+        throw error;
+      }
+      if (this.initialized === attempt) {
+        this.initialized = this.initialize();
+        this.initialized.catch(() => {});
+      }
+      return this.initialized;
+    });
   }
 
   /**

@@ -65,8 +65,9 @@ content through xtctx without any manual export.
   surfaced in `status` and `xtctx_continuity_status` (`last scrape error:`),
   while other tools keep indexing. The cursor never skips past unread
   content.
-- **Corrupt index:** rebuilt automatically from transcripts on next use;
-  `setup --repair` forces the same reset.
+- **Corrupt index:** moved aside to `xtctx.db.set-aside-<time>` (never
+  deleted) and rebuilt from the transcripts still on disk on next use.
+  `setup --repair` does not touch the index.
 - **Unparsable/commented user config:** left byte-identical; setup reports
   a warning (comments) or a structured failure with exit code 1 (invalid),
   never a clobber.

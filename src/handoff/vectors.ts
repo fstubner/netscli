@@ -57,7 +57,13 @@ export async function waitUntilEmbeddingReady(
  * transcript content is lost either way.
  */
 export function dropVectorsFromOtherModels(db: DatabaseHandle, model: string): void {
-  db.prepare("DELETE FROM retrieval_unit_vectors WHERE model != ?").run(model);
+  // Looked for first, and deleted only when there is something to delete: a
+  // DELETE takes the write lock even when it matches nothing, and this runs
+  // on every open, where another server's write is the normal case.
+  const stale = db.prepare("SELECT 1 FROM retrieval_unit_vectors WHERE model != ? LIMIT 1").get(model);
+  if (stale !== undefined) {
+    db.prepare("DELETE FROM retrieval_unit_vectors WHERE model != ?").run(model);
+  }
 }
 
 /**

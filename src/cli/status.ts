@@ -64,18 +64,24 @@ export async function renderStatusBlock(
 ): Promise<string> {
   const { version } = readXtctxPackage(import.meta.url);
   const status = await services.sessions.getStatus();
-  const skills = await inspectSkillStatus(services.projectRoot, services.configPath);
-  const configPresent = await pathExists(services.configPath);
-  const enabledTools = SUPPORTED_TOOLS.map((tool) => tool.id).filter(
-    (id) => services.config.tools?.[id]?.enabled !== false,
+  // A tool switched off -- by `disconnect`, or by hand -- is not reported as
+  // missing anything. It was, and the fix status offered was `setup`, which
+  // wired the tool straight back in.
+  const disabledTools = new Set<string>(
+    SUPPORTED_TOOLS.map((tool) => tool.id).filter((id) => services.config.tools?.[id]?.enabled === false),
   );
+  const skills = await inspectSkillStatus(services.projectRoot, services.configPath, disabledTools);
+  const configPresent = await pathExists(services.configPath);
+  const enabledTools = SUPPORTED_TOOLS.map((tool) => tool.id).filter((id) => !disabledTools.has(id));
   // Only tools actually installed here can be "broken": a global config for
   // a tool the user does not have is absent for a good reason, and nagging
   // about it every run is the crying-wolf failure this command exists to avoid.
   const detectedTools = new Set(status.tools.filter((tool) => tool.detected).map((tool) => tool.tool));
   const mcpWiring = configPresent ? await inspectMcpWiring(services.projectRoot, "xtctx", enabledTools, options.homeDir ? { homeDir: options.homeDir } : {}) : [];
   const managed = await Promise.all(
-    managedTargets(services.projectRoot).map(async (target) => ({
+    managedTargets(services.projectRoot)
+      .filter((target) => !target.readers.every((reader) => disabledTools.has(reader)))
+      .map(async (target) => ({
       ...target,
       ...(await inspectManagedFile(target.path)),
     })),
@@ -414,13 +420,17 @@ function plural(count: number, noun: string): string {
   return `${count} ${noun}${count === 1 ? "" : "s"}`;
 }
 
-function managedTargets(projectRoot: string): Array<{ label: string; path: string }> {
+function managedTargets(projectRoot: string): Array<{ label: string; path: string; readers: string[] }> {
   return [
-    { label: "codex/opencode", path: join(projectRoot, "AGENTS.md") },
-    { label: "claude-code", path: join(projectRoot, "CLAUDE.md") },
-    { label: "antigravity", path: join(projectRoot, "GEMINI.md") },
-    { label: "cursor", path: join(projectRoot, ".cursor", "rules", "xtctx.mdc") },
-    { label: "copilot", path: join(projectRoot, ".github", "copilot-instructions.md") },
+    { label: "codex/opencode", path: join(projectRoot, "AGENTS.md"), readers: ["codex", "opencode"] },
+    { label: "claude-code", path: join(projectRoot, "CLAUDE.md"), readers: ["claude-code"] },
+    { label: "antigravity", path: join(projectRoot, "GEMINI.md"), readers: ["antigravity"] },
+    { label: "cursor", path: join(projectRoot, ".cursor", "rules", "xtctx.mdc"), readers: ["cursor"] },
+    {
+      label: "copilot",
+      path: join(projectRoot, ".github", "copilot-instructions.md"),
+      readers: ["copilot", "copilot-cli"],
+    },
   ];
 }
 

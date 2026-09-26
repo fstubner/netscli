@@ -35,9 +35,11 @@ export interface CountRow {
 }
 
 /**
- * Bumped whenever the schema shape changes. The index is derived data, so a
- * version mismatch (older or newer) triggers a full rebuild rather than a
- * migration — the transcript stores remain authoritative.
+ * Bumped whenever the schema shape changes. There are no migrations: an index
+ * from an OLDER version is set aside and rebuilt (see SqliteHandoffIndex), and
+ * one from a NEWER version is refused, because setting it aside would hide
+ * history from the newer xtctx that wrote it -- two installed versions sharing
+ * one index would each set the other's aside on every start.
  */
 // 3: `project_root` is stored canonicalised and normalized, and every read
 // filters on it. An index written by version 2 holds raw roots, which mostly
@@ -45,6 +47,36 @@ export interface CountRow {
 // go quiet rather than wrong. The scraper cursors would not re-add them, so
 // the rebuild has to be forced rather than waited for.
 const SCHEMA_VERSION = 3;
+
+/** The index on disk was written by a different schema version. */
+export class SchemaVersionError extends Error {
+  constructor(
+    readonly found: number,
+    readonly supported: number,
+  ) {
+    super(
+      found > supported
+        ? `xtctx index schema version ${found} is newer than this xtctx supports (${supported}); ` +
+            "upgrade xtctx rather than rebuilding the index"
+        : `xtctx index schema version ${found} does not match supported version ${supported}`,
+    );
+    this.name = "SchemaVersionError";
+  }
+
+  get newer(): boolean {
+    return this.found > this.supported;
+  }
+}
+
+/**
+ * True for an error that means the file itself is unusable -- not a SQLite
+ * database, or damaged -- as opposed to one that says nothing about the file:
+ * a lock held by another xtctx server, a permission, a full disk.
+ */
+export function isCorruptDatabaseError(error: unknown): boolean {
+  const code = (error as { code?: unknown } | null)?.code;
+  return typeof code === "string" && (code === "SQLITE_NOTADB" || code.startsWith("SQLITE_CORRUPT"));
+}
 
 export function openDatabase(dbPath: string): DatabaseHandle {
   const db = new Database(dbPath);
@@ -56,12 +88,15 @@ export function openDatabase(dbPath: string): DatabaseHandle {
     ).count;
     const version = db.pragma("user_version", { simple: true }) as number;
     if (objectCount > 0 && version !== SCHEMA_VERSION) {
-      throw new Error(
-        `xtctx index schema version ${version} does not match supported version ${SCHEMA_VERSION}`,
-      );
+      throw new SchemaVersionError(version, SCHEMA_VERSION);
     }
     createSchema(db);
-    db.pragma(`user_version = ${SCHEMA_VERSION}`);
+    // Only when it changes. Writing it on every open took the write lock, so
+    // with one server per MCP client an ordinary open waited out the busy
+    // timeout behind another server's write and then failed.
+    if (version !== SCHEMA_VERSION) {
+      db.pragma(`user_version = ${SCHEMA_VERSION}`);
+    }
     return db;
   } catch (error) {
     db.close();

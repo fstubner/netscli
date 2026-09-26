@@ -150,9 +150,11 @@ the transcripts remain authoritative.
 - **`.xtctx/config.yaml` is semi-trusted.** It is repo-committable, so a
   cloned repo can point `storePath` anywhere on disk. Store paths are used
   read-only, but treat overrides in a foreign repo as a risk surface.
-- **The index is trusted derived state, not a source of truth.** Anything
-  wrong with it is resolved by deletion and re-scrape (`setup --repair`,
-  or automatically on open failure / schema mismatch).
+- **The index is trusted state, and not disposable.** It is built from the
+  transcripts but keeps sessions whose transcripts have since been deleted,
+  so it is never deleted: a corrupt index or one from an older schema is
+  moved to `xtctx.db.set-aside-<time>` and rebuilt, one from a newer schema
+  is refused, and `setup --repair` leaves it alone.
 - **The registry and npm supply chain** are trusted at install time; CI
   pins action SHAs and publishes via OIDC with provenance, no long-lived
   tokens.

@@ -92,6 +92,8 @@ interface SkillSyncOptions {
   configPath: string;
   selectedSkillIds?: string[];
   homeDir?: string;
+  /** Tools the project has switched off; nothing is synced to them. */
+  disabledTools?: ReadonlySet<string>;
 }
 
 const HASH_PREFIX = "sha256:";
@@ -126,10 +128,30 @@ export async function syncProjectSkills(options: SkillSyncOptions): Promise<Skil
   }
 
   const selected = await readSelectedSkills(sourceDir, selectedIds);
-  const targetConfig = buildTargetConfig(projectRoot);
+  const disabled = options.disabledTools ?? new Set<string>();
+  const targetConfig = Object.fromEntries(
+    Object.entries(buildTargetConfig(projectRoot)).filter(([tool]) => !disabled.has(tool)),
+  );
+
+  // Where each skill came from, for disconnect's "is this the user's own
+  // file?" guard. It recorded the canonical copy's path, `.xtctx/skills/...`,
+  // which is never a sync target, so the guard never fired and `disconnect
+  // claude-code` deleted a user's own `.claude/skills/<id>/SKILL.md`. The
+  // origin is recorded once, when the skill is first found, and kept: on
+  // every later run discovery finds the canonical copy first.
+  const origins = new Map<string, string>();
+  for (const skill of selected) {
+    origins.set(
+      skill.id,
+      await skillOrigin(projectRoot, skill, existing.sources[skill.id], discovered),
+    );
+  }
 
   for (const skill of selected) {
     for (const tool of SUPPORTED_TOOLS) {
+      if (disabled.has(tool.id)) {
+        continue;
+      }
       const capability = tool.skillSync;
       if (!capability || capability.mode === "unsupported" || capability.mode === "managed-block") {
         continue;
@@ -160,7 +182,7 @@ export async function syncProjectSkills(options: SkillSyncOptions): Promise<Skil
     config: {
       sourceDir: ".xtctx/skills",
       selected: Object.fromEntries(
-        selected.map((skill) => [skill.id, { hash: skill.hash, source: toProjectRelative(projectRoot, skill.path) }]),
+        selected.map((skill) => [skill.id, { hash: skill.hash, source: origins.get(skill.id) ?? toProjectRelative(projectRoot, skill.path) }]),
       ),
       targets: targetConfig,
     },
@@ -201,7 +223,12 @@ export async function discoverProjectSkills(options: {
   return discovered.sort((left, right) => left.id.localeCompare(right.id));
 }
 
-export async function inspectSkillStatus(projectRoot: string, configPath: string): Promise<SkillStatus> {
+export async function inspectSkillStatus(
+  projectRoot: string,
+  configPath: string,
+  /** Switched off in the project's config: not reported, so not "missing". */
+  disabledTools: ReadonlySet<string> = new Set(),
+): Promise<SkillStatus> {
   const root = resolve(projectRoot);
   const sourceDir = skillSourceDir(root);
   const existing = await readExistingSkillConfig(configPath);
@@ -225,6 +252,9 @@ export async function inspectSkillStatus(projectRoot: string, configPath: string
 
   const targets: SkillStatus["targets"] = [];
   for (const tool of SUPPORTED_TOOLS) {
+    if (disabledTools.has(tool.id)) {
+      continue;
+    }
     const capability = tool.skillSync;
     const mode = capability?.mode ?? "unsupported";
 
@@ -653,6 +683,47 @@ function normalizeSkillId(value: string): string | null {
 
 function uniqueIds(ids: string[]): string[] {
   return [...new Set(ids.map(normalizeSkillId).filter((id): id is string => Boolean(id)))];
+}
+
+/** Recorded for a skill found outside the project, which no sync target can be. */
+const USER_LEVEL_SOURCE = "<user-level>";
+
+/**
+ * Where a selected skill came from, as `skills.selected.<id>.source`.
+ *
+ * Kept when already recorded. Otherwise -- a first setup, or a project where
+ * an earlier version recorded the canonical path by mistake -- a copy in a
+ * tool's own project skills folder is taken to be the user's. After an
+ * earlier setup that copy may be one xtctx wrote; then disconnect leaves one
+ * file behind, which is the safe way to be wrong, where the other way deletes
+ * the user's only copy. A skill found in the user's home is recorded as
+ * `<user-level>`, not by its path: that would put the username into a
+ * committable file.
+ */
+async function skillOrigin(
+  projectRoot: string,
+  skill: SkillSelection,
+  recorded: string | undefined,
+  discovered: DiscoveredSkill[],
+): Promise<string> {
+  const canonical = toProjectRelative(projectRoot, skill.path);
+  if (skill.id === BUILT_IN_SKILL_ID) {
+    return canonical;
+  }
+  if (recorded && recorded !== canonical) {
+    return recorded;
+  }
+  for (const folder of [[".claude", "skills"], [".codex", "skills"]]) {
+    const candidate = join(projectRoot, ...folder, skill.id, "SKILL.md");
+    if ((await readUtf8IfExists(candidate)) !== null) {
+      return toProjectRelative(projectRoot, candidate);
+    }
+  }
+  const found = discovered.find((entry) => entry.id === skill.id);
+  if (found && found.path !== "<built-in>" && relative(projectRoot, found.path).startsWith("..")) {
+    return USER_LEVEL_SOURCE;
+  }
+  return canonical;
 }
 
 function toProjectRelative(projectRoot: string, path: string): string {

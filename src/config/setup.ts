@@ -1,7 +1,7 @@
-import { mkdir, rm } from "node:fs/promises";
+import { mkdir, readFile, rm } from "node:fs/promises";
 import { isAbsolute, join, relative, resolve } from "node:path";
-import { stringify as stringifyYaml } from "yaml";
-import { pathExists, writeIfChanged } from "./file-io.js";
+import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
+import { isRecord, pathExists, writeIfChanged } from "./file-io.js";
 import { installClaudeHook } from "./claude-settings.js";
 import { memoryTargets, renderManagedBlock, upsertManagedBlock } from "./instruction-blocks.js";
 import { publishedServerDefinition, xtctxServerDefinition } from "./server-definition.js";
@@ -37,7 +37,18 @@ interface SetupResult {
   warnings: string[];
   /** Hard failures (unreadable/unwritable configs); setup exits nonzero. */
   failures: string[];
+  /** Tools the project's config has switched off (`enabled: false`). */
+  disabledTools?: string[];
 }
+
+/**
+ * Which instruction file each tool reads, where more than one tool shares it.
+ * A shared file is left alone only when every tool that reads it is off.
+ */
+const INSTRUCTION_READERS: Record<string, string[]> = {
+  codex: ["codex", "opencode"],
+  copilot: ["copilot", "copilot-cli"],
+};
 
 interface PlannedSetupWrite {
   path: string;
@@ -85,6 +96,23 @@ export async function setupProject(options: SetupOptions = {}): Promise<SetupRes
     await rm(join(xtctxDir, "tool-config"), { recursive: true, force: true });
   }
 
+  // The existing config is read first and merged into, never replaced. Setup
+  // used to rewrite it from scratch, which dropped `storePath` overrides and
+  // the `embedding:` block, and turned every `enabled: false` -- including the
+  // ones `disconnect` writes -- back on. `status` sends people to `setup` for
+  // every repair, so the documented fix undid the documented opt-out.
+  const existingConfig = await readExistingProjectConfig(configPath);
+  if (existingConfig.error !== undefined) {
+    failures.push(
+      `${configPath} could not be parsed, so setup changed nothing: ${existingConfig.error}. ` +
+        "Fix the file or delete it, then run setup again.",
+    );
+    return { projectRoot, configPath, writes, warnings, failures };
+  }
+  const disabled = disabledToolIds(existingConfig.value);
+  const isOff = (tool: string): boolean =>
+    (INSTRUCTION_READERS[tool] ?? [tool]).every((reader) => disabled.has(reader));
+
   await mkdir(stateDir, { recursive: true });
 
   const skillSync = await syncProjectSkills({
@@ -92,6 +120,7 @@ export async function setupProject(options: SetupOptions = {}): Promise<SetupRes
     configPath,
     selectedSkillIds: options.selectedSkillIds,
     homeDir: options.homeDir,
+    disabledTools: disabled,
   });
   writes.push(...skillSync.writes);
   warnings.push(...skillSync.warnings);
@@ -101,7 +130,7 @@ export async function setupProject(options: SetupOptions = {}): Promise<SetupRes
     kind: "config",
     changed: await writeIfChanged(
       configPath,
-      renderProjectConfig(projectRoot, skillSync.config),
+      renderProjectConfig(existingConfig.value, skillSync.config),
       projectRoot,
     ),
   });
@@ -129,7 +158,7 @@ export async function setupProject(options: SetupOptions = {}): Promise<SetupRes
   const mcpSummary = await syncToolMcpConfigs(
     projectRoot,
     [serverDefinition],
-    supportedMcpTools(options.includeGlobalMcp),
+    supportedMcpTools(options.includeGlobalMcp).filter((tool) => !disabled.has(tool)),
     {
       ...(options.homeDir ? { homeDir: options.homeDir } : {}),
       globalServers: [globalServerDefinition],
@@ -160,6 +189,9 @@ export async function setupProject(options: SetupOptions = {}): Promise<SetupRes
   }
 
   for (const target of memoryTargets(projectRoot)) {
+    if (isOff(target.tool)) {
+      continue;
+    }
     const block = renderManagedBlock({
       projectRoot,
       tool: target.tool,
@@ -174,15 +206,17 @@ export async function setupProject(options: SetupOptions = {}): Promise<SetupRes
     });
   }
 
-  const claudeHook = await installClaudeHook(projectRoot);
-  if (claudeHook.failure) {
-    failures.push(claudeHook.failure);
+  if (!disabled.has("claude-code")) {
+    const claudeHook = await installClaudeHook(projectRoot);
+    if (claudeHook.failure) {
+      failures.push(claudeHook.failure);
+    }
+    writes.push({
+      path: join(projectRoot, ".claude", "settings.json"),
+      kind: "hook:claude-code",
+      changed: claudeHook.changed,
+    });
   }
-  writes.push({
-    path: join(projectRoot, ".claude", "settings.json"),
-    kind: "hook:claude-code",
-    changed: claudeHook.changed,
-  });
 
   // The half setup cannot do. Claude Code ignores `permissions.allow` outright
   // in a workspace the user has not trusted, so the grants written above are
@@ -197,7 +231,40 @@ export async function setupProject(options: SetupOptions = {}): Promise<SetupRes
       "refused, silently in non-interactive runs.",
   );
 
-  return { projectRoot, configPath, writes, warnings, failures };
+  return { projectRoot, configPath, writes, warnings, failures, disabledTools: [...disabled] };
+}
+
+/** The parsed `.xtctx/config.yaml`, `{}` when absent, or why it would not parse. */
+async function readExistingProjectConfig(
+  configPath: string,
+): Promise<{ value: Record<string, unknown>; error?: undefined } | { value?: undefined; error: string }> {
+  let raw: string;
+  try {
+    raw = await readFile(configPath, "utf-8");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      return { value: {} };
+    }
+    return { error: error instanceof Error ? error.message : String(error) };
+  }
+  try {
+    const parsed: unknown = parseYaml(raw);
+    if (parsed === null || parsed === undefined) {
+      return { value: {} };
+    }
+    return isRecord(parsed) ? { value: parsed } : { error: "expected a mapping at the top level" };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : String(error) };
+  }
+}
+
+function disabledToolIds(config: Record<string, unknown>): Set<string> {
+  const tools = isRecord(config.tools) ? config.tools : {};
+  return new Set(
+    Object.entries(tools)
+      .filter(([, value]) => isRecord(value) && value.enabled === false)
+      .map(([tool]) => tool),
+  );
 }
 
 export function describeSetupPlan(
@@ -266,19 +333,22 @@ function supportedMcpTools(includeGlobalMcp = false): string[] {
     .map((tool) => tool.id);
 }
 
-function renderProjectConfig(projectRoot: string, skills: ProjectSkillConfig): string {
+function renderProjectConfig(existing: Record<string, unknown>, skills: ProjectSkillConfig): string {
+  // `project.root` and `mcp` are dropped, not carried over: nothing reads
+  // either, and `project.root` baked the absolute path, username included,
+  // into a committable file that was wrong for every other clone. Every other
+  // key the user or another version wrote -- `embedding:`, anything unknown --
+  // is kept as it is.
+  const rest: Record<string, unknown> = { ...existing };
+  for (const key of ["project", "mcp", "handoff", "skills", "tools"]) {
+    delete rest[key];
+  }
+  const previousTools = isRecord(existing.tools) ? existing.tools : {};
   const config = {
-    project: {
-      root: projectRoot,
-    },
     handoff: {
       mode: "raw-transcript-pointer",
       indexing: "on-demand",
       summaries: false,
-    },
-    mcp: {
-      command: "npx",
-      args: ["-y", "xtctx"],
     },
     skills,
     // `storePath` is deliberately not written. It is optional at read time —
@@ -288,15 +358,20 @@ function renderProjectConfig(projectRoot: string, skills: ProjectSkillConfig): s
     // meant to be committable. It also broke portability: a cloned repo
     // pointed every scraper at the original author's home directory. Set it by
     // hand to override a store that is not in its usual place.
-    tools: Object.fromEntries(
-      SUPPORTED_TOOLS.map((tool) => [
-        tool.id,
-        {
-          enabled: true,
-          hook: tool.hookMode,
-        },
-      ]),
-    ),
+    //
+    // An existing entry is merged into, so a hand-set `storePath` and an
+    // `enabled: false` survive.
+    tools: {
+      ...previousTools,
+      ...Object.fromEntries(
+        SUPPORTED_TOOLS.map((tool) => {
+          const previous = previousTools[tool.id];
+          const entry = isRecord(previous) ? previous : {};
+          return [tool.id, { ...entry, enabled: entry.enabled !== false, hook: tool.hookMode }];
+        }),
+      ),
+    },
+    ...rest,
   };
 
   return stringifyYaml(config);
@@ -372,7 +447,10 @@ function printCoverageNote(result: SetupResult): void {
   const mcpWired = new Set(
     result.writes.filter((write) => write.kind.startsWith("mcp:")).map((write) => write.kind.slice(4)),
   );
-  const unwired = SUPPORTED_TOOLS.filter((tool) => !mcpWired.has(tool.id)).map((tool) => tool.id);
+  const disabled = new Set(result.disabledTools ?? []);
+  const unwired = SUPPORTED_TOOLS.filter((tool) => !mcpWired.has(tool.id) && !disabled.has(tool.id)).map(
+    (tool) => tool.id,
+  );
   const headline =
     unwired.length === 0
       ? `All ${SUPPORTED_TOOLS.length} supported tools were wired`
@@ -390,6 +468,10 @@ function printCoverageNote(result: SetupResult): void {
       "  detected today would skip whatever you install tomorrow. The instruction\n" +
       "  files are also read by whichever agent opens this repo next.\n" +
       skipped +
+      (disabled.size > 0
+        ? `  Left off, as this project's config says: ${[...disabled].join(", ")}. To wire one\n` +
+          "  again, set its `enabled: true` in .xtctx/config.yaml and run setup.\n"
+        : "") +
       "  Remove any you do not want with `xtctx disconnect <tool>`.\n",
   );
 }

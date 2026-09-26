@@ -129,6 +129,10 @@ export class OpenAiEmbeddingProvider implements EmbeddingProvider {
       headers,
       body: JSON.stringify({ model: this.remoteModel, input: texts }),
       signal: AbortSignal.timeout(this.timeoutMs),
+      // Not followed: a 307/308 re-sends the body, transcript text and key
+      // included, to wherever the endpoint points, which is not the endpoint
+      // the user trusted.
+      redirect: "error",
     });
   }
 
