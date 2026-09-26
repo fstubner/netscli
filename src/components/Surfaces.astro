@@ -71,13 +71,15 @@ const surfacesLeadHtml = modules.docs
 }
 .surfaces-intro{
   max-width:720px;
-  margin-bottom:84px;
+  margin-bottom:56px;
 }
 .surfaces-intro .lead{
   max-width:690px;
   margin-bottom:0;
 }
-.surfaces{display:grid;gap:90px}
+/* 72, down from 90: with the rows centred, 90px between them read as four
+   separate islands rather than one tour. */
+.surfaces{display:grid;gap:72px}
 .surface{
   display:grid;grid-template-columns:1fr 1fr;gap:64px;
   /* Centred, not top-aligned. Every text block in this section is 118px tall
@@ -110,7 +112,10 @@ const surfacesLeadHtml = modules.docs
 .surface.flip>*{direction:ltr;min-width:0}
 .surface-text{padding-top:0}
 .surface-text h3{font-size:1.125rem;font-weight:700;color:var(--ui-text-strong);margin:0 0 22px}
-.surface-text p{font-size:.875rem;color:var(--ui-text-muted);margin:0;line-height:1.6}
+/* The body ink, not the muted step. The paragraph is the card's content, not
+   a caption under it, and in the muted grey it read as secondary to the code
+   beside it. */
+.surface-text p{font-size:.875rem;color:var(--ui-text);margin:0;line-height:1.6}
 .surface-text code{font-size:.75rem}
 .surface-visual picture{
   display:block;
@@ -145,8 +150,13 @@ const surfacesLeadHtml = modules.docs
 .surface.wide{grid-template-columns:1fr;gap:28px}
 .surface.wide .surface-text{max-width:720px}
 @media(max-width:720px){
-  .surface{grid-template-columns:1fr}
+  .surface{grid-template-columns:1fr;gap:28px}
   .surface.flip{direction:ltr}
+}
+/* On a phone a code visual wraps, as a terminal that width would, rather
+   than running off the card's right edge behind a scrollbar nobody sees. */
+@media(max-width:560px){
+  .surface-visual .codeblock{white-space:pre-wrap;overflow-wrap:anywhere}
 }
 
 </style>

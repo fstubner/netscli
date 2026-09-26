@@ -128,7 +128,10 @@ const agentLabel = session.agentLabel ?? 'Agent';
 .as-title{flex:1;text-align:center;color:var(--ui-ondark-text-muted);font-size:.6875rem;margin-right:39px}
 .as-body{
   display:grid;
-  grid-template-columns:7.5rem minmax(0,1fr) minmax(0,1.1fr);
+  /* The chat gets the most room. It is the longest pane and the one that
+     tells the story; at 1fr : 1.1fr it set the panel's height, and the open
+     file beside it, a dozen lines, sat over a column of empty editor. */
+  grid-template-columns:7.5rem minmax(0,.8fr) minmax(0,1.4fr);
   min-height:20rem;
 }
 .as-body>*{min-width:0}

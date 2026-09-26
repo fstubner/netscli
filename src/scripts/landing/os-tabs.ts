@@ -116,7 +116,8 @@ export function initOsTabs(): void {
 
     const setHeroCommand = (id: string, command: string) => {
       const host = document.getElementById(id);
-      if (!host) return;
+      // Absent when the content has no second command; see Hero.astro.
+      if (!host || !command) return;
       host.dataset.copy = command;
       const code = host.querySelector("code");
       if (code) code.textContent = command;

@@ -146,24 +146,35 @@ const groups = [
   list-style:none;margin:8px 0 0;padding:0;
   display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:16px;
 }
+/* Outlined panels on the band, not chips. As light chips (the light theme's
+   #f2f5fa) six or seven of them made a block of white tiles on the dark
+   band, heavier than anything else on the page; the commands inside are the
+   part to look at, so they carry the fill. */
 .client-card{
-  background:var(--ui-chip-bg);border:1px solid var(--ui-chip-border);border-radius:10px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.14);border-radius:10px;
   padding:16px 18px;display:flex;flex-direction:column;gap:8px;min-width:0;
 }
-.client-name{font-size:.9375rem;font-weight:700;color:var(--ui-chip-fg);margin:0 0 2px}
+.client-name{font-size:.9375rem;font-weight:700;color:var(--ui-ondark-text-strong);margin:0 0 2px}
 /* Commands wrap rather than scroll: a long plugin command cut off behind a
    scrollbar is the command someone came here to read. */
+/* A code surface, like the Then panel below the grid, in both themes. */
 .client-cmd{
   position:relative;padding:8px 40px 8px 10px;border-radius:6px;
-  background:rgba(var(--ui-chip-lift-rgb),.04);border:1px solid var(--ui-chip-divider);
+  background:var(--ui-code-bg);border:1px solid rgba(255,255,255,.14);
   font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.75rem;line-height:1.5;
-  color:var(--ui-chip-fg);
+  color:var(--ui-ondark-text);
 }
 .client-cmd code{all:unset;font:inherit;color:inherit;white-space:pre-wrap;overflow-wrap:anywhere}
-.client-note{font-size:.75rem;line-height:1.5;color:var(--ui-chip-fg-muted);margin:0}
-.client-after{margin-top:24px;max-width:560px}
-/* The per-OS layout pins .try to its second column; here it is in a stack. */
-.client-after .try{grid-column:auto;grid-row:auto}
+.client-note{font-size:.75rem;line-height:1.5;color:var(--ui-ondark-text-muted);margin:0}
+/* Full width, with its commands side by side. At 560px it filled half the
+   row under a full-width grid and left the other half empty. */
+.client-after{margin-top:16px}
+/* The per-OS layout pins .try to its second column; here it spans the row. */
+.client-after .try{
+  grid-column:auto;grid-row:auto;
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:4px 16px;
+}
+.client-after .try .try-title{grid-column:1/-1}
 .client-after .footer-note{margin-top:14px}
 
 /* ─── GET STARTED ─── */
