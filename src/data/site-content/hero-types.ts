@@ -71,7 +71,8 @@ export interface Hero {
    *  this is what a visitor sees before that runs, and what a crawler sees. */
   quickInstall: string;
   /** The smaller command under it — a genuinely different route, never a
-   *  restatement of the one above. */
+   *  restatement of the one above. Leave it empty for a product with one
+   *  command: the row then holds only the link to the install section. */
   quickInstallAlt: string;
   /** Jump-to-install link label. */
   installLinkLabel: string;
@@ -86,8 +87,13 @@ export interface Hero {
   /** Any visual kind -- see visual-types.ts -- shown in place of the
    *  heroImage fields above when set. */
   visual?: Visual;
-  /** Link to the source repo for the "View source" pill. */
+  /** Link to the source repo for the "View source" pill, the footer and the
+   *  structured data. */
   sourceUrl: string;
+  /** Set false to leave the "View source" link out of the hero, for a site
+   *  whose nav already links the repo. The URL above is still used
+   *  everywhere else. Defaults to true. */
+  showSourceLink?: boolean;
   /** Label on the desktop-download button. Only rendered when
    *  `heroDownloads` has entries. */
   downloadLabel: string;

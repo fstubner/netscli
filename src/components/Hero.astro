@@ -11,6 +11,10 @@ const hasInstall = (sections as readonly string[]).includes('install');
 // reads. The list's first entry, so the markup can never name a file the
 // content file does not list.
 const defaultDownload = heroDownloads[0];
+const showSource = hero.showSourceLink !== false;
+// A product with one command leaves `quickInstall` empty. The second row then
+// holds only the install link, rather than an empty command chip beside it.
+const hasSecondCommand = hero.quickInstall.trim() !== '';
 ---
 <div class="hero-frame">
 <div class="hero">
@@ -37,16 +41,16 @@ const defaultDownload = heroDownloads[0];
         source link. It has moved into the badge above the headline, where it
         can carry the release notes link with it; this line is metrics only
         again. */}
-    <span class="sep" aria-hidden="true" id="source-sep" hidden>·</span>
-    <a class="plain" href={hero.sourceUrl}>
+    {showSource && <span class="sep" aria-hidden="true" id="source-sep" hidden>·</span>}
+    {showSource && <a class="plain" href={hero.sourceUrl}>
       <svg class="gh-icon" viewBox="0 0 16 16" fill="currentColor" style="vertical-align:-2px;margin-right:3px">
         <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
       </svg>
       View source
-    </a>
+    </a>}
   </div>
 
-  <div class="hero-cta">
+  <div class:list={['hero-cta', heroDownloads.length === 0 && !hasSecondCommand && 'hero-cta-single']}>
     {/* Two columns when there is a desktop button to put in the first one.
         A product with no desktop build leaves `heroDownloads` empty, and
         the wide command was then laid into the 200px column meant for the
@@ -117,10 +121,12 @@ const defaultDownload = heroDownloads[0];
         <code>{hero.quickInstallAlt}</code>
       </div>
     </div>
-    <div class="hero-cta-sub">
-      <div class="hero-command has-copy hero-copy" id="hero-package-install" data-copy={hero.quickInstall}>
-        <code>{hero.quickInstall}</code>
-      </div>
+    <div class:list={['hero-cta-sub', !hasSecondCommand && 'hero-cta-sub-solo']}>
+      {hasSecondCommand && (
+        <div class="hero-command has-copy hero-copy" id="hero-package-install" data-copy={hero.quickInstall}>
+          <code>{hero.quickInstall}</code>
+        </div>
+      )}
       {hasInstall && <a class="hero-install-link" href="#install">{hero.installLinkLabel}</a>}
     </div>
   </div>
@@ -182,6 +188,9 @@ const defaultDownload = heroDownloads[0];
 .hero h1{
   font-size:clamp(1.75rem,4vw,2.75rem);font-weight:700;color:var(--ui-text-strong);
   letter-spacing:-.02em;margin:0 auto;line-height:1.2;
+  /* Balanced lines, so a heading that wraps does not leave its last word
+     alone on the final line ("...re-explaining the / work."). */
+  text-wrap:balance;
   /* Sized for the current heading, which is 62 characters. At the old 15ch
      -- set when the heading was "A modern network scanner" -- it broke into
      four lines and pushed the install buttons off the first screen. */
@@ -304,6 +313,12 @@ const defaultDownload = heroDownloads[0];
   justify-self:center;
   gap:28px;
 }
+/* One command and nothing beside it: sized to a short command rather than to
+   the two-row block, where `npx -y xtctx setup` sat in the middle of a 610px
+   bar. */
+.hero-cta-single{width:min(380px,calc(100vw - 48px))}
+.hero-cta-sub-solo{grid-template-columns:auto;justify-content:center;width:100%}
+.hero-cta-sub-solo .hero-install-link{justify-self:center}
 .hero-primary-wrap{
   position:relative;
   display:grid;grid-template-columns:minmax(0,1fr) 34px;
@@ -575,8 +590,12 @@ const defaultDownload = heroDownloads[0];
     max-width:calc(100% + 2px);
   }
   .hero-command{padding-right:50px;gap:3px}
+  /* After the commands, not between them: it names the other routes, so it
+     reads as a way out once the command above it has been seen. At order 2
+     a phone showed "Other agents and setup" above the command it referred
+     to. */
   .hero-install-link{
-    order:2;
+    order:5;
     align-self:center;
     justify-self:start;
     min-width:150px;
@@ -675,6 +694,7 @@ const defaultDownload = heroDownloads[0];
   .landing-split .hero .social-proof{justify-content:flex-start}
   .landing-split .hero-cta{margin-inline:0;width:100%}
   .landing-split .hero-cta-sub{width:100%;justify-self:start}
+  .landing-split .hero-cta-sub-solo{justify-content:start}
   .landing-split .bigshot{margin:0;max-width:none}
   /* The sections sit closer together: the hero no longer fills a screen on
      its own, so the old 64px gap reads as a gap rather than as rhythm. */
