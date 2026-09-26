@@ -55,6 +55,9 @@
     "resources": {
       "../../../crates/netscli-core/data/oui.min.json.gz": "data/oui.min.json.gz"
     },
+    "macOS": {
+      "signingIdentity": "-"
+    },
     "windows": {
       "webviewInstallMode": {
         "type": "embedBootstrapper"
