@@ -25,60 +25,42 @@ export const hero: Hero = {
   heroImageAlt: 'xtctx status in a terminal, listing indexed sessions per coding agent',
   heroImageWidth: 1200,
   heroImageHeight: 462,
-  // The handoff itself, rather than a status listing: it is the one picture
-  // that shows what xtctx is for. It was the first feature card, below the
-  // fold, while the hero showed diagnostics.
+  // The handoff itself, as two agents: a Claude Code session that stopped
+  // with work left, and Codex picking it up without being told again. It
+  // replaced one editor window with a file tree, an open AGENTS.md and full
+  // tool output, which was accurate but too dense to read at a glance.
   //
-  // Captured 2026-09-24 with the built server (0.21.8) in a temporary
-  // project, `my-app`. The earlier Claude Code session is synthetic, two
-  // messages written for this, like the public demo's. The AGENTS.md text
-  // is the block setup wrote there, edited only by removing lines (the
-  // generated notice, the temp project path, the last three Session
-  // Retrieval bullets, and the sections below it). Both tool results are
-  // what the server returned, edited only by removing lines. The agent's own sentences are written
+  // The tool names are the real ones and the order is the real order:
+  // recent sessions, then the raw messages of the one found. The session
+  // ref is the one the captured server returned (2026-09-24, 0.21.8, in a
+  // temporary project); the Claude Code session is synthetic, two messages
+  // written for this, like the public demo's. The few words after each
+  // tool name summarise what came back; the agents' sentences are written
   // for this panel.
   visual: {
-    kind: 'agent-session',
-    session: {
-      title: 'my-app: Codex',
-      files: ['.xtctx/config.yaml', 'src/routes/login.ts', 'AGENTS.md', 'CLAUDE.md', 'package.json'],
-      open: {
-        path: 'AGENTS.md',
-        text: `<!-- xtctx:begin -->
-# xtctx Handoff
-
-Tool: codex
-Integration mode: instruction-only
-
-## Session Retrieval
-- Call \`xtctx_recent_sessions\` to list recent local sessions.
-- Call \`xtctx_session_detail\` with a \`session_ref\` for the raw transcript messages.
-<!-- xtctx:end -->`,
-        highlight: ['xtctx_recent_sessions', 'xtctx_session_detail'],
-      },
-      agentLabel: 'Codex',
+    kind: 'handoff',
+    bridge: 'xtctx',
+    from: {
+      agent: 'Claude Code',
+      when: 'yesterday',
       turns: [
-        { role: 'user', text: 'Pick up where Claude Code left off.' },
-        { role: 'agent', text: 'AGENTS.md says to call xtctx_recent_sessions first.' },
-        {
-          role: 'tool',
-          call: 'xtctx_recent_sessions(limit: 3)',
-          result: [
-            '### 1. claude-code:a41c-login-limit',
-            '- Preview: Add a rate limit to POST /login: 5 attempts a minute per IP.',
-          ],
-        },
-        { role: 'agent', text: 'One recent session. Opening it.' },
-        {
-          role: 'tool',
-          call: 'xtctx_session_detail(session_ref: "claude-code:a41c-login-limit")',
-          result: [
-            'Added the limiter in src/routes/login.ts with a default of 5 per minute. Tests pass. Not done yet: reading the limit from RATE_LIMIT_PER_MIN.',
-          ],
-        },
+        { role: 'user', text: 'Add a rate limit to POST /login: 5 attempts a minute per IP.' },
         {
           role: 'agent',
-          text: 'The limiter is done. Next: read the limit from RATE_LIMIT_PER_MIN.',
+          text: 'Added the limiter in src/routes/login.ts, 5 a minute. Tests pass. Still to do: read the limit from RATE_LIMIT_PER_MIN.',
+        },
+      ],
+    },
+    to: {
+      agent: 'Codex',
+      when: 'today',
+      turns: [
+        { role: 'user', text: 'Pick up where Claude Code left off.' },
+        { role: 'tool', name: 'xtctx_recent_sessions', summary: 'claude-code:a41c-login-limit' },
+        { role: 'tool', name: 'xtctx_session_detail', summary: 'its messages' },
+        {
+          role: 'agent',
+          text: 'The limiter is done and tested. What is left is reading the limit from RATE_LIMIT_PER_MIN, so I am starting there.',
         },
       ],
     },
