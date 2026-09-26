@@ -57,12 +57,12 @@ const groups = [
                          `.cmd big` box the other tabs use for their
                          recommended command, so it read as a command that
                          said "Download Debian / Ubuntu" -- the label above
-                         it, repeated, in a box made for copying. The file
-                         type is the useful part; the label already names
-                         the distro. Styled like the AppImage row's button,
-                         not green: see `a.install-download` below. */
+                         it, repeated, in a box made for copying. The label
+                         names the package type; the button just says
+                         Download, like the AppImage row's, and is styled like
+                         it (not green: see `a.install-download` below). */
                       <a class="install-download" href={recommended.href} download>
-                        Download {recommended.href?.slice(recommended.href.lastIndexOf('.'))} →
+                        Download →
                       </a>
                     )}
                     {recommended.hint && <p class="install-hint">{recommended.hint}</p>}
@@ -285,8 +285,8 @@ html[data-theme='light'] #install .reco{
  *
  * This was accent text on an accent tint inside an accent border -- the
  * loudest thing in the section, on the row that is the *least* recommended
- * route: a direct download is unsigned, unverified and unmanaged, while the
- * package-manager rows above it check a hash. The green was pointing at the
+ * route: a direct download is unmanaged and nothing checks it on the way
+ * in, while the package-manager rows above it check a hash. The green was pointing at the
  * wrong option. It reads as one route among several now, and keeps the
  * accent for hover and focus so it is still obviously a control. */
 a.install-download{

@@ -9,28 +9,25 @@ export const installCopy: SectionCopy = {
 
 const RELEASE_DOWNLOAD = 'https://github.com/fstubner/netscli/releases/latest/download';
 
-/** Shown on every direct .dmg / .msi row.
+/** Shown on the direct .dmg rows.
  *
- *  The desktop installers are not code-signed yet (tracked separately —
- *  notarization needs a paid Apple Developer cert, Authenticode needs a
- *  Windows cert). Warning up front is better than someone hitting a
- *  Gatekeeper or SmartScreen dialog with no context and assuming the
- *  download is malware. */
+ *  The macOS app is not notarized (that needs a paid Apple Developer
+ *  account). Warning up front is better than someone hitting a Gatekeeper
+ *  dialog with no context and assuming the download is malware. */
 const MACOS_UNSIGNED_HINT = 'Unsigned — right-click → Open on first launch';
 /* Describes the row it is attached to, which is the direct .msi download.
- * It used to end "winget verifies the hash" -- true of winget, and winget is
- * not what this row does. Someone clicking Download gets the installer
- * straight from GitHub Releases with nothing checking it, and was being told
- * otherwise at the moment they did it. The checksums are real and published;
- * this now points at them.
  *
- * Stated as the exception rather than labelling its opposite. Every package
- * manager row used to carry a "Hash-verified" tag so this row would read as
- * different -- four copies of it in one Windows panel, saying the unremarkable
- * thing four times to make the remarkable thing stand out once. The
- * verification is the norm; not having it is the news, so only the news is
- * written down. */
-const WINDOWS_UNSIGNED_HINT = 'Unsigned — SmartScreen may warn. Checksums are published.';
+ * It said "Unsigned -- SmartScreen may warn. Checksums are published." until
+ * after 0.3.3, the first release with an Authenticode-signed .msi: the one
+ * place on the site still saying so once the install docs were corrected.
+ * A new certificate has no SmartScreen reputation yet, so the warning stays,
+ * as a "may". (Earlier still it ended "winget verifies the hash", true of
+ * winget and not of a direct download.)
+ *
+ * Stated as the exception rather than labelling its opposite: the package
+ * manager rows carry no "Signed" or "Hash-verified" tag, because that is the
+ * norm there; only the row that differs says anything. */
+const WINDOWS_INSTALLER_HINT = 'Signed. SmartScreen may still warn while the certificate is new.';
 
 export const installByPlatform: Record<Platform, PlatformInstall> = {
   windows: {
@@ -63,7 +60,7 @@ export const installByPlatform: Record<Platform, PlatformInstall> = {
       {
         label: 'Installer',
         href: `${RELEASE_DOWNLOAD}/netscli-gui-windows-x86_64.msi`,
-        hint: WINDOWS_UNSIGNED_HINT,
+        hint: WINDOWS_INSTALLER_HINT,
       },
     ],
   },
@@ -128,7 +125,7 @@ export const installByPlatform: Record<Platform, PlatformInstall> = {
      * readers actually wanted buried two rows below it. */
     desktop: [
       {
-        label: 'Debian / Ubuntu',
+        label: 'Debian / Ubuntu (.deb)',
         href: `${RELEASE_DOWNLOAD}/netscli-gui-linux-x86_64.deb`,
       },
       {
