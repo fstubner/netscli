@@ -160,7 +160,7 @@ All network operations are async (tokio). Long-running operations accept progres
 | `ops.rs` | High-level operations facade (used by CLI, TUI, GUI, MCP) |
 | `common.rs` | Default constants (ports, timeouts, concurrency) |
 | `discover.rs` | Subnet host discovery (ping + DNS resolve) |
-| `scan/` | TCP port scanning with concurrency |
+| `scan/` | TCP and UDP port scanning with concurrency |
 | `ping.rs` | ICMP/TCP ping with dual backends (raw ICMP + TCP fallback) |
 | `arp.rs` | ARP table retrieval + MAC vendor lookup |
 | `oui.rs` | MAC vendor database (compressed gzip JSON) |

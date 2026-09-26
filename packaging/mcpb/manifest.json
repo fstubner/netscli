@@ -5,7 +5,7 @@
   "display_name": "NetsCLI",
   "version": "@@VERSION@@",
   "description": "Network discovery, port scanning, DNS, ARP and mDNS tools for local networks.",
-  "long_description": "NetsCLI exposes its network diagnostics as MCP tools: discover hosts on a subnet, scan TCP ports, ping, resolve DNS, read the ARP cache, browse mDNS services, and build a combined profile of a single host.\n\nThis bundle carries the netscli binary, so nothing else needs installing. If you already run netscli from a terminal, point your client at that copy instead — you will get the version you chose, and packet capture, which this bundle does not include.",
+  "long_description": "NetsCLI exposes its network diagnostics as MCP tools: discover hosts on a subnet, scan TCP and UDP ports, ping, resolve DNS, read the ARP cache, browse mDNS services, and build a combined profile of a single host.\n\nThis bundle carries the netscli binary, so nothing else needs installing. If you already run netscli from a terminal, point your client at that copy instead — you will get the version you chose, and packet capture, which this bundle does not include.",
   "author": {
     "name": "Felix Stubner",
     "url": "https://github.com/fstubner"
