@@ -46,6 +46,7 @@ cosign verify-blob \
 |---|---|---|
 | npm | [`npm/`](./npm/) | `scripts/release/publish-npm.sh` |
 | MCP bundles | [`mcpb/`](./mcpb/) | `scripts/release/build-mcpb.sh` |
+| MCP Registry | [`mcp-registry/`](./mcp-registry/) | `scripts/release/publish-mcp-registry.sh` |
 | Homebrew tap | [`homebrew/`](./homebrew/) | `scripts/release/publish-homebrew.sh` |
 | Homebrew Cask | [`homebrew/Casks/`](./homebrew/Casks/) | `scripts/release/publish-homebrew-cask.sh` |
 | Scoop bucket | [`scoop/`](./scoop/) | `scripts/release/publish-scoop*.sh` |
@@ -67,6 +68,7 @@ These are the parts that need more than "URL + SHA256 changed":
 | npm | Six packages go up per release and the launcher must go last, or someone can install a `netscli` whose binary was never published. The publish script enforces the order and skips anything already on the registry, so a re-run after a partial upload is safe. | `scripts/release/publish-npm.sh vX.Y.Z --build-only`, which downloads the real assets, stages all six and runs the launcher against the binary for the current machine without touching npm. |
 | npm | The launcher's `mcpName` (`io.github.fstubner/netscli`) is how the official MCP Registry checks that whoever lists the server owns the npm package; it must match the `name` the server is registered under. Removing it or renaming either side makes the registry refuse the next listing update. | `npm view netscli mcpName` after a release prints the same name the registry entry uses. |
 | MCP bundles | The binary is inside the bundle, so there is one per platform, and `compatibility.platforms` cannot express an architecture — the two Linux bundles look identical to a client and are told apart only by filename. | `scripts/release/build-mcpb.sh vX.Y.Z <dir>`; unzip one and run `server/netscli serve`. Set `MCPB_CMD` to a locally installed `mcpb` where `npx` is unavailable. |
+| MCP Registry | The entry points at the npm launcher and adds `serve`; without that argument a client would start the terminal UI. It can only be listed once npm serves that version with its `mcpName`, so the job runs after npm and waits for it. Auth is the workflow's own OIDC token, so it only publishes from Actions. | `scripts/release/publish-mcp-registry.sh vX.Y.Z --validate-only` renders `server.json` and validates it against the registry without publishing (set `MCP_PUBLISHER` to a local binary off linux/amd64). |
 | Winget CLI | The CLI asset is a bare executable, so the manifest must stay `InstallerType: portable`. | Compare the generated PR against `winget/cli/<version>/`; `winget validate`; install from the PR manifest. |
 | Winget GUI | The GUI asset is a WiX MSI under a separate package id, `fstubner.netscli.gui`. | `winget validate`; confirm `PackageVersion`, `ProductVersion`, and install/uninstall behavior. |
 | Scoop CLI | The asset URL uses `#/netscli.exe` rename syntax and generates completions in `post_install`. | `scoop install`; `netscli --version`; `scoop update`; verify the completion file is written. |
