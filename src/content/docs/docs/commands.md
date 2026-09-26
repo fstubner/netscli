@@ -21,7 +21,7 @@ Every command except `calibrate`, which is about the machine rather than a proje
 | Flag | Command | Effect |
 | --- | --- | --- |
 | `-y, --yes` | setup, disconnect | Apply without prompting. Non-interactive setup syncs the built-in skill plus any already selected. |
-| `--repair` | setup | Replace stale or duplicated generated blocks before writing. |
+| `--repair` | setup | Also remove files left by older xtctx versions (`.xtctx/.store`, `.xtctx/tool-config`). The index is kept. |
 | `--global-mcp` | setup | Also write Copilot CLI's machine-wide MCP config. |
 | `--global-mcp` | disconnect | Also remove xtctx from the machine-wide Antigravity and Copilot CLI configs. |
 | `--all` | disconnect | Every supported tool. Also deletes `.xtctx/skills`. |
