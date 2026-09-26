@@ -53,8 +53,16 @@ const groups = [
                     {recommended.command ? (
                       <div class="cmd big has-copy always-show">{recommended.command}</div>
                     ) : (
-                      <a class="cmd big install-download" href={recommended.href} download>
-                        Download {recommended.label}
+                      /* A button, not a command chip. It was drawn in the
+                         `.cmd big` box the other tabs use for their
+                         recommended command, so it read as a command that
+                         said "Download Debian / Ubuntu" -- the label above
+                         it, repeated, in a box made for copying. The file
+                         type is the useful part; the label already names
+                         the distro. Styled like the AppImage row's button,
+                         not green: see `a.install-download` below. */
+                      <a class="install-download" href={recommended.href} download>
+                        Download {recommended.href?.slice(recommended.href.lastIndexOf('.'))} →
                       </a>
                     )}
                     {recommended.hint && <p class="install-hint">{recommended.hint}</p>}
