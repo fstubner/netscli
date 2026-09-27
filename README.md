@@ -145,28 +145,26 @@ they read changes rather than on every commit:
 
 ## Continuous integration
 
-`.github/workflows/ci.yml` runs every check in this repo on
-**`ubuntu-latest`**. Nothing to set up: open a pull request and it runs.
+`.github/workflows/ci.yml` runs every check in this repo. It needs a runner
+registered and running to report anything -- see "CI runs on a self-hosted
+runner" below for why, and for what that means day to day.
 
-This was a self-hosted Windows runner until 2026-09-12. The reasoning was
-cost -- this repo is private, so GitHub-hosted minutes are billed against the
-account and self-hosted minutes are not -- and it failed in the way that kind
-of saving usually does. The runner went offline, and a pull request's checks
-sat queued indefinitely: not passing, not failing, just never arriving. The
-pull request looked like it was waiting on CI, and CI was waiting on a
-machine that was not coming back.
+This ran on GitHub-hosted `ubuntu-latest` between 2026-09-12 and 2026-09-21.
+The reasoning at the time was cost -- this repo is private, so GitHub-hosted
+minutes are billed against the account and self-hosted minutes are not -- and
+before that, a self-hosted Windows runner had failed in the way that kind of
+saving usually does: it went offline, and a pull request's checks sat queued
+indefinitely, not passing, not failing, just never arriving.
 
-A check that cannot run is worse than a metered one, because nothing about it
-looks broken. So the minutes are billed now, and that is the trade: a small
-recurring cost for checks that actually report.
+Hosted `ubuntu-latest` also removed a security condition the self-hosted
+setup carried. A self-hosted runner executes whatever a workflow tells it to,
+on a real machine -- fine while the repo is private and one person opens the
+pull requests, not fine the moment it is public, because a fork's pull
+request would then run its own code there.
 
-The change also removed a security condition the old setup carried. A
-self-hosted runner executes whatever a workflow tells it to, on a real
-machine -- fine while the repo is private and one person opens the pull
-requests, not fine the moment it is public, because a fork's pull request
-would then run its own code there. The workflow had a guard step that failed
-the job if it ever ran self-hosted on a public repo. Hosted runners make both
-the condition and the guard unnecessary, so the guard is gone.
+Then, on 2026-09-21, hosted `ubuntu-latest` turned out not to run at all for
+this private repo (below), so the workflow moved back to self-hosted and the
+guard against running self-hosted on a public repo came back with it.
 
 ### What to expect
 

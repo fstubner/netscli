@@ -1,17 +1,14 @@
-# The same gate netscli runs on its site/ directory, with this repo as the
-# site root. Every step blocks; a check that is allowed to fail is a check
-# nobody reads.
+# The same gate a product's site/ directory runs, with this repo as the site
+# root. Every step blocks; a check that is allowed to fail is a check nobody
+# reads.
 #
-# It runs on a GitHub-hosted runner. This was self-hosted until 2026-09-12,
-# to avoid metered minutes on a private repo, and the trade turned out badly:
-# the runner went offline and every queued run sat there indefinitely,
-# reporting neither pass nor fail. A check that cannot run is worse than a
-# metered one, because nothing about it looks broken -- the pull request just
-# waits.
-#
-# Hosted runners also remove the security condition the self-hosted setup
-# carried, which was that a fork's pull request would have executed its own
-# code on a personal machine the moment this repo was made public.
+# It runs on a self-hosted runner (see the `runs-on` comment below for why
+# hosted `ubuntu-latest` does not work for this private repo). A self-hosted
+# runner has its own failure mode: it went offline once, and every queued run
+# sat there indefinitely, reporting neither pass nor fail. A check that
+# cannot run is worse than a metered one, because nothing about it looks
+# broken -- the pull request just waits. Keep the runner registered and
+# running, or start it before opening a pull request.
 #
 # Still one job rather than two: two would checkout and `npm ci` twice for no
 # gain. The step names report separately either way.
