@@ -6,7 +6,10 @@
  * group separator against 39px, which was obvious flipping between the two.
  *
  * `link-gap` is between neighbouring items (links, and the theme control after
- * them); `group-gap` is the margin the separator sits in the middle of.
+ * them); `group-gap` is the extra margin before the first page link. The
+ * separator is centred in the whole space between the two groups, which is
+ * both added together (plus its own 1px): centring it in the margin alone put
+ * it 20px nearer Docs than FAQ.
  *
  * Its own file rather than tokens.css, like theme-control.css, because it
  * describes one component and tokens.css is at the 300-line guard. Both

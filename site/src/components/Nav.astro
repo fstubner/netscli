@@ -240,7 +240,7 @@ html[data-theme='light'] nav[data-site-nav]::after{
 .nlinks a.nav-group-start::before{
   content:"";
   position:absolute;
-  inset-inline-start:calc(var(--ui-nav-group-gap) / -2);
+  inset-inline-start:calc((var(--ui-nav-group-gap) + var(--ui-nav-link-gap) + 1px) / -2);
   top:50%;
   width:1px;
   height:18px;
