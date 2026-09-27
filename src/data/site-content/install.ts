@@ -43,7 +43,7 @@ export const installByPlatform: Record<Platform, PlatformInstall> = {
 
 export const tryCommands: TryCommand[] = [
   { comment: 'Opt this project in', command: 'npx -y xtctx setup' },
-  { comment: 'Check it', command: 'npx -y xtctx status' },
+  { comment: 'Check the wiring', command: 'npx -y xtctx status' },
   { comment: 'All commands', command: 'npx -y xtctx --help' },
 ];
 

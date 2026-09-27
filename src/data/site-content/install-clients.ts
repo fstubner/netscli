@@ -10,6 +10,10 @@ export const installSteps: InstallSteps = {
   // (src/mcp/server.ts notConfigured; the plugin's handoff skill).
   afterNote:
     'Or ask your agent to set xtctx up here: in a project that is not set up yet, its tools say so and it offers to run this for you.',
+  use: {
+    title: 'Switch agents',
+    text: 'Open a different agent in the same project and ask it to pick up where the last one left off. It reads the earlier session through xtctx instead of asking you.',
+  },
 };
 
 // One card per client xtctx supports, from the README's plugin routes. The
