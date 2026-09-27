@@ -1,7 +1,10 @@
 ---
 import { site } from '../data/site';
 const { install, copy } = site;
-const { byPlatform, clients, tryCommands, binariesNote } = install;
+const { byPlatform, clients, steps, tryCommands, binariesNote } = install;
+// With numbered steps, the first try-command is the second step's card and
+// the rest are links under it; without, the old "Then" panel lists them all.
+const [afterCommand, ...afterExtras] = tryCommands;
 const oses = ['windows', 'macos', 'linux'] as const;
 const labels = { windows: 'Windows', macos: 'macOS', linux: 'Linux' };
 // Desktop first: most visitors landing here want the app, and the CLI
@@ -24,11 +27,32 @@ const groups = [
         {/* By client rather than by OS: see install-clients.ts. Every card is
             visible at once, because which clients are supported is itself
             part of the answer. */}
+        {steps && (
+          <h3 class="install-step"><span class="install-step-n" aria-hidden="true">1</span>{steps.install}</h3>
+        )}
         <ul class="client-grid">
           {clients.map((client) => (
             <li class="client-card">
-              <h3 class="client-name">{client.name}</h3>
-              {client.maker && <p class="client-maker">{client.maker}</p>}
+              <h3 class="client-name">
+                {client.kind && (
+                  <svg class="client-kind" viewBox="0 0 20 20" aria-hidden="true">
+                    <rect x="1.5" y="3" width="17" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.5" />
+                    {client.kind === 'terminal' ? (
+                      <path d="M5.5 8l2.5 2-2.5 2M10 12.5h4.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    ) : (
+                      <path d="M1.5 7h17M6.5 7v10" fill="none" stroke="currentColor" stroke-width="1.5" />
+                    )}
+                  </svg>
+                )}
+                {client.name}
+              </h3>
+              {(client.maker || client.kind) && (
+                <p class="client-maker">
+                  {[client.maker, client.kind === 'terminal' ? 'terminal agent' : client.kind === 'editor' ? 'editor' : undefined]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </p>
+              )}
               {client.commands.map((command) => (
                 <div class="client-cmd has-copy" data-copy={command}><code>{command}</code></div>
               ))}
@@ -36,6 +60,23 @@ const groups = [
             </li>
           ))}
         </ul>
+        {steps && afterCommand ? (
+          <div class="client-after client-after-step">
+            <h3 class="install-step"><span class="install-step-n" aria-hidden="true">2</span>{steps.after}</h3>
+            <div class="client-cmd client-cmd-main has-copy" data-copy={afterCommand.command}><code>{afterCommand.command}</code></div>
+            {afterExtras.length > 0 && (
+              <p class="client-after-extras">
+                {afterExtras.map((c, i) => (
+                  <Fragment>
+                    {i > 0 && <span aria-hidden="true"> · </span>}
+                    {c.comment}: <code>{c.command}</code>
+                  </Fragment>
+                ))}
+              </p>
+            )}
+            <p class="footer-note" set:html={binariesNote} />
+          </div>
+        ) : (
         <div class="client-after">
           <div class="try">
             <h3 class="try-title">Then</h3>
@@ -48,6 +89,7 @@ const groups = [
           </div>
           <p class="footer-note" set:html={binariesNote} />
         </div>
+        )}
       </div>
     ) : (
     <div class="install-grid">
@@ -155,7 +197,11 @@ const groups = [
   background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.14);border-radius:10px;
   padding:16px 18px;display:flex;flex-direction:column;gap:8px;min-width:0;
 }
-.client-name{font-size:.9375rem;font-weight:700;color:var(--ui-ondark-text-strong);margin:0 0 2px}
+.client-name{
+  display:flex;align-items:center;gap:8px;
+  font-size:.9375rem;font-weight:700;color:var(--ui-ondark-text-strong);margin:0 0 2px;
+}
+.client-kind{width:18px;height:18px;flex:none;color:var(--ui-ondark-accent)}
 .client-maker{margin:-6px 0 4px;font-size:.75rem;color:var(--ui-ondark-text-muted)}
 /* Commands wrap rather than scroll: a long plugin command cut off behind a
    scrollbar is the command someone came here to read. */
@@ -178,6 +224,24 @@ const groups = [
 }
 .client-after .try .try-title{grid-column:1/-1}
 .client-after .footer-note{margin-top:14px}
+
+/* Numbered steps: the grid is step 1, the per-project command step 2. */
+.install-step{
+  display:flex;align-items:center;gap:10px;
+  margin:8px 0 12px;font-size:1rem;font-weight:700;color:var(--ui-ondark-text-strong);
+}
+.install-step-n{
+  display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;
+  border:1px solid rgba(var(--ui-ondark-accent-rgb),.6);color:var(--ui-ondark-accent);
+  font-size:.75rem;font-weight:700;
+}
+.client-after-step{margin-top:28px}
+.client-cmd-main{max-width:420px;font-size:.8125rem;padding:10px 44px 10px 12px}
+.client-after-extras{margin:10px 0 0;font-size:.8125rem;color:var(--ui-ondark-text-muted)}
+.client-after-extras code{
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.75rem;
+  color:var(--ui-ondark-text);background:none;border:0;padding:0;
+}
 
 /* ─── GET STARTED ─── */
 .install-grid{
