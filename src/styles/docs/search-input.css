@@ -163,7 +163,7 @@ html[data-theme='light'] #starlight__search .pagefind-ui__message .search-data {
 }
 
 #starlight__search .pagefind-ui__drawer:not(:has(.pagefind-ui__result)):not(:has(.pagefind-ui__message))::before {
-  content: "Type a page, command, or network term";
+  content: "Type a page, command, or flag";
   max-width: 24rem;
   color: var(--sl-color-gray-3);
   font-size: 0.95rem;
@@ -171,7 +171,7 @@ html[data-theme='light'] #starlight__search .pagefind-ui__message .search-data {
 }
 
 site-search dialog .search-container:has(.pagefind-ui__drawer.pagefind-ui__hidden)::after {
-  content: "Type a page, command, or network term";
+  content: "Type a page, command, or flag";
   display: grid;
   place-items: center;
   min-height: 10rem;

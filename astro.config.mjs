@@ -1,5 +1,6 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import sitemap from '@astrojs/sitemap';
 import { modules } from './src/data/site-content/modules';
 import { meta } from './src/data/site-content/meta';
 import { social } from './src/data/site-content/footer';
@@ -16,6 +17,10 @@ import {
 export default defineConfig({
   site: meta.domain,
   integrations: [
+    // robots.txt.ts advertises /sitemap-index.xml, so something has to emit
+    // it. Without this integration that reference 404s, which is worse than
+    // not mentioning a sitemap at all.
+    sitemap(),
     // Gated on modules.docs (src/data/site-content/modules.ts). A product
     // without docs turns the flag off and can delete src/content/docs/,
     // content.config.ts, src/styles/docs/ and src/components/starlight/.
