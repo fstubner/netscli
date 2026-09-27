@@ -41,10 +41,10 @@ export const installByPlatform: Record<Platform, PlatformInstall> = {
   linux: { cli: cliEntries, desktop: [] },
 };
 
+// Only setup: status and --help are in the docs' command reference. As
+// links under the install steps they read as an afterthought.
 export const tryCommands: TryCommand[] = [
   { comment: 'Opt this project in', command: 'npx -y xtctx setup' },
-  { comment: 'Check the wiring', command: 'npx -y xtctx status' },
-  { comment: 'All commands', command: 'npx -y xtctx --help' },
 ];
 
 export const installBinariesNote =
