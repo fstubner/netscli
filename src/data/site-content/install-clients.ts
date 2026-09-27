@@ -5,6 +5,11 @@ import type { InstallSteps } from './install-types';
 export const installSteps: InstallSteps = {
   install: 'Install the plugin for your agent',
   after: 'Opt a project in',
+  // True of every tool: in a project that is not set up each one answers
+  // that it is not, names the command, and tells the agent to offer it
+  // (src/mcp/server.ts notConfigured; the plugin's handoff skill).
+  afterNote:
+    'Or ask your agent to set xtctx up here: in a project that is not set up yet, its tools say so and it offers to run this for you.',
 };
 
 // One card per client xtctx supports, from the README's plugin routes. The
