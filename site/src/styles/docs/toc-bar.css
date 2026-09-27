@@ -54,7 +54,31 @@
     z-index: calc(var(--sl-z-index-navbar) - 2);
     width: 100%;
     background: var(--sl-color-bg-nav);
+    backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--sl-color-hairline);
+  }
+
+  /* The bar sits directly under the header, so once the page scrolls the
+     header's shadow and its dark gradient (docs/header.css) fell on this bar
+     instead of on the content, and it read as a different, darker colour
+     from the header above it. With the bar present the shadow moves down to
+     its bottom edge: the header and the bar are one surface, shaded once.
+     Same blur as the header too, rather than a second 16px blur on the nav
+     inside, which is what the bar's colour had been composited through. */
+  html[data-docs-scrolled='true']:has(.ui-mobile-toc-wrapper) header.header {
+    box-shadow: none;
+  }
+
+  html[data-docs-scrolled='true']:has(.ui-mobile-toc-wrapper) header.header::after {
+    opacity: 0;
+  }
+
+  html[data-docs-scrolled='true'] .ui-mobile-toc-wrapper {
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+  }
+
+  html[data-theme='light'][data-docs-scrolled='true'] .ui-mobile-toc-wrapper {
+    box-shadow: 0 14px 30px rgba(var(--ui-hairline-rgb), 0.11);
   }
 
   mobile-starlight-toc {
@@ -72,7 +96,6 @@
     width: 100%;
     border: 0;
     background: transparent;
-    backdrop-filter: blur(16px);
     box-shadow: none;
   }
 
@@ -137,8 +160,13 @@
     box-shadow: none;
   }
 
+  /* Below and to the sides only. It was 0 18px 42px: a 42px blur on an
+     18px offset reaches 24px above the menu's top edge, so the shadow was
+     drawn over the bar the menu hangs from, as a dark band across its
+     bottom. A -16px spread with a 16px offset starts the shadow exactly at
+     the top edge (16 + 16 - 32 = 0). */
   mobile-starlight-toc details[open] .dropdown {
-    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.34);
+    box-shadow: 0 16px 32px -16px rgba(0, 0, 0, 0.45);
   }
 
   mobile-starlight-toc .dropdown ul {
