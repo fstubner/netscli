@@ -28,6 +28,7 @@
     "assets:wordmark": "node ./scripts/wordmark.mjs"
   },
   "dependencies": {
+    "@astrojs/sitemap": "^3.7.3",
     "@astrojs/starlight": "^0.42.1",
     "astro": "^7.2.9"
   },
