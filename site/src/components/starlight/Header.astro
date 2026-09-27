@@ -87,7 +87,7 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
       display: flex;
       align-items: center;
       justify-content: flex-start;
-      gap: 1rem;
+      gap: var(--ui-nav-link-gap);
       height: var(--sl-nav-height);
       min-height: var(--sl-nav-height);
       width: min(
@@ -149,9 +149,9 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 1.15rem;
+      gap: var(--ui-nav-link-gap);
       min-width: 0;
-      font-size: 0.8125rem;
+      font-size: var(--ui-nav-font-size);
       height: var(--sl-nav-height);
       line-height: 1;
     }
@@ -185,13 +185,13 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
      * sits in that margin, negatively inset. */
     .docs-nav-links a.nav-group-start {
       position: relative;
-      margin-inline-start: 1.3rem;
+      margin-inline-start: var(--ui-nav-group-gap);
     }
 
     .docs-nav-links a.nav-group-start::before {
       content: "";
       position: absolute;
-      inset-inline-start: -0.65rem;
+      inset-inline-start: calc(var(--ui-nav-group-gap) / -2);
       top: 50%;
       width: 1px;
       height: 18px;
@@ -251,15 +251,9 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
 
     @media (max-width: 72rem) {
       .docs-topbar {
-        gap: 0.85rem;
         width: min(100%, calc(100vw - 2rem));
         max-width: calc(100vw - 2rem);
         padding-inline: 1rem;
-      }
-
-      .docs-nav-links {
-        gap: 0.75rem;
-        font-size: 0.78rem;
       }
 
       .docs-header-search {
@@ -294,7 +288,6 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
 
     @media (max-width: 72rem) {
       .docs-topbar {
-        gap: 0.75rem;
         width: min(100%, calc(100vw - 5.25rem));
         max-width: calc(100vw - 5.25rem);
         justify-content: flex-start;
@@ -310,11 +303,6 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
          second auto margin on the same flex row splits the free space between
          the two rather than adding to it -- measured at 1142px, 206px of it
          landed between the search icon and the first link. */
-      .docs-nav-links {
-        gap: 0.7rem;
-        font-size: 0.76rem;
-      }
-
       .docs-header-search {
         flex: 0 0 auto;
         width: 2.5rem;

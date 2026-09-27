@@ -31,6 +31,17 @@
      landing page and the docs. Starlight's own --sl-nav-height is set from
      this in starlight/01-tokens-and-header.css. */
   --ui-nav-height: 3.75rem;
+  /* Spacing inside both top bars, so the landing and docs bars cannot drift
+     apart again. They had: 20px between links on the landing page and 18.4px
+     in the docs, and 52px around the separator against 39px. `link-gap` is
+     between neighbouring items (links, and the theme control after them);
+     `group-gap` is the margin the separator sits in the middle of. The docs
+     bar has to fit search as well, so below 72rem both bars tighten
+     together, in the media query after this block, rather than the docs bar
+     alone. */
+  --ui-nav-link-gap: 1.25rem;
+  --ui-nav-group-gap: 2rem;
+  --ui-nav-font-size: 0.8125rem;
   --ui-shell-width: 72rem;
 
   /* ---- Wordmark ------------------------------------------------------
@@ -188,6 +199,15 @@
      four slightly different near-black rgba() values -- 17/17/17, 22/24/26,
      25/25/25, 8/8/8 -- none of which could follow a theme. */
   --ui-bg-rgb: 17, 17, 17;
+}
+
+/* Between the width where the bars collapse into a menu (900px) and 72rem,
+   the docs bar has search, six links and the theme control to fit. */
+@media (max-width: 72rem) {
+  :root {
+    --ui-nav-link-gap: 0.75rem;
+    --ui-nav-font-size: 0.76rem;
+  }
 }
 
 /* The wordmark's one size step, for both bars.
