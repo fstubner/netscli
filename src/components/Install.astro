@@ -64,6 +64,7 @@ const groups = [
           <div class="client-after client-after-step">
             <h3 class="install-step"><span class="install-step-n" aria-hidden="true">2</span>{steps.after}</h3>
             <div class="client-cmd client-cmd-main has-copy" data-copy={afterCommand.command}><code>{afterCommand.command}</code></div>
+            {steps.afterNote && <p class="client-after-note">{steps.afterNote}</p>}
             {afterExtras.length > 0 && (
               <p class="client-after-extras">
                 {afterExtras.map((c, i) => (
@@ -237,6 +238,7 @@ const groups = [
 }
 .client-after-step{margin-top:28px}
 .client-cmd-main{max-width:420px;font-size:.8125rem;padding:10px 44px 10px 12px}
+.client-after-note{margin:10px 0 0;font-size:.875rem;color:var(--ui-ondark-text)}
 .client-after-extras{margin:10px 0 0;font-size:.8125rem;color:var(--ui-ondark-text-muted)}
 .client-after-extras code{
   font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.75rem;

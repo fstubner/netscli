@@ -13,4 +13,6 @@ export type InstallClientKind = 'terminal' | 'editor';
 export interface InstallSteps {
   install: string;
   after: string;
+  /** One line under step 2's command, e.g. another way to do it. Plain text. */
+  afterNote?: string;
 }
