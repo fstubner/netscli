@@ -43,12 +43,12 @@ export const installByPlatform: Record<Platform, PlatformInstall> = {
 
 export const tryCommands: TryCommand[] = [
   { comment: 'Opt this project in', command: 'npx -y xtctx setup' },
-  { comment: 'See what is wired and indexed', command: 'npx -y xtctx status' },
-  { comment: 'Every command', command: 'npx -y xtctx --help' },
+  { comment: 'Check it', command: 'npx -y xtctx status' },
+  { comment: 'All commands', command: 'npx -y xtctx --help' },
 ];
 
 export const installBinariesNote =
-  'Needs Node 24 or later. opencode has no plugin xtctx can use, so for opencode setup is the whole install. The <a href="https://github.com/fstubner/xtctx#readme">README</a> covers every agent’s plugin command and where each one keeps its transcripts.';
+  'Needs Node 24 or later. opencode has no plugin xtctx can use, so for opencode setup is the whole install. The <a href="https://github.com/fstubner/xtctx#readme">README</a> has every agent’s plugin command.';
 
 export const installFromSource =
   'git clone https://github.com/fstubner/xtctx && cd xtctx && npm ci && npm run build && node dist/src/cli/index.js --help';

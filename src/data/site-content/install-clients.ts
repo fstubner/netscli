@@ -1,4 +1,11 @@
 import type { InstallClient } from './types';
+import type { InstallSteps } from './install-types';
+
+// The grid is step 1; step 2 is the first of tryCommands in install.ts.
+export const installSteps: InstallSteps = {
+  install: 'Install the plugin for your agent',
+  after: 'Opt a project in',
+};
 
 // One card per client xtctx supports, from the README's plugin routes. The
 // plugin registers the MCP server and the handoff skill for every project;
@@ -15,33 +22,39 @@ import type { InstallClient } from './types';
 export const installClients: InstallClient[] = [
   {
     name: 'Claude Code',
-    maker: 'Anthropic · terminal agent',
+    kind: 'terminal',
+    maker: 'Anthropic',
     commands: ['claude plugin marketplace add fstubner/xtctx', 'claude plugin install xtctx@xtctx'],
   },
   {
     name: 'Codex',
-    maker: 'OpenAI · terminal agent',
+    kind: 'terminal',
+    maker: 'OpenAI',
     commands: ['codex plugin marketplace add fstubner/xtctx', 'codex plugin add xtctx@xtctx'],
   },
   {
     name: 'Cursor',
-    maker: 'Anysphere · editor',
+    kind: 'editor',
+    maker: 'Anysphere',
     commands: ['cursor-agent plugin marketplace add https://github.com/fstubner/xtctx'],
     note: 'Then install xtctx from /plugins in an interactive session.',
   },
   {
     name: 'Antigravity',
-    maker: 'Google · editor',
+    kind: 'editor',
+    maker: 'Google',
     commands: ['agy plugin install https://github.com/fstubner/xtctx'],
   },
   {
     name: 'Copilot CLI',
-    maker: 'GitHub · terminal agent',
+    kind: 'terminal',
+    maker: 'GitHub',
     commands: ['copilot plugin marketplace add fstubner/xtctx', 'copilot plugin install xtctx@xtctx'],
   },
   {
     name: 'VS Code',
-    maker: 'Microsoft · editor, with Copilot Chat',
+    kind: 'editor',
+    maker: 'Microsoft',
     commands: [],
     note: 'No command-line route: install from the Chat view, with the chat.plugins.enabled setting on.',
   },
