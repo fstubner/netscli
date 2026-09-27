@@ -203,10 +203,11 @@
     display: none;
   }
 
-  /* ---- Bar, light theme ---- */
+  /* ---- Bar, light theme ----
+     Colour only. This also set a 72%-white background (and a border colour
+     for a border that is 0 wide), which drew a lighter box behind "On this
+     page" on a bar that is otherwise the header's colour. */
   html[data-theme='light'] mobile-starlight-toc .toggle {
-    border-color: rgba(var(--ui-hairline-rgb), 0.14);
-    background: rgba(255, 255, 255, 0.72);
     color: var(--sl-color-gray-1);
   }
 
