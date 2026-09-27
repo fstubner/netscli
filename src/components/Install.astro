@@ -65,7 +65,7 @@ const groups = [
             <h3 class="install-step"><span class="install-step-n" aria-hidden="true">2</span>{steps.after}</h3>
             <div class="client-cmd client-cmd-main has-copy" data-copy={afterCommand.command}><code>{afterCommand.command}</code></div>
             {steps.afterNote && <p class="client-after-note">{steps.afterNote}</p>}
-            {afterExtras.length > 0 && (
+            {!steps.use && afterExtras.length > 0 && (
               <p class="client-after-extras">
                 {afterExtras.map((c, i) => (
                   <Fragment>
@@ -74,6 +74,22 @@ const groups = [
                   </Fragment>
                 ))}
               </p>
+            )}
+            {steps.use && (
+              <Fragment>
+                <h3 class="install-step install-step-next"><span class="install-step-n" aria-hidden="true">3</span>{steps.use.title}</h3>
+                <p class="client-after-note">{steps.use.text}</p>
+                {afterExtras.length > 0 && (
+                  <p class="client-after-extras">
+                    {afterExtras.map((c, i) => (
+                      <Fragment>
+                        {i > 0 && <span aria-hidden="true"> · </span>}
+                        {c.comment}: <code>{c.command}</code>
+                      </Fragment>
+                    ))}
+                  </p>
+                )}
+              </Fragment>
             )}
             <p class="footer-note" set:html={binariesNote} />
           </div>
@@ -237,6 +253,7 @@ const groups = [
   font-size:.75rem;font-weight:700;
 }
 .client-after-step{margin-top:28px}
+.install-step-next{margin-top:28px}
 .client-cmd-main{max-width:420px;font-size:.8125rem;padding:10px 44px 10px 12px}
 .client-after-note{margin:10px 0 0;font-size:.875rem;color:var(--ui-ondark-text)}
 .client-after-extras{margin:10px 0 0;font-size:.8125rem;color:var(--ui-ondark-text-muted)}

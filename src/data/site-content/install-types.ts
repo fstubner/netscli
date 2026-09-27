@@ -15,4 +15,7 @@ export interface InstallSteps {
   after: string;
   /** One line under step 2's command, e.g. another way to do it. Plain text. */
   afterNote?: string;
+  /** A third step, after setup: what to do next, in a sentence. The rest of
+   *  `tryCommands` move under it as links. Omit it and they stay under step 2. */
+  use?: { title: string; text: string };
 }
