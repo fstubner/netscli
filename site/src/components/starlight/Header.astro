@@ -48,10 +48,6 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
     />
   </a>
 
-  <div class="docs-header-search print:hidden">
-    {shouldRenderSearch && <Search />}
-  </div>
-
   <nav class="docs-nav-links" aria-label="Site navigation">
     {
       navLinks.map((link, i) => (
@@ -66,6 +62,10 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
       ))
     }
   </nav>
+
+  <div class="docs-header-search print:hidden">
+    {shouldRenderSearch && <Search />}
+  </div>
 
   <div class="docs-header-theme sl-hidden md:sl-flex print:hidden">
     <ThemeSelect />
@@ -125,22 +125,22 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
       filter: var(--ui-mark-filter);
     }
 
-    /* The bar is two groups: identity on the left, then search, navigation
-       and the theme control together on the right. The auto margin is the
-       seam, and it sits on the search box because search is the first
-       element of the right-hand group.
+    /* The bar is two groups: identity on the left, then navigation and the
+       controls on the right -- links, then search and the theme control
+       together at the end. The auto margin is the seam, on the links because
+       they begin the right-hand group.
      *
-     * Two earlier placements are worth not repeating. On the wordmark, the
-     * whole gap landed immediately after it, and since search was the next
-     * element search came to rest near the middle of the bar, reading as a
-     * stray control belonging to neither side -- measured at a 1367px bar,
-     * search at x=704, the centre to within a few pixels. On .docs-nav-links,
-     * search stayed pinned beside the wordmark at the far left, a long way
-     * from the navigation it belongs with.
+     * Search used to lead that group, before the links, so that the keyboard
+     * reached it first. It read as a stray box at one end of the links with
+     * the theme control at the other; grouped with the theme control it is
+     * one cluster of controls, as on most docs sites. The cost is keyboard
+     * order: search now comes after the nav links. Starlight's Ctrl+K / `/`
+     * shortcut still opens it from anywhere.
      *
-     * DOM order is unchanged: search still precedes the nav links, so it is
-     * reachable by keyboard before six nav items rather than after them. */
-    .docs-header-search {
+     * An earlier placement worth not repeating: the seam on the wordmark put
+     * the whole gap straight after it, and whatever came next floated near the
+     * middle of the bar -- measured at a 1367px bar, search at x=704. */
+    .docs-nav-links {
       margin-inline-start: auto;
     }
 
@@ -203,18 +203,12 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
       border-bottom-color: var(--ui-accent);
     }
 
+    /* Sized to its button. It was a fixed 168px box with a 135px button
+       centred in it, which added 16px either side on top of the row gap. */
     .docs-header-search {
-      flex: 0 1 10.5rem;
-      width: 10.5rem;
-      max-width: 10.5rem;
-      min-width: 8.5rem;
+      flex: 0 0 auto;
       display: flex;
       align-items: center;
-      /* The button is narrower than this box (135px in 168px), so centring it
-         left 16px of box between the button and "Features" on top of the row
-         gap: 37px there against 20px between every link. Against the end, the
-         step from search to the links is the link gap like the rest. */
-      justify-content: flex-end;
       height: var(--sl-nav-height);
     }
 

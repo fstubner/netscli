@@ -118,18 +118,17 @@ html[data-theme='light'][data-docs-scrolled='true'] header.header::after {
     padding-inline: 1rem;
   }
 
-  /* The row gap stays tight here, because logo, search, links and theme
-     control all have to fit, but the steps either side of the links -- from
-     the search button to the first link, and from the last link to the theme
-     control -- match the gap between the links (--ui-nav-link-gap). At the
-     row gap alone the search button sat 7px from "Features" with 12px
-     between every link after it. */
-  .docs-nav-links,
+  /* The row gap stays tight here, because logo, links, search and theme
+     control all have to fit, but the steps after the links -- to the search
+     button, and from it to the theme control -- match the gap between the
+     links (--ui-nav-link-gap). At the row gap alone they were 7px, with 12px
+     between every link. */
+  .docs-header-search,
   .docs-header-theme {
     margin-inline-start: calc(var(--ui-nav-link-gap) - 0.45rem);
   }
 
-  /* Collapsed, search shrinks to an icon and keeps the seam.
+  /* Collapsed, search shrinks to an icon.
    *
    * Two things used to happen here and neither does now. `order: 2` on search
    * and `order: 3` on the theme control moved both into a right-hand cluster,
@@ -141,7 +140,8 @@ html[data-theme='light'][data-docs-scrolled='true'] header.header::after {
    *
    * Both were built around the links being gone, and the links are back (see
    * Header.astro). So DOM order applies again and the bar reads the same at
-   * every width above 50rem: wordmark, seam, search, links, theme control.
+   * every width above 50rem: wordmark, seam, links, search, theme control.
+   * The seam is the auto margin on .docs-nav-links (Header.astro).
    *
    * What the old arrangement cost, measured on the built site before this
    * change: the links hid at 72rem and the seam rule was left at 900px, so
@@ -155,7 +155,6 @@ html[data-theme='light'][data-docs-scrolled='true'] header.header::after {
     width: 2.5rem;
     max-width: 2.5rem;
     min-width: 2.5rem;
-    margin-inline-start: auto;
     margin-inline-end: 0;
   }
 
