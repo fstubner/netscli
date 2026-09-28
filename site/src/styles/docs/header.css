@@ -119,9 +119,12 @@ html[data-theme='light'][data-docs-scrolled='true'] header.header::after {
   }
 
   /* The row gap stays tight here, because logo, search, links and theme
-     control all have to fit, but the step from the last link to the theme
-     control matches the landing bar's (--ui-nav-link-gap). Measured at 905px
-     that costs 5px of the 14px left over. */
+     control all have to fit, but the steps either side of the links -- from
+     the search button to the first link, and from the last link to the theme
+     control -- match the gap between the links (--ui-nav-link-gap). At the
+     row gap alone the search button sat 7px from "Features" with 12px
+     between every link after it. */
+  .docs-nav-links,
   .docs-header-theme {
     margin-inline-start: calc(var(--ui-nav-link-gap) - 0.45rem);
   }
