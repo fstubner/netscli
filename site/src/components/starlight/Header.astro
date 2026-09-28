@@ -210,7 +210,11 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
       min-width: 8.5rem;
       display: flex;
       align-items: center;
-      justify-content: center;
+      /* The button is narrower than this box (135px in 168px), so centring it
+         left 16px of box between the button and "Features" on top of the row
+         gap: 37px there against 20px between every link. Against the end, the
+         step from search to the links is the link gap like the rest. */
+      justify-content: flex-end;
       height: var(--sl-nav-height);
     }
 
