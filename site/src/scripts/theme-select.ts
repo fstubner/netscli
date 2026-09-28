@@ -71,15 +71,22 @@ function initControl(root: HTMLElement): void {
     if (menu.hidden) return;
     menu.hidden = true;
     trigger.setAttribute('aria-expanded', 'false');
-    if (focusTrigger) trigger.focus();
+    if (focusTrigger) trigger.focus({ preventScroll: true });
   };
 
   const open = (): void => {
     menu.hidden = false;
     trigger.setAttribute('aria-expanded', 'true');
     // The current choice takes focus, so the keyboard starts where the eye is.
+    //
+    // `preventScroll` on every focus call here. The control lives in a sticky
+    // header, and the docs set `scroll-padding-top` on <html> so anchors clear
+    // that header. To the browser, a menu item 59px from the top sits inside
+    // that padding, so focusing it "scrolled it into view" -- which moved the
+    // page, not the header: opening the menu from far down a docs page
+    // jumped 388px up (measured at 1000px wide, from scrollY 1200 to 812).
     const current = options.find((option) => option.dataset.themeOption === choice);
-    (current ?? options[0]).focus();
+    (current ?? options[0]).focus({ preventScroll: true });
   };
 
   const choose = (next: Choice): void => {
@@ -126,13 +133,13 @@ function initControl(root: HTMLElement): void {
       event.preventDefault();
       const step = event.key === 'ArrowDown' ? 1 : -1;
       const next = (index + step + options.length) % options.length;
-      options[next].focus();
+      options[next].focus({ preventScroll: true });
     } else if (event.key === 'Home') {
       event.preventDefault();
-      options[0].focus();
+      options[0].focus({ preventScroll: true });
     } else if (event.key === 'End') {
       event.preventDefault();
-      options[options.length - 1].focus();
+      options[options.length - 1].focus({ preventScroll: true });
     }
   });
 
