@@ -58,13 +58,9 @@
     border-bottom: 1px solid var(--sl-color-hairline);
   }
 
-  /* The bar sits directly under the header, so once the page scrolls the
-     header's shadow and its dark gradient (docs/header.css) fell on this bar
-     instead of on the content, and it read as a different, darker colour
-     from the header above it. With the bar present the shadow moves down to
-     its bottom edge: the header and the bar are one surface, shaded once.
-     Same blur as the header too, rather than a second 16px blur on the nav
-     inside, which is what the bar's colour had been composited through. */
+  /* Once scrolled, the header's shadow and gradient (docs/header.css) fell
+     on this bar and darkened it. With the bar present both move to its
+     bottom edge, so header and bar are one surface, shaded once. */
   html[data-docs-scrolled='true']:has(.ui-mobile-toc-wrapper) header.header {
     box-shadow: none;
   }
@@ -81,10 +77,8 @@
     box-shadow: 0 14px 30px rgba(var(--ui-hairline-rgb), 0.11);
   }
 
-  /* The header's dark gradient, moved here with its shadow. Moving only the
-     shadow lost the part that actually reads as content sliding under the
-     bars: in the dark theme the shadow is black on near-black, and the
-     gradient is what shows. Dark only, as on the header. */
+  /* The gradient is what shows in dark (the shadow is black on near-black).
+     Dark only, as on the header. */
   .ui-mobile-toc-wrapper::after {
     content: "";
     position: absolute;
@@ -119,9 +113,7 @@
     box-shadow: none;
   }
 
-  /* Right-hand padding clears the Copy page button pinned over the bar's end
-     (.ui-mobile-toc-actions below), so a long current-section name stops
-     short of it instead of running underneath. */
+  /* End padding clears the Copy page button (.ui-mobile-toc-actions). */
   mobile-starlight-toc summary {
     display: flex;
     align-items: center;
@@ -131,9 +123,7 @@
     border: 0;
   }
 
-  /* Copy page at the bar's end. Outside <details>, so clicking it copies
-     rather than opening the contents; above it in z-order, since the
-     summary spans the full bar. */
+  /* Copy page at the bar's end: outside <details>, above the summary. */
   .ui-mobile-toc-actions {
     position: absolute;
     inset-block-start: 0;
@@ -142,10 +132,6 @@
     display: flex;
     align-items: center;
     height: var(--ui-mobile-toc-bar-height);
-  }
-
-  .ui-mobile-toc-actions:not(:has(button:not([hidden]))) {
-    display: none;
   }
 
   /* Phones: icon only. The button keeps its accessible name. */
@@ -211,11 +197,8 @@
     box-shadow: none;
   }
 
-  /* Below and to the sides only. It was 0 18px 42px: a 42px blur on an
-     18px offset reaches 24px above the menu's top edge, so the shadow was
-     drawn over the bar the menu hangs from, as a dark band across its
-     bottom. A -16px spread with a 16px offset starts the shadow exactly at
-     the top edge (16 + 16 - 32 = 0). */
+  /* Below and to the sides only: offset + |spread| = blur, so nothing is
+     drawn above the top edge. It was 0 18px 42px, a dark band over the bar. */
   mobile-starlight-toc details[open] .dropdown {
     box-shadow: 0 16px 32px -16px rgba(0, 0, 0, 0.45);
   }
@@ -255,9 +238,7 @@
   }
 
   /* ---- Bar, light theme ----
-     Colour only. This also set a 72%-white background (and a border colour
-     for a border that is 0 wide), which drew a lighter box behind "On this
-     page" on a bar that is otherwise the header's colour. */
+     Colour only: a 72%-white background here drew a box behind the label. */
   html[data-theme='light'] mobile-starlight-toc .toggle {
     color: var(--sl-color-gray-1);
   }
