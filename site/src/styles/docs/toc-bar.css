@@ -140,9 +140,7 @@
       padding-inline-end: calc(clamp(1rem, 3.4vw, 1.75rem) + 2.75rem);
     }
 
-    .ui-mobile-toc-actions .copy-page-label {
-      display: none;
-    }
+    .ui-mobile-toc-actions .copy-page-label { display: none; }
   }
 
   mobile-starlight-toc summary:focus-visible {
