@@ -1,6 +1,7 @@
 ---
 import MobileTableOfContents from 'virtual:starlight/components/MobileTableOfContents';
 import TableOfContents from 'virtual:starlight/components/TableOfContents';
+import CopyPage from './CopyPage.astro';
 
 const { toc } = Astro.locals.starlightRoute;
 ---
@@ -49,6 +50,11 @@ const { toc } = Astro.locals.starlightRoute;
       {/* Narrow screens keep the collapsed dropdown. */}
       <div class="ui-mobile-toc-wrapper lg:sl-hidden">
         <MobileTableOfContents />
+        {/* Copy page, pinned at the bar's end so it stays in reach while the
+            page scrolls; the wide-screen copy is above the content. */}
+        <div class="ui-mobile-toc-actions">
+          <CopyPage />
+        </div>
       </div>
     </>
   )

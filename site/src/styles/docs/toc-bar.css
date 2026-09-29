@@ -81,6 +81,26 @@
     box-shadow: 0 14px 30px rgba(var(--ui-hairline-rgb), 0.11);
   }
 
+  /* The header's dark gradient, moved here with its shadow. Moving only the
+     shadow lost the part that actually reads as content sliding under the
+     bars: in the dark theme the shadow is black on near-black, and the
+     gradient is what shows. Dark only, as on the header. */
+  .ui-mobile-toc-wrapper::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    bottom: -28px;
+    height: 28px;
+    pointer-events: none;
+    opacity: 0;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.34), rgba(0, 0, 0, 0));
+    transition: opacity 160ms ease;
+  }
+
+  html[data-docs-scrolled='true']:not([data-theme='light']) .ui-mobile-toc-wrapper::after {
+    opacity: 1;
+  }
+
   mobile-starlight-toc {
     position: relative;
     display: block;
@@ -99,13 +119,44 @@
     box-shadow: none;
   }
 
+  /* Right-hand padding clears the Copy page button pinned over the bar's end
+     (.ui-mobile-toc-actions below), so a long current-section name stops
+     short of it instead of running underneath. */
   mobile-starlight-toc summary {
     display: flex;
     align-items: center;
     gap: 0.65rem;
     height: var(--ui-mobile-toc-bar-height);
-    padding: 0 clamp(1rem, 3.4vw, 1.75rem);
+    padding: 0 calc(clamp(1rem, 3.4vw, 1.75rem) + 7.5rem) 0 clamp(1rem, 3.4vw, 1.75rem);
     border: 0;
+  }
+
+  /* Copy page at the bar's end. Outside <details>, so clicking it copies
+     rather than opening the contents; above it in z-order, since the
+     summary spans the full bar. */
+  .ui-mobile-toc-actions {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-end: clamp(1rem, 3.4vw, 1.75rem);
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    height: var(--ui-mobile-toc-bar-height);
+  }
+
+  .ui-mobile-toc-actions:not(:has(button:not([hidden]))) {
+    display: none;
+  }
+
+  /* Phones: icon only. The button keeps its accessible name. */
+  @media (max-width: 36rem) {
+    mobile-starlight-toc summary {
+      padding-inline-end: calc(clamp(1rem, 3.4vw, 1.75rem) + 2.75rem);
+    }
+
+    .ui-mobile-toc-actions .copy-page-label {
+      display: none;
+    }
   }
 
   mobile-starlight-toc summary:focus-visible {
