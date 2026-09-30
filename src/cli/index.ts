@@ -7,7 +7,7 @@ import { runScan } from "./scan.js";
 import { runSetup } from "./setup.js";
 import { runStatus } from "./status.js";
 import { runLogin } from "./login.js";
-import { runWatch } from "./watch.js";
+import { runSync } from "./watch.js";
 import { createProjectServices } from "../runtime/services.js";
 import { startMcpServer } from "../mcp/server.js";
 import { readXtctxPackage } from "../utils/package-info.js";
@@ -169,13 +169,22 @@ export async function main(argv = process.argv): Promise<void> {
     });
 
   program
-    .command("watch")
-    .alias("sync")
+    .command("sync")
     .option("-p, --project <path>", "Project root (defaults to cwd)")
-    .description("Stream active agent sessions and turns to xtctx cloud in real time")
+    .option("-w, --watch", "Keep running and stream new turns continuously in real time", false)
+    .description("Sync local transcript diffs to xtctx cloud")
+    .action(async (options: { project?: string; watch?: boolean }) => {
+      const globalOptions = program.opts<{ project?: string }>();
+      await runSync({ projectDir: options.project ?? globalOptions.project, watch: options.watch });
+    });
+
+  program
+    .command("watch")
+    .option("-p, --project <path>", "Project root (defaults to cwd)")
+    .description("Keep running and stream new turns to xtctx cloud continuously in real time")
     .action(async (options: { project?: string }) => {
       const globalOptions = program.opts<{ project?: string }>();
-      await runWatch({ projectDir: options.project ?? globalOptions.project });
+      await runSync({ projectDir: options.project ?? globalOptions.project, watch: true });
     });
 
   program

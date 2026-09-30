@@ -6,15 +6,18 @@ import type { Env, AuthUser, StreamTurnDelta, SessionRecord, MessageRecord } fro
 export async function ingestTurnDelta(
   env: Env,
   user: AuthUser,
-  delta: StreamTurnDelta
-): Promise<{ success: boolean; sessionRef: string }> {
-  const sessionRef = `${user.userId}:${delta.tool}:${delta.sourceSessionId}`;
+  input: StreamTurnDelta | StreamTurnDelta[]
+): Promise<{ success: boolean; count: number; sessionRef?: string }> {
+  const deltas = Array.isArray(input) ? input : [input];
+  if (deltas.length === 0) {
+    return { success: true, count: 0 };
+  }
+
   const now = new Date().toISOString();
   const nowTs = Date.now();
-
   const statements: D1PreparedStatement[] = [];
 
-  // 1. Ensure user and device records exist/updated
+  // Ensure user record exists/updated
   statements.push(
     env.DB.prepare(
       `INSERT INTO users (id, username, created_at, updated_at)
@@ -23,76 +26,84 @@ export async function ingestTurnDelta(
     ).bind(user.userId, user.username, nowTs, nowTs)
   );
 
-  const deviceName = delta.deviceName || delta.deviceId;
-  statements.push(
-    env.DB.prepare(
-      `INSERT INTO devices (id, user_id, device_name, last_seen_at, created_at)
-       VALUES (?, ?, ?, ?, ?)
-       ON CONFLICT(id) DO UPDATE SET last_seen_at = excluded.last_seen_at`
-    ).bind(delta.deviceId, user.userId, deviceName, nowTs, nowTs)
-  );
+  for (const delta of deltas) {
+    const sessionRef = `${user.userId}:${delta.tool}:${delta.sourceSessionId}`;
+    const deviceName = delta.deviceName || delta.deviceId;
 
-  // 2. Upsert session
-  statements.push(
-    env.DB.prepare(
-      `INSERT INTO sessions (
-         session_ref, user_id, device_id, tool, source_session_id,
-         repo_url, project_root, git_branch, git_commit,
-         started_at, last_activity_at, message_count, preview, source_path, status, updated_at
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)
-       ON CONFLICT(session_ref) DO UPDATE SET
-         last_activity_at = excluded.last_activity_at,
-         message_count = message_count + 1,
-         preview = COALESCE(excluded.preview, preview),
-         status = excluded.status,
-         updated_at = excluded.updated_at`
-    ).bind(
-      sessionRef,
-      user.userId,
-      delta.deviceId,
-      delta.tool,
-      delta.sourceSessionId,
-      delta.repoUrl,
-      delta.projectRoot,
-      delta.gitBranch || null,
-      delta.gitCommit || null,
-      delta.timestamp,
-      delta.timestamp,
-      delta.preview || (delta.content ? delta.content.slice(0, 160) : null),
-      delta.sourcePointer || null,
-      delta.status || "active",
-      now
-    )
-  );
+    statements.push(
+      env.DB.prepare(
+        `INSERT INTO devices (id, user_id, device_name, last_seen_at, created_at)
+         VALUES (?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET last_seen_at = excluded.last_seen_at`
+      ).bind(delta.deviceId, user.userId, deviceName, nowTs, nowTs)
+    );
 
-  // 3. Insert message turn
-  const messageId = `${sessionRef}:${delta.messageIndex}:${delta.contentHash.slice(0, 8)}`;
-  statements.push(
-    env.DB.prepare(
-      `INSERT INTO messages (
-         id, session_ref, tool, source_session_id, timestamp, role,
-         content, message_index, content_hash, metadata_json, source_pointer, indexed_at
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT(id) DO NOTHING`
-    ).bind(
-      messageId,
-      sessionRef,
-      delta.tool,
-      delta.sourceSessionId,
-      delta.timestamp,
-      delta.role,
-      delta.content,
-      delta.messageIndex,
-      delta.contentHash,
-      delta.metadataJson || "{}",
-      delta.sourcePointer || null,
-      now
-    )
-  );
+    statements.push(
+      env.DB.prepare(
+        `INSERT INTO sessions (
+           session_ref, user_id, device_id, tool, source_session_id,
+           repo_url, project_root, git_branch, git_commit,
+           started_at, last_activity_at, message_count, preview, source_path, status, updated_at
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)
+         ON CONFLICT(session_ref) DO UPDATE SET
+           last_activity_at = excluded.last_activity_at,
+           message_count = message_count + 1,
+           preview = COALESCE(excluded.preview, preview),
+           status = excluded.status,
+           updated_at = excluded.updated_at`
+      ).bind(
+        sessionRef,
+        user.userId,
+        delta.deviceId,
+        delta.tool,
+        delta.sourceSessionId,
+        delta.repoUrl,
+        delta.projectRoot,
+        delta.gitBranch || null,
+        delta.gitCommit || null,
+        delta.timestamp,
+        delta.timestamp,
+        delta.preview || (delta.content ? delta.content.slice(0, 160) : null),
+        delta.sourcePointer || null,
+        delta.status || "active",
+        now
+      )
+    );
 
-  await env.DB.batch(statements);
+    const messageId = `${sessionRef}:${delta.messageIndex}:${delta.contentHash.slice(0, 8)}`;
+    statements.push(
+      env.DB.prepare(
+        `INSERT INTO messages (
+           id, session_ref, tool, source_session_id, timestamp, role,
+           content, message_index, content_hash, metadata_json, source_pointer, indexed_at
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO NOTHING`
+      ).bind(
+        messageId,
+        sessionRef,
+        delta.tool,
+        delta.sourceSessionId,
+        delta.timestamp,
+        delta.role,
+        delta.content,
+        delta.messageIndex,
+        delta.contentHash,
+        delta.metadataJson || "{}",
+        delta.sourcePointer || null,
+        now
+      )
+    );
+  }
 
-  return { success: true, sessionRef };
+  // D1 batch execution in chunks of 100 statements
+  const CHUNK_SIZE = 100;
+  for (let i = 0; i < statements.length; i += CHUNK_SIZE) {
+    const chunk = statements.slice(i, i + CHUNK_SIZE);
+    await env.DB.batch(chunk);
+  }
+
+  const lastSessionRef = `${user.userId}:${deltas[deltas.length - 1].tool}:${deltas[deltas.length - 1].sourceSessionId}`;
+  return { success: true, count: deltas.length, sessionRef: lastSessionRef };
 }
 
 /**

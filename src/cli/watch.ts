@@ -1,11 +1,12 @@
 import { loadCredentials } from "../sync/client.js";
 import { RealtimeTranscriptWatcher } from "../sync/watcher.js";
+import { runDiffSync } from "../sync/diff-sync.js";
 import { readdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
 
-export async function runWatch(options: { projectDir?: string }): Promise<void> {
+export async function runSync(options: { projectDir?: string; watch?: boolean }): Promise<void> {
   const projectDir = options.projectDir || process.cwd();
   const credentials = await loadCredentials();
 
@@ -14,9 +15,26 @@ export async function runWatch(options: { projectDir?: string }): Promise<void> 
     process.exit(1);
   }
 
-  console.log(`\nStarting xtctx real-time memory streamer...`);
-  console.log(`- User:   ${credentials.user.username}`);
-  console.log(`- Device: ${credentials.deviceName}`);
+  // 1. Run automatic diff sync first
+  console.log(`\nChecking cloud sync for ${credentials.deviceName} (${credentials.user.username})...`);
+  try {
+    const diff = await runDiffSync({ projectDir });
+    if (diff.upToDate) {
+      console.log(`✓ Cloud sync is up to date (0 pending diffs)`);
+    } else {
+      console.log(`✓ Successfully synced ${diff.syncedCount} pending turns to cloud`);
+    }
+  } catch (err: unknown) {
+    console.warn(`⚠️ Warning: Diff sync encountered an error:`, err instanceof Error ? err.message : String(err));
+  }
+
+  // If not watching, we are done
+  if (!options.watch) {
+    return;
+  }
+
+  // 2. Start real-time continuous watcher
+  console.log(`\nStarting continuous real-time watcher...`);
   console.log(`- Server: ${credentials.syncUrl}`);
   console.log(`- Target: ${projectDir}\n`);
 
@@ -25,11 +43,8 @@ export async function runWatch(options: { projectDir?: string }): Promise<void> 
     credentials,
   });
 
-  // 1. Check Antigravity transcripts
-  const antigravityBrain = process.platform === "win32"
-    ? join(homedir(), ".gemini", "antigravity", "brain")
-    : join(homedir(), ".gemini", "antigravity", "brain");
-
+  // Antigravity transcripts
+  const antigravityBrain = join(homedir(), ".gemini", "antigravity", "brain");
   if (existsSync(antigravityBrain)) {
     try {
       const convs = await readdir(antigravityBrain);
@@ -45,7 +60,7 @@ export async function runWatch(options: { projectDir?: string }): Promise<void> 
     }
   }
 
-  // 2. Check Claude Code transcripts
+  // Claude Code transcripts
   const claudeProjects = join(homedir(), ".claude", "projects");
   if (existsSync(claudeProjects)) {
     try {
