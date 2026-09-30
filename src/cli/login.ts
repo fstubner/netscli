@@ -1,5 +1,6 @@
 import { hostname } from "node:os";
 import { saveCredentials } from "../sync/client.js";
+import { runDiffSync } from "../sync/diff-sync.js";
 
 interface DeviceCodeResponse {
   device_code: string;
@@ -70,7 +71,20 @@ export async function runLogin(options: { syncUrl?: string; deviceName?: string 
 
         console.log(`\n✓ Successfully authenticated as \x1b[1m${pollData.user.username}\x1b[0m`);
         console.log(`✓ Device registered as: \x1b[32m${deviceName}\x1b[0m`);
-        console.log("✓ Credentials saved to ~/.xtctx/credentials.json\n");
+        console.log("✓ Credentials saved to ~/.xtctx/credentials.json");
+
+        // Automatically trigger initial diff sync
+        console.log("\nSyncing existing local sessions to xtctx cloud...");
+        try {
+          const diff = await runDiffSync({ projectDir: process.cwd() });
+          if (diff.upToDate) {
+            console.log("✓ Cloud sync is up to date (0 pending diffs)\n");
+          } else {
+            console.log(`✓ Automatically synced ${diff.syncedCount} turns to xtctx cloud!\n`);
+          }
+        } catch (err: unknown) {
+          console.warn(`⚠️ Note: Cloud sync deferred (${err instanceof Error ? err.message : String(err)})\n`);
+        }
         return;
       }
 
