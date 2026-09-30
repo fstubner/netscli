@@ -31,7 +31,7 @@
     "@astrojs/check": "^0.9.10",
     "@axe-core/cli": "^4.13.0",
     "chromedriver": "^154.0.0",
-    "lighthouse": "^13.4.1",
+    "lighthouse": "^13.5.0",
     "linkedom": "^0.18.13",
     "selenium-webdriver": "^4.49.0",
     "typescript": "^5.5.0"
