@@ -18,7 +18,7 @@ database_id = "f64a7fc9-60a3-41be-964f-efbca6897f88"
 
 [vars]
 # Public GitHub OAuth App Client ID (for Device Flow)
-GITHUB_CLIENT_ID = "YOUR_GITHUB_CLIENT_ID"
+GITHUB_CLIENT_ID = "Ov23liFUTodqfoH9mgHA"
 ENVIRONMENT = "production"
 
 # Secrets to set via `wrangler secret put <NAME>`:
