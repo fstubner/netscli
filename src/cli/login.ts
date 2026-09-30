@@ -1,6 +1,7 @@
 import { hostname } from "node:os";
 import { saveCredentials } from "../sync/client.js";
 import { runDiffSync } from "../sync/diff-sync.js";
+import { ensureDaemonRunning } from "../sync/daemon-manager.js";
 
 interface DeviceCodeResponse {
   device_code: string;
@@ -78,13 +79,26 @@ export async function runLogin(options: { syncUrl?: string; deviceName?: string 
         try {
           const diff = await runDiffSync({ projectDir: process.cwd() });
           if (diff.upToDate) {
-            console.log("✓ Cloud sync is up to date (0 pending diffs)\n");
+            console.log("✓ Cloud sync is up to date (0 pending diffs)");
           } else {
-            console.log(`✓ Automatically synced ${diff.syncedCount} turns to xtctx cloud!\n`);
+            console.log(`✓ Automatically synced ${diff.syncedCount} turns to xtctx cloud!`);
           }
         } catch (err: unknown) {
-          console.warn(`⚠️ Note: Cloud sync deferred (${err instanceof Error ? err.message : String(err)})\n`);
+          console.warn(`⚠️ Note: Cloud sync deferred (${err instanceof Error ? err.message : String(err)})`);
         }
+
+        // Automatically start detached background sync daemon
+        try {
+          const daemon = await ensureDaemonRunning();
+          if (daemon.started) {
+            console.log(`✓ Background sync daemon started (PID: ${daemon.pid})`);
+          } else if (daemon.pid) {
+            console.log(`✓ Background sync daemon is active (PID: ${daemon.pid})`);
+          }
+        } catch {
+          // Ignore
+        }
+        console.log();
         return;
       }
 

@@ -188,6 +188,42 @@ export async function main(argv = process.argv): Promise<void> {
     });
 
   program
+    .command("daemon")
+    .argument("[action]", "start, stop, or status (default: status)", "status")
+    .description("Inspect or control the background real-time sync daemon")
+    .action(async (action: string) => {
+      const { getDaemonStatus, ensureDaemonRunning, stopDaemon, getDaemonLogPath } = await import(
+        "../sync/daemon-manager.js"
+      );
+
+      if (action === "start") {
+        const res = await ensureDaemonRunning();
+        if (res.started) {
+          console.log(`✓ Started background sync daemon (PID: ${res.pid})`);
+        } else if (res.pid) {
+          console.log(`✓ Background sync daemon is already running (PID: ${res.pid})`);
+        } else {
+          console.log(`❌ Could not start daemon (are you logged in? Run xtctx login)`);
+        }
+      } else if (action === "stop") {
+        const stopped = await stopDaemon();
+        if (stopped) {
+          console.log(`✓ Stopped background sync daemon`);
+        } else {
+          console.log(`✓ Background sync daemon was not running`);
+        }
+      } else {
+        const status = await getDaemonStatus();
+        if (status.running) {
+          console.log(`✓ Background sync daemon: ACTIVE (PID: ${status.pid})`);
+        } else {
+          console.log(`○ Background sync daemon: STOPPED`);
+        }
+        console.log(`- Logs: ${getDaemonLogPath()}`);
+      }
+    });
+
+  program
     .command("scan")
     .option("-p, --project <path>", "Project root (defaults to cwd)")
     .option(
