@@ -2,18 +2,20 @@ import type { InstallClient } from './types';
 import type { InstallSteps } from './install-types';
 
 // The grid is step 1; step 2 is the first of tryCommands in install.ts.
+//
+// Labelled by how often each is done, because that is the difference between
+// them. The plugin alone does not make handoff work: in a project that is not
+// set up every tool only answers that it is not (src/mcp/server.ts
+// notConfigured). What it buys is that the tools exist in every repo, so the
+// agent can offer to run setup there. Setup is what makes a project work, and
+// it wires the agents in the repo whether or not they have the plugin (all
+// but Copilot CLI, which needs --global-mcp). No third "use it" step: the
+// hero already shows the switch.
 export const installSteps: InstallSteps = {
-  install: 'Install the plugin for your agent',
-  after: 'Opt a project in',
-  // True of every tool: in a project that is not set up each one answers
-  // that it is not, names the command, and tells the agent to offer it
-  // (src/mcp/server.ts notConfigured; the plugin's handoff skill).
+  install: 'Once per agent: install the plugin',
+  after: 'Once per project: set it up',
   afterNote:
-    'Or ask your agent to set xtctx up here: in a project that is not set up yet, its tools say so and it offers to run this for you.',
-  use: {
-    title: 'Switch agents',
-    text: 'Open a different agent in the same project and ask it to pick up where the last one left off. It reads the earlier session through xtctx instead of asking you.',
-  },
+    'With the plugin installed you can ask your agent to set xtctx up here instead, and it runs this for you. Setup wires the other agents in the repo too, plugin or not (Copilot CLI only with --global-mcp).',
 };
 
 // One card per client xtctx supports, from the README's plugin routes. The

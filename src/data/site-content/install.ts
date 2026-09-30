@@ -3,7 +3,7 @@ import type { Platform, PlatformInstall, SectionCopy, TryCommand } from './types
 export const installCopy: SectionCopy = {
   heading: 'Install, then opt a project in',
   leadHtml:
-    'Install the plugin in the agents you use: it makes the tools reachable from every project and writes nothing into any of them. Then opt each project in with setup, which puts the handoff in front of the next agent without it having to ask.',
+    'The plugin makes xtctx available in every repo and writes nothing into any of them, so your agent can set a project up when you ask. Setup is what makes a project work: it wires the agents there and puts the handoff in front of the next one without it having to ask.',
 };
 
 // Only used if install-clients.ts is emptied: the install section shows the
