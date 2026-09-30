@@ -14,8 +14,22 @@ import type { InstallSteps } from './install-types';
 export const installSteps: InstallSteps = {
   install: 'Once per agent: install the plugin',
   after: 'Once per project: set it up',
-  afterNote:
-    'With the plugin installed you can ask your agent to set xtctx up here instead, and it runs this for you. Setup wires the other agents in the repo too, plugin or not (Copilot CLI only with --global-mcp).',
+  // Asking works because every tool in a project that is not set up says so
+  // and tells the agent to offer setup (src/mcp/server.ts notConfigured);
+  // without the plugin there are no tools there to ask. Running it yourself
+  // needs nothing installed first.
+  afterCards: [
+    {
+      name: 'Ask your agent',
+      commands: ['Set up xtctx in this repo'],
+      note: 'Needs the plugin from step 1.',
+    },
+    {
+      name: 'Or run it yourself',
+      commands: ['npx -y xtctx setup'],
+      note: 'Works without the plugin.',
+    },
+  ],
 };
 
 // One card per client xtctx supports, from the README's plugin routes. The

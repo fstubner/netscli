@@ -48,7 +48,7 @@ export const tryCommands: TryCommand[] = [
 ];
 
 export const installBinariesNote =
-  'Needs Node 24 or later. opencode has no plugin xtctx can use, so for opencode setup is the whole install. The <a href="https://github.com/fstubner/xtctx#readme">README</a> has every agent’s plugin command.';
+  'Needs Node 24 or later. opencode has no plugin, so for opencode setup is the whole install.';
 
 export const installFromSource =
   'git clone https://github.com/fstubner/xtctx && cd xtctx && npm ci && npm run build && node dist/src/cli/index.js --help';
