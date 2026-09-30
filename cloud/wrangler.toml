@@ -7,7 +7,7 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "xtctx-db"
-database_id = "YOUR_D1_DATABASE_ID_HERE"
+database_id = "f64a7fc9-60a3-41be-964f-efbca6897f88"
 
 # Custom domain routing for xtctx.com
 # Uncomment when ready to map custom domains in Cloudflare Dashboard:
