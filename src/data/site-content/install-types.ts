@@ -18,4 +18,7 @@ export interface InstallSteps {
   /** A third step, after setup: what to do next, in a sentence. The rest of
    *  `tryCommands` move under it as links. Omit it and they stay under step 2. */
   use?: { title: string; text: string };
+  /** Step 2 as cards in the same style as step 1's, e.g. "ask your agent"
+   *  and "run it yourself". When set they replace the command and note. */
+  afterCards?: import('./types').InstallClient[];
 }

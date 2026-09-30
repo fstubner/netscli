@@ -5,6 +5,12 @@ const { byPlatform, clients, steps, tryCommands, binariesNote } = install;
 // With numbered steps, the first try-command is the second step's card and
 // the rest are links under it; without, the old "Then" panel lists them all.
 const [afterCommand, ...afterExtras] = tryCommands;
+// Step 1 is always the client grid; step 2 joins it as a second grid when the
+// content gives it cards rather than a single command.
+const cardGroups = [
+  { n: 1, label: steps?.install, cards: clients },
+  ...(steps?.afterCards ? [{ n: 2, label: steps.after, cards: steps.afterCards }] : []),
+];
 const oses = ['windows', 'macos', 'linux'] as const;
 const labels = { windows: 'Windows', macos: 'macOS', linux: 'Linux' };
 // Desktop first: most visitors landing here want the app, and the CLI
@@ -27,11 +33,13 @@ const groups = [
         {/* By client rather than by OS: see install-clients.ts. Every card is
             visible at once, because which clients are supported is itself
             part of the answer. */}
-        {steps && (
-          <h3 class="install-step"><span class="install-step-n" aria-hidden="true">1</span>{steps.install}</h3>
+        {cardGroups.map((group) => (
+        <Fragment>
+        {group.label && (
+          <h3 class:list={['install-step', group.n > 1 && 'install-step-next']}><span class="install-step-n" aria-hidden="true">{group.n}</span>{group.label}</h3>
         )}
-        <ul class="client-grid">
-          {clients.map((client) => (
+        <ul class:list={['client-grid', group.n > 1 && 'client-grid-pair']}>
+          {group.cards.map((client) => (
             <li class="client-card">
               <h3 class="client-name">
                 {client.kind && (
@@ -60,7 +68,11 @@ const groups = [
             </li>
           ))}
         </ul>
-        {steps && afterCommand ? (
+        </Fragment>
+        ))}
+        {steps?.afterCards ? (
+          <p class="footer-note client-after-foot" set:html={binariesNote} />
+        ) : steps && afterCommand ? (
           <div class="client-after client-after-step">
             <h3 class="install-step"><span class="install-step-n" aria-hidden="true">2</span>{steps.after}</h3>
             <div class="client-cmd client-cmd-main has-copy" data-copy={afterCommand.command}><code>{afterCommand.command}</code></div>
@@ -253,6 +265,11 @@ const groups = [
   font-size:.75rem;font-weight:700;
 }
 .client-after-step{margin-top:28px}
+/* Two cards, always a pair: auto-fill left an empty third track on wide
+   screens, which read as a missing card. */
+.client-grid-pair{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:700px){.client-grid-pair{grid-template-columns:minmax(0,1fr)}}
+.client-after-foot{margin-top:18px}
 .install-step-next{margin-top:28px}
 .client-cmd-main{max-width:420px;font-size:.8125rem;padding:10px 44px 10px 12px}
 .client-after-note{margin:10px 0 0;font-size:.875rem;color:var(--ui-ondark-text)}
