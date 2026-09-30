@@ -1,0 +1,23 @@
+{
+  "name": "xtctx-cloud",
+  "version": "0.1.0",
+  "description": "Cloudflare Edge MCP server and real-time continuous memory store for xtctx",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "d1:create": "wrangler d1 create xtctx-db",
+    "d1:migrate:local": "wrangler d1 execute xtctx-db --local --file=./schema.sql",
+    "d1:migrate:remote": "wrangler d1 execute xtctx-db --remote --file=./schema.sql",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250224.0",
+    "typescript": "^5.8.0",
+    "wrangler": "^3.111.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.6.0"
+  }
+}

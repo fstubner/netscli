@@ -6,6 +6,8 @@ import { runHook } from "./hook.js";
 import { runScan } from "./scan.js";
 import { runSetup } from "./setup.js";
 import { runStatus } from "./status.js";
+import { runLogin } from "./login.js";
+import { runWatch } from "./watch.js";
 import { createProjectServices } from "../runtime/services.js";
 import { startMcpServer } from "../mcp/server.js";
 import { readXtctxPackage } from "../utils/package-info.js";
@@ -155,6 +157,25 @@ export async function main(argv = process.argv): Promise<void> {
     .action(async (options: { project?: string; verbose?: boolean }) => {
       const globalOptions = program.opts<{ project?: string }>();
       await runStatus({ projectPath: options.project ?? globalOptions.project, verbose: options.verbose });
+    });
+
+  program
+    .command("login")
+    .option("--sync-url <url>", "Sync server URL (default: https://sync.xtctx.com)")
+    .option("--device <name>", "Friendly name for this device")
+    .description("Authenticate this machine with xtctx cloud via GitHub Device Flow")
+    .action(async (options: { syncUrl?: string; device?: string }) => {
+      await runLogin({ syncUrl: options.syncUrl, deviceName: options.device });
+    });
+
+  program
+    .command("watch")
+    .alias("sync")
+    .option("-p, --project <path>", "Project root (defaults to cwd)")
+    .description("Stream active agent sessions and turns to xtctx cloud in real time")
+    .action(async (options: { project?: string }) => {
+      const globalOptions = program.opts<{ project?: string }>();
+      await runWatch({ projectDir: options.project ?? globalOptions.project });
     });
 
   program

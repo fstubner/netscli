@@ -1,0 +1,26 @@
+name = "xtctx-cloud"
+main = "src/index.ts"
+compatibility_date = "2026-07-28"
+compatibility_flags = ["nodejs_compat"]
+
+# D1 Database Binding
+[[d1_databases]]
+binding = "DB"
+database_name = "xtctx-db"
+database_id = "YOUR_D1_DATABASE_ID_HERE"
+
+# Custom domain routing for xtctx.com
+# Uncomment when ready to map custom domains in Cloudflare Dashboard:
+# routes = [
+#   { pattern = "mcp.xtctx.com", custom_domain = true },
+#   { pattern = "sync.xtctx.com", custom_domain = true }
+# ]
+
+[vars]
+# Public GitHub OAuth App Client ID (for Device Flow)
+GITHUB_CLIENT_ID = "YOUR_GITHUB_CLIENT_ID"
+ENVIRONMENT = "production"
+
+# Secrets to set via `wrangler secret put <NAME>`:
+# - JWT_SECRET: Secret key for signing user tokens
+# - GITHUB_CLIENT_SECRET: (Optional) If using Web Application flow instead of Device Flow
