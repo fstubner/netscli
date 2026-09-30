@@ -2,19 +2,19 @@ name = "xtctx-cloud"
 main = "src/index.ts"
 compatibility_date = "2026-07-28"
 compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+
+# Custom domain routing for xtctx.com
+routes = [
+  { pattern = "mcp.xtctx.com", custom_domain = true },
+  { pattern = "sync.xtctx.com", custom_domain = true }
+]
 
 # D1 Database Binding
 [[d1_databases]]
 binding = "DB"
 database_name = "xtctx-db"
 database_id = "f64a7fc9-60a3-41be-964f-efbca6897f88"
-
-# Custom domain routing for xtctx.com
-# Uncomment when ready to map custom domains in Cloudflare Dashboard:
-# routes = [
-#   { pattern = "mcp.xtctx.com", custom_domain = true },
-#   { pattern = "sync.xtctx.com", custom_domain = true }
-# ]
 
 [vars]
 # Public GitHub OAuth App Client ID (for Device Flow)
