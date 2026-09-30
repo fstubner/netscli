@@ -17,11 +17,12 @@ function corsHeaders(extra: Record<string, string> = {}) {
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    const url = new URL(request.url);
+    try {
+      const url = new URL(request.url);
 
-    if (request.method === "OPTIONS") {
-      return new Response(null, { headers: corsHeaders() });
-    }
+      if (request.method === "OPTIONS") {
+        return new Response(null, { headers: corsHeaders() });
+      }
 
     // 1. Health check & status
     if (url.pathname === "/" || url.pathname === "/health") {
@@ -203,6 +204,14 @@ export default {
       });
     }
 
-    return new Response("Not Found", { status: 404, headers: corsHeaders() });
+      return new Response("Not Found", { status: 404, headers: corsHeaders() });
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      const stack = err instanceof Error ? err.stack : undefined;
+      return new Response(JSON.stringify({ error: errorMsg, stack }), {
+        status: 500,
+        headers: corsHeaders({ "Content-Type": "application/json" })
+      });
+    }
   }
 };
