@@ -24,11 +24,31 @@ export function getCredentialsPath(): string {
 export async function loadCredentials(): Promise<SyncCredentials | null> {
   const credPath = getCredentialsPath();
   if (process.env.XTCTX_TOKEN) {
+    const token = process.env.XTCTX_TOKEN;
+    let userId = "env-user";
+    let username = "developer";
+    let deviceId = process.env.XTCTX_DEVICE_ID;
+
+    try {
+      const parts = token.split(".");
+      if (parts.length >= 2) {
+        const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf-8"));
+        if (payload.sub) userId = payload.sub;
+        if (payload.username) username = payload.username;
+        if (payload.device_id && !deviceId) deviceId = payload.device_id;
+      }
+    } catch {
+      // Ignore JWT decode errors and use defaults
+    }
+
+    const { hostname } = await import("node:os");
+    const machineName = hostname();
+
     return {
-      token: process.env.XTCTX_TOKEN,
-      user: { id: "env-user", username: "developer" },
-      deviceId: "env-device",
-      deviceName: "cli-env",
+      token,
+      user: { id: userId, username },
+      deviceId: deviceId || `device-${machineName.toLowerCase().replace(/[^a-z0-9_-]/g, "")}`,
+      deviceName: process.env.XTCTX_DEVICE_NAME || machineName,
       syncUrl: process.env.XTCTX_SYNC_URL || DEFAULT_SYNC_URL,
     };
   }
