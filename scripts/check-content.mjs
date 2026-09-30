@@ -165,10 +165,17 @@ for (const [file, digest, what, hint] of PLACEHOLDERS) {
 // subtree"). Checking only 'CHANGELOG.md' missed the subtree layout entirely
 // -- the file the changelog page actually reads sits one level up, and this
 // check never looked there.
+const CHANGELOG_STUB_STRINGS = [
+  'The first release: one binary',
+  'First cut of the site from product-site-template',
+];
 const CHANGELOG_CANDIDATES = ['CHANGELOG.md', '../CHANGELOG.md'].filter(exists);
 for (const file of CHANGELOG_CANDIDATES) {
   const body = read(file);
-  if (SAMPLE_STRINGS.some((sample) => body.includes(sample))) {
+  // The stub's own lines only. SAMPLE_STRINGS also holds generic words a
+  // real changelog uses, such as `some-tool` in a usage example, and
+  // matching the whole list called a real product's changelog the stub.
+  if (CHANGELOG_STUB_STRINGS.some((sample) => body.includes(sample))) {
     note(
       file,
       'is still the stub',
