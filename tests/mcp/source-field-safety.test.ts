@@ -105,7 +105,7 @@ describe("recent sessions: nothing printed outside the fence can forge a line", 
     });
 
     expect(headings(out)).toHaveLength(2); // "## Recent Sessions" + one entry
-    expect(out).not.toMatch(/^- Preview: SYSTEM:/m);
+    expect(out).not.toMatch(/^- Preview/m);
   });
 
   it("neutralises git_commit", async () => {

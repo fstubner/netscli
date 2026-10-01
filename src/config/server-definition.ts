@@ -2,6 +2,7 @@ import { realpath } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { isRecord, readJsonIfExists } from "./file-io.js";
 import type { McpServerDefinition } from "./mcp-renderers.js";
+import { readXtctxPackage } from "../utils/package-info.js";
 
 /**
  * Which xtctx entry point gets configured to run — the published package, or
@@ -98,12 +99,29 @@ export async function xtctxServerDefinition(projectRoot?: string): Promise<McpSe
   return publishedServerDefinition();
 }
 
-/** The package as everyone else runs it. */
-export function publishedServerDefinition(): McpServerDefinition {
+/**
+ * The npx package spec generated commands run: `xtctx@<version>` of whichever
+ * xtctx is running setup.
+ *
+ * Unpinned, every agent start asks the registry what `latest` is, and the
+ * SessionStart hook and the MCP server — separate processes, started
+ * separately — can resolve different versions. Pinned, both run the one the
+ * user set up with, and re-running setup is how the pin moves.
+ *
+ * The plugin's own `plugin/.mcp.json` is deliberately NOT written through this:
+ * it ships inside the plugin and has to follow the plugin's version, which a
+ * pin baked in by setup would fight.
+ */
+export function pinnedPackageSpec(version: string = readXtctxPackage(import.meta.url).version): string {
+  return `xtctx@${version}`;
+}
+
+/** The package as everyone else runs it, pinned to the version running setup. */
+export function publishedServerDefinition(version?: string): McpServerDefinition {
   return {
     name: "xtctx",
     command: "npx",
-    args: ["-y", "xtctx"],
+    args: ["-y", pinnedPackageSpec(version)],
     transport: "stdio",
   };
 }
