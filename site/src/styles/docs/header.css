@@ -75,12 +75,6 @@ html[data-theme='light'][data-docs-scrolled='true'] header.header::after {
   }
 }
 
-@media (min-width: 72.01rem) {
-  starlight-menu-button {
-    display: none;
-  }
-}
-
 @media (min-width: 50rem) and (max-width: 72rem) {
   .header .docs-topbar {
     padding-inline-end: 2.25rem;
@@ -90,23 +84,22 @@ html[data-theme='light'][data-docs-scrolled='true'] header.header::after {
 /* Tablet: the search control collapses to its icon and the menu button
    pins to the bar's right edge. */
 @media (max-width: 72rem) {
-  starlight-menu-button {
-    display: block;
-  }
-
-  starlight-menu-button button {
-    display: inline-flex;
+  /* Starlight's menu button. It was a <starlight-menu-button> element with
+     a <button> inside until Starlight 0.42, which made it a bare
+     `button.sl-menu-button` opening the sidebar as a popover. Every rule here
+     and in header-controls.css still named the old element, matched nothing,
+     and the button fell back to Starlight's own white circle. No `display`
+     here: Starlight's `md:sl-hidden` decides where it shows (below 50rem),
+     and an unlayered display would outrank that. */
+  .sl-menu-button {
     align-items: center;
     justify-content: center;
-    position: fixed;
     width: 2.5rem;
     height: 2.5rem;
-    inset-block-start: calc((var(--sl-nav-height) - 2.5rem) / 2);
-    inset-inline-end: max(0.5rem, env(safe-area-inset-right));
-    z-index: 102;
+    padding: 0;
   }
 
-  starlight-menu-button button svg {
+  .sl-menu-button svg {
     width: 1.15rem;
     height: 1.15rem;
   }
@@ -217,22 +210,10 @@ html[data-theme='light'][data-docs-scrolled='true'] header.header::after {
     margin-inline-end: 0.15rem;
   }
 
-  starlight-menu-button {
-    display: block;
+  .sl-menu-button {
     position: fixed;
     inset-block-start: 0.625rem;
     inset-inline-end: 0.75rem;
     z-index: calc(var(--sl-z-index-navbar) + 2);
-    margin-left: 0;
-  }
-
-  /* The host is what is pinned now, so the button itself goes back into
-     flow. `inset: auto` is the shorthand and must stay after the tablet
-     rule's inset-inline-end, which it resets. */
-  starlight-menu-button button {
-    position: static;
-    inset: auto;
-    width: 2.5rem;
-    height: 2.5rem;
   }
 }
