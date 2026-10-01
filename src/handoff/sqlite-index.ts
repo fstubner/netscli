@@ -41,6 +41,7 @@ import {
   placeholders,
   prepareStatements,
   setSetting,
+  unitsStaleKey,
 } from "./schema.js";
 import {
   PROJECT_ROOT_SQL,
@@ -170,16 +171,6 @@ interface SessionRow {
 
 const DEFAULT_LIMIT = 5;
 const MAX_LIMIT = 100;
-
-/**
- * Sessions repaired per scan by `reconcileRetrievalUnits`.
- *
- * Small on purpose: rebuilding reads every message in a session, and scans
- * here are routinely cut short by the client disconnecting, so a large batch
- * would be killed before finishing and would repeat the same prefix next time.
- * A backlog drains over a few scans instead, newest first.
- */
-const RETRIEVAL_UNIT_RECONCILE_LIMIT = 4;
 
 /**
  * How long a scan waits for the embedding model to finish loading.
@@ -761,7 +752,10 @@ export class SqliteHandoffIndex implements SessionService {
     // scan is interrupted in the same way. Rows that already agree are not
     // written, so on a healthy index this costs one indexed count per session.
     this.prepared().reconcileSessionRollups.run();
-    this.reconcileRetrievalUnits();
+    // Bounded by the refresh budget: the newest sessions' windows are what a
+    // caller waiting that long is most likely to search. The rest is drained
+    // after the scan.
+    this.reconcileRetrievalUnits(Date.now() + this.refreshBudgetMs);
 
     for (const { scraper } of this.tools) {
       const scanned = await scanTool(scraper, {
@@ -781,6 +775,8 @@ export class SqliteHandoffIndex implements SessionService {
       this.prepared().sessionRollup.run(sessionRef);
       this.rebuildRetrievalUnitsForSession(sessionRef);
     }
+    // Whatever the pass above did not reach, now that the stores are read.
+    this.reconcileRetrievalUnits(Number.POSITIVE_INFINITY);
 
     setSetting(db, "last_scan_at", startedAt);
     setSetting(db, "last_scan_ms", String(Date.now() - Date.parse(startedAt)));
@@ -842,38 +838,41 @@ export class SqliteHandoffIndex implements SessionService {
   }
 
   /**
-   * Rebuild retrieval units for sessions whose windows do not reach their last
-   * message.
+   * Rebuild retrieval units for sessions whose windows are missing or stale,
+   * newest first, until `deadline`.
    *
    * Units are otherwise built only for the sessions a scan touched, at the end,
    * after every scraper — while each scraper advances its cursor as soon as it
    * finishes and the CLI exits shortly after a client disconnects. A scan that
    * dies in that gap leaves the messages committed, the cursor past them, and
-   * the tail of the session in no window: reachable through
-   * `xtctx_session_detail`, invisible to search, and never repaired because
-   * nothing re-reads the store.
+   * the session in no window: reachable through `xtctx_session_detail`,
+   * invisible to search, and never repaired because nothing re-reads the
+   * store. See `selectSessionsNeedingUnits` for how those sessions are found.
    *
-   * `reconcileSessionRollups` above handles the same gap for `message_count`.
-   * This is its counterpart, and the two run together for the same reason: at
-   * the start, so the repair survives an interruption of the same kind.
+   * `reconcileSessionRollups` handles the same gap for `message_count`. This is
+   * its counterpart, and the two run together at the start, so the repair
+   * survives an interruption of the same kind; the scan runs it again at the
+   * end, unbounded, for whatever the first pass left.
    *
-   * Bounded per scan. Rebuilding reads every message in a session, and scans
-   * here are routinely cut short, so an unbounded pass over a large backlog
-   * would spend the whole scan and be killed before finishing. Most-recently
-   * active first, matching `ensureVectors`: the history a handoff reaches for
-   * is covered before the archive is, and the backlog drains over a few scans.
+   * Bounded by time rather than by a count. It was four sessions a scan, so a
+   * first scan killed before its windows were built left most of the index
+   * unsearchable for dozens of sessions afterwards: over a 100-session corpus,
+   * 96 of 2,400 windows came back per later session. Each session's rebuild
+   * commits on its own, so a pass cut short keeps what it finished.
    */
-  private reconcileRetrievalUnits(): void {
+  private reconcileRetrievalUnits(deadline: number): void {
     // Scoped to this project. One database can hold another project's
     // sessions — a copied `.xtctx/`, or a root that was renamed — and
     // rebuilding windows for those spends the scan's repair budget, and the
     // embedding that follows, on rows no read here will ever return.
-    const drifted = this.prepared().selectSessionsMissingUnits.all(
-      this.scopedRoot,
-      RETRIEVAL_UNIT_RECONCILE_LIMIT,
-    ) as Array<{ session_ref: string }>;
+    const drifted = this.prepared().selectSessionsNeedingUnits.all(this.scopedRoot) as Array<{
+      session_ref: string;
+    }>;
 
     for (const { session_ref: sessionRef } of drifted) {
+      if (Date.now() >= deadline) {
+        return;
+      }
       this.rebuildRetrievalUnitsForSession(sessionRef);
     }
   }
@@ -883,14 +882,20 @@ export class SqliteHandoffIndex implements SessionService {
     const stmts = this.prepared();
     const messages = stmts.selectSessionMessages.all(sessionRef) as MessageRow[];
 
+    const staleKey = unitsStaleKey(sessionRef);
+
     if (messages.length === 0) {
-      db.prepare("DELETE FROM retrieval_units_fts WHERE session_ref = ?").run(sessionRef);
-      db.prepare("DELETE FROM retrieval_units WHERE session_ref = ?").run(sessionRef);
+      db.transaction(() => {
+        db.prepare("DELETE FROM retrieval_units_fts WHERE session_ref = ?").run(sessionRef);
+        db.prepare("DELETE FROM retrieval_units WHERE session_ref = ?").run(sessionRef);
+        stmts.clearUnitsStale.run(staleKey);
+      })();
       return;
     }
 
     const session = stmts.selectSessionTool.get(sessionRef) as { tool: string } | undefined;
     if (!session) {
+      stmts.clearUnitsStale.run(staleKey);
       return;
     }
 
@@ -945,6 +950,8 @@ export class SqliteHandoffIndex implements SessionService {
         // match every session.
         stmts.insertUnitFts.run(unitId, sessionRef, session.tool, unit.searchableText);
       }
+      // In the same transaction as the windows it vouches for.
+      stmts.clearUnitsStale.run(staleKey);
     });
     applyDiff();
   }

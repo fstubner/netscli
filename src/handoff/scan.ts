@@ -1,7 +1,7 @@
 import type { Database as DatabaseHandle } from "better-sqlite3";
 import type { ConversationChunk, ConversationScraper } from "../types/scraper.js";
 import { hashParts } from "./hash.js";
-import { type PreparedStatements, clearSetting, setSetting } from "./schema.js";
+import { type PreparedStatements, clearSetting, setSetting, unitsStaleKey } from "./schema.js";
 
 /**
  * How often a session still streaming in from a scraper has its count and
@@ -129,6 +129,9 @@ export async function scanTool(
           | { lowest: number | null }
           | undefined;
         lowestStored.set(chunkSessionRef, row?.lowest ?? null);
+        // Committed before the first row, so a scan cut off anywhere after
+        // this leaves the session marked for the rebuild it never reached.
+        stmts.markUnitsStale.run(unitsStaleKey(chunkSessionRef), new Date().toISOString());
       }
 
       const written = upsertChunk(stmts, scopedRoot, chunk);

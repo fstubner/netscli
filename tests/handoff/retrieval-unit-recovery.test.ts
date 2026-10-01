@@ -13,12 +13,16 @@
  * gap. There was no counterpart for units, and the maintainer's own index
  * carried 1,343 and 356 uncovered messages in its two live sessions.
  */
+import { realpathSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import Database from "better-sqlite3";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { SqliteHandoffIndex } from "@xtctx/handoff/sqlite-index";
+import { scanTool } from "@xtctx/handoff/scan";
+import { normalizeRootForCompare } from "@xtctx/handoff/queries";
+import { openDatabase, prepareStatements } from "@xtctx/handoff/schema";
 import type { ConversationChunk, ConversationScraper, ScraperState } from "@xtctx/types/scraper";
 
 /** Cursor genuinely advances, so a later scan re-reads nothing. */
@@ -181,9 +185,8 @@ describe("retrieval unit recovery after an interrupted scan", () => {
    * the scan's repair budget, and the embedding that follows it, on rows no
    * read here can ever return: every search filters on `project_root`.
    *
-   * The repair is capped at a handful of sessions per scan, so foreign rows do
-   * not merely waste work — they crowd out the real ones, and this project's
-   * own gap never closes.
+   * The repair's first pass is bounded by time, so foreign rows do not merely
+   * waste work — they spend the budget this project's own gap needed.
    */
   it("leaves another project's sessions alone", async () => {
     const chunks = Array.from({ length: 24 }, (_, i) => chunk(i));
@@ -248,5 +251,75 @@ describe("retrieval unit recovery after an interrupted scan", () => {
     expect(coverageGap(dbPath, REF)).toBe(0);
     // ...and the foreign session was never touched.
     expect(foreignUnits).toBe(0);
+  });
+
+  /**
+   * The repair used to stop at four sessions a scan, so a first scan killed
+   * between saving its cursor and building windows left most of the index
+   * unsearchable for many sessions afterwards: measured over a 100-session
+   * corpus, 96 of 2,400 windows came back per later session. Bounded by time
+   * now, and finished after the scan rather than abandoned.
+   */
+  it("rebuilds windows for every session a killed scan left without them", async () => {
+    const sessions = Array.from({ length: 10 }, (_, s) =>
+      Array.from({ length: 24 }, (_, i) => ({ ...chunk(i), sessionId: `s${s}` })),
+    );
+    const scraper = new CursoredScraper(sessions.flat());
+
+    const first = new SqliteHandoffIndex(dbPath, tempDir, [{ tool: "codex", scraper }]);
+    await first.listRecentSessions(5);
+    await first.whenScanSettled?.();
+    await first.close();
+
+    const raw = new Database(dbPath);
+    raw.exec("DELETE FROM retrieval_units; DELETE FROM retrieval_units_fts;");
+    raw.close();
+
+    const second = new SqliteHandoffIndex(dbPath, tempDir, [{ tool: "codex", scraper }]);
+    await second.listRecentSessions(5);
+    await second.whenScanSettled?.();
+    await second.close();
+
+    for (let s = 0; s < 10; s++) {
+      expect(coverageGap(dbPath, `codex:s${s}`)).toBe(0);
+    }
+  });
+
+  /**
+   * Coverage arithmetic cannot see a turn whose text changed at a position the
+   * windows already reach. A re-read that replaced it, cut short before the
+   * windows were rebuilt, left search answering from the old text forever.
+   */
+  it("rebuilds windows for a session whose rows changed under them", async () => {
+    const original = Array.from({ length: 24 }, (_, i) => chunk(i));
+    original[5] = { ...original[5], content: "the marmalade heuristic" };
+    const scraper = new CursoredScraper(original);
+    const first = new SqliteHandoffIndex(dbPath, tempDir, [{ tool: "codex", scraper }]);
+    await first.listRecentSessions(5);
+    await first.whenScanSettled?.();
+    await first.close();
+
+    // A re-read that replaces turn 5, written by the scan and then cut off:
+    // rows changed, windows never rebuilt.
+    const changed = [...original];
+    changed[5] = { ...changed[5], content: "the quince heuristic" };
+    const db = openDatabase(dbPath);
+    try {
+      await scanTool(new CursoredScraper(changed), {
+        db,
+        stmts: prepareStatements(db),
+        scopedRoot: normalizeRootForCompare(realpathSync(tempDir)),
+      });
+    } finally {
+      db.close();
+    }
+
+    const second = new SqliteHandoffIndex(dbPath, tempDir, [{ tool: "codex", scraper }]);
+    await second.listRecentSessions(5);
+    await second.whenScanSettled?.();
+    const hits = await second.searchSessions("quince", 5, undefined, "keyword");
+    await second.close();
+
+    expect(hits.map((hit) => hit.session_ref)).toEqual([REF]);
   });
 });
