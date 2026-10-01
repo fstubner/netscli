@@ -1,4 +1,5 @@
 import { calibrateEmbeddingDevice, deviceCandidates, readDeviceVerdict } from "../handoff/device.js";
+import { ENABLE_SEMANTIC_HINT, isRuntimeInstalled } from "../handoff/embedding-runtime.js";
 
 interface CalibrateOptions {
   /** Re-measure even when a verdict for this machine is already cached. */
@@ -29,6 +30,14 @@ export async function runCalibrate(options: CalibrateOptions = {}): Promise<void
   if (process.env.XTCTX_DISABLE_EMBEDDINGS === "1") {
     process.stdout.write(
       "XTCTX_DISABLE_EMBEDDINGS=1 is set, so there is no model to time. Unset it and run this again.\n",
+    );
+    return;
+  }
+
+  // Nothing to time without the local model, and timing it is what loads it.
+  if (!isRuntimeInstalled()) {
+    process.stdout.write(
+      `Local semantic search is not enabled, so there is no model to time. To turn it on, ${ENABLE_SEMANTIC_HINT}, then run this again.\n`,
     );
     return;
   }

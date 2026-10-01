@@ -219,7 +219,8 @@ export const site: SiteData = {
         'Status reports configured tools, transcript freshness, selected skills, managed blocks, and unsupported targets.',
       codeHtml: `<span class="dim">$</span> <span class="cmd-text">npx -y xtctx status</span>
 <span class="info-text">MCP</span>      npx -y xtctx
-<span class="info-text">Data</span>     12 sessions, 1840 messages, 460 retrieval windows, 460 vectorized
+<span class="info-text">Search</span>   keyword only. Semantic search is optional: run xtctx embeddings enable (downloads the local model and its runtime, about 540 MB on disk)
+<span class="info-text">Data</span>     12 sessions, 1840 messages, 460 retrieval windows
 <span class="info-text">Tools:</span>
   <span class="success-text">+</span> codex         detected; 7 sessions; hook: instruction-only
   <span class="success-text">+</span> claude-code   detected; 5 sessions; hook: executable`,
@@ -297,7 +298,7 @@ export const site: SiteData = {
     },
     {
       q: 'What are the limits?',
-      a: 'xtctx is local-only by default; sending window text to an external embedding endpoint is something a project has to opt into by hand. Transcript formats can change upstream, semantic vectors are built incrementally in the background, and search falls back to keyword while vectors are missing or the local model is unavailable.',
+      a: 'xtctx is local-only by default; sending window text to an external embedding endpoint is something a project has to opt into by hand. Transcript formats can change upstream, semantic search is an optional add-on (xtctx embeddings enable, about 540 MB on disk; the default install is about 55 MB and searches by keyword straight away), its vectors are built incrementally in the background, and search falls back to keyword while vectors are missing or the local model is unavailable.',
     },
     {
       q: 'Can I test it without private transcripts?',

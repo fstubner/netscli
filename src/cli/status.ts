@@ -12,6 +12,7 @@ import {
 import { readDriftLog, type DriftLogFile } from "../scrapers/drift-log.js";
 import { SUPPORTED_TOOLS } from "../tools/sources.js";
 import { readXtctxPackage } from "../utils/package-info.js";
+import { ENABLE_SEMANTIC_HINT } from "../handoff/embedding-runtime.js";
 
 interface StatusOptions {
   projectPath?: string;
@@ -116,12 +117,35 @@ export async function renderStatusBlock(
   lines.push(
     `Scan     ${status.last_scan_at ?? "never"}${scanTook ? ` (took ${scanTook})` : ""}`,
   );
-  if (status.embedding_error) {
+  // Which way search is answered, always. Off is the default of a fresh install
+  // and is not a fault, so it is stated once, with the way to turn it on, and
+  // none of the backlog lines below appear for it.
+  const semanticOff = status.semantic_search === "off";
+  if (semanticOff) {
+    lines.push(
+      status.semantic_off_reason === "disabled_by_env"
+        ? "Search   keyword only (XTCTX_DISABLE_EMBEDDINGS=1 is set)"
+        : `Search   keyword only. Semantic search is optional: ${ENABLE_SEMANTIC_HINT}`,
+    );
+    if (status.vectorized_units > 0) {
+      // An index that had vectors before the add-on was split out. They are not
+      // deleted, and they work again the moment the model is back.
+      lines.push(
+        `         ${status.vectorized_units} windows already have vectors; they are kept and used again once semantic search is on`,
+      );
+    }
+  } else if (status.embedding_error) {
     lines.push(`Search   semantic unavailable (keyword only): ${status.embedding_error}`);
+  } else {
+    lines.push(
+      status.semantic_search === "remote"
+        ? "Search   keyword + semantic (external endpoint)"
+        : "Search   keyword + semantic (local model)",
+    );
   }
   lines.push(
     `Data     ${status.sessions} sessions, ${status.messages} messages, ` +
-      `${status.retrieval_units} retrieval windows, ${status.vectorized_units} vectorized`,
+      `${status.retrieval_units} retrieval windows${semanticOff ? "" : `, ${status.vectorized_units} vectorized`}`,
   );
   // The index is the only copy of these, and nothing else in this report
   // says so: deleting `.xtctx/state`, or losing the disk, loses them.

@@ -4,6 +4,7 @@ import {
   type EmbeddingProvider,
 } from "./embeddings.js";
 import { OpenAiEmbeddingProvider } from "./openai-embeddings.js";
+import { isRuntimeInstalled } from "./embedding-runtime.js";
 import { NullEmbeddingProvider } from "./null-embeddings.js";
 import { MIN_CONFIDENT_COSINE, MIN_SEMANTIC_COSINE } from "./ranking.js";
 import type { EmbeddingConfig } from "../types/config.js";
@@ -196,7 +197,7 @@ export function createEmbeddingProvider(
   device?: string,
 ): EmbeddingProvider {
   if (process.env.XTCTX_DISABLE_EMBEDDINGS === "1") {
-    return new NullEmbeddingProvider();
+    return new NullEmbeddingProvider("disabled_by_env");
   }
   if (config.provider === "openai-compatible") {
     if (!config.baseUrl || !config.model) {
@@ -211,7 +212,26 @@ export function createEmbeddingProvider(
       timeoutMs: config.timeoutMs,
     });
   }
+  // The remote path above needs no local runtime and is unaffected. The local
+  // one is an add-on, and without it there is no model to load: semantic
+  // search is off, which `xtctx status` says along with how to turn it on.
+  if (!isRuntimeInstalled()) {
+    return new NullEmbeddingProvider("not_enabled");
+  }
   return new TransformersEmbeddingProvider(DEFAULT_EMBEDDING_MODEL, undefined, device);
+}
+
+/**
+ * Whether this project will embed with the local model: configured for it, not
+ * switched off, and the add-on is installed.
+ *
+ * What gates work that only the local model needs, such as measuring devices.
+ */
+export function localEmbeddingsActive(
+  config: EmbeddingConfig,
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  return config.provider === "local" && env.XTCTX_DISABLE_EMBEDDINGS !== "1" && isRuntimeInstalled({ env });
 }
 
 function readPositiveInt(value: unknown, fallback: number, label: string): number {

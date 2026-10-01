@@ -120,6 +120,9 @@ const LAYERS = [
       /^\.gitignore$/,
       /^\.gitattributes$/,
       /^\.github\/dependabot\.yml$/,
+      // What `xtctx embeddings enable` installs. If `files` stops shipping it,
+      // enable fails for every user, and nothing else notices.
+      /^embeddings-runtime\//,
     ],
   },
 ];

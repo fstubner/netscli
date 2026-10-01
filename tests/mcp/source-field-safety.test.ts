@@ -75,6 +75,8 @@ class FixtureService implements SessionService {
     vector_ms_per_segment: null,
       vector_model: "fixture",
       vector_device: null,
+      semantic_search: "local",
+      semantic_off_reason: null,
       tools: [],
     };
   }

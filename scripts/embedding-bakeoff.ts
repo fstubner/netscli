@@ -37,6 +37,10 @@ import type { SessionSearchMode } from "../src/handoff/types.js";
 import type { ConversationChunk, ConversationScraper, ScraperState } from "../src/types/scraper.js";
 import { generateCorpus, type Anchor, type NegativeQuery } from "../tests/eval/corpus.js";
 
+// The library is an add-on loaded from a runtime directory; run from the
+// repository root, which has it as a devDependency.
+process.env.XTCTX_EMBEDDING_RUNTIME_DIR ??= process.cwd();
+
 const MODES: SessionSearchMode[] = ["hybrid", "vector", "keyword"];
 
 /**

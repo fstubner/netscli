@@ -100,6 +100,21 @@ evidence they have, and one with no vector is treated as unknown similarity
 rather than none, because scoring it zero penalises it for its position in a
 queue.
 
+**Semantic search is an add-on, off until enabled.** The default install has no
+ML runtime: `@huggingface/transformers` and the ONNX runtimes under it were
+about 550 MB on disk and were fetched before `npx -y xtctx` could answer, which
+is longer than an MCP client waits. `optionalDependencies` would not help, as
+npm installs those by default, so the library is not a dependency at all.
+`xtctx embeddings enable` runs `npm ci` against a pinned manifest and lockfile
+shipped in `embeddings-runtime/`, into `~/.xtctx/embeddings`, and
+`handoff/embedding-runtime.ts` loads it from there by path. Until then the
+provider is `NullEmbeddingProvider`, which carries a `semanticOff` reason: search
+answers from keyword without calling it, nothing counts as a backlog, vectors an
+earlier install built are kept (the placeholder model identity must not read as
+"another model" to `dropVectorsFromOtherModels`), and `xtctx status` and
+`xtctx_continuity_status` say which mode is active and the command to change it.
+A remote OpenAI-compatible endpoint needs no local runtime and is unaffected.
+
 **Bounded, so a tool call always returns.** Scanning gets four seconds,
 vectorizing six, and an indexed view is treated as current for thirty. Work
 left over resumes on the next call. A scan also warms the embedding model and

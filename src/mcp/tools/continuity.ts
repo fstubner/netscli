@@ -1,4 +1,5 @@
-import type { SessionService } from "../../handoff/types.js";
+import { ENABLE_SEMANTIC_HINT } from "../../handoff/embedding-runtime.js";
+import type { HandoffStatus, SessionService } from "../../handoff/types.js";
 import { estimateVectorBacklog, formatDuration } from "../../utils/duration.js";
 import { sanitizeErrorMessage } from "../../utils/errors.js";
 import { inlineSafe } from "../../utils/untrusted-text.js";
@@ -47,6 +48,10 @@ export function createContinuityStatusHandler(service: SessionService) {
       `- Sessions: ${status.sessions}`,
       `- Messages: ${status.messages}`,
       `- Retrieval windows: ${status.retrieval_units}`,
+      // Said first and in words, so an agent reading this can tell "keyword
+      // only, by default" from "semantic search is broken" without inferring it
+      // from a zero below.
+      ...semanticSearchLines(status),
       `- Vectorized windows: ${status.vectorized_units}`,
       // The backlog as a duration, so an agent can tell "semantic search is
       // still warming up" from "semantic search is ready".
@@ -66,7 +71,7 @@ export function createContinuityStatusHandler(service: SessionService) {
             `${backlog.eta ? ` (about ${backlog.eta})` : ""}`,
         ];
       })(),
-      `- Vector model: ${inlineSafe(status.vector_model)}`,
+      ...(status.semantic_search === "off" ? [] : [`- Vector model: ${inlineSafe(status.vector_model)}`]),
       ...(status.embedding_error
         ? [`- Semantic search unavailable (keyword only): ${inlineSafe(sanitizeErrorMessage(status.embedding_error))}`]
         : []),
@@ -98,6 +103,20 @@ export function createContinuityStatusHandler(service: SessionService) {
 
     return lines.join("\n");
   };
+}
+
+function semanticSearchLines(status: HandoffStatus): string[] {
+  if (status.semantic_search === "remote") {
+    return ["- Semantic search: on (external embedding endpoint)"];
+  }
+  if (status.semantic_search === "local") {
+    return ["- Semantic search: on (local model)"];
+  }
+  return [
+    status.semantic_off_reason === "disabled_by_env"
+      ? "- Semantic search: off (XTCTX_DISABLE_EMBEDDINGS=1), answering from keyword only"
+      : `- Semantic search: off, answering from keyword only. To turn it on, ${ENABLE_SEMANTIC_HINT}`,
+  ];
 }
 
 /** `<project>/.xtctx/...` rather than the machine's absolute layout. */

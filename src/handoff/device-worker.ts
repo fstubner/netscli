@@ -16,6 +16,7 @@
 import { parseArgs } from "node:util";
 import { DEFAULT_EMBEDDING_DTYPE, DEFAULT_EMBEDDING_MODEL } from "./embeddings.js";
 import { calibrationSegments } from "./device.js";
+import { importTransformers } from "./embedding-runtime.js";
 
 const { values } = parseArgs({
   options: {
@@ -38,7 +39,7 @@ const segmentCount = Math.max(1, Number.parseInt(String(values.segments), 10) ||
 
 try {
   const segments = calibrationSegments(segmentCount);
-  const transformers = (await import("@huggingface/transformers")) as unknown as {
+  const transformers = (await importTransformers()) as {
     pipeline: (
       task: "feature-extraction",
       model: string,

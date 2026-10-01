@@ -105,6 +105,32 @@ it cannot see the server's version from the other side. Because the plugin write
 reports a plugin-only project as `Config missing (run xtctx setup)`, and the
 tools answer the same way until `setup` has been run there.
 
+### Semantic search is an optional add-on
+
+The default install is small (about 55 MB on disk with its dependencies) and
+searches by keyword straight away, with no model to download. Semantic search,
+which also matches by meaning, needs a local embedding model, and the model
+and its runtime are several hundred megabytes. They are not part of
+`npx -y xtctx`: bundling them made a cold start take from 18 seconds to over
+two minutes before the server could answer, which is longer than some MCP
+clients wait.
+
+Turn it on once per machine:
+
+```bash
+npx -y xtctx embeddings enable        # asks first; add --yes in a script or from an agent
+```
+
+That installs a pinned runtime from a lockfile shipped with this release into
+`~/.xtctx/embeddings` (about 540 MB on disk, including the model), then the
+server builds vectors in the background as before. `xtctx embeddings disable`
+removes it again and leaves your index, vectors included, alone.
+`xtctx status` says which mode you are in and how to switch.
+
+Pointing a project at an OpenAI-compatible endpoint (see
+[`docs/embedding-providers.md`](docs/embedding-providers.md)) needs none of
+this: nothing local is installed for it.
+
 One thing to expect in a project with a large transcript history: the first
 scan builds the index from scratch and can run for minutes. The server starts
 it as soon as it starts, calls return within a refresh budget with whatever
@@ -187,18 +213,22 @@ note above.
 
 `xtctx scan --embed` additionally vectorizes every window the scan leaves
 without one, running to completion however long that takes rather than to a
-budget. You need it when `xtctx status` says the backlog is too large to
-finish in the background — otherwise the server gets there on its own.
+budget. It needs semantic search to be enabled (`xtctx embeddings enable`) and
+says so when it is not. You need it when `xtctx status` says the backlog is
+too large to finish in the background — otherwise the server gets there on its
+own.
 
-Indexing picks a device by measuring it, and **you do not have to do anything
-to get that**. The first time the MCP server starts on a machine, or the
-first `xtctx scan --embed`, it times the embedding model on each execution provider available and remembers
+Once semantic search is enabled, indexing picks a device by measuring it, and
+**you do not have to do anything to get that**. The first time the MCP server
+starts on a machine, or the first `xtctx scan --embed`, it times the embedding
+model on each execution provider available and remembers
 the fastest in `~/.xtctx/device.json`, once per machine. On a machine with a
 usable GPU that has measured roughly six times faster than the CPU; on one
 without, it picks the CPU and nothing changes. Vectors are identical whichever
 device wins, so this changes speed and nothing else.
 
-`xtctx calibrate` runs that measurement on demand and prints it. You need it
+Nothing is measured while semantic search is off, since there is no model to
+time. `xtctx calibrate` runs that measurement on demand and prints it. You need it
 only to re-measure after the hardware changes (`--force`) or to see the
 numbers — it is not a setup step. `scan --no-calibrate` skips the automatic
 run for anyone who would rather start embedding immediately.
@@ -223,7 +253,7 @@ When invoked in a normal terminal, it shows the human CLI.
 
 - `xtctx_recent_sessions` lists recent indexed transcript sessions.
 - `xtctx_session_detail` returns raw messages for a `session_ref`.
-- `xtctx_search_sessions` hybrid-searches chronological transcript windows with local semantic vectors plus keyword fallback. `mode: "literal"` skips the index entirely and matches text straight in the transcript stores, so it answers before a scan has finished and finds exact strings the index has not reached yet; it reads what the scrapers attribute to this project, so it never widens the project boundary. It says when it stopped at its limit or time budget rather than reporting an empty result as a complete one.
+- `xtctx_search_sessions` hybrid-searches chronological transcript windows: keyword always, plus local semantic vectors once semantic search is enabled (`xtctx embeddings enable`). `mode: "literal"` skips the index entirely and matches text straight in the transcript stores, so it answers before a scan has finished and finds exact strings the index has not reached yet; it reads what the scrapers attribute to this project, so it never widens the project boundary. It says when it stopped at its limit or time budget rather than reporting an empty result as a complete one.
 - `xtctx_continuity_status` reports wiring and local index diagnostics.
 - `xtctx_handoff_manifest` returns a read-only orchestrator envelope with stable
   session handoff IDs and pointers to raw-detail retrieval. A caller can attach
@@ -244,8 +274,8 @@ same server under two names in Claude Code (`xtctx` from `.mcp.json` and
 `plugin:xtctx:xtctx` from the plugin). Setup grants the tools under both, so
 whichever copy the agent picks needs no prompt.
 
-Semantic search embeds sliding windows of raw transcript turns, not generated
-summaries. Window text includes role, timestamp, and message order so retrieval
+When semantic search is enabled it embeds sliding windows of raw transcript
+turns, not generated summaries. Window text includes role, timestamp, and message order so retrieval
 can prefer the relevant point in the conversation, then return the matching
 message range for `xtctx_session_detail`.
 
@@ -278,12 +308,16 @@ startup hooks; others receive MCP config plus managed instructions only.
 - Transcript formats belong to each upstream tool and can drift. The drift
   tests and format fingerprints exist to catch parser breakage, but `xtctx status`
   is still the source of truth for your machine.
-- Vectors are built incrementally, and the MCP server also works the backlog
-  down in the background when it starts, as long as this machine's measured
-  rate says the remainder fits in fifteen minutes. Above that nothing drains
-  it on its own and `xtctx status` says so, naming `xtctx scan --embed`.
-  Hybrid search falls back to keyword whenever vectors are missing or the
-  embedding model is unavailable, and `xtctx status` reports the reason.
+- Semantic search is off until you run `xtctx embeddings enable`; until then
+  every search is keyword-only, which `xtctx status` states along with the
+  command. Vectors are built incrementally once it is on, and the MCP server
+  also works the backlog down in the background when it starts, as long as
+  this machine's measured rate says the remainder fits in fifteen minutes.
+  Above that nothing drains it on its own and `xtctx status` says so, naming
+  `xtctx scan --embed`. Hybrid search falls back to keyword whenever vectors
+  are missing or the embedding model is unavailable, and `xtctx status`
+  reports the reason. An index that already has vectors from an earlier
+  install keeps them while the add-on is off.
 - Antigravity conversation `.pb` files are not parsed directly; retrieval uses
   the local language-server API when available, otherwise readable `brain`
   artifacts.
