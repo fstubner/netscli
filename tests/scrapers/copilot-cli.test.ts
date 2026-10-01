@@ -178,7 +178,7 @@ describe("CopilotCliScraper", () => {
     expect(chunks[0].content).toBe("late");
   });
 
-  it("parses typed events with data payloads (current Copilot CLI format)", async () => {
+  it("parses typed events with data payloads (current Copilot CLI format) and skips the system prompt", async () => {
     await writeSessionEvents("sess-real", [
       JSON.stringify({
         type: "session.start",
@@ -206,14 +206,14 @@ describe("CopilotCliScraper", () => {
     const chunks: CopilotCliChunk[] = [];
     for await (const chunk of scraper.fullSync()) chunks.push(chunk);
 
-    expect(chunks).toHaveLength(3);
-    expect(chunks[0].role).toBe("system");
-    expect(chunks[0].content).toBe("system prompt");
-    expect(chunks[1].role).toBe("user");
-    expect(chunks[1].content).toBe("real user ask");
-    expect(chunks[2].role).toBe("assistant");
-    expect(chunks[2].content).toBe("real answer");
-    expect(chunks[2].metadata.eventType).toBe("assistant.message");
+    // `system.message` is the CLI's own system prompt, not conversation.
+    expect(chunks).toHaveLength(2);
+    expect(chunks[0].role).toBe("user");
+    expect(chunks[0].content).toBe("real user ask");
+    expect(chunks[0].metadata.messageIndex).toBe(0);
+    expect(chunks[1].role).toBe("assistant");
+    expect(chunks[1].content).toBe("real answer");
+    expect(chunks[1].metadata.eventType).toBe("assistant.message");
   });
 
   it("scopes sessions to the project root from session.start context", async () => {

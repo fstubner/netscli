@@ -1,7 +1,10 @@
-import { isRecord } from "../base.js";
+import { describeType, isRecord } from "../base.js";
 import { warnDrift } from "./shared.js";
 
-/** A journal record: 0 replaces the whole state, 1 sets a path, 2 splices an array. */
+/**
+ * A journal record: 0 replaces the whole state, 1 sets a path, 2 pushes onto
+ * an array (optionally truncating it first).
+ */
 const LOG_SNAPSHOT = 0;
 const LOG_SET = 1;
 const LOG_SPLICE = 2;
@@ -11,15 +14,19 @@ const LOG_SPLICE = 2;
  *
  * The file is a journal, not a list of sessions: the first record is a full
  * snapshot and every record after it is one mutation — `k` is a key path, `v`
- * the value, and for a splice `i` is where it goes. Reading it as "one session
- * per line" found only the snapshot, whose `requests` array is empty because
- * the turns arrive as later mutations, so a whole conversation read as an
- * empty session and said nothing about it. One 182KB file on the machine this
- * was written against holds four turns across 35 records.
+ * the value, and for kind 2 `i` is the length the array is cut back to before
+ * `v` is pushed. Reading it as "one session per line" found only the
+ * snapshot, whose `requests` array is empty because the turns arrive as later
+ * mutations, so a whole conversation read as an empty session and said
+ * nothing about it. One 182KB file on the machine this was written against
+ * holds four turns across 35 records.
  *
- * Turns are ordered by timestamp rather than by array position. A splice puts
- * requests in the order the editor wants to draw them, which is not the order
- * they happened — in that same file it places a later turn first.
+ * `i` is NOT an insert position. VS Code's journal means "cut the array back
+ * to length `i`, then push `v`", so a record names the request it rewrites and
+ * drops everything after it. Applying it as an insert duplicated the first
+ * question and hung later answers on the wrong requests, and a sort by
+ * timestamp then papered over the misordering that caused. With the truncate
+ * applied, array order is already conversation order.
  */
 function replayChatSessionLog(raw: string, location: string): unknown {
   let state: Record<string, unknown> | null = null;
@@ -41,6 +48,16 @@ function replayChatSessionLog(raw: string, location: string): unknown {
       continue;
     }
 
+    if (record.kind !== LOG_SET && record.kind !== LOG_SPLICE) {
+      // Not skipped quietly: a mutation this reader does not know how to apply
+      // leaves the rebuilt session wrong from that record on.
+      warnDrift(
+        location,
+        `chat session journal has unknown record kind ${JSON.stringify(record.kind) ?? "undefined"}`,
+      );
+      continue;
+    }
+
     // A mutation before any snapshot has nothing to apply to. Later records
     // are still tried, in case a snapshot appears further down.
     if (!state || !Array.isArray(record.k)) continue;
@@ -48,13 +65,32 @@ function replayChatSessionLog(raw: string, location: string): unknown {
 
     if (record.kind === LOG_SET) {
       setAtPath(state, path, record.v);
-    } else if (record.kind === LOG_SPLICE && Array.isArray(record.v)) {
-      const target = readAtPath(state, path);
-      if (Array.isArray(target)) {
-        if (typeof record.i === "number") target.splice(record.i, 0, ...record.v);
-        else target.push(...record.v);
+      continue;
+    }
+
+    const target = readAtPath(state, path);
+    if (!Array.isArray(target)) continue;
+    // `v` may be absent: a record can be a bare truncate.
+    const values = record.v === undefined ? [] : record.v;
+    if (!Array.isArray(values)) {
+      warnDrift(
+        location,
+        `chat session journal push has a non-array value (got ${describeType(values)})`,
+      );
+      continue;
+    }
+    if (typeof record.i === "number") {
+      if (Number.isInteger(record.i) && record.i >= 0 && record.i <= target.length) {
+        target.length = record.i;
+      } else {
+        // Truncating at an index past the end would pad the array with holes.
+        warnDrift(
+          location,
+          `chat session journal truncates at index ${record.i} of ${target.length}; appending instead`,
+        );
       }
     }
+    target.push(...values);
   }
 
   if (!state) {
@@ -62,23 +98,7 @@ function replayChatSessionLog(raw: string, location: string): unknown {
     return null;
   }
 
-  if (Array.isArray(state.requests)) {
-    state.requests = sortRequestsByTime(state.requests);
-  }
   return state;
-}
-
-/** Chronological where the data allows it, original order otherwise. */
-function sortRequestsByTime(requests: unknown[]): unknown[] {
-  const timed = requests.every(
-    (request) => isRecord(request) && typeof request.timestamp === "number",
-  );
-  if (!timed) return requests;
-  return [...requests].sort(
-    (left, right) =>
-      ((left as Record<string, number>).timestamp ?? 0) -
-      ((right as Record<string, number>).timestamp ?? 0),
-  );
 }
 
 /**

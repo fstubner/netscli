@@ -220,5 +220,11 @@ export interface CopilotCliChunk extends ConversationChunk {
   tool: "copilot-cli";
   metadata: ChunkMetadata & {
     eventType?: string;
+    /**
+     * Set on output from a subagent the main assistant launched, with the id of
+     * the tool call that launched it.
+     */
+    subagent?: boolean;
+    parentToolCallId?: string;
   };
 }
