@@ -1,4 +1,4 @@
-import { existsSync, realpathSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { mkdir, readdir, rename, rm } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import type { Database as DatabaseHandle } from "better-sqlite3";
@@ -27,9 +27,11 @@ import {
 import { scanTool, waitWithBudget } from "./scan.js";
 import { literalSearch } from "./literal-search.js";
 import {
+  MIGRATED_FROM_SETTING,
   type PreparedStatements,
   SchemaVersionError,
   clearSetting,
+  getSetting,
   isCorruptDatabaseError,
   openDatabase,
   placeholders,
@@ -38,6 +40,7 @@ import {
 } from "./schema.js";
 import {
   PROJECT_ROOT_SQL,
+  canonicalRoot,
   countWhere,
   normalizeRootForCompare,
   retrievalUnitSelect,
@@ -229,27 +232,6 @@ function embeddingWarmBudgetFromEnv(): number | undefined {
  * Swept against the eval; see the table on `blendScores`.
  */
 const CANDIDATE_WINDOWS_PER_SESSION = 12;
-
-/**
- * The project root as the filesystem reports it, so writes and reads agree.
- *
- * Resolving at both ends is what makes the comparison work at all. One
- * directory has two names whenever a symlink is involved — a macOS temp
- * directory is `/var/...` and `/private/var/...`, and `createProjectServices`
- * already resolves it while a directly-constructed index did not. Rows
- * written under one name were then invisible under the other, which reads as
- * an empty project rather than as a bug.
- *
- * Falls back to the given path when it is not on disk, which is the case for
- * diagnostics and for a project that has moved.
- */
-function canonicalRoot(projectRoot: string): string {
-  try {
-    return realpathSync(projectRoot);
-  } catch {
-    return projectRoot;
-  }
-}
 
 export class SqliteHandoffIndex implements SessionService {
   private db: DatabaseHandle | null = null;
@@ -1121,10 +1103,13 @@ export class SqliteHandoffIndex implements SessionService {
       await this.openAndPrepare();
     } catch (error) {
       // Only a file that is itself unusable -- corrupt, or from an OLDER
-      // schema -- is set aside and a fresh one rebuilt from the transcript
-      // stores. Set aside, not deleted: the index keeps sessions whose
-      // transcripts are gone (Claude Code deletes them after 30 days by
-      // default), so for those it is the only copy.
+      // schema in a shape no migration recognises -- is set aside and a fresh
+      // one rebuilt from the transcript stores. An older schema that can be
+      // migrated never reaches here; `openDatabase` upgrades it in place.
+      // Set aside, not deleted: the index keeps sessions whose transcripts
+      // are gone (Claude Code deletes them after 30 days by default), so for
+      // those it is the only copy -- and the first scan after the rebuild
+      // copies them back out of it (see `carryForwardSetAside`).
       //
       // Anything else stands, and the next call retries (see whenReady): a
       // lock held by another xtctx server is normal with one server per
@@ -1185,6 +1170,15 @@ export class SqliteHandoffIndex implements SessionService {
     );
     if (sessionCount === 0) {
       await this.clearScraperCursors();
+    }
+
+    // A schema migration left the rows an older build wrote; re-reading every
+    // session still on disk is what refreshes them. See MIGRATED_FROM_SETTING.
+    // Cursors first, setting second: a process that dies in between re-reads
+    // twice rather than not at all.
+    if (getSetting(this.db, MIGRATED_FROM_SETTING) !== null) {
+      await this.clearScraperCursors();
+      clearSetting(this.db, MIGRATED_FROM_SETTING);
     }
 
     dropVectorsFromOtherModels(this.getDb(), this.embeddingProvider.model);

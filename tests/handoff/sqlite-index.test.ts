@@ -522,7 +522,7 @@ describe("SqliteHandoffIndex", () => {
     await index.close();
   });
 
-  it("sets an index from an older schema aside and rebuilds", async () => {
+  it("sets aside an older index whose shape no migration recognises, and rebuilds", async () => {
     const dbPath = join(tempDir, "xtctx.db");
     const Database = (await import("better-sqlite3")).default;
     const legacy = new Database(dbPath);

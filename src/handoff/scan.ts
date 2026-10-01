@@ -52,7 +52,7 @@ export async function waitWithBudget(
 interface ScanToolDeps {
   db: DatabaseHandle;
   stmts: PreparedStatements;
-  /** Canonical and normalized; see `canonicalRoot` in sqlite-index. */
+  /** Canonical and normalized; see `canonicalRoot` in queries. */
   scopedRoot: string;
 }
 

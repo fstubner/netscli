@@ -20,7 +20,7 @@ interface StatusToolRuntime {
 
 interface StatusInputs {
   db: DatabaseHandle;
-  /** Canonical and normalized; see `canonicalRoot` in sqlite-index. */
+  /** Canonical and normalized; see `canonicalRoot` in queries. */
   scopedRoot: string;
   /**
    * The root as given, not `scopedRoot`. That one is lowercased and
