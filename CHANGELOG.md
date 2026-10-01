@@ -5,6 +5,49 @@ All notable changes to this project are documented in this file.
 The format is based on Keep a Changelog, and this project follows Semantic Versioning.
 Entries are written by the `release` workflow when a release is cut by hand.
 
+## [Unreleased]
+
+Work on `main` since 0.21.8 that has not been released. The release workflow
+leaves this heading in place and empties it when a version is cut.
+
+### Features
+
+* **scan:** add `--embed`, so semantic search can cover a real history ([#359](https://github.com/fstubner/xtctx/issues/359))
+* **search:** a literal mode that answers without the index ([#343](https://github.com/fstubner/xtctx/issues/343))
+* **hook:** background scan on session start; take the transcript location from the tool instead of deriving it ([#322](https://github.com/fstubner/xtctx/issues/322), [#300](https://github.com/fstubner/xtctx/issues/300))
+* **mcp:** name an unconfigured project instead of answering with silence ([#315](https://github.com/fstubner/xtctx/issues/315))
+
+### Bug Fixes
+
+* **index:** stop deleting the index; status and setup say what is true ([#388](https://github.com/fstubner/xtctx/issues/388), [#389](https://github.com/fstubner/xtctx/issues/389))
+* **index:** stop a re-read leaving behind the rows it replaced ([#374](https://github.com/fstubner/xtctx/issues/374))
+* **config:** stop setup and disconnect destroying files the user wrote ([#367](https://github.com/fstubner/xtctx/issues/367), [#380](https://github.com/fstubner/xtctx/issues/380))
+* **setup:** grant the xtctx tools (including under the plugin's server name) and say what setup cannot grant ([#316](https://github.com/fstubner/xtctx/issues/316), [#326](https://github.com/fstubner/xtctx/issues/326))
+* **setup:** authenticate the self-hosted branch, and stop mangling flags ([#307](https://github.com/fstubner/xtctx/issues/307))
+* **status:** report the MCP command the configs name, and make the embedding estimate describe the run that is happening ([#358](https://github.com/fstubner/xtctx/issues/358), [#361](https://github.com/fstubner/xtctx/issues/361))
+* **search:** point a match at where it actually is ([#368](https://github.com/fstubner/xtctx/issues/368))
+* **hook:** stop stdin choosing which directory is a project's transcript store ([#370](https://github.com/fstubner/xtctx/issues/370))
+* **scope:** close project-boundary leaks, and scope search and status to the project ([#293](https://github.com/fstubner/xtctx/issues/293), [#311](https://github.com/fstubner/xtctx/issues/311), [#313](https://github.com/fstubner/xtctx/issues/313))
+* **codex:** read the human turns Codex writes now; stop a resumed scan serving another project's turns; report an oversized record instead of dropping it ([#371](https://github.com/fstubner/xtctx/issues/371), [#309](https://github.com/fstubner/xtctx/issues/309), [#355](https://github.com/fstubner/xtctx/issues/355))
+* **claude-code:** collapse the dots and underscores its store directories collapse ([#357](https://github.com/fstubner/xtctx/issues/357))
+* **scrapers:** see a project opened through WSL ([#375](https://github.com/fstubner/xtctx/issues/375))
+* **security:** scrub every unfenced field and fail closed on an undecided resume ([#312](https://github.com/fstubner/xtctx/issues/312), [#314](https://github.com/fstubner/xtctx/issues/314))
+* **release:** publish as its own run so npm trusted publishing accepts it ([#390](https://github.com/fstubner/xtctx/issues/390))
+
+### Performance
+
+* **scrapers:** resume Codex, Claude Code and Copilot CLI transcripts from a byte offset instead of re-reading them ([#302](https://github.com/fstubner/xtctx/issues/302), [#303](https://github.com/fstubner/xtctx/issues/303))
+* bound search memory, skip unchanged Copilot files, batch FTS deletes ([#298](https://github.com/fstubner/xtctx/issues/298))
+
+### Documentation
+
+* the plugin route does not answer in an unconfigured project; design a configurable embedding provider; write down what indexing throughput costs ([#325](https://github.com/fstubner/xtctx/issues/325), [#381](https://github.com/fstubner/xtctx/issues/381), [#382](https://github.com/fstubner/xtctx/issues/382))
+
+### Internal
+
+* Releases are manual: one workflow, run on request, replaces the automatic pipeline ([#296](https://github.com/fstubner/xtctx/issues/296))
+* Large module splits (index, scrapers, config) and mutation-sweep test additions ([#328](https://github.com/fstubner/xtctx/issues/328) to [#356](https://github.com/fstubner/xtctx/issues/356))
+
 ## [0.21.8](https://github.com/fstubner/xtctx/compare/xtctx-v0.21.7...xtctx-v0.21.8) (2026-08-31)
 
 > **Not on npm.** 0.20.0 through 0.21.8 were tagged and given GitHub
