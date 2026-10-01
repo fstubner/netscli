@@ -64,6 +64,9 @@ interface MessageData {
 interface PartData {
   type?: string;
   text?: string;
+  /** On a `tool` part: the tool's name, and the state its call reached. */
+  tool?: string;
+  state?: { title?: unknown; input?: unknown };
 }
 
 export class OpenCodeScraper extends AbstractScraper<OpenCodeChunk> {
@@ -286,6 +289,7 @@ export class OpenCodeScraper extends AbstractScraper<OpenCodeChunk> {
         }
 
         const textSegments: string[] = [];
+        const toolLines: string[] = [];
         for (const part of parts) {
           let partData: PartData;
           try {
@@ -306,8 +310,9 @@ export class OpenCodeScraper extends AbstractScraper<OpenCodeChunk> {
             continue;
           }
 
-          // Only text parts contribute to conversation content. Reasoning,
-          // tool-call, file, snapshot, step etc. are skipped silently.
+          // Text parts are the conversation, and a tool part leaves one line
+          // of what was run. Reasoning, file, snapshot, step etc. are skipped
+          // silently.
           if (partData.type === "text") {
             const text = typeof partData.text === "string" ? partData.text : "";
             if (text.length > 0) {
@@ -315,38 +320,95 @@ export class OpenCodeScraper extends AbstractScraper<OpenCodeChunk> {
             }
             continue;
           }
+          if (partData.type === "tool") {
+            toolLines.push(describeToolPart(partData));
+            continue;
+          }
 
           // ACCEPTED_DEGRADATIONS.nonTextPart / reasoningPart — silent skip.
         }
 
-        const content = textSegments.join("\n").trim();
-        if (!content) {
-          messageIndex++;
-          continue;
-        }
-
         const model = msgData.modelID ?? msgData.model?.modelID;
         const providerID = msgData.providerID ?? msgData.model?.providerID;
-
-        yield {
-          tool: "opencode",
-          sessionId: session.id,
-          timestamp,
-          role,
-          content,
-          metadata: {
-            messageIndex,
-            tokenEstimate: estimateTokens(content),
-            referencedFiles: [],
-            agent: typeof msgData.agent === "string" ? msgData.agent : undefined,
-            model,
-            providerID,
-          },
+        const metadata = {
+          agent: typeof msgData.agent === "string" ? msgData.agent : undefined,
+          model,
+          providerID,
         };
+
+        const content = textSegments.join("\n").trim();
+        if (content) {
+          yield {
+            tool: "opencode",
+            sessionId: session.id,
+            timestamp,
+            role,
+            content,
+            metadata: {
+              messageIndex,
+              tokenEstimate: estimateTokens(content),
+              referencedFiles: [],
+              ...metadata,
+            },
+          };
+        }
+
+        if (toolLines.length > 0) {
+          // A turn that only ran tools left no trace at all. One chunk per
+          // message, a line per call: rows are ordered by time, then index,
+          // then id, so separate chunks sharing a timestamp would come back in
+          // hash order. The millisecond puts the calls after the message's
+          // own text, which is where they happened.
+          const toolContent = toolLines.join("\n");
+          yield {
+            tool: "opencode",
+            sessionId: session.id,
+            timestamp: new Date(timestamp.getTime() + 1),
+            role: "tool",
+            content: toolContent,
+            metadata: {
+              messageIndex,
+              tokenEstimate: estimateTokens(toolContent),
+              referencedFiles: [],
+              ...metadata,
+            },
+          };
+        }
         messageIndex++;
       }
     }
   }
+}
+
+const TOOL_LINE_MAX = 200;
+
+/** Names a tool call's input records its target under, most specific first. */
+const TOOL_TARGET_KEYS = ["filePath", "path", "pattern", "command", "url", "query", "description"];
+
+/**
+ * One short line for a tool part: `used read: src/a.ts`.
+ *
+ * The state's `title` is opencode's own one-line summary of the call, so it is
+ * preferred; the input is the fallback. Neither the input as a whole nor the
+ * output is indexed — a write's input is the file and a read's output is the
+ * file's contents.
+ */
+function describeToolPart(part: PartData): string {
+  const name = typeof part.tool === "string" && part.tool.trim() ? part.tool.trim() : "tool";
+  const state = isRecord(part.state as unknown) ? (part.state as Record<string, unknown>) : {};
+  const input = isRecord(state.input) ? state.input : {};
+
+  const firstLine = (value: unknown): string =>
+    typeof value === "string" && value.trim() ? (value.trim().split(/\r?\n/, 1)[0] ?? "") : "";
+
+  let target = firstLine(state.title);
+  for (const key of TOOL_TARGET_KEYS) {
+    if (target) break;
+    target = firstLine(input[key]);
+  }
+
+  const line = target ? `used ${name}: ${target}` : `used ${name}`;
+  return line.length > TOOL_LINE_MAX ? `${line.slice(0, TOOL_LINE_MAX)}…` : line;
 }
 
 function normalizeRole(value: unknown): OpenCodeChunk["role"] {

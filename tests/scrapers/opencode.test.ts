@@ -10,7 +10,8 @@ import type { OpenCodeChunk } from "@xtctx/types/scraper";
  * opencode stores conversations in a single SQLite database with three
  * tables: session, message, part. The scraper joins by session_id and
  * message_id, then concatenates type === "text" parts to form the chunk
- * content. Reasoning, file, tool, and step parts are skipped silently.
+ * content. Tool parts become a line of their own; reasoning, file and step
+ * parts are skipped silently.
  */
 
 interface SessionFixture {
@@ -264,8 +265,11 @@ describe("OpenCodeScraper", () => {
     const chunks: OpenCodeChunk[] = [];
     for await (const chunk of scraper.fullSync()) chunks.push(chunk);
 
-    expect(chunks).toHaveLength(1);
-    expect(chunks[0].content).toBe("first\nsecond");
+    // The text parts join; the tool part between them is a line of its own.
+    expect(chunks.map((chunk) => [chunk.role, chunk.content])).toEqual([
+      ["assistant", "first\nsecond"],
+      ["tool", "used read"],
+    ]);
   });
 
   it("walks multiple sessions in time order", async () => {
