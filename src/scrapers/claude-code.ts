@@ -510,7 +510,26 @@ function extractRole(
 ): ClaudeCodeChunk["role"] {
   const message = isRecord(obj.message) ? obj.message : {};
   const role = typeof message.role === "string" ? message.role : type;
-  return ROLE_MAP[role] ?? ROLE_MAP[type] ?? "system";
+  const mapped = ROLE_MAP[role] ?? ROLE_MAP[type] ?? "system";
+
+  // `message.role` is the API role, not who produced the words. Claude Code
+  // writes every tool result back as a "user" record, so trusting the field
+  // indexed 11,434 "user" messages against 5,325 "assistant" ones in a real
+  // index, and the most common "user" texts were "File created successfully"
+  // and "The file ... has been updated". A record carrying only tool blocks
+  // is tool traffic whichever side of the API it sat on; one with real text
+  // keeps its API role, because that text is what the person or model said.
+  if ((mapped === "user" || mapped === "assistant") && Array.isArray(message.content)) {
+    const blocks = message.content.filter(isRecord);
+    const hasTool = blocks.some((b) => b.type === "tool_result" || b.type === "tool_use");
+    const hasText = message.content.some(
+      (b) => typeof b === "string" || (isRecord(b) && b.type !== "tool_result" && typeof b.text === "string"),
+    );
+    if (hasTool && !hasText) {
+      return "tool";
+    }
+  }
+  return mapped;
 }
 
 /**
@@ -532,7 +551,22 @@ function carriesPlan(obj: Record<string, unknown>): boolean {
   return typeof attachment?.planContent === "string" && attachment.planContent.trim() !== "";
 }
 
+/**
+ * Terminal colour and cursor sequences, which tool output carries and a
+ * transcript has no use for: 726 real messages held them, and each one is
+ * noise in search and an unreadable line in a handoff.
+ */
+const ANSI_SEQUENCE = /\u001b(?:\[[0-?]*[ -/]*[@-~]|\][^\u0007\u001b]*(?:\u0007|\u001b\\)|[@-Z\\-_])/g;
+
+function stripAnsi(text: string): string {
+  return text.replace(ANSI_SEQUENCE, "");
+}
+
 function extractContent(obj: Record<string, unknown>): string {
+  return stripAnsi(extractRawContent(obj));
+}
+
+function extractRawContent(obj: Record<string, unknown>): string {
   if (typeof obj.content === "string") {
     return obj.content;
   }
@@ -566,6 +600,15 @@ function stringifyContent(value: unknown): string {
     return "";
   }
 
+  // A record that mixes real text with tool results keeps the text only, and
+  // stays one chunk: chunk ids hash `messageIndex`, so splitting a record in
+  // two would renumber every later message. The results are tool output the
+  // person never wrote, and the pure-result records (the real shape) are
+  // indexed whole as role "tool" by extractRole.
+  const hasText = value.some(
+    (item) => typeof item === "string" || (isRecord(item) && typeof item.text === "string"),
+  );
+
   return value
     .map((item) => {
       if (typeof item === "string") {
@@ -573,6 +616,12 @@ function stringifyContent(value: unknown): string {
       }
       if (!isRecord(item)) {
         return "";
+      }
+      if (item.type === "tool_use") {
+        return describeToolUse(item);
+      }
+      if (item.type === "tool_result") {
+        return hasText ? "" : toolResultText(item.content);
       }
       if (typeof item.text === "string") {
         return item.text;
@@ -584,6 +633,59 @@ function stringifyContent(value: unknown): string {
     })
     .filter((item) => item.length > 0)
     .join("\n");
+}
+
+/** A tool result's content is a string, or an array of text blocks. */
+function toolResultText(content: unknown): string {
+  if (typeof content === "string") {
+    return content;
+  }
+  if (!Array.isArray(content)) {
+    return "";
+  }
+  return content
+    .map((part) => (isRecord(part) && typeof part.text === "string" ? part.text : ""))
+    .filter((part) => part.length > 0)
+    .join("\n");
+}
+
+const TOOL_LINE_MAX = 200;
+
+/**
+ * One short line for a tool call: `ran Bash: <command>`, `edit <path>`.
+ *
+ * The call was dropped entirely, so an assistant turn that only ran tools left
+ * no trace of what it did. The input is never indexed whole: a Write carries
+ * the entire file and an Edit both versions of it.
+ */
+function describeToolUse(block: Record<string, unknown>): string {
+  const name = typeof block.name === "string" && block.name ? block.name : "tool";
+  const input = isRecord(block.input) ? block.input : {};
+  const pick = (...keys: string[]): string => {
+    for (const key of keys) {
+      const value = input[key];
+      if (typeof value === "string" && value.trim()) {
+        return value.trim().split(/\r?\n/, 1)[0] ?? "";
+      }
+    }
+    return "";
+  };
+
+  let line: string;
+  if (name === "Bash") {
+    line = `ran Bash: ${pick("command")}`;
+  } else if (name === "Edit" || name === "MultiEdit" || name === "NotebookEdit") {
+    line = `edit ${pick("file_path", "notebook_path")}`;
+  } else if (name === "Write") {
+    line = `write ${pick("file_path")}`;
+  } else if (name === "Read") {
+    line = `read ${pick("file_path")}`;
+  } else {
+    const hint = pick("file_path", "path", "pattern", "command", "url", "query", "description");
+    line = hint ? `used ${name}: ${hint}` : `used ${name}`;
+  }
+  line = line.trim();
+  return line.length > TOOL_LINE_MAX ? `${line.slice(0, TOOL_LINE_MAX)}…` : line;
 }
 
 /** A non-empty string, or nothing. An empty branch is no branch. */
