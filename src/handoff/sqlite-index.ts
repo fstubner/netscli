@@ -25,6 +25,12 @@ import {
   planRetrievalUnits,
 } from "./retrieval-units.js";
 import { scanTool, waitWithBudget } from "./scan.js";
+import {
+  SCAN_COMPLETED_FROM_KEY,
+  SCAN_LEASE_RENEW_MS,
+  ScanLease,
+  lastCompletedScanFrom,
+} from "./scan-lease.js";
 import { literalSearch } from "./literal-search.js";
 import {
   type PreparedStatements,
@@ -185,6 +191,12 @@ const RETRIEVAL_UNIT_RECONCILE_LIMIT = 4;
  * scan, so this budget is also shutdown latency and cannot be generous.
  */
 const DEFAULT_EMBEDDING_WARM_BUDGET_MS = 5_000;
+
+/**
+ * How often a server waiting on another's scan lease looks again. Also the
+ * longest `close()` waits for a server that is only waiting.
+ */
+const SCAN_LEASE_POLL_MS = 250;
 
 /**
  * The real model unless `XTCTX_DISABLE_EMBEDDINGS=1`.
@@ -680,6 +692,66 @@ export class SqliteHandoffIndex implements SessionService {
   }
 
   private async refreshNow(): Promise<void> {
+    const lease = await this.takeScanLease(Date.now());
+    if (!lease) {
+      return;
+    }
+    // Renewed on a timer so a scan waiting on a slow store keeps it. A timer
+    // cannot fire inside synchronous work, which is what the TTL's margin is
+    // for.
+    const heartbeat = setInterval(() => lease.renew(), SCAN_LEASE_RENEW_MS);
+    heartbeat.unref?.();
+    try {
+      await this.scanUnderLease(lease);
+    } finally {
+      clearInterval(heartbeat);
+      lease.release();
+    }
+    await this.warmVectors();
+  }
+
+  /**
+   * Take this project's scan lease, waiting while another process holds it.
+   *
+   * Null when there is nothing left for this process to do: it is closing, or
+   * a scan by another process that began after `requestedAt` has finished —
+   * that scan read every store after this one asked, which is everything this
+   * one's own scan would have read.
+   *
+   * Waiting, rather than skipping, is deliberate. A server cannot treat
+   * another's scan in progress as its own: that scan may have passed a store
+   * before the tool this session follows wrote to it, which is the reason a
+   * server scans on every start (see `cli/index.ts`). So it waits for the
+   * lease and scans after the holder — usually a cheap pass over cursors that
+   * are already at the end of their files — unless someone else got there
+   * first. Callers are not held up by this: they wait on the scan only up to
+   * the refresh budget, and read whatever the holder has indexed by then.
+   */
+  private async takeScanLease(requestedAt: number): Promise<ScanLease | null> {
+    const db = this.getDb();
+    const lease = new ScanLease(db);
+    for (;;) {
+      if (this.closed) {
+        return null;
+      }
+      if (lease.tryAcquire()) {
+        return lease;
+      }
+      await new Promise((resolve) => setTimeout(resolve, SCAN_LEASE_POLL_MS));
+      if (this.closed) {
+        return null;
+      }
+      if (lastCompletedScanFrom(db) >= requestedAt) {
+        // Read on this process's behalf, so not outstanding; see `scannedTools`.
+        for (const { tool } of this.tools) {
+          this.scannedTools.add(tool);
+        }
+        return null;
+      }
+    }
+  }
+
+  private async scanUnderLease(lease: ScanLease): Promise<void> {
     const db = this.getDb();
     const startedAt = new Date().toISOString();
     const touchedSessions = new Set<string>();
@@ -712,6 +784,10 @@ export class SqliteHandoffIndex implements SessionService {
 
     setSetting(db, "last_scan_at", startedAt);
     setSetting(db, "last_scan_ms", String(Date.now() - Date.parse(startedAt)));
+    setSetting(db, SCAN_COMPLETED_FROM_KEY, String(lease.heldSince ?? Date.parse(startedAt)));
+  }
+
+  private async warmVectors(): Promise<void> {
 
     // Warm vectors here too, not only inside a search.
     //

@@ -299,7 +299,10 @@ function upsertChunk(
  * plainest reason, that it never saw them, and deleting them lost them for
  * good — the other server's cursor already sat past those lines. Measured with
  * three servers over a 10,000-message corpus while sessions grew: 70 to 74
- * rows lost in every run. A row indexed at the very millisecond the
+ * rows lost in every run. One scanner per project at a time (`ScanLease`) is
+ * what prevents the overlap; this bound is what keeps an overlap that happens
+ * anyway — a lease taken over from a holder that stalled past its expiry —
+ * from costing data. A row indexed at the very millisecond the
  * scan began is still a candidate: whoever wrote it read those lines before
  * this scan started reading, so this scan read them too.
  *
