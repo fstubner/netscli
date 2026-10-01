@@ -23,6 +23,12 @@ export interface SessionMessage {
   role: "user" | "assistant" | "system" | "tool";
   content: string;
   source_pointer?: string;
+  /**
+   * 0-based position in the session's message order — the same number
+   * `offset` counts from the start, so a caller who has read the end can
+   * ask for the page before it.
+   */
+  position?: number;
 }
 
 export interface HandoffStatus {
@@ -113,7 +119,16 @@ export interface SessionService {
     branchFilter?: string[],
   ): Promise<SessionSummary[]>;
   getSessionByRef(sessionRef: string): Promise<SessionSummary | null>;
-  getSessionDetail(sessionRef: string, offset: number, limit: number): Promise<SessionMessage[]>;
+  /**
+   * `fromEnd` counts `offset` back from the newest message instead of
+   * forward from the oldest; either way the page comes back oldest-first.
+   */
+  getSessionDetail(
+    sessionRef: string,
+    offset: number,
+    limit: number,
+    fromEnd?: boolean,
+  ): Promise<SessionMessage[]>;
   searchSessions(
     query: string,
     limit: number,

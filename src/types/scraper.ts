@@ -118,6 +118,14 @@ export interface ScraperState {
    * full re-read, never correctness.
    */
   files?: Record<string, FileCursor>;
+  /**
+   * The version of the scraper's output that produced the rows already
+   * indexed. Absent means the first version. A scraper whose output changed
+   * for transcripts it has already read bumps its own constant, and a stored
+   * value below it makes the next scan read everything again; see the
+   * claude-code scraper.
+   */
+  scraperVersion?: number;
 }
 
 export interface ConversationScraper<

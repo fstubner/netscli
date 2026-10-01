@@ -1,5 +1,11 @@
 import type { SessionService, SessionSummary } from "../../handoff/types.js";
-import { indexingPayload, ToolInputError, validatedFilter, validatedToolFilter } from "./sessions.js";
+import {
+  indexingPayload,
+  ToolInputError,
+  UNTRUSTED_NOTICE,
+  validatedFilter,
+  validatedToolFilter,
+} from "./sessions.js";
 import { inlineSafe } from "../../utils/untrusted-text.js";
 
 interface HandoffManifestParams {
@@ -47,6 +53,8 @@ export function createHandoffManifestHandler(service: SessionService) {
     const status = await service.getStatus();
     const manifest = {
       schema_version: "xtctx/handoff-manifest/v1",
+      untrusted: true,
+      notice: UNTRUSTED_NOTICE,
       generated_at: new Date().toISOString(),
       correlation_id: normalizeCorrelationId(params.correlation_id),
       project: {
