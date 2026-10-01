@@ -26,7 +26,7 @@ export const ACCEPTED_DEGRADATIONS = {
   emptyWorkspace: "workspace has no composer.composerData row",
   /** A composer whose bubble row is missing — bubble pruned by Cursor. */
   prunedBubble: "bubble referenced by composer but missing from globalStorage",
-  /** Empty bubble text (tool-call only, etc.). */
+  /** Empty bubble text with no tool call either — a thinking bubble, kept out on purpose. */
   emptyBubbleText: "bubble has no user-visible text",
   /** Forward-compat unknown keys alongside known composer fields. */
   unknownFieldsAlongside: "extra keys alongside known composer schema",
@@ -74,6 +74,8 @@ interface CursorComposerData {
 interface CursorBubbleData {
   type: number;
   text?: string;
+  /** Present on a tool-call bubble, which carries no text of its own. */
+  toolFormerData?: { name?: unknown; params?: unknown; rawArgs?: unknown };
   createdAt?: string | number;
   modelInfo?: { modelName?: string };
 }
@@ -704,14 +706,21 @@ export class CursorScraper extends AbstractScraper<CursorChunk> {
           continue;
         }
 
-        const content = toNonEmptyString(bubble.text) ?? "";
-        if (!content) {
-          messageIndex++;
-          continue;
-        }
-
+        let content = toNonEmptyString(bubble.text) ?? "";
         let role = normalizeRole(bubble.type);
-        if (subagent && role === "user" && !promptSeen) {
+        if (!content) {
+          // A tool call is a bubble with no text, so reading text alone
+          // dropped every edit, command and search an agent made: 2,200
+          // bubbles became 278 chunks on a real store. One line says what it
+          // did; thinking bubbles have neither text nor a tool and stay out.
+          const toolLine = describeToolBubble(bubble);
+          if (!toolLine) {
+            messageIndex++;
+            continue;
+          }
+          content = toolLine;
+          role = "tool";
+        } else if (subagent && role === "user" && !promptSeen) {
           promptSeen = true;
           role = "tool";
         }
@@ -922,6 +931,68 @@ function normalizeRole(value?: number | string): CursorChunk["role"] {
 
 function normalizeComposerMode(value?: string): CursorChunk["metadata"]["composerMode"] {
   return value === "agent" ? "agent" : "normal";
+}
+
+const TOOL_LINE_MAX = 200;
+
+/** Argument names a tool call records its target under, most specific first. */
+const TOOL_TARGET_KEYS = [
+  "relativeWorkspacePath",
+  "targetFile",
+  "filePath",
+  "path",
+  "targetDirectory",
+  "effectiveUri",
+  "title",
+  "pattern",
+  "globPattern",
+  "query",
+  "command",
+  "description",
+];
+
+/**
+ * One short line for a tool-call bubble: `used edit_file_v2: src/a.ts`.
+ *
+ * The arguments are never indexed whole — an edit carries the file's new
+ * content — only the first line of the target, so the index learns what was
+ * touched without holding what was written.
+ */
+function describeToolBubble(bubble: CursorBubbleData): string | undefined {
+  const tool = bubble.toolFormerData;
+  if (!isRecord(tool)) {
+    return undefined;
+  }
+
+  const name = toNonEmptyString(tool.name) ?? "tool";
+  const args = parseToolArguments(tool.params) ?? parseToolArguments(tool.rawArgs) ?? {};
+  let target = "";
+  for (const key of TOOL_TARGET_KEYS) {
+    const value = toNonEmptyString(args[key]);
+    if (value) {
+      target = value.split(/\r?\n/, 1)[0] ?? "";
+      break;
+    }
+  }
+
+  const line = target ? `used ${name}: ${target}` : `used ${name}`;
+  return line.length > TOOL_LINE_MAX ? `${line.slice(0, TOOL_LINE_MAX)}…` : line;
+}
+
+/** Cursor stores a tool's arguments as a JSON string; tolerate an object too. */
+function parseToolArguments(value: unknown): Record<string, unknown> | undefined {
+  if (isRecord(value)) {
+    return value;
+  }
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return isRecord(parsed) ? parsed : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function isTruthyFlag(value: unknown): boolean {
