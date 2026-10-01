@@ -58,10 +58,21 @@ describe("TransformersEmbeddingProvider (integration)", () => {
   // This builds the real pipeline. Slow, but it is the only test that would
   // have caught it.
   it("embeds text with the real local model", async () => {
+    // The library is not a dependency of the package any more; it is loaded
+    // from a runtime directory. This repository has it as a devDependency, so
+    // the repository root is one.
+    const saved = process.env.XTCTX_EMBEDDING_RUNTIME_DIR;
+    process.env.XTCTX_EMBEDDING_RUNTIME_DIR = process.cwd();
     const { TransformersEmbeddingProvider } = await import("@xtctx/handoff/embeddings");
     const provider = new TransformersEmbeddingProvider();
 
-    const [vector] = await provider.embedBatch(["handoff context for xtctx"]);
+    let vector: Float32Array;
+    try {
+      [vector] = await provider.embedBatch(["handoff context for xtctx"]);
+    } finally {
+      if (saved === undefined) delete process.env.XTCTX_EMBEDDING_RUNTIME_DIR;
+      else process.env.XTCTX_EMBEDDING_RUNTIME_DIR = saved;
+    }
 
     expect(vector.length).toBeGreaterThan(0);
     expect(Number.isFinite(vector[0])).toBe(true);
