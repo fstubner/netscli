@@ -88,7 +88,7 @@ there is nothing to look at until a client connects.
 | `ping_host` | Check reachability and latency. |
 | `dns_lookup` | Query DNS records. |
 | `get_arp_table` | Read the local ARP neighbor cache. |
-| `inspect_host` | Build a host profile: reachability, DNS, MAC address and maker, an OS hint, and ports. |
+| `inspect_host` | Build a host profile with reachability, DNS, MAC address and maker, an OS hint, and ports. |
 | `sweep_network` | Discover hosts and scan selected ports. |
 | `list_network_interfaces` | List local network interfaces. |
 | `discover_mdns` | Discover local mDNS/DNS-SD services. |

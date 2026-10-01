@@ -55,7 +55,7 @@ iwr -useb https://netscli.com/install.ps1 | iex
 Direct Windows downloads are on the
 [releases page](https://github.com/fstubner/netscli/releases/latest). From
 0.3.3 on, the `.exe` downloads and the `.msi` installer are signed, so Windows
-names the publisher instead of showing an unknown one; from 0.3.4 the desktop
+names the publisher instead of showing an unknown one. From 0.3.4 the desktop
 app inside the installer is signed too. While the certificate is new,
 SmartScreen may still show a warning the first time you run one.
 
@@ -276,7 +276,7 @@ confirms the asset was built and signed by this repository's release workflow
 and has not been altered since.
 
 This is separate from the code signing Windows and macOS check. The Windows
-downloads carry a Windows signature from 0.3.3 on; the macOS app is not
+downloads carry a Windows signature from 0.3.3 on, and the macOS app is not
 notarized. See the Windows and macOS sections above for what your system will
 say on first run.
 

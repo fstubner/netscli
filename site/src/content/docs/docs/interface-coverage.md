@@ -61,7 +61,7 @@ server does not expose it as a tool.
   over MCP.
 - **First-run setup** (`netscli setup`) and **diagnostics**
   (`netscli doctor`) are two different commands. Setup is an interactive
-  wizard; doctor is a report that works on every build and tells you what
+  wizard. Doctor is a report that works on every build and tells you what
   your build can do.
 
 ### Notes on the ticks
@@ -72,7 +72,7 @@ server does not expose it as a tool.
   `cargo install netscli` are all built without it. Each release does publish
   separate `-pcap` CLI assets that have it compiled in. See
   [Installation](/docs/install/#packet-capture).
-- **Structured output** means something different on each interface: the
+- **Structured output** means something different on each interface. The
   desktop app exports files and
   result bundles, the CLI takes `--json`, `--yaml`, `--csv` and `--md`, the
   TUI exports a session with `/export`, and the MCP server returns JSON-RPC

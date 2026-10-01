@@ -167,7 +167,7 @@ The CLI exposes shared network operations plus command-line maintenance workflow
 | --- | --- |
 | `discover` | Find reachable hosts on a subnet. |
 | `scan` | Scan TCP ports on one host, or UDP services with `--udp`. |
-| `inspect` | Build a host profile: reachability, reverse DNS, MAC address and maker, an OS hint, and optional ports. |
+| `inspect` | Build a host profile with reachability, reverse DNS, MAC address and maker, an OS hint, and optional ports. |
 | `sweep` | Discover hosts and scan selected ports across them. |
 | `ping` | Measure reachability and packet loss. |
 | `trace` | Show route hops to a host. |

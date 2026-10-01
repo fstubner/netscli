@@ -15,7 +15,7 @@ NetsCLI focuses on practical network inspection tasks:
 | --- | --- |
 | Discover hosts | You want to find reachable devices on a subnet. |
 | Scan ports | You know a host and want TCP or UDP port status, latency, the software and version where a service names itself, and banner data. |
-| Inspect a host | You want a host profile: reachability, reverse DNS, MAC address and maker, an OS hint, and optional port checks. |
+| Inspect a host | You want a host profile with reachability, reverse DNS, MAC address and maker, an OS hint, and optional port checks. |
 | Sweep a subnet | You want discovery plus exposed services across discovered hosts. |
 | Query names | You need DNS, reverse DNS, or local mDNS service information. |
 | Review local inventory | You need local interfaces or the operating system ARP neighbor cache. |
@@ -53,6 +53,6 @@ Interfaces may add confirmations or guidance, but they do not bypass the core li
 - Installing on Windows, macOS, or Linux: read [Installation](/docs/install/).
 - Comparing desktop app, TUI, CLI, and MCP coverage: read [Interface coverage](/docs/interface-coverage/).
 - Using the desktop app: read [Desktop app](/docs/desktop/).
-- Automating scans or exporting JSON, YAML, CSV or Markdown: read [CLI](/docs/cli/).
+- Automating scans or exporting JSON, YAML, CSV or Markdown, read [CLI](/docs/cli/).
 - Integrating with agents: read [MCP server](/docs/mcp/).
 - Building on the Rust crates: read [Core library and crates](/docs/core-library/).

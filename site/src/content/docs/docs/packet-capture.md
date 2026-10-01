@@ -6,7 +6,7 @@ description: NetsCLI packet capture support, runtime requirements, output format
 Packet capture is optional. It needs a build with packet-capture support and a system packet-capture library.
 
 :::caution[The default builds have no packet capture]
-The desktop installers, the standard CLI downloads, and `cargo install netscli` are all built without it, so nothing on this page will work until you install a capture-capable build. The `-pcap` CLI assets on each release *are* built with it — see [Packet capture in the install guide](/docs/install/#packet-capture) for the three ways to get one.
+The desktop installers, the standard CLI downloads, and `cargo install netscli` are all built without it, so nothing on this page will work until you install a capture-capable build. The `-pcap` CLI assets on each release *are* built with it. See [Packet capture in the install guide](/docs/install/#packet-capture) for the three ways to get one.
 
 Run `netscli doctor` to check which build you have. It works on every build, unlike `netscli pcap --check` below.
 :::
@@ -25,7 +25,7 @@ The Packet Capture tool stays visible in the desktop app either way. If the buil
 
 ## CLI Capture
 
-List available capture devices. This subcommand only exists on capture-capable builds — a standard build answers with an "unrecognized subcommand" error, so use `netscli doctor` if you are checking which build you have:
+List available capture devices. This subcommand only exists on capture-capable builds. A standard build answers with an "unrecognized subcommand" error, so use `netscli doctor` if you are checking which build you have.
 
 ```bash
 netscli pcap --check

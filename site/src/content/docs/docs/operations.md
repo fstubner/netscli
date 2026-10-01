@@ -150,7 +150,7 @@ Use `ping` for a quick reachability and packet-loss summary.
 netscli ping 192.168.1.1 --count 4
 ```
 
-The result summarizes sent packets, received packets, packet loss, and RTT values. Raw ICMP may require elevated permissions on some platforms; without them, NetsCLI checks reachability with a TCP connection instead.
+The result summarizes sent packets, received packets, packet loss, and RTT values. Raw ICMP may require elevated permissions on some platforms. Without them, NetsCLI checks reachability with a TCP connection instead.
 
 ## Trace route
 

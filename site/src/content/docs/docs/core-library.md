@@ -34,7 +34,7 @@ Dependency flow stays one-way:
 Interface crates may depend on the core. The core must not depend on a UI layer, MCP protocol layer, or desktop runtime.
 
 The CLI additionally depends on `netscli-mcp`, because `netscli serve` runs
-the MCP server in-process — the one edge between two interface crates.
+the MCP server in-process. It is the one dependency between two interface crates.
 
 ## Public facade
 
