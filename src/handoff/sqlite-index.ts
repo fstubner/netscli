@@ -24,7 +24,13 @@ import {
   type MessageRow,
   planRetrievalUnits,
 } from "./retrieval-units.js";
-import { scanTool, waitWithBudget } from "./scan.js";
+import { ScanInterrupted, scanTool, waitWithBudget } from "./scan.js";
+import {
+  SCAN_COMPLETED_FROM_KEY,
+  SCAN_LEASE_RENEW_MS,
+  ScanLease,
+  lastCompletedScanFrom,
+} from "./scan-lease.js";
 import { literalSearch } from "./literal-search.js";
 import {
   type PreparedStatements,
@@ -35,6 +41,7 @@ import {
   placeholders,
   prepareStatements,
   setSetting,
+  unitsStaleKey,
 } from "./schema.js";
 import {
   PROJECT_ROOT_SQL,
@@ -166,16 +173,6 @@ const DEFAULT_LIMIT = 5;
 const MAX_LIMIT = 100;
 
 /**
- * Sessions repaired per scan by `reconcileRetrievalUnits`.
- *
- * Small on purpose: rebuilding reads every message in a session, and scans
- * here are routinely cut short by the client disconnecting, so a large batch
- * would be killed before finishing and would repeat the same prefix next time.
- * A backlog drains over a few scans instead, newest first.
- */
-const RETRIEVAL_UNIT_RECONCILE_LIMIT = 4;
-
-/**
  * How long a scan waits for the embedding model to finish loading.
  *
  * Sized against both failure modes. A warm cache loads in about a second, so
@@ -185,6 +182,23 @@ const RETRIEVAL_UNIT_RECONCILE_LIMIT = 4;
  * scan, so this budget is also shutdown latency and cannot be generous.
  */
 const DEFAULT_EMBEDDING_WARM_BUDGET_MS = 5_000;
+
+/**
+ * How often a server waiting on another's scan lease looks again. Also the
+ * longest `close()` waits for a server that is only waiting.
+ */
+const SCAN_LEASE_POLL_MS = 250;
+
+/**
+ * Longest a scan runs before letting the event loop turn.
+ *
+ * The scan runs on the thread that answers tool calls, over synchronous
+ * SQLite, and its longest stretches never awaited anything: measured on a
+ * 15,000-message corpus, a request that needs no index at all (`tools/list`)
+ * waited up to 3.8 seconds behind one. Yielding this often lets requests,
+ * the lease heartbeat and the shutdown timer in between.
+ */
+const SCAN_YIELD_INTERVAL_MS = 20;
 
 /**
  * The real model unless `XTCTX_DISABLE_EMBEDDINGS=1`.
@@ -306,6 +320,10 @@ export class SqliteHandoffIndex implements SessionService {
   private readonly embeddingWarmBudgetMs: number;
   private readonly vectorBudgetMs: number;
   private scanStartedMs = 0;
+  /** When the running scan last let the event loop turn; see `scanCheckpoint`. */
+  private lastYieldAt = 0;
+  /** Whether this process has scanned as the lease holder; see `truncateWal`. */
+  private scannedAsHolder = false;
   private readonly createIfMissing: boolean;
   /** Canonical, and compared normalized; see `canonicalRoot`. */
   private readonly scopedRoot: string;
@@ -581,13 +599,44 @@ export class SqliteHandoffIndex implements SessionService {
   async close(): Promise<void> {
     // Set first, so a retry that starts after this cannot open the database
     // again, and one already running closes what it opened (see initialize).
+    // A scan sees it at its next checkpoint and stops there.
     this.closed = true;
     await this.initialized.catch(() => {});
     // A scan may still be running because a caller stopped waiting for it.
     // Closing the database underneath it would turn an ordinary shutdown into
-    // a write to a closed handle.
+    // a write to a closed handle, so wait for it to reach a checkpoint.
     await this.whenScanSettled();
+    this.truncateWal();
     this.discardHandle();
+  }
+
+  /**
+   * Fold the write-ahead log back into the database and empty it, if this
+   * process scanned and nobody else is scanning now.
+   *
+   * SQLite does this by itself when the last connection closes, which on a
+   * machine with several servers open is rarely this one, and never when a
+   * process is stopped before it closes. Write-ahead logs of 6 to 30MB
+   * were left behind after every server had exited in the multi-server
+   * measurement.
+   *
+   * Skipped while another server holds the scan lease, so it never contends
+   * with a scan in progress; that server truncates when it closes. Checked
+   * rather than taken, because taking and releasing the lease are writes,
+   * and they would land in the log just emptied. A short busy timeout,
+   * because a reader that will not let go is a reason to leave the log for
+   * later, not to hold shutdown up.
+   */
+  private truncateWal(): void {
+    if (!this.db || !this.scannedAsHolder || new ScanLease(this.db).heldElsewhere()) {
+      return;
+    }
+    try {
+      this.db.pragma("busy_timeout = 100");
+      this.db.pragma("wal_checkpoint(TRUNCATE)");
+    } catch {
+      // Left for the next close.
+    }
   }
 
   private async refresh(reason: {
@@ -680,7 +729,97 @@ export class SqliteHandoffIndex implements SessionService {
   }
 
   private async refreshNow(): Promise<void> {
+    const lease = await this.takeScanLease(Date.now());
+    if (!lease) {
+      return;
+    }
+    this.scannedAsHolder = true;
+    // Renewed on a timer so a scan waiting on a slow store keeps it. A timer
+    // cannot fire inside synchronous work, which is what the TTL's margin is
+    // for.
+    const heartbeat = setInterval(() => lease.renew(), SCAN_LEASE_RENEW_MS);
+    heartbeat.unref?.();
+    try {
+      await this.scanUnderLease(lease);
+    } catch (error) {
+      if (error instanceof ScanInterrupted) {
+        // Closing, or the lease went to another process: stop as a killed
+        // scan would, minus the kill. See `ScanInterrupted`.
+        return;
+      }
+      throw error;
+    } finally {
+      clearInterval(heartbeat);
+      lease.release();
+    }
+    await this.warmVectors();
+  }
+
+  /**
+   * Awaited between units of scan work: yields the event loop when the scan
+   * has held it for `SCAN_YIELD_INTERVAL_MS`, and stops the scan when the
+   * index is closing or the lease is no longer this process's.
+   */
+  private scanCheckpoint(lease: ScanLease): () => Promise<void> {
+    return async () => {
+      if (Date.now() - this.lastYieldAt >= SCAN_YIELD_INTERVAL_MS) {
+        await new Promise<void>((resolve) => setImmediate(resolve));
+        this.lastYieldAt = Date.now();
+      }
+      if (this.closed) {
+        throw new ScanInterrupted("the index is closing");
+      }
+      if (!lease.renew()) {
+        throw new ScanInterrupted("another process took over the scan lease");
+      }
+    };
+  }
+
+  /**
+   * Take this project's scan lease, waiting while another process holds it.
+   *
+   * Null when there is nothing left for this process to do: it is closing, or
+   * a scan by another process that began after `requestedAt` has finished —
+   * that scan read every store after this one asked, which is everything this
+   * one's own scan would have read.
+   *
+   * Waiting, rather than skipping, is deliberate. A server cannot treat
+   * another's scan in progress as its own: that scan may have passed a store
+   * before the tool this session follows wrote to it, which is the reason a
+   * server scans on every start (see `cli/index.ts`). So it waits for the
+   * lease and scans after the holder — usually a cheap pass over cursors that
+   * are already at the end of their files — unless someone else got there
+   * first. Callers are not held up by this: they wait on the scan only up to
+   * the refresh budget, and read whatever the holder has indexed by then.
+   */
+  private async takeScanLease(requestedAt: number): Promise<ScanLease | null> {
     const db = this.getDb();
+    const lease = new ScanLease(db);
+    for (;;) {
+      if (this.closed) {
+        return null;
+      }
+      if (lease.tryAcquire()) {
+        return lease;
+      }
+      await new Promise((resolve) => setTimeout(resolve, SCAN_LEASE_POLL_MS));
+      if (this.closed) {
+        return null;
+      }
+      if (lastCompletedScanFrom(db) >= requestedAt) {
+        // Read on this process's behalf, so not outstanding; see `scannedTools`.
+        for (const { tool } of this.tools) {
+          this.scannedTools.add(tool);
+        }
+        return null;
+      }
+    }
+  }
+
+  private async scanUnderLease(lease: ScanLease): Promise<void> {
+    const db = this.getDb();
+    const checkpoint = this.scanCheckpoint(lease);
+    this.lastYieldAt = Date.now();
     const startedAt = new Date().toISOString();
     const touchedSessions = new Set<string>();
 
@@ -689,13 +828,17 @@ export class SqliteHandoffIndex implements SessionService {
     // scan is interrupted in the same way. Rows that already agree are not
     // written, so on a healthy index this costs one indexed count per session.
     this.prepared().reconcileSessionRollups.run();
-    this.reconcileRetrievalUnits();
+    // Bounded by the refresh budget: the newest sessions' windows are what a
+    // caller waiting that long is most likely to search. The rest is drained
+    // after the scan.
+    await this.reconcileRetrievalUnits(Date.now() + this.refreshBudgetMs, checkpoint);
 
     for (const { scraper } of this.tools) {
       const scanned = await scanTool(scraper, {
         db,
         stmts: this.prepared(),
         scopedRoot: this.scopedRoot,
+        checkpoint,
       });
       for (const sessionRef of scanned.touchedSessions) {
         touchedSessions.add(sessionRef);
@@ -708,10 +851,21 @@ export class SqliteHandoffIndex implements SessionService {
       // once per inserted message (which made indexing O(N²) per session).
       this.prepared().sessionRollup.run(sessionRef);
       this.rebuildRetrievalUnitsForSession(sessionRef);
+      await checkpoint();
     }
+    // Whatever the pass above did not reach, now that the stores are read.
+    await this.reconcileRetrievalUnits(Number.POSITIVE_INFINITY, checkpoint);
 
     setSetting(db, "last_scan_at", startedAt);
     setSetting(db, "last_scan_ms", String(Date.now() - Date.parse(startedAt)));
+    setSetting(db, SCAN_COMPLETED_FROM_KEY, String(lease.heldSince ?? Date.parse(startedAt)));
+  }
+
+  private async warmVectors(): Promise<void> {
+    // `close()` waits for this, and nothing that closes wants vectors.
+    if (this.closed) {
+      return;
+    }
 
     // Warm vectors here too, not only inside a search.
     //
@@ -766,39 +920,46 @@ export class SqliteHandoffIndex implements SessionService {
   }
 
   /**
-   * Rebuild retrieval units for sessions whose windows do not reach their last
-   * message.
+   * Rebuild retrieval units for sessions whose windows are missing or stale,
+   * newest first, until `deadline`.
    *
    * Units are otherwise built only for the sessions a scan touched, at the end,
    * after every scraper — while each scraper advances its cursor as soon as it
    * finishes and the CLI exits shortly after a client disconnects. A scan that
    * dies in that gap leaves the messages committed, the cursor past them, and
-   * the tail of the session in no window: reachable through
-   * `xtctx_session_detail`, invisible to search, and never repaired because
-   * nothing re-reads the store.
+   * the session in no window: reachable through `xtctx_session_detail`,
+   * invisible to search, and never repaired because nothing re-reads the
+   * store. See `selectSessionsNeedingUnits` for how those sessions are found.
    *
-   * `reconcileSessionRollups` above handles the same gap for `message_count`.
-   * This is its counterpart, and the two run together for the same reason: at
-   * the start, so the repair survives an interruption of the same kind.
+   * `reconcileSessionRollups` handles the same gap for `message_count`. This is
+   * its counterpart, and the two run together at the start, so the repair
+   * survives an interruption of the same kind; the scan runs it again at the
+   * end, unbounded, for whatever the first pass left.
    *
-   * Bounded per scan. Rebuilding reads every message in a session, and scans
-   * here are routinely cut short, so an unbounded pass over a large backlog
-   * would spend the whole scan and be killed before finishing. Most-recently
-   * active first, matching `ensureVectors`: the history a handoff reaches for
-   * is covered before the archive is, and the backlog drains over a few scans.
+   * Bounded by time rather than by a count. It was four sessions a scan, so a
+   * first scan killed before its windows were built left most of the index
+   * unsearchable for dozens of sessions afterwards: over a 100-session corpus,
+   * 96 of 2,400 windows came back per later session. Each session's rebuild
+   * commits on its own, so a pass cut short keeps what it finished.
    */
-  private reconcileRetrievalUnits(): void {
+  private async reconcileRetrievalUnits(
+    deadline: number,
+    checkpoint: () => Promise<void>,
+  ): Promise<void> {
     // Scoped to this project. One database can hold another project's
     // sessions — a copied `.xtctx/`, or a root that was renamed — and
     // rebuilding windows for those spends the scan's repair budget, and the
     // embedding that follows, on rows no read here will ever return.
-    const drifted = this.prepared().selectSessionsMissingUnits.all(
-      this.scopedRoot,
-      RETRIEVAL_UNIT_RECONCILE_LIMIT,
-    ) as Array<{ session_ref: string }>;
+    const drifted = this.prepared().selectSessionsNeedingUnits.all(this.scopedRoot) as Array<{
+      session_ref: string;
+    }>;
 
     for (const { session_ref: sessionRef } of drifted) {
+      if (Date.now() >= deadline) {
+        return;
+      }
       this.rebuildRetrievalUnitsForSession(sessionRef);
+      await checkpoint();
     }
   }
 
@@ -807,14 +968,20 @@ export class SqliteHandoffIndex implements SessionService {
     const stmts = this.prepared();
     const messages = stmts.selectSessionMessages.all(sessionRef) as MessageRow[];
 
+    const staleKey = unitsStaleKey(sessionRef);
+
     if (messages.length === 0) {
-      db.prepare("DELETE FROM retrieval_units_fts WHERE session_ref = ?").run(sessionRef);
-      db.prepare("DELETE FROM retrieval_units WHERE session_ref = ?").run(sessionRef);
+      db.transaction(() => {
+        db.prepare("DELETE FROM retrieval_units_fts WHERE session_ref = ?").run(sessionRef);
+        db.prepare("DELETE FROM retrieval_units WHERE session_ref = ?").run(sessionRef);
+        stmts.clearUnitsStale.run(staleKey);
+      })();
       return;
     }
 
     const session = stmts.selectSessionTool.get(sessionRef) as { tool: string } | undefined;
     if (!session) {
+      stmts.clearUnitsStale.run(staleKey);
       return;
     }
 
@@ -869,6 +1036,8 @@ export class SqliteHandoffIndex implements SessionService {
         // match every session.
         stmts.insertUnitFts.run(unitId, sessionRef, session.tool, unit.searchableText);
       }
+      // In the same transaction as the windows it vouches for.
+      stmts.clearUnitsStale.run(staleKey);
     });
     applyDiff();
   }

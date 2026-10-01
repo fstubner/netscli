@@ -35,6 +35,12 @@ export async function main(argv = process.argv): Promise<void> {
       // So give the clean close a moment, then leave. Nothing is lost by not
       // waiting: the index is derived data, every chunk is committed as it is
       // written, and an unfinished scan simply resumes on the next run.
+      //
+      // `close()` now stops a scan at its next checkpoint, a few tens of
+      // milliseconds away, so the clean close normally wins and releases the
+      // scan lease and empties the write-ahead log on the way out. The timer
+      // is the backstop for work that cannot be interrupted. It used to be
+      // the usual way out, which also meant the index was never closed.
       const graceMs = 2_000;
       const timer = setTimeout(() => {
         if (exit) process.exit(0);

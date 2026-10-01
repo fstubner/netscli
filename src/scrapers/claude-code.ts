@@ -1,13 +1,20 @@
 import { stat, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import type { ChunkMetadata, ClaudeCodeChunk } from "../types/scraper.js";
-import { AbstractScraper, describeType, estimateTokens, fileSize, isRecord } from "./base.js";
+import {
+  AbstractScraper,
+  describeType,
+  emittedPosition,
+  estimateTokens,
+  fileSize,
+  isRecord,
+} from "./base.js";
 import { encodePathForToolDirectory, pathMatchesProject } from "../utils/project-scope.js";
 import { recordDrift, withDriftReport } from "./drift-log.js";
 import { MAX_LINE_BYTES } from "./limits.js";
-import { fileHeadHash, resumeOffset } from "./base.js";
+import { fileHeadHash, fileTailHash, resumeOffset } from "./base.js";
 import { readJsonlLines } from "./jsonl-reader.js";
-import type { FileCursor } from "../types/scraper.js";
+import type { EmittedPosition, FileCursor } from "../types/scraper.js";
 
 const SCRAPER_NAME = "claude-code";
 
@@ -100,9 +107,22 @@ export class ClaudeCodeScraper extends AbstractScraper<ClaudeCodeChunk> {
     return [this.claudeProjectsDir];
   }
 
+  /**
+   * Everything after each file's byte cursor, with no timestamp cutoff unless
+   * one is passed.
+   *
+   * This used to default to the index's saved `lastTimestamp`. For an
+   * append-only file the cursor already says exactly what is new, and the
+   * timestamp only second-guessed it, wrongly in both directions it could:
+   * a line appended with an earlier stamp than the newest one indexed was
+   * skipped while the cursor moved past it, so no scan ever read it again;
+   * and a file re-read from the top because it was rewritten had every
+   * rewritten turn filtered out as old, so the index kept the text it had
+   * replaced. A file with no usable cursor is read whole and its rows are
+   * upserted by deterministic id, so the cost of not filtering is a re-read.
+   */
   async *scrape(since?: Date): AsyncIterable<ClaudeCodeChunk> {
-    const state = await this.getLastScrapedPosition();
-    const cutoff = since ?? state.lastTimestamp;
+    const cutoff = since ?? new Date(0);
     yield* withDriftReport(SCRAPER_NAME, this.readAllSessions(cutoff, true), this.stateDir);
   }
 
@@ -243,10 +263,14 @@ export class ClaudeCodeScraper extends AbstractScraper<ClaudeCodeChunk> {
     // Resume where the last scan stopped; see the codex scraper for why these
     // files are safe to resume and what refuses the cursor.
     const size = await fileSize(filePath);
-    const cursor = this.cursors[filePath];
+    const saved = this.cursors[filePath];
+    const cursor = saved && this.cursorBackedByIndex(saved) ? saved : undefined;
     const checkHash =
       this.resuming && cursor ? await fileHeadHash(filePath, cursor.offset) : null;
-    const startAt = size === null ? 0 : resumeOffset(cursor, size, checkHash ?? undefined);
+    const checkTail =
+      this.resuming && cursor ? await fileTailHash(filePath, cursor.offset) : null;
+    const startAt =
+      size === null ? 0 : resumeOffset(cursor, size, checkHash ?? undefined, checkTail ?? undefined);
     if (size !== null && startAt > 0 && startAt >= size) {
       return;
     }
@@ -273,6 +297,11 @@ export class ClaudeCodeScraper extends AbstractScraper<ClaudeCodeChunk> {
     /** Records with no `cwd`, held until `fileIsOurs` is known. */
     const pending: ClaudeCodeChunk[] = [];
     let readTo = startAt;
+    /** The last chunk handed out for this file; see `FileCursor.lastEmitted`. */
+    let lastEmitted: EmittedPosition | null | undefined = resumed ? cursor?.lastEmitted : null;
+    const emitted = (chunk: ClaudeCodeChunk | undefined): void => {
+      lastEmitted = (chunk && emittedPosition(chunk)) ?? lastEmitted;
+    };
 
     for await (const entry of readJsonlLines(filePath, { start: startAt })) {
       byteAt = entry.endOffset;
@@ -326,6 +355,7 @@ export class ClaudeCodeScraper extends AbstractScraper<ClaudeCodeChunk> {
           fileIsOurs = mine;
           if (mine) {
             yield* pending;
+            emitted(pending.at(-1));
           } else if (pending.length > 0) {
             recordDrift(
               SCRAPER_NAME,
@@ -429,10 +459,12 @@ export class ClaudeCodeScraper extends AbstractScraper<ClaudeCodeChunk> {
           continue;
         }
         yield* pending;
+        emitted(pending.at(-1));
         pending.length = 0;
       }
 
       yield chunk;
+      emitted(chunk);
     }
 
     // The file ended without any record naming a project. Nothing better than
@@ -441,6 +473,7 @@ export class ClaudeCodeScraper extends AbstractScraper<ClaudeCodeChunk> {
     if (pending.length > 0) {
       if (exactDirectory) {
         yield* pending;
+        emitted(pending.at(-1));
       } else {
         recordDrift(
           SCRAPER_NAME,
@@ -456,15 +489,18 @@ export class ClaudeCodeScraper extends AbstractScraper<ClaudeCodeChunk> {
     // resume re-derive ownership from a point where no `cwd` is left to see.
     if (this.resuming && size !== null) {
       const headHash = await fileHeadHash(filePath, readTo);
+      const tailHash = await fileTailHash(filePath, readTo);
       this.updatedCursors[filePath] = {
         offset: readTo,
         size,
         ...(headHash ? { headHash } : {}),
+        ...(tailHash ? { tailHash } : {}),
         context: {
           sessionId,
           messageIndex,
           projectMatched: fileIsOurs ?? exactDirectory,
         },
+        ...(lastEmitted === undefined ? {} : { lastEmitted }),
       };
     }
   }

@@ -9,11 +9,23 @@ export interface PreparedStatements {
   sessionRollup: Statement;
   /** Repairs roll-ups a previous scan died before reaching. See its prepare. */
   reconcileSessionRollups: Statement;
-  /** Sessions whose retrieval units do not reach their last message. */
-  selectSessionsMissingUnits: Statement;
+  /**
+   * Sessions whose retrieval units are missing or stale: marked stale by a
+   * scan that wrote to them, or not reaching their last message.
+   */
+  selectSessionsNeedingUnits: Statement;
+  /** Records that a session's units must be rebuilt; see `unitsStaleKey`. */
+  markUnitsStale: Statement;
+  /** Clears that record, once the units are rebuilt. */
+  clearUnitsStale: Statement;
   selectSessionMessages: Statement;
-  /** Every message id a session currently holds; see the prune in `scanTool`. */
-  selectMessageIdsForSession: Statement;
+  /**
+   * The message ids a session held when a scan began: every row indexed at or
+   * before a given time. See the prune in `scanTool` for why the time bound.
+   */
+  selectPrunableMessageIds: Statement;
+  /** Whether a session holds a row at a position; the cursor check's probe. */
+  messageAtIndex: Statement;
   /**
    * The lowest position a session already holds, read before this scan writes
    * to it. A scan that reaches at least that far back has accounted for
@@ -217,7 +229,12 @@ export function prepareStatements(db: DatabaseHandle): PreparedStatements {
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   );
 
-  const selectMessageIdsForSession = db.prepare(`SELECT id FROM messages WHERE session_ref = ?`);
+  const selectPrunableMessageIds = db.prepare(
+    `SELECT id FROM messages WHERE session_ref = ? AND indexed_at <= ?`,
+  );
+  const messageAtIndex = db.prepare(
+    `SELECT 1 FROM messages WHERE session_ref = ? AND message_index = ? LIMIT 1`,
+  );
   const deleteMessageById = db.prepare(`DELETE FROM messages WHERE id = ?`);
   const minMessageIndexForSession = db.prepare(
     `SELECT MIN(message_index) AS lowest FROM messages WHERE session_ref = ?`,
@@ -226,7 +243,8 @@ export function prepareStatements(db: DatabaseHandle): PreparedStatements {
   return {
     upsertSession,
     insertMessage,
-    selectMessageIdsForSession,
+    selectPrunableMessageIds,
+    messageAtIndex,
     deleteMessageById,
     minMessageIndexForSession,
     upsertChunkTxn: db.transaction((sessionArgs: unknown[], messageArgs: unknown[]) => {
@@ -286,27 +304,35 @@ export function prepareStatements(db: DatabaseHandle): PreparedStatements {
        )`,
     ),
     /**
-     * Sessions whose windows stop short of their last message.
+     * Sessions whose windows are missing or out of date, most recent first.
      *
-     * `MAX(message_end_index)` against `MAX(message_index)` is exact rather
-     * than approximate: on a healthy index every session reports a gap of
-     * zero, so this returns nothing and the scan pays one indexed pass.
-     * Ordered by recency because the repair is bounded per scan.
+     * Two signals, because each misses what the other catches. A scan marks
+     * every session it writes to before writing (`markUnitsStale`) and the
+     * rebuild clears the mark, so a scan cut off in between leaves the mark
+     * behind — including where a turn was replaced at a position the windows
+     * already reach, which no comparison of positions can see. The coverage
+     * check covers indexes written before the marks existed: windows that
+     * stop short of the session's last message. On a healthy index both find
+     * nothing, and this costs one indexed pass over the project's sessions.
      */
-    selectSessionsMissingUnits: db.prepare(
+    selectSessionsNeedingUnits: db.prepare(
       `SELECT s.session_ref
        FROM sessions s
        WHERE ${PROJECT_ROOT_SQL.replace("project_root", "s.project_root")} = ?
-         AND COALESCE(
-               (SELECT MAX(u.message_end_index) FROM retrieval_units u
-                WHERE u.session_ref = s.session_ref), -1
-             ) < COALESCE(
-               (SELECT MAX(m.message_index) FROM messages m
-                WHERE m.session_ref = s.session_ref), -1
-             )
-       ORDER BY s.last_activity_at DESC
-       LIMIT ?`,
+         AND (
+           EXISTS (SELECT 1 FROM settings st WHERE st.key = '${UNITS_STALE_PREFIX}' || s.session_ref)
+           OR COALESCE(
+                (SELECT MAX(u.message_end_index) FROM retrieval_units u
+                 WHERE u.session_ref = s.session_ref), -1
+              ) < COALESCE(
+                (SELECT MAX(m.message_index) FROM messages m
+                 WHERE m.session_ref = s.session_ref), -1
+              )
+         )
+       ORDER BY s.last_activity_at DESC`,
     ),
+    markUnitsStale: db.prepare(`INSERT OR IGNORE INTO settings(key, value) VALUES (?, ?)`),
+    clearUnitsStale: db.prepare(`DELETE FROM settings WHERE key = ?`),
     selectSessionMessages: db.prepare(
       `SELECT id, timestamp, role, content, message_index, source_pointer
        FROM messages
@@ -367,6 +393,14 @@ export function prepareStatements(db: DatabaseHandle): PreparedStatements {
     ),
     deleteUnit: db.prepare("DELETE FROM retrieval_units WHERE id = ?"),
   };
+}
+
+/** Prefix of the `settings` keys that mark a session's units stale. */
+const UNITS_STALE_PREFIX = "units_stale:";
+
+/** The `settings` key marking one session's retrieval units as needing a rebuild. */
+export function unitsStaleKey(sessionRef: string): string {
+  return `${UNITS_STALE_PREFIX}${sessionRef}`;
 }
 
 export function placeholders(countValue: number): string {

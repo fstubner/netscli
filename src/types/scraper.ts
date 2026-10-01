@@ -72,9 +72,38 @@ export interface FileCursor {
    * garbage. An append never changes the head; a rewrite almost always does.
    */
   headHash?: string;
+  /**
+   * Hash of the bytes just before the offset, for a rewrite past the head;
+   * see `fileTailHash`. Absent on short files, where the head covers it all.
+   */
+  tailHash?: string;
   /** Absent means resume is unsafe, so the file is read from the start. */
   context?: FileCursorContext;
+  /**
+   * The last chunk this file has yielded, across every read that led to this
+   * cursor; null when it has yielded none.
+   *
+   * What lets the index check the cursor against what it actually holds. A
+   * cursor at the end of a file says "everything before here is indexed",
+   * and when that stops being true — rows lost to the concurrent prune this
+   * field was added for, an index restored from a copy — nothing else ever
+   * reads those lines again. Absent on cursors written before it existed,
+   * which the check therefore cannot vouch for; see `useIndexProbe`.
+   */
+  lastEmitted?: EmittedPosition | null;
 }
+
+/** A chunk's place in its session: the two parts of its row the index can look up. */
+export interface EmittedPosition {
+  sessionId: string;
+  messageIndex: number;
+}
+
+/**
+ * Whether the index holds a row for this session at this position. Handed to
+ * a scraper by the scan; see `ConversationScraper.useIndexProbe`.
+ */
+export type IndexProbe = (sessionId: string, messageIndex: number) => boolean;
 
 export interface ScraperState {
   lastTimestamp: Date;
@@ -101,6 +130,13 @@ export interface ConversationScraper<
   fullSync(): AsyncIterable<T>;
   getLastScrapedPosition(): Promise<ScraperState>;
   saveScrapedPosition(state: ScraperState): Promise<void>;
+  /**
+   * Optional. Lets a scraper that keeps per-file resume cursors check each one
+   * against the index before trusting it: a cursor whose last yielded chunk is
+   * not in the index is refused, and the file is read again from the start.
+   * The scan installs a probe before scraping and removes it afterwards.
+   */
+  useIndexProbe?(probe: IndexProbe | undefined): void;
 }
 
 export interface ClaudeCodeChunk extends ConversationChunk {
