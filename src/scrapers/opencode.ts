@@ -7,6 +7,24 @@ import { withDriftReport } from "./drift-log.js";
 const SCRAPER_NAME = "opencode";
 
 /**
+ * Bumped when the scraper's output for a session it has already read changes,
+ * so that already-indexed rows are corrected rather than kept.
+ *
+ * 1 (absent from state): text parts only, so an assistant turn made of tool
+ *    calls left nothing.
+ * 2: tool parts leave a 'tool' line.
+ *
+ * The cursor sits past every session already read, so without this the old
+ * rows stay as they were until a session is next touched. A stored version
+ * below this resets the cutoff for one scan, which re-reads every session
+ * still in the database through the normal path; the index's re-read prune
+ * then replaces the old rows of each. Sessions that have left the database
+ * are not re-read, so their rows keep the old shape: they are the only copy,
+ * which is why this corrects in place instead of rebuilding.
+ */
+export const OPENCODE_SCRAPER_VERSION = 2;
+
+/**
  * Mutation shapes the opencode scraper tolerates silently. Anything outside
  * this whitelist that drops records must warn (or throw for required tables).
  */
@@ -97,15 +115,16 @@ export class OpenCodeScraper extends AbstractScraper<OpenCodeChunk> {
 
   async *scrape(since?: Date): AsyncIterable<OpenCodeChunk> {
     const state = await this.getLastScrapedPosition();
-    const cutoff = since ?? state.lastTimestamp;
-    yield* withDriftReport(SCRAPER_NAME, this.readAllSessions(cutoff), this.stateDir);
+    const outdated = since === undefined && (state.scraperVersion ?? 1) < OPENCODE_SCRAPER_VERSION;
+    const cutoff = since ?? (outdated ? new Date(0) : state.lastTimestamp);
+    yield* withDriftReport(SCRAPER_NAME, this.readAllSessions(cutoff, outdated), this.stateDir);
   }
 
   async *fullSync(): AsyncIterable<OpenCodeChunk> {
     yield* withDriftReport(SCRAPER_NAME, this.readAllSessions(new Date(0)), this.stateDir);
   }
 
-  private async *readAllSessions(since: Date): AsyncIterable<OpenCodeChunk> {
+  private async *readAllSessions(since: Date, recordVersion = false): AsyncIterable<OpenCodeChunk> {
     try {
       const target = await stat(this.opencodeDbPath);
       if (!target.isFile()) {
@@ -143,17 +162,26 @@ export class OpenCodeScraper extends AbstractScraper<OpenCodeChunk> {
       );
     }
 
+    let complete: boolean;
     try {
-      yield* this.readFromDb(db, since);
+      complete = yield* this.readFromDb(db, since);
     } finally {
       db.close();
     }
+
+    // Reached only when the read ran to the end: a scan that throws abandons
+    // the generator before this line, and a database whose tables could not be
+    // queried reports drift and carries on, having re-read nothing.
+    if (recordVersion && complete) {
+      await this.saveScrapedPosition({ scraperVersion: OPENCODE_SCRAPER_VERSION });
+    }
   }
 
+  /** Returns whether the sessions could actually be read. */
   private *readFromDb(
     db: import("better-sqlite3").Database,
     since: Date,
-  ): Iterable<OpenCodeChunk> {
+  ): Generator<OpenCodeChunk, boolean, void> {
     let sessions: SessionRow[];
     try {
       // Columns are looked up rather than assumed: older schemas lack
@@ -178,7 +206,7 @@ export class OpenCodeScraper extends AbstractScraper<OpenCodeChunk> {
         );
       }
       warnDrift(this.opencodeDbPath, `session table query failed: ${message}`);
-      return;
+      return false;
     }
 
     if (this.projectRoot) {
@@ -199,7 +227,7 @@ export class OpenCodeScraper extends AbstractScraper<OpenCodeChunk> {
 
     if (sessions.length === 0) {
       // ACCEPTED_DEGRADATIONS.emptySessions
-      return;
+      return true;
     }
 
     let getMessages: import("better-sqlite3").Statement;
@@ -219,7 +247,7 @@ export class OpenCodeScraper extends AbstractScraper<OpenCodeChunk> {
         this.opencodeDbPath,
         `message/part table prepare failed: ${(err as Error).message}`,
       );
-      return;
+      return false;
     }
 
     for (const session of sessions) {
@@ -407,6 +435,7 @@ export class OpenCodeScraper extends AbstractScraper<OpenCodeChunk> {
         }
       }
     }
+    return true;
   }
 }
 

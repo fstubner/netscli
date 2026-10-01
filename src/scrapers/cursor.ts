@@ -16,6 +16,25 @@ const SCRAPER_NAME = "cursor";
 const STATE_DB_NAME = "state.vscdb";
 
 /**
+ * Bumped when the scraper's output for a conversation it has already read
+ * changes, so that already-indexed rows are corrected rather than kept.
+ *
+ * 1 (absent from state): text bubbles only; every conversation placed by the
+ *    files it recorded; a subagent's prompt indexed as the user's.
+ * 2: tool-call bubbles leave a 'tool' line; conversations are placed by
+ *    `composerHeaders`; a subagent's prompt is role 'tool'.
+ *
+ * The cursor sits past every conversation already read, so without this the
+ * old rows stay as they were until a conversation happens to grow. A stored
+ * version below this resets the cutoff for one scan, which re-reads every
+ * conversation still in the store through the normal path; the index's
+ * re-read prune then replaces the old rows of each. Conversations that have
+ * left the store are not re-read, so their rows keep the old shape: they are
+ * the only copy, which is why this corrects in place instead of rebuilding.
+ */
+export const CURSOR_SCRAPER_VERSION = 2;
+
+/**
  * Shapes the cursor scraper tolerates silently without logging. All other
  * shape surprises warn; missing required tables throw.
  */
@@ -158,15 +177,16 @@ export class CursorScraper extends AbstractScraper<CursorChunk> {
 
   async *scrape(since?: Date): AsyncIterable<CursorChunk> {
     const state = await this.getLastScrapedPosition();
-    const cutoff = since ?? state.lastTimestamp;
-    yield* withDriftReport(SCRAPER_NAME, this.readAllMessages(cutoff), this.stateDir);
+    const outdated = since === undefined && (state.scraperVersion ?? 1) < CURSOR_SCRAPER_VERSION;
+    const cutoff = since ?? (outdated ? new Date(0) : state.lastTimestamp);
+    yield* withDriftReport(SCRAPER_NAME, this.readAllMessages(cutoff, outdated), this.stateDir);
   }
 
   async *fullSync(): AsyncIterable<CursorChunk> {
     yield* withDriftReport(SCRAPER_NAME, this.readAllMessages(new Date(0)), this.stateDir);
   }
 
-  private async *readAllMessages(since: Date): AsyncIterable<CursorChunk> {
+  private async *readAllMessages(since: Date, recordVersion = false): AsyncIterable<CursorChunk> {
     // Dynamic import keeps better-sqlite3 an optional runtime dependency,
     // matching the copilot and opencode scrapers.
     let DatabaseCtor: typeof Database;
@@ -237,6 +257,15 @@ export class CursorScraper extends AbstractScraper<CursorChunk> {
       attribution,
       since,
     );
+
+    // Reached only when the read ran to the end: a scan that throws abandons
+    // the generator before this line, so an interrupted re-read does not mark
+    // itself done. Nor does one that could not open globalStorage, which
+    // reports drift and carries on rather than throwing, but has re-read
+    // nothing.
+    if (recordVersion && globalPath && canOpen(DatabaseCtor, globalPath)) {
+      await this.saveScrapedPosition({ scraperVersion: CURSOR_SCRAPER_VERSION });
+    }
   }
 
   /**
@@ -795,6 +824,15 @@ export class CursorScraper extends AbstractScraper<CursorChunk> {
       }
     }
     return filtered;
+  }
+}
+
+function canOpen(DatabaseCtor: typeof Database, path: string): boolean {
+  try {
+    new DatabaseCtor(path, { readonly: true, fileMustExist: true }).close();
+    return true;
+  } catch {
+    return false;
   }
 }
 
