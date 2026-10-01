@@ -12,6 +12,28 @@ import type { FileCursor } from "../types/scraper.js";
 const SCRAPER_NAME = "claude-code";
 
 /**
+ * Bumped when the scraper's output for a transcript it has already read
+ * changes, so that already-indexed rows are corrected rather than kept.
+ *
+ * 1 (absent from state): `message.role` taken at face value, so tool results
+ *    were indexed as role "user".
+ * 2: tool results and tool-only assistant turns are role "tool"; tool calls
+ *    are rendered; ANSI is stripped.
+ *
+ * Without this, the resume cursor sits past every finished session and the
+ * old rows stay wrong until a transcript happens to grow. A stored version
+ * below this resets the cutoff and the cursors for one scan, which re-reads
+ * every transcript still on disk through the normal path: the rows it writes
+ * carry new ids (the id hashes the role), and the index's re-read prune then
+ * deletes the old rows of each re-read session.
+ *
+ * Sessions whose transcript files are gone are not re-read, so their rows
+ * keep the old roles. They are the only copy of those sessions, which is why
+ * this corrects in place instead of rebuilding the index.
+ */
+export const CLAUDE_CODE_SCRAPER_VERSION = 2;
+
+/**
  * How many cwd-less records to hold while waiting for one that names a
  * project. Real files name one within the first few records; the cap only
  * bounds a pathological file that never does.
@@ -102,8 +124,13 @@ export class ClaudeCodeScraper extends AbstractScraper<ClaudeCodeChunk> {
 
   async *scrape(since?: Date): AsyncIterable<ClaudeCodeChunk> {
     const state = await this.getLastScrapedPosition();
-    const cutoff = since ?? state.lastTimestamp;
-    yield* withDriftReport(SCRAPER_NAME, this.readAllSessions(cutoff, true), this.stateDir);
+    const outdated = (state.scraperVersion ?? 1) < CLAUDE_CODE_SCRAPER_VERSION;
+    const cutoff = since ?? (outdated ? new Date(0) : state.lastTimestamp);
+    yield* withDriftReport(
+      SCRAPER_NAME,
+      this.readAllSessions(cutoff, true, outdated),
+      this.stateDir,
+    );
   }
 
   async *fullSync(): AsyncIterable<ClaudeCodeChunk> {
@@ -138,17 +165,29 @@ export class ClaudeCodeScraper extends AbstractScraper<ClaudeCodeChunk> {
   }
 
   /** See the codex scraper: `fullSync` neither resumes nor records. */
-  private async *readAllSessions(since: Date, resume = false): AsyncIterable<ClaudeCodeChunk> {
-    this.cursors = resume ? ((await this.getLastScrapedPosition()).files ?? {}) : {};
+  private async *readAllSessions(
+    since: Date,
+    resume = false,
+    outdated = false,
+  ): AsyncIterable<ClaudeCodeChunk> {
+    // An outdated state ignores its cursors, so every file is read from the
+    // top. They are overwritten below once this read has finished.
+    this.cursors = resume && !outdated ? ((await this.getLastScrapedPosition()).files ?? {}) : {};
     this.updatedCursors = {};
     this.resuming = resume;
 
     yield* this.readAllSessionsInner(since);
 
-    if (resume && Object.keys(this.updatedCursors).length > 0) {
+    // Reached only when the read ran to the end: a scan that throws abandons
+    // the generator before this line, so an interrupted re-read does not mark
+    // itself done and the next scan starts it again.
+    if (resume && (outdated || Object.keys(this.updatedCursors).length > 0)) {
       // Merged by `saveScrapedPosition`, so this leaves the index's
       // `lastTimestamp` alone.
-      await this.saveScrapedPosition({ files: this.updatedCursors });
+      await this.saveScrapedPosition({
+        files: this.updatedCursors,
+        scraperVersion: CLAUDE_CODE_SCRAPER_VERSION,
+      });
     }
   }
 
