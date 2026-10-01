@@ -24,7 +24,7 @@ Per message:
 
 - the message text, role, timestamp and position
 - a content hash, and the index's own message id
-- these metadata fields and no others: `messageIndex`, `tokenEstimate`, `toolCalls`, `toolName`, `model`, `stepType`, `artifactType`, `artifactName`, `sessionType`, `approvalMode`, `sandboxed`, `layer`, `costUsd`, `gitBranch`, `gitCommit`. A value among them that looks like an absolute path is dropped.
+- these metadata fields and no others: `messageIndex`, `tokenEstimate`, `toolCalls`, `toolName`, `model`, `stepType`, `artifactType`, `artifactName`, `sessionType`, `approvalMode`, `sandboxed`, `layer`, `costUsd`, `gitBranch`, `gitCommit`, `subagent`, `subagentType`. A value among them that looks like an absolute path is dropped.
 
 Per upload:
 
@@ -33,7 +33,7 @@ Per upload:
 - this device's id (random, made at login) and its name, which is a random label like `device-3f9a1c` unless you set one
 - the client version (`X-Xtctx-Client: xtctx/<version>`)
 
-**Not uploaded:** the absolute path of the project or of any transcript file (the index's `source_pointer`, Antigravity's `sourcePath`), `referencedFiles`, your hostname, and any metadata field not listed above.
+**Not uploaded:** the absolute path of the project or of any transcript file (the index's `source_pointer`, Antigravity's `sourcePath`), `referencedFiles`, Copilot CLI's `parentToolCallId`, your hostname, and any metadata field not listed above.
 
 **Message text is uploaded as written**, and it can contain anything your agents saw or printed: file paths, command output, a secret pasted into a chat. Opt in only projects whose transcripts you would put on that server. A message over 64 KB is cut to 64 KB and ends with a `[xtctx: truncated for upload ...]` marker.
 

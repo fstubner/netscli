@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { isAbsolute, join, relative, resolve } from "node:path";
 import { inspectManagedFile, pathExists } from "../config/setup.js";
 import { inspectMcpWiring, type McpWiringState } from "../config/mcp-config.js";
+import { readClaudeHookPin } from "../config/claude-settings.js";
 import { inspectSkillStatus } from "../config/skills.js";
 import { createProjectServices, type ProjectServices } from "../runtime/services.js";
 import {
@@ -13,6 +14,7 @@ import { readDriftLog, type DriftLogFile } from "../scrapers/drift-log.js";
 import { SUPPORTED_TOOLS } from "../tools/sources.js";
 import { readXtctxPackage } from "../utils/package-info.js";
 import { describeCloudSync } from "../sync/report.js";
+import { ENABLE_SEMANTIC_HINT } from "../handoff/embedding-runtime.js";
 
 interface StatusOptions {
   projectPath?: string;
@@ -113,17 +115,56 @@ export async function renderStatusBlock(
   }
   lines.push(`Index    ${show(services.dbPath)}`);
   lines.push(`MCP      ${describeMcpCommand(mcpWiring)}`);
+  if (configPresent) {
+    const pin = describePin(
+      [...mcpWiring.map((entry) => pinFromCommand(entry.command)), await readClaudeHookPin(services.projectRoot)],
+      version,
+    );
+    if (pin) lines.push(`Pinned   ${pin}`);
+  }
   const scanTook = formatDuration(status.last_scan_ms);
   lines.push(
     `Scan     ${status.last_scan_at ?? "never"}${scanTook ? ` (took ${scanTook})` : ""}`,
   );
-  if (status.embedding_error) {
+  // Which way search is answered, always. Off is the default of a fresh install
+  // and is not a fault, so it is stated once, with the way to turn it on, and
+  // none of the backlog lines below appear for it.
+  const semanticOff = status.semantic_search === "off";
+  if (semanticOff) {
+    lines.push(
+      status.semantic_off_reason === "disabled_by_env"
+        ? "Search   keyword only (XTCTX_DISABLE_EMBEDDINGS=1 is set)"
+        : `Search   keyword only. Semantic search is optional: ${ENABLE_SEMANTIC_HINT}`,
+    );
+    if (status.vectorized_units > 0) {
+      // An index that had vectors before the add-on was split out. They are not
+      // deleted, and they work again the moment the model is back.
+      lines.push(
+        `         ${status.vectorized_units} windows already have vectors; they are kept and used again once semantic search is on`,
+      );
+    }
+  } else if (status.embedding_error) {
     lines.push(`Search   semantic unavailable (keyword only): ${status.embedding_error}`);
+  } else {
+    lines.push(
+      status.semantic_search === "remote"
+        ? "Search   keyword + semantic (external endpoint)"
+        : "Search   keyword + semantic (local model)",
+    );
   }
   lines.push(
     `Data     ${status.sessions} sessions, ${status.messages} messages, ` +
-      `${status.retrieval_units} retrieval windows, ${status.vectorized_units} vectorized`,
+      `${status.retrieval_units} retrieval windows${semanticOff ? "" : `, ${status.vectorized_units} vectorized`}`,
   );
+  // The index is the only copy of these, and nothing else in this report
+  // says so: deleting `.xtctx/state`, or losing the disk, loses them.
+  if (status.index_only_sessions > 0) {
+    const count = status.index_only_sessions;
+    lines.push(
+      `Backup   ${count} session${count === 1 ? " exists" : "s exist"} only in this index; ` +
+        `back ${count === 1 ? "it" : "them"} up with \`xtctx export\``,
+    );
+  }
   // A backlog is only meaningful as a duration: "1762 windows left" says
   // nothing until it says "about 30 seconds".
   const backlog = estimateVectorBacklog(
@@ -422,6 +463,33 @@ export function describeMcpCommand(wiring: McpWiringState[]): string {
     return "nothing wired (run xtctx setup)";
   }
   return "varies by tool - see MCP wiring below";
+}
+
+/** `1.2.3` out of `npx -y xtctx@1.2.3`, or null for an unpinned or non-npx command. */
+function pinFromCommand(command: string | undefined): string | null {
+  const match = command ? /(?:^|[\s/])xtctx@(\S+)/.exec(command) : null;
+  return match ? match[1] : null;
+}
+
+/**
+ * Which version the generated commands are pinned to, and whether that is the
+ * version running now. Null when nothing is pinned (a self-hosted checkout, or
+ * a project set up before pinning), where there is nothing to report.
+ *
+ * Setup pins the MCP entries and the Claude Code hook to the version that ran
+ * it, so they stay on that version until setup runs again. Saying so, and what
+ * to run, is the whole point: otherwise a pin is an old version nobody chose.
+ */
+function describePin(pins: Array<string | null>, running: string): string | null {
+  const found = [...new Set(pins.filter((pin): pin is string => pin !== null))];
+  if (found.length === 0) return null;
+  if (found.length === 1 && found[0] === running) {
+    return `xtctx@${running} (matches the running version)`;
+  }
+  return (
+    `${found.map((pin) => `xtctx@${pin}`).join(", ")} but running ${running} - ` +
+    "run `xtctx setup --yes` to update"
+  );
 }
 
 function plural(count: number, noun: string): string {

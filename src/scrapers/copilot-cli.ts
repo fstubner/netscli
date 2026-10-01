@@ -6,17 +6,39 @@ import {
   AbstractScraper,
   describeType,
   driftWarner,
+  emittedPosition,
   estimateTokens,
   fileSize,
   isRecord,
   toDate,
 } from "./base.js";
 import { withDriftReport } from "./drift-log.js";
-import { fileHeadHash, resumeOffset } from "./base.js";
+import { fileHeadHash, fileTailHash, resumeOffset } from "./base.js";
 import { readJsonlLines } from "./jsonl-reader.js";
-import type { FileCursor } from "../types/scraper.js";
+import type { EmittedPosition, FileCursor } from "../types/scraper.js";
 
 const SCRAPER_NAME = "copilot-cli";
+
+/**
+ * Bumped when the scraper's output for a session it has already read changes,
+ * so that already-indexed rows are corrected rather than kept. Same mechanism
+ * as `CLAUDE_CODE_SCRAPER_VERSION`.
+ *
+ * 1 (absent from state): subagent output indexed as ordinary assistant turns,
+ *    the CLI's own system prompt indexed as a turn, tool executions dropped.
+ * 2: subagent output is role "tool" with `subagent` metadata, `system.message`
+ *    is skipped, and each tool execution is a one-line "tool" chunk.
+ *
+ * A stored version below this ignores the cursors for one scan, which
+ * re-reads every session still on disk through the normal path: the rows
+ * it writes carry new ids (the id hashes role, index and content) and the
+ * index's re-read prune then deletes the old rows of each re-read session.
+ * Sessions whose files are gone keep their old rows, being the only copy.
+ */
+export const COPILOT_CLI_SCRAPER_VERSION = 2;
+
+/** Longest tool line kept; a command or pattern can be arbitrarily long. */
+const MAX_TOOL_LINE = 200;
 
 /**
  * Mutation shapes the copilot-cli scraper tolerates silently. Anything
@@ -29,8 +51,8 @@ export const ACCEPTED_DEGRADATIONS = {
   missingEventsJsonl: "session directory has no events.jsonl",
   /** Blank line in events.jsonl. */
   blankJsonlLine: "blank line in events.jsonl",
-  /** Event with no extractable role — many event types (status, tool_call,
-   *  subagent meta, etc.) legitimately have no role. */
+  /** Event with no extractable role — many event types (status, turn
+   *  boundaries, subagent meta, etc.) legitimately have no role. */
   noRole: "event has no role — non-conversation event",
   /** Event with no extractable text content. */
   noContent: "event has role but no text content",
@@ -49,21 +71,21 @@ const ROLE_MAP: Record<string, CopilotCliChunk["role"]> = {
 
 /**
  * Current Copilot CLI writes typed events ("user.message",
- * "assistant.message", "system.message") whose payload lives under `data`.
- * The event type itself carries the role.
+ * "assistant.message") whose payload lives under `data`. The event type itself
+ * carries the role. "system.message" is the CLI's own system prompt and is
+ * skipped rather than mapped.
  */
 const EVENT_TYPE_ROLE_MAP: Record<string, CopilotCliChunk["role"]> = {
   "user.message": "user",
   "assistant.message": "assistant",
-  "system.message": "system",
 };
 
 /**
  * Event types that carry a `data.content` payload but are not conversation.
  *
  * `data.content` is otherwise a reliable sign that a record holds a turn — of
- * the sixteen types a real store emits, only the three routed above and this
- * one carry it. Listing it is what lets an unrecognised type carrying that
+ * the sixteen types a real store emits, only the two routed above, the system
+ * prompt (skipped in the read loop) and this one carry it. Listing it is what lets an unrecognised type carrying that
  * payload be reported as drift without warning on every scan for something
  * deliberately skipped.
  */
@@ -100,10 +122,29 @@ export class CopilotCliScraper extends AbstractScraper<CopilotCliChunk> {
     return [this.sessionStateDir];
   }
 
+  /**
+   * Everything after each file's byte cursor, with no timestamp cutoff unless
+   * one is passed.
+   *
+   * This used to default to the index's saved `lastTimestamp`. For an
+   * append-only file the cursor already says exactly what is new, and the
+   * timestamp only second-guessed it, wrongly in both directions it could:
+   * a line appended with an earlier stamp than the newest one indexed was
+   * skipped while the cursor moved past it, so no scan ever read it again;
+   * and a file re-read from the top because it was rewritten had every
+   * rewritten turn filtered out as old, so the index kept the text it had
+   * replaced. A file with no usable cursor is read whole and its rows are
+   * upserted by deterministic id, so the cost of not filtering is a re-read.
+   */
   async *scrape(since?: Date): AsyncIterable<CopilotCliChunk> {
     const state = await this.getLastScrapedPosition();
-    const cutoff = since ?? state.lastTimestamp;
-    yield* withDriftReport(SCRAPER_NAME, this.readAllSessions(cutoff, true), this.stateDir);
+    const outdated = (state.scraperVersion ?? 1) < COPILOT_CLI_SCRAPER_VERSION;
+    const cutoff = since ?? new Date(0);
+    yield* withDriftReport(
+      SCRAPER_NAME,
+      this.readAllSessions(cutoff, true, outdated),
+      this.stateDir,
+    );
   }
 
   async *fullSync(): AsyncIterable<CopilotCliChunk> {
@@ -111,15 +152,27 @@ export class CopilotCliScraper extends AbstractScraper<CopilotCliChunk> {
   }
 
   /** See the codex scraper: `fullSync` neither resumes nor records. */
-  private async *readAllSessions(since: Date, resume = false): AsyncIterable<CopilotCliChunk> {
-    this.cursors = resume ? ((await this.getLastScrapedPosition()).files ?? {}) : {};
+  private async *readAllSessions(
+    since: Date,
+    resume = false,
+    outdated = false,
+  ): AsyncIterable<CopilotCliChunk> {
+    // An outdated state ignores its cursors, so every file is read from the
+    // top. They are overwritten below once this read has finished.
+    this.cursors = resume && !outdated ? ((await this.getLastScrapedPosition()).files ?? {}) : {};
     this.updatedCursors = {};
     this.resuming = resume;
 
     yield* this.readAllSessionsInner(since);
 
-    if (resume && Object.keys(this.updatedCursors).length > 0) {
-      await this.saveScrapedPosition({ files: this.updatedCursors });
+    // Reached only when the read ran to the end: a scan that throws abandons
+    // the generator before this line, so an interrupted re-read does not mark
+    // itself done and the next scan starts it again.
+    if (resume && (outdated || Object.keys(this.updatedCursors).length > 0)) {
+      await this.saveScrapedPosition({
+        files: this.updatedCursors,
+        scraperVersion: COPILOT_CLI_SCRAPER_VERSION,
+      });
     }
   }
 
@@ -167,10 +220,14 @@ export class CopilotCliScraper extends AbstractScraper<CopilotCliChunk> {
   ): AsyncIterable<CopilotCliChunk> {
     // Resume where the last scan stopped; see the codex scraper for the guards.
     const size = await fileSize(filePath);
-    const cursor = this.cursors[filePath];
+    const saved = this.cursors[filePath];
+    const cursor = saved && this.cursorBackedByIndex(saved) ? saved : undefined;
     const checkHash =
       this.resuming && cursor ? await fileHeadHash(filePath, cursor.offset) : null;
-    const startAt = size === null ? 0 : resumeOffset(cursor, size, checkHash ?? undefined);
+    const checkTail =
+      this.resuming && cursor ? await fileTailHash(filePath, cursor.offset) : null;
+    const startAt =
+      size === null ? 0 : resumeOffset(cursor, size, checkHash ?? undefined, checkTail ?? undefined);
     if (size !== null && startAt > 0 && startAt >= size) {
       return;
     }
@@ -193,6 +250,8 @@ export class CopilotCliScraper extends AbstractScraper<CopilotCliChunk> {
     let gitBranch: string | undefined = resumed?.gitBranch;
     let gitCommit: string | undefined = resumed?.gitCommit;
     let readTo = startAt;
+    /** The last chunk handed out for this file; see `FileCursor.lastEmitted`. */
+    let lastEmitted: EmittedPosition | null | undefined = resumed ? cursor?.lastEmitted : null;
 
     for await (const entry of readJsonlLines(filePath, { start: startAt })) {
       byteAt = entry.endOffset;
@@ -245,8 +304,30 @@ export class CopilotCliScraper extends AbstractScraper<CopilotCliChunk> {
         continue;
       }
 
-      const role = extractRole(event);
-      const content = extractContent(event);
+      // The CLI's own system prompt: instructions to the model, not anything
+      // the user or the assistant said.
+      if (event.type === "system.message") {
+        continue;
+      }
+
+      // A tool execution has no text of its own; it is recorded as one line.
+      // Handled ahead of the role check so that it goes through the same
+      // project-scope guard and timestamp cutoff as every other record.
+      const toolText =
+        event.type === "tool.execution_start" ? describeToolExecution(event) : undefined;
+      const parentToolCallId =
+        isRecord(event.data) && typeof event.data.parentToolCallId === "string"
+          ? event.data.parentToolCallId
+          : undefined;
+
+      let role = toolText ? "tool" : extractRole(event);
+      const content = toolText ?? extractContent(event);
+      // Output carrying a `parentToolCallId` came from a subagent the main
+      // assistant launched. Presented as an assistant turn it reads as the main
+      // assistant speaking, so it is filed as tool output.
+      if (parentToolCallId && role === "assistant") {
+        role = "tool";
+      }
 
       if (!role) {
         // If the event looks like a conversation message (has extractable
@@ -349,7 +430,7 @@ export class CopilotCliScraper extends AbstractScraper<CopilotCliChunk> {
 
       const eventType = typeof event.type === "string" ? event.type : undefined;
 
-      yield {
+      const chunk: CopilotCliChunk = {
         tool: "copilot-cli",
         sessionId,
         timestamp,
@@ -362,8 +443,11 @@ export class CopilotCliScraper extends AbstractScraper<CopilotCliChunk> {
           eventType,
           gitBranch,
           gitCommit,
+          ...(parentToolCallId ? { subagent: true, parentToolCallId } : {}),
         },
       };
+      yield chunk;
+      lastEmitted = emittedPosition(chunk) ?? lastEmitted;
       messageIndex++;
     }
 
@@ -371,10 +455,12 @@ export class CopilotCliScraper extends AbstractScraper<CopilotCliChunk> {
     // records a position past what it delivered.
     if (this.resuming && size !== null) {
       const headHash = await fileHeadHash(filePath, readTo);
+      const tailHash = await fileTailHash(filePath, readTo);
       this.updatedCursors[filePath] = {
         offset: readTo,
         size,
         ...(headHash ? { headHash } : {}),
+        ...(tailHash ? { tailHash } : {}),
         context: {
           sessionId,
           messageIndex,
@@ -391,6 +477,7 @@ export class CopilotCliScraper extends AbstractScraper<CopilotCliChunk> {
           gitBranch,
           gitCommit,
         },
+        ...(lastEmitted === undefined ? {} : { lastEmitted }),
       };
     }
   }
@@ -422,6 +509,27 @@ function extractRole(event: Record<string, unknown>): CopilotCliChunk["role"] | 
   }
 
   return null;
+}
+
+/**
+ * `ran <tool>: <target>` for a `tool.execution_start` event, or nothing when it
+ * names no tool. The target is the first argument that says what the tool
+ * acted on; arguments are never dumped whole, since an edit's would carry the
+ * file's contents.
+ */
+function describeToolExecution(event: Record<string, unknown>): string | undefined {
+  const data = event.data;
+  if (!isRecord(data) || typeof data.toolName !== "string" || !data.toolName) return undefined;
+
+  const args = isRecord(data.arguments) ? data.arguments : {};
+  const target = ["path", "paths", "command", "pattern", "query", "description", "name"]
+    .map((key) => args[key])
+    .find((value): value is string => typeof value === "string" && value.trim().length > 0);
+
+  const line = target
+    ? `ran ${data.toolName}: ${target.replace(/\s+/g, " ").trim()}`
+    : `ran ${data.toolName}`;
+  return line.length > MAX_TOOL_LINE ? `${line.slice(0, MAX_TOOL_LINE - 1)}…` : line;
 }
 
 function sessionStartMatchesProject(

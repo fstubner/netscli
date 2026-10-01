@@ -3,6 +3,7 @@ import type { ConversationScraper } from "../types/scraper.js";
 import { PROJECT_ROOT_SQL, countWhere } from "./queries.js";
 import { getSetting } from "./schema.js";
 import { safeDetect } from "./scan.js";
+import type { SemanticOffReason } from "./embeddings.js";
 import type { HandoffStatus, IndexProgress } from "./types.js";
 import { countUnvectorizedSegments } from "./vectors.js";
 
@@ -20,7 +21,7 @@ interface StatusToolRuntime {
 
 interface StatusInputs {
   db: DatabaseHandle;
-  /** Canonical and normalized; see `canonicalRoot` in sqlite-index. */
+  /** Canonical and normalized; see `canonicalRoot` in queries. */
   scopedRoot: string;
   /**
    * The root as given, not `scopedRoot`. That one is lowercased and
@@ -34,6 +35,8 @@ interface StatusInputs {
   vectorModel: string;
   /** Execution provider the indexer will load on; see HandoffStatus. */
   vectorDevice: string | null;
+  /** Why semantic search is off, or null when it is on. */
+  semanticOff: SemanticOffReason | null;
 }
 
 /**
@@ -68,7 +71,7 @@ function indexedByTool(db: DatabaseHandle, scopedRoot: string): Map<string, Tool
 
 /** Everything `getStatus` reports, given an already-refreshed database. */
 export async function buildStatus(inputs: StatusInputs): Promise<HandoffStatus> {
-  const { db, scopedRoot, projectRoot, dbPath, tools, redirectedTools, vectorModel, vectorDevice } = inputs;
+  const { db, scopedRoot, projectRoot, dbPath, tools, redirectedTools, vectorModel, vectorDevice, semanticOff } = inputs;
   // Scoped like the read paths. Unscoped counts disagreed with what the
   // retrieval tools return, and a status saying "3 sessions" for a project
   // whose searches return one is the report that makes a scoping bug look
@@ -114,14 +117,57 @@ export async function buildStatus(inputs: StatusInputs): Promise<HandoffStatus> 
     retrieval_units: retrievalUnitCount,
     vectorized_units: vectorizedUnitCount,
     vector_ms_per_unit: numericSetting(db, "vector_ms_per_unit"),
-    vector_segment_backlog: countUnvectorizedSegments(db, vectorModel, scopedRoot),
+    // Nothing is outstanding when nothing will be built; counting against the
+    // placeholder model identity would report every window as a backlog.
+    vector_segment_backlog: semanticOff ? 0 : countUnvectorizedSegments(db, vectorModel, scopedRoot),
     vector_ms_per_segment: numericSetting(db, "vector_ms_per_segment"),
     vector_model: vectorModel,
     vector_device: vectorDevice,
+    // A remote endpoint's identity is `openai:<url>`; see `vector_model`.
+    semantic_search: semanticOff ? "off" : vectorModel.startsWith("openai:") ? "remote" : "local",
+    semantic_off_reason: semanticOff,
     embedding_error: getSetting(db, "last_error:embeddings"),
     redirected_tools: redirectedTools,
+    index_only_sessions: await countIndexOnlySessions(db, scopedRoot, tools),
     tools: toolStatuses,
   };
+}
+
+/**
+ * This project's sessions whose transcript its tool no longer has.
+ *
+ * A directory listing per tool that can give one, compared against the
+ * session ids indexed for that tool. A tool whose scraper cannot list its
+ * store, or whose listing fails, adds nothing: status saying "these exist
+ * only here" must be a fact, and an unreadable store is not evidence that a
+ * transcript is gone.
+ */
+async function countIndexOnlySessions(
+  db: DatabaseHandle,
+  scopedRoot: string,
+  tools: StatusToolRuntime[],
+): Promise<number> {
+  let count = 0;
+  for (const { tool, scraper } of tools) {
+    if (!scraper.listSessionIds) {
+      continue;
+    }
+    let onDisk: Set<string> | null;
+    try {
+      onDisk = await scraper.listSessionIds();
+    } catch {
+      onDisk = null;
+    }
+    if (onDisk === null) {
+      continue;
+    }
+    const indexed = db
+      .prepare(`SELECT source_session_id FROM sessions WHERE tool = ? AND ${PROJECT_ROOT_SQL} = ?`)
+      .pluck()
+      .all(tool, scopedRoot) as string[];
+    count += indexed.filter((id) => !onDisk.has(id)).length;
+  }
+  return count;
 }
 
 interface ProgressInputs {

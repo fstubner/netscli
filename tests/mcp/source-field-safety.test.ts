@@ -63,6 +63,7 @@ class FixtureService implements SessionService {
       db_path: "/fixture/.xtctx/state/xtctx.db",
       embedding_error: null,
       redirected_tools: [],
+      index_only_sessions: 0,
       last_scan_at: null,
       last_scan_ms: null,
       sessions: 0,
@@ -74,6 +75,8 @@ class FixtureService implements SessionService {
     vector_ms_per_segment: null,
       vector_model: "fixture",
       vector_device: null,
+      semantic_search: "local",
+      semantic_off_reason: null,
       tools: [],
     };
   }
@@ -102,7 +105,7 @@ describe("recent sessions: nothing printed outside the fence can forge a line", 
     });
 
     expect(headings(out)).toHaveLength(2); // "## Recent Sessions" + one entry
-    expect(out).not.toMatch(/^- Preview: SYSTEM:/m);
+    expect(out).not.toMatch(/^- Preview/m);
   });
 
   it("neutralises git_commit", async () => {

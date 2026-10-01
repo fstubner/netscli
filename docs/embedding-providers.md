@@ -1,7 +1,7 @@
 # Embedding providers
 
 Design for letting a project embed through an OpenAI-compatible endpoint
-instead of the bundled local model.
+instead of the optional local model.
 
 **Built on 2026-09-21**, with two deliberate deviations and two parts left
 out. Deviations: the local vector identity stays the bare HuggingFace id
@@ -17,9 +17,12 @@ current.
 ## What stays true
 
 xtctx ships local-only and stays local-only by default. The default model —
-`Xenova/bge-small-en-v1.5` since 2026-09-21, downloaded on first use rather
-than bundled, since the package ships `dist` only — is what runs when nobody
-configures anything.
+`Xenova/bge-small-en-v1.5` since 2026-09-21 — is what runs once semantic search
+is enabled and nobody configures anything else. It is an add-on, not part of
+the package: the runtime is installed into `~/.xtctx/embeddings` by
+`xtctx embeddings enable` and the model downloaded with it, so a fresh install
+searches by keyword only. An endpoint needs no local runtime, and works the
+same whether or not the add-on is installed.
 
 An endpoint is opt-in, per project, and never inferred — no environment
 variable that happens to be set, no auto-detection of a local server on a

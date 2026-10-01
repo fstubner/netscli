@@ -113,6 +113,25 @@ describe("Golden snapshots", () => {
           content: "snapshot answer one",
           timestamp: "2026-02-24T10:00:05Z",
         }),
+        // The real shape: a tool call, and its result written back as a
+        // "user" record. The snapshot pins the result as role "tool"; a
+        // regression to message.role would turn it into a user turn.
+        JSON.stringify({
+          type: "assistant",
+          message: {
+            role: "assistant",
+            content: [{ type: "tool_use", id: "tu1", name: "Bash", input: { command: "npm test" } }],
+          },
+          timestamp: "2026-02-24T10:00:30Z",
+        }),
+        JSON.stringify({
+          type: "user",
+          message: {
+            role: "user",
+            content: [{ type: "tool_result", tool_use_id: "tu1", content: "all tests passed" }],
+          },
+          timestamp: "2026-02-24T10:00:40Z",
+        }),
         JSON.stringify({
           type: "human",
           content: "snapshot question two",
@@ -123,6 +142,17 @@ describe("Golden snapshots", () => {
 
     const scraper = new ClaudeCodeScraper(tempDir, stateDir);
     const chunks = await collectChunks(scraper);
+    // Role shape, independent of the snapshot file (which a blanket
+    // XTCTX_UPDATE_SNAPSHOTS=1 would rewrite): tool output must never read as
+    // a user turn.
+    expect(chunks.filter((c) => c.role === "user").map((c) => c.content)).toEqual([
+      "snapshot question one",
+      "snapshot question two",
+    ]);
+    expect(chunks.filter((c) => c.role === "tool").map((c) => c.content)).toEqual([
+      "ran Bash: npm test",
+      "all tests passed",
+    ]);
     await assertSnapshot("claude-code", normalise(chunks));
   });
 

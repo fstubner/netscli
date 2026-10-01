@@ -160,6 +160,17 @@ describe("diff sync", () => {
     expect(cloud.uploads()[0].body.device.name).toBe("device-abc123");
   });
 
+  it("sends the subagent markers the scrapers add, and not Copilot CLI's parent tool-call id", async () => {
+    await optedIn();
+    seedIndex(box.project, 1, {
+      metadata: { messageIndex: 0, subagent: true, subagentType: "explore", parentToolCallId: "call_8f2a" },
+    });
+
+    await runDiffSync({ projectDir: box.project });
+
+    expect(JSON.parse(cloud.stored()[0].metadataJson)).toEqual({ messageIndex: 0, subagent: true, subagentType: "explore" });
+  });
+
   it("truncates a message over the server's limit, with a marker", async () => {
     await optedIn();
     seedIndex(box.project, 1, { content: () => "x".repeat(UPLOAD_LIMITS.maxMessageBytes * 2) });

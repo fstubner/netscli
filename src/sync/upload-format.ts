@@ -20,6 +20,12 @@ export const UPLOAD_LIMITS = {
  * `sourcePath` (an absolute transcript or working-directory path),
  * `referencedFiles` (paths), and anything a scraper adds later until it is
  * looked at and listed here.
+ *
+ * Looked at and decided: `subagent` (a flag) and `subagentType` (the kind of
+ * subagent Cursor names, such as "explore") are sent, so a reader of the
+ * cloud copy can tell a subagent's turns from the main agent's, as the local
+ * index can. `parentToolCallId` (Copilot CLI) is not: it is an id into the
+ * tool's own records, which the cloud does not have, so it says nothing there.
  */
 const UPLOADED_METADATA_KEYS = [
   "messageIndex",
@@ -37,6 +43,8 @@ const UPLOADED_METADATA_KEYS = [
   "costUsd",
   "gitBranch",
   "gitCommit",
+  "subagent",
+  "subagentType",
 ] as const;
 
 export const UPLOADED_METADATA_FIELDS: readonly string[] = UPLOADED_METADATA_KEYS;

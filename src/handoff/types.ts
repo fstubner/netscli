@@ -23,6 +23,12 @@ export interface SessionMessage {
   role: "user" | "assistant" | "system" | "tool";
   content: string;
   source_pointer?: string;
+  /**
+   * 0-based position in the session's message order — the same number
+   * `offset` counts from the start, so a caller who has read the end can
+   * ask for the page before it.
+   */
+  position?: number;
 }
 
 export interface HandoffStatus {
@@ -63,6 +69,17 @@ export interface HandoffStatus {
   vector_ms_per_segment: number | null;
   vector_model: string;
   /**
+   * How semantic search is answered here.
+   *
+   * `off` is the default for a fresh install: the local model is an add-on
+   * (`xtctx embeddings enable`), and until it is installed every search is
+   * keyword-only, by design rather than by failure. `remote` is an
+   * OpenAI-compatible endpoint, which needs no local runtime.
+   */
+  semantic_search: "local" | "remote" | "off";
+  /** Why `semantic_search` is off, or null when it is not. */
+  semantic_off_reason: "not_enabled" | "disabled_by_env" | null;
+  /**
    * ONNX execution provider embedding actually runs on, or null when this
    * machine has not been calibrated and is therefore on the CPU default.
    *
@@ -85,6 +102,16 @@ export interface HandoffStatus {
    * surfaces.
    */
   redirected_tools: string[];
+  /**
+   * This project's sessions whose transcript is no longer where its tool
+   * keeps them, so the index holds the only copy and deleting it loses them.
+   *
+   * Counted only for tools whose scraper can list the sessions on disk
+   * (`ConversationScraper.listSessionIds`) — Claude Code, which deletes
+   * transcripts after 30 days by default. A tool that cannot say contributes
+   * nothing rather than a guess, so this is a floor, never an overcount.
+   */
+  index_only_sessions: number;
   tools: Array<{
     tool: string;
     detected: boolean;
@@ -103,7 +130,16 @@ export interface SessionService {
     branchFilter?: string[],
   ): Promise<SessionSummary[]>;
   getSessionByRef(sessionRef: string): Promise<SessionSummary | null>;
-  getSessionDetail(sessionRef: string, offset: number, limit: number): Promise<SessionMessage[]>;
+  /**
+   * `fromEnd` counts `offset` back from the newest message instead of
+   * forward from the oldest; either way the page comes back oldest-first.
+   */
+  getSessionDetail(
+    sessionRef: string,
+    offset: number,
+    limit: number,
+    fromEnd?: boolean,
+  ): Promise<SessionMessage[]>;
   searchSessions(
     query: string,
     limit: number,
@@ -157,6 +193,19 @@ export interface SessionService {
    */
   embedBacklog?(onProgress?: (embedded: number, total: number) => void): Promise<number>;
   /**
+   * Write this project's sessions and messages as an export file, a line at a
+   * time; see `export-file.ts` for the format. Reads the index as it stands,
+   * without scanning, and never touches a transcript.
+   *
+   * Optional because only `xtctx export` needs it, like `embedBacklog`.
+   */
+  exportSessions?(
+    writeLine: (line: string) => Promise<void>,
+    options?: { xtctxVersion?: string },
+  ): Promise<ExportSummary>;
+  /** Merge an export file's lines into this project's index; see `exportSessions`. */
+  importSessions?(lines: AsyncIterable<string>): Promise<ImportSummary>;
+  /**
    * Make the embedding model's first load wait for this device.
    *
    * For calibration running alongside the index: whichever caller asks for the
@@ -164,6 +213,31 @@ export interface SessionService {
    * measured the device is the one that uses it.
    */
   deferEmbeddingDeviceUntil?(device: Promise<string | undefined>): void;
+}
+
+export interface ExportSummary {
+  sessions: number;
+  messages: number;
+}
+
+export interface ImportSummary {
+  /** Session lines read from the file, valid or not. */
+  sessionsInFile: number;
+  /** Sessions the index did not have. */
+  sessionsAdded: number;
+  /** Sessions it had, which gained messages from the file. */
+  sessionsUpdated: number;
+  /** Sessions it already held in full. */
+  sessionsUnchanged: number;
+  messagesAdded: number;
+  /** Lines skipped because they were not a whole, valid line, and why. */
+  invalidLines: Array<{ line: number; reason: string }>;
+  /**
+   * The file ended with its end line, and that line's session count matched.
+   * False means it was cut short: what it held was imported, and nothing
+   * after the cut can have been.
+   */
+  complete: boolean;
 }
 
 export interface IndexProgress {

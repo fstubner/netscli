@@ -3,6 +3,7 @@ import { readdir, readFile, rm, stat, mkdir } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 import { writeFileAtomic } from "../utils/atomic-file.js";
 import { parse as parseYaml } from "yaml";
+import { stripMarkers } from "./managed-block.js";
 import { SUPPORTED_TOOLS, type SkillSyncMode, type ToolId } from "../tools/sources.js";
 
 export const BUILT_IN_SKILL_ID = "xtctx-handoff";
@@ -352,17 +353,13 @@ function isUserAuthoredTarget(
 }
 
 export function renderSyncedSkillsBlock(selected: SkillSelection[]): string[] {
-  if (selected.length === 0) {
-    return [];
-  }
-
-  return [
-    "## Synced Skills",
-    "- Canonical project skills live in `.xtctx/skills`.",
-    "- If a task matches a synced skill, read that skill file before following it.",
-    ...selected.map((skill) => `- ${skill.id}: \`.xtctx/skills/${skill.id}/SKILL.md\``),
-    "",
-  ];
+  // The id is a directory name chosen by whoever authored the skill, and removal
+  // keys on the literal marker strings, so one that contains a marker would end
+  // the block early. Stripped for that reason; see `stripMarkers`.
+  return selected.map(
+    (skill) =>
+      `Skill: \`.xtctx/skills/${stripMarkers(skill.id)}/SKILL.md\` — read it when a task matches.`,
+  );
 }
 
 function resolveSelectedSkillIds(existing: ExistingSkillConfig, explicit?: string[]): string[] {

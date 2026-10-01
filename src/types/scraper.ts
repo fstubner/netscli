@@ -72,9 +72,38 @@ export interface FileCursor {
    * garbage. An append never changes the head; a rewrite almost always does.
    */
   headHash?: string;
+  /**
+   * Hash of the bytes just before the offset, for a rewrite past the head;
+   * see `fileTailHash`. Absent on short files, where the head covers it all.
+   */
+  tailHash?: string;
   /** Absent means resume is unsafe, so the file is read from the start. */
   context?: FileCursorContext;
+  /**
+   * The last chunk this file has yielded, across every read that led to this
+   * cursor; null when it has yielded none.
+   *
+   * What lets the index check the cursor against what it actually holds. A
+   * cursor at the end of a file says "everything before here is indexed",
+   * and when that stops being true — rows lost to the concurrent prune this
+   * field was added for, an index restored from a copy — nothing else ever
+   * reads those lines again. Absent on cursors written before it existed,
+   * which the check therefore cannot vouch for; see `useIndexProbe`.
+   */
+  lastEmitted?: EmittedPosition | null;
 }
+
+/** A chunk's place in its session: the two parts of its row the index can look up. */
+export interface EmittedPosition {
+  sessionId: string;
+  messageIndex: number;
+}
+
+/**
+ * Whether the index holds a row for this session at this position. Handed to
+ * a scraper by the scan; see `ConversationScraper.useIndexProbe`.
+ */
+export type IndexProbe = (sessionId: string, messageIndex: number) => boolean;
 
 export interface ScraperState {
   lastTimestamp: Date;
@@ -89,6 +118,14 @@ export interface ScraperState {
    * full re-read, never correctness.
    */
   files?: Record<string, FileCursor>;
+  /**
+   * The version of the scraper's output that produced the rows already
+   * indexed. Absent means the first version. A scraper whose output changed
+   * for transcripts it has already read bumps its own constant, and a stored
+   * value below it makes the next scan read everything again; see the
+   * claude-code scraper.
+   */
+  scraperVersion?: number;
 }
 
 export interface ConversationScraper<
@@ -101,6 +138,23 @@ export interface ConversationScraper<
   fullSync(): AsyncIterable<T>;
   getLastScrapedPosition(): Promise<ScraperState>;
   saveScrapedPosition(state: ScraperState): Promise<void>;
+  /**
+   * Optional. Lets a scraper that keeps per-file resume cursors check each one
+   * against the index before trusting it: a cursor whose last yielded chunk is
+   * not in the index is refused, and the file is read again from the start.
+   * The scan installs a probe before scraping and removes it afterwards.
+   */
+  useIndexProbe?(probe: IndexProbe | undefined): void;
+  /**
+   * The ids (`ConversationChunk.sessionId`) of every session whose transcript
+   * is in the store now, without reading any of them; null when the store
+   * cannot be listed.
+   *
+   * Optional, for stores where that is a directory listing. `xtctx status`
+   * uses it to count sessions the index holds the only copy of; a scraper
+   * without it is left out of that count rather than guessed at.
+   */
+  listSessionIds?(): Promise<Set<string> | null>;
 }
 
 export interface ClaudeCodeChunk extends ConversationChunk {
@@ -120,6 +174,12 @@ export interface CursorChunk extends ConversationChunk {
     model: string;
     tabContext?: string[];
     codebaseSearchResults?: number;
+    /**
+     * Set on a conversation a parent agent started, whose first "user" turn
+     * is that agent's prompt rather than anything the person typed.
+     */
+    subagent?: boolean;
+    subagentType?: string;
   };
 }
 
@@ -166,5 +226,11 @@ export interface CopilotCliChunk extends ConversationChunk {
   tool: "copilot-cli";
   metadata: ChunkMetadata & {
     eventType?: string;
+    /**
+     * Set on output from a subagent the main assistant launched, with the id of
+     * the tool call that launched it.
+     */
+    subagent?: boolean;
+    parentToolCallId?: string;
   };
 }

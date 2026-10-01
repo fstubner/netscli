@@ -1,4 +1,5 @@
 import { calibrateEmbeddingDevice, readDeviceVerdict } from "../handoff/device.js";
+import { ENABLE_SEMANTIC_HINT, isRuntimeInstalled } from "../handoff/embedding-runtime.js";
 import { createProjectServices } from "../runtime/services.js";
 import type { SessionService } from "../handoff/types.js";
 import { formatDuration } from "../utils/duration.js";
@@ -49,6 +50,11 @@ async function calibrateIfNeeded(): Promise<void> {
   // doing exactly that. It timed out two tests on a CI runner, which is the
   // cheap version of the same surprise a user would get.
   if (process.env.XTCTX_DISABLE_EMBEDDINGS === "1") {
+    return;
+  }
+  // Same reason: without the add-on there is no model to measure. The embed
+  // below says so; this only declines to spend a minute loading nothing.
+  if (!isRuntimeInstalled()) {
     return;
   }
   if (await readDeviceVerdict()) {
@@ -127,6 +133,17 @@ export async function runScan(options: ScanOptions = {}): Promise<void> {
     );
 
     if (options.embed) {
+      if (status.semantic_search === "off") {
+        // Asked for by name, so it says why nothing was embedded and exits
+        // nonzero, unlike the automatic paths that quietly have nothing to do.
+        process.stderr.write(
+          status.semantic_off_reason === "disabled_by_env"
+            ? "Nothing was embedded: XTCTX_DISABLE_EMBEDDINGS=1 is set.\n"
+            : `Nothing was embedded: semantic search is not enabled. To turn it on, ${ENABLE_SEMANTIC_HINT}.\n`,
+        );
+        process.exitCode = 1;
+        return;
+      }
       await embedBacklog(services.sessions);
     }
   } finally {

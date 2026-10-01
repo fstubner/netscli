@@ -73,6 +73,7 @@ describe("the server's background work", () => {
     await runBackgroundWork({
       sessions,
       env: {},
+      localEmbeddings: true,
       readVerdict: async () => null,
       calibrate: async () => {
         events.push("calibrate");
@@ -106,6 +107,30 @@ describe("the server's background work", () => {
     expect(events).not.toContain("defer");
   });
 
+  it("does not calibrate when the local model is not enabled", async () => {
+    // The default state of an install: the model is an add-on, so there is
+    // nothing to time. Calibrating loads the model in a worker per device.
+    const { sessions, events } = fakeSessions(50);
+    let calibrated = false;
+
+    await runBackgroundWork({
+      sessions,
+      env: {},
+      localEmbeddings: false,
+      readVerdict: async () => null,
+      calibrate: async () => {
+        calibrated = true;
+        return VERDICT;
+      },
+      log: () => {},
+    });
+
+    expect(calibrated).toBe(false);
+    expect(events).not.toContain("defer");
+    // The scan still runs: keyword search needs the index either way.
+    expect(events).toContain("scan");
+  });
+
   it("does not calibrate a machine that already has a verdict", async () => {
     const { sessions } = fakeSessions(50);
     let calibrated = false;
@@ -113,6 +138,7 @@ describe("the server's background work", () => {
     await runBackgroundWork({
       sessions,
       env: {},
+      localEmbeddings: true,
       readVerdict: async () => VERDICT,
       calibrate: async () => {
         calibrated = true;
@@ -128,7 +154,7 @@ describe("the server's background work", () => {
     // 1,000 windows at 50ms is under a minute.
     const { sessions, events } = fakeSessions(50);
 
-    await runBackgroundWork({ sessions, env: {}, readVerdict: async () => VERDICT, log: () => {} });
+    await runBackgroundWork({ sessions, env: {}, localEmbeddings: true, readVerdict: async () => VERDICT, log: () => {} });
 
     expect(events).toContain("drain");
   });
@@ -137,7 +163,7 @@ describe("the server's background work", () => {
     // 1,000 windows at 5s each is over an hour — the CPU case the budget is for.
     const { sessions, events } = fakeSessions(5_000);
 
-    await runBackgroundWork({ sessions, env: {}, readVerdict: async () => VERDICT, log: () => {} });
+    await runBackgroundWork({ sessions, env: {}, localEmbeddings: true, readVerdict: async () => VERDICT, log: () => {} });
 
     expect(events).not.toContain("drain");
   });
@@ -145,7 +171,7 @@ describe("the server's background work", () => {
   it("does not drain when no rate has ever been measured", async () => {
     const { sessions, events } = fakeSessions(null);
 
-    await runBackgroundWork({ sessions, env: {}, readVerdict: async () => VERDICT, log: () => {} });
+    await runBackgroundWork({ sessions, env: {}, localEmbeddings: true, readVerdict: async () => VERDICT, log: () => {} });
 
     expect(events).not.toContain("drain");
   });
@@ -158,6 +184,7 @@ describe("the server's background work", () => {
     await runBackgroundWork({
       sessions,
       env: {},
+      localEmbeddings: true,
       readVerdict: async () => null,
       calibrate: async () => {
         throw new CalibrationBusyError();
@@ -180,6 +207,7 @@ describe("the server's background work", () => {
     await runBackgroundWork({
       sessions,
       env: {},
+      localEmbeddings: true,
       readVerdict: async () => VERDICT,
       log: (line) => lines.push(line),
     });

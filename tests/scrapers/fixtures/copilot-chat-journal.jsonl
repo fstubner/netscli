@@ -1,0 +1,9 @@
+{"kind":0,"v":{"sessionId":"three","creationDate":1,"requests":[]}}
+{"kind":2,"k":["requests"],"v":[{"message":{"parts":[{"text":"first question"}]},"response":[],"isCanceled":false,"timestamp":1000}]}
+{"kind":2,"k":["requests"],"v":[{"message":{"parts":[{"text":"second question"}]},"response":[],"isCanceled":false,"timestamp":2000}]}
+{"kind":2,"k":["requests"],"v":[{"message":{"parts":[{"text":"third question"}]},"response":[],"isCanceled":false,"timestamp":3000}]}
+{"kind":1,"k":["requests",0,"response"],"v":[{"value":"first answer"}]}
+{"kind":1,"k":["requests",1,"response"],"v":[{"value":"second answer"}]}
+{"kind":2,"k":["requests",2,"response"],"v":[{"value":"third "}]}
+{"kind":2,"k":["requests",2,"response"],"i":0,"v":[{"value":"third answer"}]}
+{"kind":2,"k":["requests"],"i":2,"v":[{"message":{"parts":[{"text":"third question"}]},"response":[{"value":"third answer"}],"isCanceled":false,"timestamp":3000,"model":"gpt-final"}]}

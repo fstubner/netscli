@@ -1,6 +1,12 @@
 # Keeping the index: backup, moving machines, restore
 
-Status: proposal, not built. Needs a decision on the open questions at the end.
+Status: option 1 built, with these answers to the open questions: per
+project; no vectors; plain JSON Lines rather than gzipped, so a backup can be
+read without xtctx (format in `src/handoff/export-file.ts`). Snapshots
+(option 2) not built. Alongside it, schema upgrades now migrate the index in
+place instead of setting it aside, a set-aside index has the sessions only it
+held copied into the rebuilt one, and `xtctx status` counts the sessions that
+exist only in the index. The rest of this page is the proposal as written.
 
 ## Why this matters now
 

@@ -217,9 +217,11 @@ describe("opencode message index is the same on a full and an incremental read",
       partial.push(chunk);
     }
 
-    expect(partial.map((c) => c.content)).toEqual(["second"]);
+    // The session has a message past the cutoff, so it is read from its first
+    // message: the earlier one is emitted again, at the index it always had.
+    expect(partial.map((c) => c.content)).toEqual(["first", "second"]);
     expect(secondOnFullSync?.metadata.messageIndex).toBe(1);
-    expect(partial[0]?.metadata.messageIndex).toBe(secondOnFullSync?.metadata.messageIndex);
+    expect(partial[1]?.metadata.messageIndex).toBe(secondOnFullSync?.metadata.messageIndex);
   });
 });
 

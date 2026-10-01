@@ -1,15 +1,14 @@
-import { existsSync, realpathSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { mkdir, readdir, rename, rm } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import type { Database as DatabaseHandle } from "better-sqlite3";
 import type { ConversationScraper } from "../types/scraper.js";
-import {
-  DEFAULT_EMBEDDING_MODEL,
-  TransformersEmbeddingProvider,
-  type EmbeddingProvider,
-} from "./embeddings.js";
+import type { EmbeddingProvider } from "./embeddings.js";
+import { createEmbeddingProvider, defaultEmbeddingConfig } from "./embedding-config.js";
 import type {
+  ExportSummary,
   HandoffStatus,
+  ImportSummary,
   IndexProgress,
   SessionMessage,
   SessionSearchMode,
@@ -17,27 +16,46 @@ import type {
   SessionSummary,
 } from "./types.js";
 import { cosineSimilarity, deserializeVector } from "./vector.js";
-import { NullEmbeddingProvider } from "./null-embeddings.js";
+import { semanticOffMessage } from "./null-embeddings.js";
 import {
   DEFAULT_WINDOW_SIZE,
   DEFAULT_WINDOW_STRIDE,
   type MessageRow,
   planRetrievalUnits,
 } from "./retrieval-units.js";
-import { scanTool, waitWithBudget } from "./scan.js";
+import { ScanInterrupted, scanTool, waitWithBudget } from "./scan.js";
+import {
+  SCAN_COMPLETED_FROM_KEY,
+  SCAN_LEASE_RENEW_MS,
+  ScanLease,
+  lastCompletedScanFrom,
+} from "./scan-lease.js";
+import { carryForwardSessions, createSessionMerger, readArchivedSession } from "./archive.js";
+import {
+  ExportFormatError,
+  checkHeader,
+  endLine,
+  headerLine,
+  parseSessionLine,
+  sessionLine,
+} from "./export-file.js";
 import { literalSearch } from "./literal-search.js";
 import {
+  MIGRATED_FROM_SETTING,
   type PreparedStatements,
   SchemaVersionError,
   clearSetting,
+  getSetting,
   isCorruptDatabaseError,
   openDatabase,
   placeholders,
   prepareStatements,
   setSetting,
+  unitsStaleKey,
 } from "./schema.js";
 import {
   PROJECT_ROOT_SQL,
+  canonicalRoot,
   countWhere,
   normalizeRootForCompare,
   retrievalUnitSelect,
@@ -166,16 +184,6 @@ const DEFAULT_LIMIT = 5;
 const MAX_LIMIT = 100;
 
 /**
- * Sessions repaired per scan by `reconcileRetrievalUnits`.
- *
- * Small on purpose: rebuilding reads every message in a session, and scans
- * here are routinely cut short by the client disconnecting, so a large batch
- * would be killed before finishing and would repeat the same prefix next time.
- * A backlog drains over a few scans instead, newest first.
- */
-const RETRIEVAL_UNIT_RECONCILE_LIMIT = 4;
-
-/**
  * How long a scan waits for the embedding model to finish loading.
  *
  * Sized against both failure modes. A warm cache loads in about a second, so
@@ -185,6 +193,23 @@ const RETRIEVAL_UNIT_RECONCILE_LIMIT = 4;
  * scan, so this budget is also shutdown latency and cannot be generous.
  */
 const DEFAULT_EMBEDDING_WARM_BUDGET_MS = 5_000;
+
+/**
+ * How often a server waiting on another's scan lease looks again. Also the
+ * longest `close()` waits for a server that is only waiting.
+ */
+const SCAN_LEASE_POLL_MS = 250;
+
+/**
+ * Longest a scan runs before letting the event loop turn.
+ *
+ * The scan runs on the thread that answers tool calls, over synchronous
+ * SQLite, and its longest stretches never awaited anything: measured on a
+ * 15,000-message corpus, a request that needs no index at all (`tools/list`)
+ * waited up to 3.8 seconds behind one. Yielding this often lets requests,
+ * the lease heartbeat and the shutdown timer in between.
+ */
+const SCAN_YIELD_INTERVAL_MS = 20;
 
 /**
  * The real model unless `XTCTX_DISABLE_EMBEDDINGS=1`.
@@ -197,9 +222,7 @@ const DEFAULT_EMBEDDING_WARM_BUDGET_MS = 5_000;
  * provider directly, so it still exercises the real thing.
  */
 function defaultEmbeddingProvider(): EmbeddingProvider {
-  return process.env.XTCTX_DISABLE_EMBEDDINGS === "1"
-    ? new NullEmbeddingProvider()
-    : new TransformersEmbeddingProvider(DEFAULT_EMBEDDING_MODEL);
+  return createEmbeddingProvider(defaultEmbeddingConfig());
 }
 
 /**
@@ -229,27 +252,6 @@ function embeddingWarmBudgetFromEnv(): number | undefined {
  * Swept against the eval; see the table on `blendScores`.
  */
 const CANDIDATE_WINDOWS_PER_SESSION = 12;
-
-/**
- * The project root as the filesystem reports it, so writes and reads agree.
- *
- * Resolving at both ends is what makes the comparison work at all. One
- * directory has two names whenever a symlink is involved — a macOS temp
- * directory is `/var/...` and `/private/var/...`, and `createProjectServices`
- * already resolves it while a directly-constructed index did not. Rows
- * written under one name were then invisible under the other, which reads as
- * an empty project rather than as a bug.
- *
- * Falls back to the given path when it is not on disk, which is the case for
- * diagnostics and for a project that has moved.
- */
-function canonicalRoot(projectRoot: string): string {
-  try {
-    return realpathSync(projectRoot);
-  } catch {
-    return projectRoot;
-  }
-}
 
 export class SqliteHandoffIndex implements SessionService {
   private db: DatabaseHandle | null = null;
@@ -306,6 +308,10 @@ export class SqliteHandoffIndex implements SessionService {
   private readonly embeddingWarmBudgetMs: number;
   private readonly vectorBudgetMs: number;
   private scanStartedMs = 0;
+  /** When the running scan last let the event loop turn; see `scanCheckpoint`. */
+  private lastYieldAt = 0;
+  /** Whether this process has scanned as the lease holder; see `truncateWal`. */
+  private scannedAsHolder = false;
   private readonly createIfMissing: boolean;
   /** Canonical, and compared normalized; see `canonicalRoot`. */
   private readonly scopedRoot: string;
@@ -450,12 +456,17 @@ export class SqliteHandoffIndex implements SessionService {
     sessionRef: string,
     offset: number,
     limit: number,
+    fromEnd = false,
   ): Promise<SessionMessage[]> {
     this.clearLiteralAdvice();
     await this.refresh({ sessionRef });
     const db = this.getDb();
     const normalizedOffset = Number.isFinite(offset) && offset > 0 ? Math.floor(offset) : 0;
     const normalizedLimit = normalizeLimit(limit, 50);
+    // Reading from the end walks the same ordering backwards. All three sort
+    // keys flip together, so it is the exact reverse of the forward order and
+    // a page read from the end covers the same rows a forward offset would.
+    const direction = fromEnd ? "DESC" : "ASC";
     const rows = db
       .prepare(
         `SELECT id, timestamp, role, content, message_index, source_pointer
@@ -465,16 +476,28 @@ export class SqliteHandoffIndex implements SessionService {
                  SELECT session_ref FROM sessions
                  WHERE ${PROJECT_ROOT_SQL} = ?
                )
-         ORDER BY timestamp ASC, message_index ASC, id ASC
+         ORDER BY timestamp ${direction}, message_index ${direction}, id ${direction}
          LIMIT ? OFFSET ?`,
       )
       .all(sessionRef, this.scopedRoot, normalizedLimit, normalizedOffset) as MessageRow[];
 
-    return rows.map((row) => ({
+    let firstPosition = normalizedOffset;
+    if (fromEnd) {
+      rows.reverse();
+      const total = (
+        db
+          .prepare(`SELECT COUNT(*) AS count FROM messages WHERE session_ref = ?`)
+          .get(sessionRef) as { count: number }
+      ).count;
+      firstPosition = Math.max(0, total - normalizedOffset - rows.length);
+    }
+
+    return rows.map((row, index) => ({
       timestamp: row.timestamp,
       role: row.role,
       content: row.content,
       source_pointer: row.source_pointer ?? undefined,
+      position: firstPosition + index,
     }));
   }
 
@@ -513,6 +536,18 @@ export class SqliteHandoffIndex implements SessionService {
     }
 
     if (normalizedMode === "keyword") {
+      return this.keywordSearch(trimmed, limit, toolFilter, branchFilter);
+    }
+
+    // Semantic search off: hybrid is keyword, and says nothing about it. This
+    // is the default state of an install (the model is an add-on), so it must
+    // not be reported as a failure on every search. An explicit `vector`
+    // request has no other route, so that one is told how to turn it on.
+    const semanticOff = this.embeddingProvider.semanticOff;
+    if (semanticOff !== undefined) {
+      if (normalizedMode === "vector") {
+        throw new Error(semanticOffMessage(semanticOff));
+      }
       return this.keywordSearch(trimmed, limit, toolFilter, branchFilter);
     }
 
@@ -575,19 +610,183 @@ export class SqliteHandoffIndex implements SessionService {
       redirectedTools: this.redirectedTools,
       vectorModel: this.embeddingProvider.model,
       vectorDevice: this.embeddingProvider.device ?? null,
+      semanticOff: this.embeddingProvider.semanticOff ?? null,
     });
+  }
+
+  /**
+   * Write this project's sessions and messages out; see `export-file.ts`.
+   *
+   * No scan first. The point of an export is the sessions that exist only
+   * here, and those are already indexed by definition; scanning would add
+   * minutes on a large store for sessions whose transcripts are still on disk.
+   * Each session is read inside its own read transaction, so a server writing
+   * to the index meanwhile cannot leave a session's row and its messages
+   * describing two different moments.
+   */
+  async exportSessions(
+    writeLine: (line: string) => Promise<void>,
+    options: { xtctxVersion?: string } = {},
+  ): Promise<ExportSummary> {
+    await this.whenReady();
+    const db = this.getDb();
+    const refs = db
+      .prepare(
+        `SELECT session_ref FROM sessions WHERE ${PROJECT_ROOT_SQL} = ?
+         ORDER BY started_at ASC, session_ref ASC`,
+      )
+      .pluck()
+      .all(this.scopedRoot) as string[];
+    const readOne = db.transaction((ref: string) => readArchivedSession(db, ref));
+
+    await writeLine(headerLine(this.projectRoot, options.xtctxVersion));
+    let sessions = 0;
+    let messages = 0;
+    for (const ref of refs) {
+      const session = readOne(ref);
+      if (!session) {
+        continue;
+      }
+      await writeLine(sessionLine(session));
+      sessions += 1;
+      messages += session.messages.length;
+    }
+    await writeLine(endLine(sessions, messages));
+    return { sessions, messages };
+  }
+
+  /**
+   * Merge an export into this project's index.
+   *
+   * Every session lands under this project, whatever root it was exported
+   * from: importing is how history moves to a project that has moved. Message
+   * ids are content hashes, so a session the index already holds gains only
+   * the messages it lacks, and importing the same file twice adds nothing.
+   * One transaction per session, so a file cut short or a line that does not
+   * parse costs that line, never a half-written session.
+   *
+   * Throws `ExportFormatError` before writing anything if the file is not an
+   * export this build reads.
+   */
+  async importSessions(lines: AsyncIterable<string>): Promise<ImportSummary> {
+    await this.whenReady();
+    const db = this.getDb();
+    const merge = createSessionMerger(db);
+    const summary: ImportSummary = {
+      sessionsInFile: 0,
+      sessionsAdded: 0,
+      sessionsUpdated: 0,
+      sessionsUnchanged: 0,
+      messagesAdded: 0,
+      invalidLines: [],
+      complete: false,
+    };
+    const changed: string[] = [];
+    let headerSeen = false;
+    let end: { sessions?: unknown } | null = null;
+    let lineNumber = 0;
+
+    for await (const raw of lines) {
+      lineNumber += 1;
+      const line = raw.trim();
+      if (!line) {
+        continue;
+      }
+      let value: Record<string, unknown> | null = null;
+      try {
+        value = JSON.parse(line) as Record<string, unknown>;
+      } catch {
+        // Handled below: the first line must be a header either way.
+      }
+      if (!headerSeen) {
+        checkHeader(value);
+        headerSeen = true;
+        continue;
+      }
+      if (!value || typeof value !== "object") {
+        summary.invalidLines.push({ line: lineNumber, reason: "not a JSON object" });
+        continue;
+      }
+      if (value.type === "end") {
+        end = value;
+        continue;
+      }
+      if (value.type !== "session") {
+        summary.invalidLines.push({ line: lineNumber, reason: `unknown line type ${JSON.stringify(value.type)}` });
+        continue;
+      }
+      summary.sessionsInFile += 1;
+      const session = parseSessionLine(value);
+      if (typeof session === "string") {
+        summary.invalidLines.push({ line: lineNumber, reason: session });
+        continue;
+      }
+      const result = merge(session, this.scopedRoot);
+      summary.messagesAdded += result.messagesAdded;
+      if (result.created) {
+        summary.sessionsAdded += 1;
+      } else if (result.messagesAdded > 0) {
+        summary.sessionsUpdated += 1;
+      } else {
+        summary.sessionsUnchanged += 1;
+      }
+      if (result.created || result.messagesAdded > 0) {
+        changed.push(session.session_ref);
+      }
+    }
+
+    if (!headerSeen) {
+      throw new ExportFormatError("not an xtctx export: the file is empty");
+    }
+    for (const ref of changed) {
+      this.prepared().sessionRollup.run(ref);
+      this.rebuildRetrievalUnitsForSession(ref);
+    }
+    summary.complete = end !== null && end.sessions === summary.sessionsInFile;
+    return summary;
   }
 
   async close(): Promise<void> {
     // Set first, so a retry that starts after this cannot open the database
     // again, and one already running closes what it opened (see initialize).
+    // A scan sees it at its next checkpoint and stops there.
     this.closed = true;
     await this.initialized.catch(() => {});
     // A scan may still be running because a caller stopped waiting for it.
     // Closing the database underneath it would turn an ordinary shutdown into
-    // a write to a closed handle.
+    // a write to a closed handle, so wait for it to reach a checkpoint.
     await this.whenScanSettled();
+    this.truncateWal();
     this.discardHandle();
+  }
+
+  /**
+   * Fold the write-ahead log back into the database and empty it, if this
+   * process scanned and nobody else is scanning now.
+   *
+   * SQLite does this by itself when the last connection closes, which on a
+   * machine with several servers open is rarely this one, and never when a
+   * process is stopped before it closes. Write-ahead logs of 6 to 30MB
+   * were left behind after every server had exited in the multi-server
+   * measurement.
+   *
+   * Skipped while another server holds the scan lease, so it never contends
+   * with a scan in progress; that server truncates when it closes. Checked
+   * rather than taken, because taking and releasing the lease are writes,
+   * and they would land in the log just emptied. A short busy timeout,
+   * because a reader that will not let go is a reason to leave the log for
+   * later, not to hold shutdown up.
+   */
+  private truncateWal(): void {
+    if (!this.db || !this.scannedAsHolder || new ScanLease(this.db).heldElsewhere()) {
+      return;
+    }
+    try {
+      this.db.pragma("busy_timeout = 100");
+      this.db.pragma("wal_checkpoint(TRUNCATE)");
+    } catch {
+      // Left for the next close.
+    }
   }
 
   private async refresh(reason: {
@@ -664,6 +863,10 @@ export class SqliteHandoffIndex implements SessionService {
   }
 
   private countUnvectorizedUnits(): number {
+    // Nothing is outstanding when nothing will ever be built.
+    if (this.embeddingProvider.semanticOff !== undefined) {
+      return 0;
+    }
     try {
       return countUnvectorizedUnits(this.getDb(), this.embeddingProvider.model);
     } catch {
@@ -680,7 +883,97 @@ export class SqliteHandoffIndex implements SessionService {
   }
 
   private async refreshNow(): Promise<void> {
+    const lease = await this.takeScanLease(Date.now());
+    if (!lease) {
+      return;
+    }
+    this.scannedAsHolder = true;
+    // Renewed on a timer so a scan waiting on a slow store keeps it. A timer
+    // cannot fire inside synchronous work, which is what the TTL's margin is
+    // for.
+    const heartbeat = setInterval(() => lease.renew(), SCAN_LEASE_RENEW_MS);
+    heartbeat.unref?.();
+    try {
+      await this.scanUnderLease(lease);
+    } catch (error) {
+      if (error instanceof ScanInterrupted) {
+        // Closing, or the lease went to another process: stop as a killed
+        // scan would, minus the kill. See `ScanInterrupted`.
+        return;
+      }
+      throw error;
+    } finally {
+      clearInterval(heartbeat);
+      lease.release();
+    }
+    await this.warmVectors();
+  }
+
+  /**
+   * Awaited between units of scan work: yields the event loop when the scan
+   * has held it for `SCAN_YIELD_INTERVAL_MS`, and stops the scan when the
+   * index is closing or the lease is no longer this process's.
+   */
+  private scanCheckpoint(lease: ScanLease): () => Promise<void> {
+    return async () => {
+      if (Date.now() - this.lastYieldAt >= SCAN_YIELD_INTERVAL_MS) {
+        await new Promise<void>((resolve) => setImmediate(resolve));
+        this.lastYieldAt = Date.now();
+      }
+      if (this.closed) {
+        throw new ScanInterrupted("the index is closing");
+      }
+      if (!lease.renew()) {
+        throw new ScanInterrupted("another process took over the scan lease");
+      }
+    };
+  }
+
+  /**
+   * Take this project's scan lease, waiting while another process holds it.
+   *
+   * Null when there is nothing left for this process to do: it is closing, or
+   * a scan by another process that began after `requestedAt` has finished —
+   * that scan read every store after this one asked, which is everything this
+   * one's own scan would have read.
+   *
+   * Waiting, rather than skipping, is deliberate. A server cannot treat
+   * another's scan in progress as its own: that scan may have passed a store
+   * before the tool this session follows wrote to it, which is the reason a
+   * server scans on every start (see `cli/index.ts`). So it waits for the
+   * lease and scans after the holder — usually a cheap pass over cursors that
+   * are already at the end of their files — unless someone else got there
+   * first. Callers are not held up by this: they wait on the scan only up to
+   * the refresh budget, and read whatever the holder has indexed by then.
+   */
+  private async takeScanLease(requestedAt: number): Promise<ScanLease | null> {
     const db = this.getDb();
+    const lease = new ScanLease(db);
+    for (;;) {
+      if (this.closed) {
+        return null;
+      }
+      if (lease.tryAcquire()) {
+        return lease;
+      }
+      await new Promise((resolve) => setTimeout(resolve, SCAN_LEASE_POLL_MS));
+      if (this.closed) {
+        return null;
+      }
+      if (lastCompletedScanFrom(db) >= requestedAt) {
+        // Read on this process's behalf, so not outstanding; see `scannedTools`.
+        for (const { tool } of this.tools) {
+          this.scannedTools.add(tool);
+        }
+        return null;
+      }
+    }
+  }
+
+  private async scanUnderLease(lease: ScanLease): Promise<void> {
+    const db = this.getDb();
+    const checkpoint = this.scanCheckpoint(lease);
+    this.lastYieldAt = Date.now();
     const startedAt = new Date().toISOString();
     const touchedSessions = new Set<string>();
 
@@ -689,13 +982,17 @@ export class SqliteHandoffIndex implements SessionService {
     // scan is interrupted in the same way. Rows that already agree are not
     // written, so on a healthy index this costs one indexed count per session.
     this.prepared().reconcileSessionRollups.run();
-    this.reconcileRetrievalUnits();
+    // Bounded by the refresh budget: the newest sessions' windows are what a
+    // caller waiting that long is most likely to search. The rest is drained
+    // after the scan.
+    await this.reconcileRetrievalUnits(Date.now() + this.refreshBudgetMs, checkpoint);
 
     for (const { scraper } of this.tools) {
       const scanned = await scanTool(scraper, {
         db,
         stmts: this.prepared(),
         scopedRoot: this.scopedRoot,
+        checkpoint,
       });
       for (const sessionRef of scanned.touchedSessions) {
         touchedSessions.add(sessionRef);
@@ -703,15 +1000,32 @@ export class SqliteHandoffIndex implements SessionService {
       this.scannedTools.add(scanned.tool);
     }
 
+    // After the scan, so what is still on disk has come from the transcripts
+    // and only what is not is taken from a set-aside file.
+    for (const sessionRef of this.carryForwardSetAside()) {
+      touchedSessions.add(sessionRef);
+    }
+
     for (const sessionRef of touchedSessions) {
       // Roll up message_count/preview once per touched session rather than
       // once per inserted message (which made indexing O(N²) per session).
       this.prepared().sessionRollup.run(sessionRef);
       this.rebuildRetrievalUnitsForSession(sessionRef);
+      await checkpoint();
     }
+    // Whatever the pass above did not reach, now that the stores are read.
+    await this.reconcileRetrievalUnits(Number.POSITIVE_INFINITY, checkpoint);
 
     setSetting(db, "last_scan_at", startedAt);
     setSetting(db, "last_scan_ms", String(Date.now() - Date.parse(startedAt)));
+    setSetting(db, SCAN_COMPLETED_FROM_KEY, String(lease.heldSince ?? Date.parse(startedAt)));
+  }
+
+  private async warmVectors(): Promise<void> {
+    // `close()` waits for this, and nothing that closes wants vectors.
+    if (this.closed) {
+      return;
+    }
 
     // Warm vectors here too, not only inside a search.
     //
@@ -766,39 +1080,46 @@ export class SqliteHandoffIndex implements SessionService {
   }
 
   /**
-   * Rebuild retrieval units for sessions whose windows do not reach their last
-   * message.
+   * Rebuild retrieval units for sessions whose windows are missing or stale,
+   * newest first, until `deadline`.
    *
    * Units are otherwise built only for the sessions a scan touched, at the end,
    * after every scraper — while each scraper advances its cursor as soon as it
    * finishes and the CLI exits shortly after a client disconnects. A scan that
    * dies in that gap leaves the messages committed, the cursor past them, and
-   * the tail of the session in no window: reachable through
-   * `xtctx_session_detail`, invisible to search, and never repaired because
-   * nothing re-reads the store.
+   * the session in no window: reachable through `xtctx_session_detail`,
+   * invisible to search, and never repaired because nothing re-reads the
+   * store. See `selectSessionsNeedingUnits` for how those sessions are found.
    *
-   * `reconcileSessionRollups` above handles the same gap for `message_count`.
-   * This is its counterpart, and the two run together for the same reason: at
-   * the start, so the repair survives an interruption of the same kind.
+   * `reconcileSessionRollups` handles the same gap for `message_count`. This is
+   * its counterpart, and the two run together at the start, so the repair
+   * survives an interruption of the same kind; the scan runs it again at the
+   * end, unbounded, for whatever the first pass left.
    *
-   * Bounded per scan. Rebuilding reads every message in a session, and scans
-   * here are routinely cut short, so an unbounded pass over a large backlog
-   * would spend the whole scan and be killed before finishing. Most-recently
-   * active first, matching `ensureVectors`: the history a handoff reaches for
-   * is covered before the archive is, and the backlog drains over a few scans.
+   * Bounded by time rather than by a count. It was four sessions a scan, so a
+   * first scan killed before its windows were built left most of the index
+   * unsearchable for dozens of sessions afterwards: over a 100-session corpus,
+   * 96 of 2,400 windows came back per later session. Each session's rebuild
+   * commits on its own, so a pass cut short keeps what it finished.
    */
-  private reconcileRetrievalUnits(): void {
+  private async reconcileRetrievalUnits(
+    deadline: number,
+    checkpoint: () => Promise<void>,
+  ): Promise<void> {
     // Scoped to this project. One database can hold another project's
     // sessions — a copied `.xtctx/`, or a root that was renamed — and
     // rebuilding windows for those spends the scan's repair budget, and the
     // embedding that follows, on rows no read here will ever return.
-    const drifted = this.prepared().selectSessionsMissingUnits.all(
-      this.scopedRoot,
-      RETRIEVAL_UNIT_RECONCILE_LIMIT,
-    ) as Array<{ session_ref: string }>;
+    const drifted = this.prepared().selectSessionsNeedingUnits.all(this.scopedRoot) as Array<{
+      session_ref: string;
+    }>;
 
     for (const { session_ref: sessionRef } of drifted) {
+      if (Date.now() >= deadline) {
+        return;
+      }
       this.rebuildRetrievalUnitsForSession(sessionRef);
+      await checkpoint();
     }
   }
 
@@ -807,14 +1128,20 @@ export class SqliteHandoffIndex implements SessionService {
     const stmts = this.prepared();
     const messages = stmts.selectSessionMessages.all(sessionRef) as MessageRow[];
 
+    const staleKey = unitsStaleKey(sessionRef);
+
     if (messages.length === 0) {
-      db.prepare("DELETE FROM retrieval_units_fts WHERE session_ref = ?").run(sessionRef);
-      db.prepare("DELETE FROM retrieval_units WHERE session_ref = ?").run(sessionRef);
+      db.transaction(() => {
+        db.prepare("DELETE FROM retrieval_units_fts WHERE session_ref = ?").run(sessionRef);
+        db.prepare("DELETE FROM retrieval_units WHERE session_ref = ?").run(sessionRef);
+        stmts.clearUnitsStale.run(staleKey);
+      })();
       return;
     }
 
     const session = stmts.selectSessionTool.get(sessionRef) as { tool: string } | undefined;
     if (!session) {
+      stmts.clearUnitsStale.run(staleKey);
       return;
     }
 
@@ -869,6 +1196,8 @@ export class SqliteHandoffIndex implements SessionService {
         // match every session.
         stmts.insertUnitFts.run(unitId, sessionRef, session.tool, unit.searchableText);
       }
+      // In the same transaction as the windows it vouches for.
+      stmts.clearUnitsStale.run(staleKey);
     });
     applyDiff();
   }
@@ -1068,6 +1397,10 @@ export class SqliteHandoffIndex implements SessionService {
 
   async embedBacklog(onProgress?: (embedded: number, total: number) => void): Promise<number> {
     await this.whenScanSettled();
+    const semanticOff = this.embeddingProvider.semanticOff;
+    if (semanticOff !== undefined) {
+      throw new Error(semanticOffMessage(semanticOff));
+    }
     // No `isReady` check and no degrading to keyword: `embedBatch` loads the
     // model itself and this command has nothing else it could be asking for,
     // so it waits however long that takes.
@@ -1098,7 +1431,7 @@ export class SqliteHandoffIndex implements SessionService {
   }
 
   private async ensureVectors(toolFilter?: string[]): Promise<void> {
-    if (this.freezeVectors) {
+    if (this.freezeVectors || this.embeddingProvider.semanticOff !== undefined) {
       return;
     }
     this.vectorBacklog = await ensureVectors({
@@ -1121,10 +1454,13 @@ export class SqliteHandoffIndex implements SessionService {
       await this.openAndPrepare();
     } catch (error) {
       // Only a file that is itself unusable -- corrupt, or from an OLDER
-      // schema -- is set aside and a fresh one rebuilt from the transcript
-      // stores. Set aside, not deleted: the index keeps sessions whose
-      // transcripts are gone (Claude Code deletes them after 30 days by
-      // default), so for those it is the only copy.
+      // schema in a shape no migration recognises -- is set aside and a fresh
+      // one rebuilt from the transcript stores. An older schema that can be
+      // migrated never reaches here; `openDatabase` upgrades it in place.
+      // Set aside, not deleted: the index keeps sessions whose transcripts
+      // are gone (Claude Code deletes them after 30 days by default), so for
+      // those it is the only copy -- and the first scan after the rebuild
+      // copies them back out of it (see `carryForwardSetAside`).
       //
       // Anything else stands, and the next call retries (see whenReady): a
       // lock held by another xtctx server is normal with one server per
@@ -1187,7 +1523,22 @@ export class SqliteHandoffIndex implements SessionService {
       await this.clearScraperCursors();
     }
 
-    dropVectorsFromOtherModels(this.getDb(), this.embeddingProvider.model);
+    // A schema migration left the rows an older build wrote; re-reading every
+    // session still on disk is what refreshes them. See MIGRATED_FROM_SETTING.
+    // Cursors first, setting second: a process that dies in between re-reads
+    // twice rather than not at all.
+    if (getSetting(this.db, MIGRATED_FROM_SETTING) !== null) {
+      await this.clearScraperCursors();
+      clearSetting(this.db, MIGRATED_FROM_SETTING);
+    }
+
+    // Not when semantic search is off. The provider's identity is a placeholder
+    // then, and treating it as "another model" deleted every vector an index
+    // had, on the first open without the add-on, for no reason: switching the
+    // model back on would then re-embed the whole history.
+    if (this.embeddingProvider.semanticOff === undefined) {
+      dropVectorsFromOtherModels(this.getDb(), this.embeddingProvider.model);
+    }
   }
 
   /**
@@ -1231,6 +1582,71 @@ export class SqliteHandoffIndex implements SessionService {
         `it was moved to ${aside} and a new one is being built.
 `,
     );
+  }
+
+  /**
+   * Copy the sessions only a set-aside file still holds back into the index.
+   *
+   * A file is set aside because it is corrupt or in a shape nothing could
+   * migrate, and the new index is rebuilt from the transcripts still on disk.
+   * Sessions whose transcripts were cleaned up have no other copy, and nothing
+   * read the set-aside file, so each set-aside used to drop them from
+   * retrieval for good -- the file kept them where no search could reach.
+   *
+   * Found by listing the directory rather than remembered from the set-aside
+   * itself, so a process that dies between the two, or a file set aside by an
+   * earlier version, is still picked up. Each file is done once, recorded
+   * under `carried_forward:<name>` with what it yielded; a file that could not
+   * be opened for a reason that may pass is left unrecorded and tried again on
+   * the next scan. The file itself is never deleted.
+   *
+   * Returns the refs copied in, for the caller to roll up and window.
+   */
+  private carryForwardSetAside(): string[] {
+    const dir = dirname(this.dbPath);
+    const prefix = `${basename(this.dbPath)}.set-aside-`;
+    let names: string[];
+    try {
+      names = readdirSync(dir);
+    } catch {
+      return [];
+    }
+
+    const db = this.getDb();
+    const copied: string[] = [];
+    for (const name of names.sort()) {
+      if (!name.startsWith(prefix) || /-(wal|shm|journal)$/.test(name)) {
+        continue;
+      }
+      const key = `carried_forward:${name}`;
+      if (getSetting(db, key) !== null) {
+        continue;
+      }
+      const result = carryForwardSessions(db, join(dir, name));
+      if (result === null) {
+        continue;
+      }
+      setSetting(
+        db,
+        key,
+        JSON.stringify({
+          at: new Date().toISOString(),
+          copied: result.copied.length,
+          unreadable: result.unreadable,
+          ...(result.error ? { error: result.error } : {}),
+        }),
+      );
+      copied.push(...result.copied);
+      if (result.copied.length > 0 || result.unreadable > 0 || result.error) {
+        process.stderr.write(
+          `xtctx: carried ${result.copied.length} session(s) forward from ${name}` +
+            (result.unreadable > 0 ? `; ${result.unreadable} could not be read` : "") +
+            (result.error ? `; the file could not be read (${result.error})` : "") +
+            ". The file is kept.\n",
+        );
+      }
+    }
+    return copied;
   }
 
   /**

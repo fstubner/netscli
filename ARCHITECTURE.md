@@ -1,14 +1,18 @@
 # xtctx — Architecture
 
-One npm package, no services. Everything runs in the invoking process on the
-developer's machine. `docs/architecture.md` describes module internals; this
-document fixes the parts, how a handoff actually flows through them, the
-boundaries between them, and what each part is allowed to trust.
+One npm package, no services on the handoff path. Everything runs in the
+invoking process on the developer's machine. The one exception is optional and
+off by default: cloud sync, which uploads an opted-in project's sessions to a
+separate Worker (`cloud/`) so the same user's agents on other machines can read
+them. Handoff never depends on it. `docs/architecture.md` describes module
+internals; this document fixes the parts, how a handoff actually flows through
+them, the boundaries between them, and what each part is allowed to trust.
 
 ## Parts
 
-- **CLI** (`src/cli/`) — `setup`, `status`, `scan`, `calibrate`,
-  `disconnect`, and the internal `--hook session-start` entry point. Bare `xtctx` on a non-TTY stdio pair
+- **CLI** (`src/cli/`) — `setup`, `status`, `scan`, `export`, `import`,
+  `embeddings enable|disable`, `calibrate`, `disconnect`, the cloud-sync
+  commands `login`, `logout` and `sync`, and the internal `--hook session-start` entry point. Bare `xtctx` on a non-TTY stdio pair
   starts the MCP server.
 - **MCP server** (`src/mcp/`) — stdio JSON-RPC server exposing exactly five
   read-only tools. Spawned by coding agents via `npx -y xtctx`.
@@ -20,9 +24,16 @@ boundaries between them, and what each part is allowed to trust.
   (`.xtctx/state/xtctx.db`, WAL, schema-versioned) holding sessions,
   messages, retrieval windows, FTS index, and embedding vectors. Refreshed
   on demand from the scrapers and at MCP server start. Derived from the
-  transcripts, but not disposable: the index keeps sessions whose transcripts have since been deleted (Claude Code deletes them after 30 days by default), so for those it is the only copy. A database that will not
-  open (corruption, schema mismatch) is moved aside to
-  `xtctx.db.set-aside-<time>`, never deleted, and a new one is built.
+  transcripts for every session still on disk, and the only copy of the
+  sessions whose transcripts have since been deleted (Claude Code deletes
+  them after 30 days by default); deleting it loses those. An index from an
+  older schema is migrated in place. One that is corrupt, or older in a shape
+  no migration recognises, is moved aside to `xtctx.db.set-aside-<time>`,
+  never deleted; a new one is built from the transcripts, and the first full
+  scan copies every session it lacks back out of the set-aside file. One from
+  a newer schema is refused. `xtctx export` writes the project's sessions and
+  messages to a JSON Lines file and `xtctx import` merges one back, without
+  duplicates.
 - **Drift log** (`src/scrapers/drift-log.ts`) — per-tool record of the
   places another tool's transcripts did not match what the scraper expected,
   summarised once per scan and kept in `.xtctx/state/<tool>-drift.json`.
@@ -39,6 +50,17 @@ boundaries between them, and what each part is allowed to trust.
 - **Config writers** (`src/config/`) — setup/disconnect logic that edits
   other tools' config files (MCP config, managed instruction blocks,
   synced skills, the Claude Code hook in `.claude/settings.json`).
+- **Cloud sync client** (`src/sync/`) — optional. Uploads a project's
+  sessions from its index when, and only when, someone is logged in
+  (`~/.xtctx/credentials.json`) and the project is on the opt-in list
+  (`~/.xtctx/cloud-projects.json`). Runs inside the MCP server every 10
+  seconds and once on shutdown, or from `xtctx sync`; reads the index through
+  its own read-only connection; keeps its position per project and account in
+  `~/.xtctx/sync/`, never in the index. See `docs/cloud-sync.md`.
+- **Cloud Worker** (`cloud/`) — a separate Cloudflare Worker, not shipped in
+  the npm package. Stores uploads in D1 and serves them back over MCP to the
+  same account. Has its own tests (`npm run test:cloud`) and deploy steps
+  (`cloud/README.md`).
 - **Landing site** (`landing/`) — static Astro site on GitHub Pages;
   no runtime relationship to the package.
 
@@ -93,6 +115,21 @@ evidence they have, and one with no vector is treated as unknown similarity
 rather than none, because scoring it zero penalises it for its position in a
 queue.
 
+**Semantic search is an add-on, off until enabled.** The default install has no
+ML runtime: `@huggingface/transformers` and the ONNX runtimes under it were
+about 550 MB on disk and were fetched before `npx -y xtctx` could answer, which
+is longer than an MCP client waits. `optionalDependencies` would not help, as
+npm installs those by default, so the library is not a dependency at all.
+`xtctx embeddings enable` runs `npm ci` against a pinned manifest and lockfile
+shipped in `embeddings-runtime/`, into `~/.xtctx/embeddings`, and
+`handoff/embedding-runtime.ts` loads it from there by path. Until then the
+provider is `NullEmbeddingProvider`, which carries a `semanticOff` reason: search
+answers from keyword without calling it, nothing counts as a backlog, vectors an
+earlier install built are kept (the placeholder model identity must not read as
+"another model" to `dropVectorsFromOtherModels`), and `xtctx status` and
+`xtctx_continuity_status` say which mode is active and the command to change it.
+A remote OpenAI-compatible endpoint needs no local runtime and is unaffected.
+
 **Bounded, so a tool call always returns.** Scanning gets four seconds,
 vectorizing six, and an indexed view is treated as current for thirty. Work
 left over resumes on the next call. A scan also warms the embedding model and
@@ -100,6 +137,17 @@ builds vectors under the same cap, because a process spawned per agent session
 would otherwise never vectorize anything; `hybrid` deliberately answers from
 keyword while the model is still loading, so the first call after a cold start
 is fast rather than blocked.
+
+**Cloud sync, when a project opts in.** The MCP server starts an upload loop
+next to its scan. Each tick reads the sessions this project's index
+attributes to this project, sends what changed under the index's own message
+ids, and compares the server's per-session count with the local one; on a
+mismatch (a re-read replaced rows under new ids, or deleted some) it sends the
+session whole with every id it holds, and the server deletes the rest, so the
+cloud copy ends equal to the index. (A session with more ids than fit in one
+request is resent but not pruned.) On shutdown the final upload runs
+alongside the index close, inside the same bounded grace window, so it never
+holds up releasing the scan lease.
 
 **What comes back is raw.** Sessions, message text, and pointers — never a
 generated summary. A recap is the lossy artefact this exists to replace, and
@@ -126,6 +174,11 @@ the transcripts remain authoritative.
   Managed markdown blocks touch nothing outside their markers — including the
   tail of the file, which is why setup does not trim it and removal gives back
   exactly the separator it added.
+- **Index → cloud:** only with a login and a per-project opt-in, both in the
+  user's home directory. Metadata is cut to an allowlist with absolute paths
+  dropped, `source_pointer` is never sent, and environment credentials that
+  differ from the saved login refuse to upload unless explicitly allowed.
+  Message text goes as written.
 - **Process boundary:** the MCP server writes logs to stderr only — stdout
   is the JSON-RPC transport. The session-start hook fails open: it must
   never break a host agent's startup.
@@ -150,11 +203,22 @@ the transcripts remain authoritative.
 - **`.xtctx/config.yaml` is semi-trusted.** It is repo-committable, so a
   cloned repo can point `storePath` anywhere on disk. Store paths are used
   read-only, but treat overrides in a foreign repo as a risk surface.
-- **The index is trusted state, and not disposable.** It is built from the
-  transcripts but keeps sessions whose transcripts have since been deleted,
-  so it is never deleted: a corrupt index or one from an older schema is
-  moved to `xtctx.db.set-aside-<time>` and rebuilt, one from a newer schema
-  is refused, and `setup --repair` leaves it alone.
+- **The index is trusted state, and not disposable.** It is derived from the
+  transcripts still on disk but is the only copy of sessions whose
+  transcripts have since been deleted, so it is never deleted: an older
+  schema is migrated in place, a corrupt index (or an older one no migration
+  fits) is moved to `xtctx.db.set-aside-<time>` and rebuilt with the set-aside
+  file's missing sessions carried forward, one from a newer schema is
+  refused, and `setup --repair` leaves it alone.
+- **An export file is untrusted input**, like the transcripts it came from:
+  `xtctx import` checks the header and every line before writing it, binds
+  every value as a SQL parameter, and its content reaches agents through the
+  same fenced MCP output as any other transcript text.
+- **The opt-in is the user's, never the repository's.** Cloud sync reads its
+  login and opt-in list from the home directory, not `.xtctx/config.yaml`, so
+  a cloned repository cannot turn uploading on. The Worker treats every upload
+  as untrusted input: it validates the body, caps sizes, and scopes rows to
+  the authenticated account.
 - **The registry and npm supply chain** are trusted at install time; CI
   pins action SHAs and publishes via OIDC with provenance, no long-lived
   tokens.

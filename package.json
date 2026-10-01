@@ -44,7 +44,6 @@
     "check:workflows": "node ./scripts/check-workflows.mjs"
   },
   "dependencies": {
-    "@huggingface/transformers": "^4.2.0",
     "@iarna/toml": "^2.2.5",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "better-sqlite3": "^13.0.3",
@@ -53,6 +52,7 @@
     "yaml": "^2.9.0"
   },
   "devDependencies": {
+    "@huggingface/transformers": "^4.2.0",
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^26.2.0",
     "eslint": "^10.8.1",
@@ -76,6 +76,7 @@
   "files": [
     "dist",
     "src",
+    "embeddings-runtime",
     "README.md",
     "LICENSE",
     "CHANGELOG.md"

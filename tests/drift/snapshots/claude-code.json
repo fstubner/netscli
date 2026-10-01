@@ -20,10 +20,28 @@
   {
     "tool": "claude-code",
     "sessionId": "session-snap",
+    "role": "tool",
+    "content": "ran Bash: npm test",
+    "timestamp": "2026-02-24T10:00:30.000Z",
+    "messageIndex": 2,
+    "tokenEstimate": 5
+  },
+  {
+    "tool": "claude-code",
+    "sessionId": "session-snap",
+    "role": "tool",
+    "content": "all tests passed",
+    "timestamp": "2026-02-24T10:00:40.000Z",
+    "messageIndex": 3,
+    "tokenEstimate": 4
+  },
+  {
+    "tool": "claude-code",
+    "sessionId": "session-snap",
     "role": "user",
     "content": "snapshot question two",
     "timestamp": "2026-02-24T10:01:00.000Z",
-    "messageIndex": 2,
+    "messageIndex": 4,
     "tokenEstimate": 6
   }
 ]

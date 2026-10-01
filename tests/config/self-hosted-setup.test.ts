@@ -16,6 +16,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { CLAUDE_HOOK_MARKER, setupProject, xtctxServerDefinition } from "@xtctx/config/setup";
+import { readXtctxPackage } from "@xtctx/utils/package-info";
+
+const PINNED_VERSION = readXtctxPackage(import.meta.url).version;
 
 /** The real package.json shape that identifies this repo. */
 const SELF_PKG = JSON.stringify({
@@ -88,7 +91,7 @@ describe("self-hosted project detection", () => {
     const def = await xtctxServerDefinition(root);
 
     expect(def.command).toBe("npx");
-    expect(def.args).toEqual(["-y", "xtctx"]);
+    expect(def.args).toEqual(["-y", `xtctx@${PINNED_VERSION}`]);
   });
 
   it("uses npx when the repo has no built entry point to authenticate against", async () => {
@@ -132,7 +135,7 @@ describe("self-hosted project detection", () => {
         mcpServers: Record<string, { command: string; args: string[] }>;
       };
       expect(config.mcpServers.xtctx.command, relative).toBe("npx");
-      expect(config.mcpServers.xtctx.args, relative).toEqual(["-y", "xtctx"]);
+      expect(config.mcpServers.xtctx.args, relative).toEqual(["-y", `xtctx@${PINNED_VERSION}`]);
       expect(raw, relative).not.toContain("dist");
     }
   });
@@ -147,7 +150,7 @@ describe("self-hosted project detection", () => {
     const def = await xtctxServerDefinition(root);
 
     expect(def.command).toBe("npx");
-    expect(def.args).toEqual(["-y", "xtctx"]);
+    expect(def.args).toEqual(["-y", `xtctx@${PINNED_VERSION}`]);
   });
 
   it("uses npx for a project merely named xtctx without this package's bin", async () => {

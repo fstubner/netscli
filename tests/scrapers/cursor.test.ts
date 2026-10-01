@@ -632,6 +632,9 @@ describe("CursorScraper reports workspace shapes it cannot read", () => {
     await mkdir(join(rootDir, "globalStorage"), { recursive: true });
     const global = new Database(join(rootDir, "globalStorage", "state.vscdb"));
     global.exec("CREATE TABLE cursorDiskKV (key TEXT PRIMARY KEY, value TEXT NOT NULL)");
+    // Present, as in current Cursor: its absence is reported as drift, which
+    // would turn the "stays quiet" case below into a different test.
+    global.exec("CREATE TABLE composerHeaders (composerId TEXT PRIMARY KEY, workspaceId TEXT)");
     global.close();
 
     warnings = [];

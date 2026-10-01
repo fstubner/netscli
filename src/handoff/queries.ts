@@ -1,3 +1,4 @@
+import { realpathSync } from "node:fs";
 import type { Database as DatabaseHandle } from "better-sqlite3";
 import type { CountRow } from "./schema.js";
 
@@ -17,6 +18,27 @@ export const PROJECT_ROOT_SQL = `rtrim(replace(lower(project_root), '\\', '/'), 
 
 export function normalizeRootForCompare(value: string): string {
   return value.replace(/\\/g, "/").replace(/[/]+$/, "").toLowerCase();
+}
+
+/**
+ * The project root as the filesystem reports it, so writes and reads agree.
+ *
+ * Resolving at both ends is what makes the comparison work at all. One
+ * directory has two names whenever a symlink is involved — a macOS temp
+ * directory is `/var/...` and `/private/var/...`, and `createProjectServices`
+ * already resolves it while a directly-constructed index did not. Rows
+ * written under one name were then invisible under the other, which reads as
+ * an empty project rather than as a bug.
+ *
+ * Falls back to the given path when it is not on disk, which is the case for
+ * diagnostics and for a project that has moved.
+ */
+export function canonicalRoot(projectRoot: string): string {
+  try {
+    return realpathSync(projectRoot);
+  } catch {
+    return projectRoot;
+  }
 }
 
 /**

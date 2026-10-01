@@ -46,6 +46,9 @@ const MODES: SessionSearchMode[] = ["hybrid", "vector", "keyword"];
  * forks killed a worker outright, which is the shape of issue #101. One load,
  * shared, avoids both.
  */
+// The library is an add-on loaded from a runtime directory; this repository has
+// it as a devDependency, so the repository root is one.
+process.env.XTCTX_EMBEDDING_RUNTIME_DIR ??= process.cwd();
 const sharedProvider = new TransformersEmbeddingProvider();
 
 interface Metrics {

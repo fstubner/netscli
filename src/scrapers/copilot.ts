@@ -17,5 +17,5 @@
  * This file is the public surface; it re-exports so that every existing
  * import path keeps working.
  */
-export { CopilotScraper, ACCEPTED_DEGRADATIONS } from "./copilot/scraper.js";
+export { CopilotScraper, ACCEPTED_DEGRADATIONS, COPILOT_SCRAPER_VERSION } from "./copilot/scraper.js";
 export { parseChatSessionFile } from "./copilot/journal.js";

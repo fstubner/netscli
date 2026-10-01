@@ -67,6 +67,7 @@ class FixtureSessionService implements SessionService {
       // model fails, and the status contract requires the field either way.
       embedding_error: null,
       redirected_tools: [],
+      index_only_sessions: 0,
       last_scan_at: "2026-05-10T10:02:00.000Z",
       last_scan_ms: null,
       sessions: 1,
@@ -78,6 +79,8 @@ class FixtureSessionService implements SessionService {
     vector_ms_per_segment: null,
       vector_model: "fixture-embedding",
       vector_device: null,
+      semantic_search: "local",
+      semantic_off_reason: null,
       tools: [
         {
           tool: "codex",

@@ -16,7 +16,10 @@ when someone runs it.
    across every file that carries it (`npm version` triggers the `version`
    script, which syncs the plugin manifests, the marketplace entry and the
    landing site), writes the CHANGELOG entry from GitHub's generated notes,
-   then commits, tags and creates the GitHub Release.
+   then commits, tags and creates the GitHub Release. `CHANGELOG.md` keeps an
+   `## [Unreleased]` section at the top for work merged but not released; the
+   new entry is written beneath it and the section's body is dropped, because
+   the generated notes cover the same commits.
 4. With `publish_npm` left on, it then starts the `publish` workflow as a
    separate run against the tag it just created: tag check,
    `verify:release`, then `npm publish --provenance` over OIDC trusted
