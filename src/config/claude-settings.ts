@@ -2,7 +2,7 @@ import { join } from "node:path";
 import { rm } from "node:fs/promises";
 import { writeFileAtomic } from "../utils/atomic-file.js";
 import { isRecord, readJsonIfExists, readUtf8IfExists, writeIfChanged } from "./file-io.js";
-import { SELF_HOSTED_ENTRY, isSelfHostedProject } from "./server-definition.js";
+import { SELF_HOSTED_ENTRY, isSelfHostedProject, pinnedPackageSpec } from "./server-definition.js";
 
 /**
  * `.claude/settings.json` — the one file where xtctx registers a SessionStart
@@ -26,9 +26,46 @@ import { SELF_HOSTED_ENTRY, isSelfHostedProject } from "./server-definition.js";
  */
 export const CLAUDE_HOOK_MARKER = "--hook session-start";
 
-// Claude Code runs hooks with cwd = project root, so the command stays
-// path-independent — no shell-quoted absolute path to get injection wrong.
-const CLAUDE_HOOK_COMMAND = "npx -y xtctx --hook session-start --tool claude-code";
+const HOOK_ARGS = "--hook session-start --tool claude-code";
+
+/**
+ * Every command shape setup itself has written, and nothing else.
+ *
+ * Re-running setup moves the version pin, which means rewriting a hook that is
+ * already installed; this is what keeps that rewrite off a hook the user
+ * edited by hand (an added flag, a wrapper script), which is left alone.
+ */
+function isGeneratedHookCommand(command: string): boolean {
+  if (command === `node ${SELF_HOSTED_ENTRY} ${HOOK_ARGS}`) return true;
+  const rest = /^npx -y xtctx(?:@\S+)? (.*)$/.exec(command);
+  return rest !== null && rest[1] === HOOK_ARGS;
+}
+
+/**
+ * The version a hook command is pinned to, or null when it is not pinned (the
+ * unpinned form older setups wrote, or the self-hosted `node` form).
+ */
+export function hookCommandPin(command: string): string | null {
+  const match = /^npx -y xtctx@(\S+) /.exec(command);
+  return match ? match[1] : null;
+}
+
+/** The version the project's installed Claude Code hook is pinned to, if any. */
+export async function readClaudeHookPin(projectRoot: string): Promise<string | null> {
+  const parsed = await readJsonIfExists(join(projectRoot, ".claude", "settings.json"));
+  const groups = isRecord(parsed) && isRecord(parsed.hooks) ? parsed.hooks.SessionStart : undefined;
+  if (!Array.isArray(groups)) return null;
+  for (const group of groups) {
+    if (!isRecord(group) || !Array.isArray(group.hooks)) continue;
+    for (const hook of group.hooks) {
+      if (isRecord(hook) && typeof hook.command === "string" && hook.command.includes(CLAUDE_HOOK_MARKER)) {
+        const pin = hookCommandPin(hook.command);
+        if (pin) return pin;
+      }
+    }
+  }
+  return null;
+}
 
 /**
  * In its own repo, run the built entry point rather than going through npx.
@@ -36,9 +73,11 @@ const CLAUDE_HOOK_COMMAND = "npx -y xtctx --hook session-start --tool claude-cod
  * deletes the file the MCP server is configured to run.
  */
 async function claudeHookCommand(projectRoot: string): Promise<string> {
+  // Claude Code runs hooks with cwd = project root, so the command stays
+  // path-independent — no shell-quoted absolute path to get injection wrong.
   return (await isSelfHostedProject(projectRoot))
-    ? `node ${SELF_HOSTED_ENTRY} --hook session-start --tool claude-code`
-    : CLAUDE_HOOK_COMMAND;
+    ? `node ${SELF_HOSTED_ENTRY} ${HOOK_ARGS}`
+    : `npx -y ${pinnedPackageSpec()} ${HOOK_ARGS}`;
 }
 
 /**
@@ -144,12 +183,25 @@ export async function installClaudeHook(projectRoot: string): Promise<ClaudeHook
   // Not an early return on `alreadyInstalled`. Every project set up before
   // permissions existed already has the hook, so stopping here would leave
   // exactly the installs that need the fix without it.
+  const command = await claudeHookCommand(projectRoot);
   if (!alreadyInstalled) {
-    hooks.SessionStart = [
-      ...sessionStart,
-      { hooks: [{ type: "command", command: await claudeHookCommand(projectRoot) }] },
-    ];
+    hooks.SessionStart = [...sessionStart, { hooks: [{ type: "command", command }] }];
     root.hooks = hooks;
+  } else {
+    // Re-running setup is how the version pin moves, so a hook setup wrote
+    // earlier is brought up to date rather than left on the old version.
+    for (const group of sessionStart) {
+      if (!isRecord(group) || !Array.isArray(group.hooks)) continue;
+      for (const hook of group.hooks) {
+        if (
+          isRecord(hook) &&
+          typeof hook.command === "string" &&
+          isGeneratedHookCommand(hook.command)
+        ) {
+          hook.command = command;
+        }
+      }
+    }
   }
 
   // Registering the server is not the same as being allowed to call it.

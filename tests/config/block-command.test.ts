@@ -21,6 +21,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { setupProject } from "@xtctx/config/setup";
+import { readXtctxPackage } from "@xtctx/utils/package-info";
 
 describe("managed block command line", () => {
   let root = "";
@@ -56,7 +57,7 @@ describe("managed block command line", () => {
 
     await setupProject({ projectPath: root, homeDir: home, yes: true });
 
-    expect(await commandLine()).toBe("npx -y xtctx");
+    expect(await commandLine()).toBe(`npx -y xtctx@${readXtctxPackage(import.meta.url).version}`);
   });
 
   it("records the same command regardless of where setup was run from", async () => {
