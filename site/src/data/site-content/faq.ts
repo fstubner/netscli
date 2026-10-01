@@ -29,7 +29,7 @@ export const faq: FaqItem[] = [
     // search engine and answer engine reads. The visible `aHtml` below was
     // already a template literal and rendered correctly, which is why the
     // page looked fine.
-    a: `Install the netscli package for the CLI, terminal UI, and MCP server. On Windows, run: winget install netscli (the full identifier fstubner.netscli also works). On Linux or macOS, run: ${INSTALL_SH_COMMAND}. For the desktop app, run winget install netscli-gui on Windows or brew install --cask fstubner/tap/netscli-gui on macOS, or download it from GitHub releases; Linux has a .deb and an AppImage. With Rust installed you can also run: cargo install netscli.`,
+    a: `Install the netscli package for the CLI, terminal UI, and MCP server. On Windows, run: winget install netscli (the full identifier fstubner.netscli also works). On Linux or macOS, run: ${INSTALL_SH_COMMAND}. For the desktop app, run winget install netscli-gui on Windows or brew install --cask fstubner/tap/netscli-gui on macOS, or download it from GitHub releases. Linux has a .deb and an AppImage. With Rust installed you can also run: cargo install netscli.`,
     aHtml: `
       <p>Install the <code>netscli</code> package for the CLI, terminal UI, and MCP server:</p>
       <div class="faq-command-list" aria-label="Install commands">
@@ -138,9 +138,9 @@ export const faq: FaqItem[] = [
   {
     group: 'Network workflows',
     q: 'What is the difference between scan, inspect, discover, and sweep?',
-    a: 'Use scan when you already know a host and want TCP or UDP port status. Use inspect when you want a host profile: reachability, reverse DNS, MAC address and maker, an OS hint, and optional port checks. Use discover to find reachable devices on a subnet. Use sweep when you want discovery plus open-port checks across the discovered hosts.',
+    a: 'Use scan when you already know a host and want TCP or UDP port status. Use inspect when you want a host profile with reachability, reverse DNS, MAC address and maker, an OS hint, and optional port checks. Use discover to find reachable devices on a subnet. Use sweep when you want discovery plus open-port checks across the discovered hosts.',
     aHtml:
-      'Use <code>scan</code> when you already know a host and want TCP or UDP port status. Use <code>inspect</code> when you want a host profile: reachability, reverse DNS, MAC address and maker, an OS hint, and optional port checks. Use <code>discover</code> to find reachable devices on a subnet. Use <code>sweep</code> when you want discovery plus open-port checks across the discovered hosts.',
+      'Use <code>scan</code> when you already know a host and want TCP or UDP port status. Use <code>inspect</code> when you want a host profile with reachability, reverse DNS, MAC address and maker, an OS hint, and optional port checks. Use <code>discover</code> to find reachable devices on a subnet. Use <code>sweep</code> when you want discovery plus open-port checks across the discovered hosts.',
   },
   {
     group: 'Limits and dependencies',
