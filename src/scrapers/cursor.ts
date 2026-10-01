@@ -1,5 +1,5 @@
 import { readdir, stat } from "node:fs/promises";
-import { workspaceMatchesProject } from "./vscode-workspace.js";
+import { classifyWorkspace, workspaceMatchesProject } from "./vscode-workspace.js";
 import { basename, join } from "node:path";
 import type Database from "better-sqlite3";
 import { glob } from "glob";
@@ -16,6 +16,25 @@ const SCRAPER_NAME = "cursor";
 const STATE_DB_NAME = "state.vscdb";
 
 /**
+ * Bumped when the scraper's output for a conversation it has already read
+ * changes, so that already-indexed rows are corrected rather than kept.
+ *
+ * 1 (absent from state): text bubbles only; every conversation placed by the
+ *    files it recorded; a subagent's prompt indexed as the user's.
+ * 2: tool-call bubbles leave a 'tool' line; conversations are placed by
+ *    `composerHeaders`; a subagent's prompt is role 'tool'.
+ *
+ * The cursor sits past every conversation already read, so without this the
+ * old rows stay as they were until a conversation happens to grow. A stored
+ * version below this resets the cutoff for one scan, which re-reads every
+ * conversation still in the store through the normal path; the index's
+ * re-read prune then replaces the old rows of each. Conversations that have
+ * left the store are not re-read, so their rows keep the old shape: they are
+ * the only copy, which is why this corrects in place instead of rebuilding.
+ */
+export const CURSOR_SCRAPER_VERSION = 2;
+
+/**
  * Shapes the cursor scraper tolerates silently without logging. All other
  * shape surprises warn; missing required tables throw.
  */
@@ -26,7 +45,7 @@ export const ACCEPTED_DEGRADATIONS = {
   emptyWorkspace: "workspace has no composer.composerData row",
   /** A composer whose bubble row is missing — bubble pruned by Cursor. */
   prunedBubble: "bubble referenced by composer but missing from globalStorage",
-  /** Empty bubble text (tool-call only, etc.). */
+  /** Empty bubble text with no tool call either — a thinking bubble, kept out on purpose. */
   emptyBubbleText: "bubble has no user-visible text",
   /** Forward-compat unknown keys alongside known composer fields. */
   unknownFieldsAlongside: "extra keys alongside known composer schema",
@@ -34,11 +53,44 @@ export const ACCEPTED_DEGRADATIONS = {
 
 const warnDrift = driftWarner(SCRAPER_NAME);
 
+/**
+ * The `composerHeaders` columns the scraper reads. The committed format
+ * fingerprint (`tests/drift/fingerprints/cursor.json`) has to list each, so a
+ * column the scraper starts depending on cannot go unwatched.
+ */
+export const COMPOSER_HEADER_COLUMNS = [
+  "composerId",
+  "workspaceId",
+  "isSubagent",
+  "subagentTypeName",
+] as const;
+
 interface WorkspaceComposerRef {
   composerId: string;
   unifiedMode?: string;
   forceMode?: string;
 }
+
+/**
+ * What globalStorage's `composerHeaders` table records about one conversation.
+ *
+ * Cursor moved the per-workspace conversation lists out of `workspaceStorage`
+ * (`hasMigratedComposerData: true`, no `allComposers`) into this table, which
+ * is the only place that still says which workspace a conversation belongs to.
+ */
+interface ComposerHeader {
+  workspaceId?: string;
+  /** A conversation a parent agent started; `subagentType` names its kind. */
+  isSubagent: boolean;
+  subagentType?: string;
+}
+
+/**
+ * Whose a conversation is, according to its header: `ours` and `other` are the
+ * header's workspace resolving to this project or to a different one, and
+ * `unknown` is a header whose workspace cannot be resolved to a folder.
+ */
+type Attribution = "ours" | "other" | "unknown";
 
 interface CursorComposerData {
   composerId: string;
@@ -53,6 +105,8 @@ interface CursorComposerData {
 interface CursorBubbleData {
   type: number;
   text?: string;
+  /** Present on a tool-call bubble, which carries no text of its own. */
+  toolFormerData?: { name?: unknown; params?: unknown; rawArgs?: unknown };
   createdAt?: string | number;
   modelInfo?: { modelName?: string };
 }
@@ -123,15 +177,16 @@ export class CursorScraper extends AbstractScraper<CursorChunk> {
 
   async *scrape(since?: Date): AsyncIterable<CursorChunk> {
     const state = await this.getLastScrapedPosition();
-    const cutoff = since ?? state.lastTimestamp;
-    yield* withDriftReport(SCRAPER_NAME, this.readAllMessages(cutoff), this.stateDir);
+    const outdated = since === undefined && (state.scraperVersion ?? 1) < CURSOR_SCRAPER_VERSION;
+    const cutoff = since ?? (outdated ? new Date(0) : state.lastTimestamp);
+    yield* withDriftReport(SCRAPER_NAME, this.readAllMessages(cutoff, outdated), this.stateDir);
   }
 
   async *fullSync(): AsyncIterable<CursorChunk> {
     yield* withDriftReport(SCRAPER_NAME, this.readAllMessages(new Date(0)), this.stateDir);
   }
 
-  private async *readAllMessages(since: Date): AsyncIterable<CursorChunk> {
+  private async *readAllMessages(since: Date, recordVersion = false): AsyncIterable<CursorChunk> {
     // Dynamic import keeps better-sqlite3 an optional runtime dependency,
     // matching the copilot and opencode scrapers.
     let DatabaseCtor: typeof Database;
@@ -146,8 +201,22 @@ export class CursorScraper extends AbstractScraper<CursorChunk> {
     const workspacePaths = await this.resolveWorkspaceDatabasePaths();
     const seenComposerIds = new Set<string>();
 
+    // Read once, before anything is attributed: the header is the authority on
+    // which workspace a conversation belongs to, and the workspace's own list
+    // of conversations is no longer written by current Cursor.
+    const globalPath = globalStoragePathForStore(this.cursorStorePath);
+    const headers = this.readComposerHeaders(DatabaseCtor, globalPath);
+    const attribution =
+      headers && this.projectRoot
+        ? await this.attributeByHeader(headers, this.projectRoot)
+        : new Map<string, Attribution>();
+
     for (const wsPath of workspacePaths) {
-      const composerRefs = this.readWorkspaceComposers(DatabaseCtor, wsPath);
+      // A workspace that lists a conversation the header files under another
+      // project is out of date about it; the header wins.
+      const composerRefs = this.readWorkspaceComposers(DatabaseCtor, wsPath).filter(
+        (ref) => attribution.get(ref.composerId) !== "other",
+      );
       for (const ref of composerRefs) {
         seenComposerIds.add(ref.composerId);
       }
@@ -155,20 +224,20 @@ export class CursorScraper extends AbstractScraper<CursorChunk> {
         continue;
       }
 
-      const globalPath = deriveGlobalStoragePath(wsPath);
-      if (!globalPath) {
+      const wsGlobalPath = deriveGlobalStoragePath(wsPath);
+      if (!wsGlobalPath) {
         continue;
       }
 
       let globalDb: Database.Database | null = null;
       try {
-        globalDb = new DatabaseCtor(globalPath, { readonly: true, fileMustExist: true });
-        yield* this.readComposerMessages(globalDb, composerRefs, since, wsPath);
+        globalDb = new DatabaseCtor(wsGlobalPath, { readonly: true, fileMustExist: true });
+        yield* this.readComposerMessages(globalDb, composerRefs, since, wsPath, headers);
       } catch (err) {
         // Global storage unreadable — treat as schema drift and warn.
         // The cursorDiskKV table is required; if it's gone, something changed.
         warnDrift(
-          globalPath,
+          wsGlobalPath,
           `globalStorage unreadable: ${(err as Error).message}`,
         );
       } finally {
@@ -180,38 +249,171 @@ export class CursorScraper extends AbstractScraper<CursorChunk> {
     // it on a matched workspace meant a pruned workspaceStorage entry, or a
     // multi-root workspace with no `folder`, left this doing nothing at all —
     // while globalStorage sat exactly where it always sits.
-    yield* this.readUnreferencedComposers(
+    yield* this.readUnlistedComposers(
       DatabaseCtor,
-      globalStoragePathForStore(this.cursorStorePath),
+      globalPath,
       seenComposerIds,
+      headers,
+      attribution,
+      since,
     );
+
+    // Reached only when the read ran to the end: a scan that throws abandons
+    // the generator before this line, so an interrupted re-read does not mark
+    // itself done. Nor does one that could not open globalStorage, which
+    // reports drift and carries on rather than throwing, but has re-read
+    // nothing.
+    if (recordVersion && globalPath && canOpen(DatabaseCtor, globalPath)) {
+      await this.saveScrapedPosition({ scraperVersion: CURSOR_SCRAPER_VERSION });
+    }
   }
 
   /**
-   * Read conversations that globalStorage holds but no workspace lists.
+   * Every conversation globalStorage files under a workspace, keyed by id.
+   *
+   * `null` when the table is not there, which is what older Cursor looks like
+   * and also what a rename would look like, so it is reported rather than
+   * assumed. Columns are looked up first and only the ones present are
+   * selected: a missing column then costs that piece of information, not the
+   * whole table.
+   */
+  private readComposerHeaders(
+    DatabaseCtor: typeof Database,
+    globalPath: string | null,
+  ): Map<string, ComposerHeader> | null {
+    if (!globalPath) {
+      return null;
+    }
+
+    let db: Database.Database;
+    try {
+      db = new DatabaseCtor(globalPath, { readonly: true, fileMustExist: true });
+    } catch {
+      // Unopenable globalStorage is reported where the conversations are read.
+      return null;
+    }
+
+    try {
+      const columns = new Set(
+        (db.prepare("PRAGMA table_info(composerHeaders)").all() as Array<{ name: string }>).map(
+          (column) => column.name,
+        ),
+      );
+      if (columns.size === 0) {
+        warnDrift(
+          globalPath,
+          "composerHeaders table is missing — conversations are attributed by the files they record",
+        );
+        return null;
+      }
+      if (!columns.has("composerId")) {
+        warnDrift(globalPath, "composerHeaders has no 'composerId' column — cannot be used");
+        return null;
+      }
+      if (!columns.has("workspaceId")) {
+        warnDrift(
+          globalPath,
+          "composerHeaders has no 'workspaceId' column — conversations are attributed by the files they record",
+        );
+      }
+
+      const selected = COMPOSER_HEADER_COLUMNS.filter((column) => columns.has(column));
+      const rows = db
+        .prepare(`SELECT ${selected.map((column) => `"${column}"`).join(", ")} FROM composerHeaders`)
+        .all() as Array<Record<string, unknown>>;
+
+      const headers = new Map<string, ComposerHeader>();
+      for (const row of rows) {
+        const composerId = toNonEmptyString(row.composerId);
+        if (!composerId) continue;
+        const subagentType = toNonEmptyString(row.subagentTypeName);
+        headers.set(composerId, {
+          workspaceId: toNonEmptyString(row.workspaceId),
+          // The flag is stored as a number or a boolean depending on how
+          // Cursor wrote it; either way a named subagent type says it too.
+          isSubagent: isTruthyFlag(row.isSubagent) || subagentType !== undefined,
+          subagentType,
+        });
+      }
+      return headers;
+    } catch (err) {
+      warnDrift(globalPath, `composerHeaders unreadable: ${(err as Error).message}`);
+      return null;
+    } finally {
+      db.close();
+    }
+  }
+
+  /**
+   * Settle each header against this project through the workspace it names.
+   *
+   * The workspace id is the directory under `workspaceStorage`, so the folder
+   * comes from the `workspace.json` already used to scope workspaces. A
+   * workspace that is plainly another project's makes the conversation
+   * `other`; one that cannot be resolved (no id, directory pruned, a
+   * multi-root workspace with no folder) makes it `unknown`, which falls back
+   * to the files the conversation recorded rather than discarding it.
+   */
+  private async attributeByHeader(
+    headers: Map<string, ComposerHeader>,
+    projectRoot: string,
+  ): Promise<Map<string, Attribution>> {
+    const workspaceStorageDir = workspaceStorageDirForStore(this.cursorStorePath);
+    const byWorkspace = new Map<string, Attribution>();
+    const result = new Map<string, Attribution>();
+
+    for (const [composerId, header] of headers) {
+      const id = header.workspaceId;
+      let verdict: Attribution = "unknown";
+      // The id is joined into a path, so only a bare directory name is used.
+      if (id && workspaceStorageDir && id === basename(id) && id !== "." && id !== "..") {
+        let known = byWorkspace.get(id);
+        if (!known) {
+          const ownership = await classifyWorkspace(
+            join(workspaceStorageDir, id, STATE_DB_NAME),
+            projectRoot,
+          );
+          known = ownership === "match" ? "ours" : ownership === "other" ? "other" : "unknown";
+          byWorkspace.set(id, known);
+        }
+        verdict = known;
+      }
+      result.set(composerId, verdict);
+    }
+    return result;
+  }
+
+  /**
+   * Read conversations that no matched workspace lists.
    *
    * A workspace only keeps a composer in `composer.composerData` for as long as
-   * it cares to; globalStorage keeps the conversation. On one machine that was
-   * 165 referenced against 593 stored, so discovery through workspaces alone
-   * could not reach most of the history that exists.
+   * it cares to — current Cursor keeps none — while globalStorage keeps the
+   * conversation. On one machine that was 165 referenced against 593 stored,
+   * so discovery through workspaces alone could not reach most of the history
+   * that exists.
    *
-   * Attribution is the whole difficulty. A workspace-referenced composer
-   * belongs to that workspace's folder, and nothing else has to be decided. An
-   * orphan has no workspace, so it is attributed only by file paths recorded
-   * inside it. That is deliberately strict: matching on any mention of a
-   * project's name is what once handed one project another project's private
-   * transcripts, and a conversation that cannot be placed is skipped rather
-   * than guessed at.
+   * Which workspace a conversation belongs to is read from `composerHeaders`
+   * wherever it says. Only a conversation it cannot place — no header row, or a
+   * workspace that resolves to no folder — is attributed by file paths
+   * recorded inside it, which is deliberately strict: matching on any mention
+   * of a project's name is what once handed one project another project's
+   * private transcripts, and a conversation that cannot be placed is skipped
+   * rather than guessed at. Path-guessing everything misfiled 3 of 100 real
+   * conversations under a second project, which is why the header comes first.
    */
-  private *readUnreferencedComposers(
+  private async *readUnlistedComposers(
     DatabaseCtor: typeof Database,
     globalPath: string | null,
     referenced: Set<string>,
-  ): Iterable<CursorChunk> {
+    headers: Map<string, ComposerHeader> | null,
+    attribution: Map<string, Attribution>,
+    since: Date,
+  ): AsyncIterable<CursorChunk> {
     // Without a project root there is nothing to attribute against, and an
-    // orphan's only claim to belong anywhere is a path match. Reading them
-    // unscoped would mean every conversation on the machine, which is the
-    // opposite of what an unscoped reader should do with unattributable data.
+    // orphan's only claim to belong anywhere is a header or a path match.
+    // Reading them unscoped would mean every conversation on the machine,
+    // which is the opposite of what an unscoped reader should do with
+    // unattributable data.
     if (!globalPath || !this.projectRoot) {
       return;
     }
@@ -226,27 +428,33 @@ export class CursorScraper extends AbstractScraper<CursorChunk> {
     }
 
     try {
-      // Narrowed in SQL before anything is parsed. Walking every stored
-      // composer took a scan from 1.3s to 6.2s on a real store — past the
-      // refresh budget, on the critical path of a tool call. The project's
-      // directory name survives every encoding these blobs use (Windows paths,
-      // `file:///` URIs), so it is a safe coarse filter; `composerMentionsProject`
-      // still decides, and a name like `core` merely lets more candidates
-      // through rather than admitting them.
-      const refs: WorkspaceComposerRef[] = [];
-      const rows = globalDb
-        .prepare("SELECT key, value FROM cursorDiskKV WHERE key LIKE 'composerData:%' AND value LIKE ?")
-        .all(`%${basename(this.projectRoot)}%`) as Array<{ key: string; value: string }>;
+      const getComposer = globalDb.prepare("SELECT value FROM cursorDiskKV WHERE key = ?");
+      // Header-attributed to this project: no path check, and read from the
+      // cursor like any listed conversation. Path-attributed ones are, by
+      // definition, ones nothing lists, so they are older than the cursor.
+      const attributed: WorkspaceComposerRef[] = [];
+      const guessed: WorkspaceComposerRef[] = [];
 
-      for (const row of rows) {
-        const composerId = row.key.slice("composerData:".length);
+      for (const candidate of this.unlistedCandidates(globalDb, headers, attribution)) {
+        const composerId = candidate.composerId;
         if (!composerId || referenced.has(composerId)) {
+          continue;
+        }
+        const verdict = attribution.get(composerId);
+        if (verdict === "other") {
+          continue;
+        }
+
+        const value =
+          candidate.value ??
+          (getComposer.get(`composerData:${composerId}`) as { value: string } | undefined)?.value;
+        if (value === undefined) {
           continue;
         }
 
         let parsed: unknown;
         try {
-          parsed = JSON.parse(row.value) as unknown;
+          parsed = JSON.parse(value) as unknown;
         } catch {
           // A malformed orphan is reported by readComposerMessages if it is
           // ever selected; here it simply cannot be attributed.
@@ -264,27 +472,31 @@ export class CursorScraper extends AbstractScraper<CursorChunk> {
         // Most orphans are abandoned chats with no turns at all — 405 of 504
         // on the machine this was measured on. Skipping them before the path
         // walk keeps the common case cheap.
-        const headers = composer.fullConversationHeadersOnly;
-        if (!Array.isArray(headers) || headers.length === 0) {
+        const turns = composer.fullConversationHeadersOnly;
+        if (!Array.isArray(turns) || turns.length === 0) {
           continue;
         }
 
-        if (!composerMentionsProject(composer, this.projectRoot)) {
-          continue;
+        const ref = { composerId, unifiedMode: composer.unifiedMode };
+        if (verdict === "ours") {
+          attributed.push(ref);
+        } else if (composerMentionsProject(composer, this.projectRoot)) {
+          guessed.push(ref);
         }
-
-        refs.push({ composerId, unifiedMode: composer.unifiedMode });
       }
 
-      if (refs.length > 0) {
-        // Deliberately not `since`. These conversations are ones no workspace
-        // lists, so they are older than the cursor by definition — filtering
-        // them by it meant the whole feature fired only on a never-indexed
-        // project and did nothing for anyone with an existing index. The
-        // copilot reader made the same call for the same reason. Re-emitting
-        // is safe: upserts collapse on a chunk id that includes the message
-        // index, so a conversation read twice is stored once.
-        yield* this.readComposerMessages(globalDb, refs, new Date(0), globalPath);
+      if (attributed.length > 0) {
+        yield* this.readComposerMessages(globalDb, attributed, since, globalPath, headers);
+      }
+      if (guessed.length > 0) {
+        // Deliberately not `since`: these are conversations no workspace
+        // lists, so filtering them by the cursor meant the whole feature fired
+        // only on a never-indexed project and did nothing for anyone with an
+        // existing index. The copilot reader made the same call for the same
+        // reason. Re-emitting is safe: upserts collapse on a chunk id that
+        // includes the message index, so a conversation read twice is stored
+        // once.
+        yield* this.readComposerMessages(globalDb, guessed, new Date(0), globalPath, headers);
       }
     } catch (err) {
       // The same condition the workspace loop treats as drift and continues
@@ -298,6 +510,55 @@ export class CursorScraper extends AbstractScraper<CursorChunk> {
       );
     } finally {
       globalDb.close();
+    }
+  }
+
+  /**
+   * The conversations worth looking at for this project.
+   *
+   * With the header table that is a lookup by id: the ones it files under this
+   * project, the ones whose workspace it cannot resolve, and any composer it
+   * has no row for (found from the keys alone, which never touches the large
+   * values). Without the table there is no id to start from, so every stored
+   * composer is narrowed in SQL by the project's directory name. Walking them
+   * all took a scan from 1.3s to 6.2s on a real store, and the same query is
+   * what cost 9 to 28s a scan on a 6.9GB one — which is why it is only the
+   * fallback. The name survives every encoding these blobs use (Windows paths,
+   * `file:///` URIs), so it is a safe coarse filter; `composerMentionsProject`
+   * still decides, and a name like `core` merely lets more candidates through
+   * rather than admitting them.
+   */
+  private *unlistedCandidates(
+    globalDb: Database.Database,
+    headers: Map<string, ComposerHeader> | null,
+    attribution: Map<string, Attribution>,
+  ): Iterable<{ composerId: string; value?: string }> {
+    if (!headers) {
+      const rows = globalDb
+        .prepare("SELECT key, value FROM cursorDiskKV WHERE key LIKE 'composerData:%' AND value LIKE ?")
+        .all(`%${basename(this.projectRoot ?? "")}%`) as Array<{ key: string; value: string }>;
+      for (const row of rows) {
+        yield { composerId: row.key.slice("composerData:".length), value: row.value };
+      }
+      return;
+    }
+
+    for (const [composerId, verdict] of attribution) {
+      if (verdict !== "other") {
+        yield { composerId };
+      }
+    }
+
+    // A range over the key, not LIKE: the range uses the key's index and
+    // reads no values, where LIKE on this column cannot.
+    const keys = globalDb
+      .prepare("SELECT key FROM cursorDiskKV WHERE key >= 'composerData:' AND key < 'composerData;'")
+      .all() as Array<{ key: string }>;
+    for (const { key } of keys) {
+      const composerId = key.slice("composerData:".length);
+      if (!headers.has(composerId)) {
+        yield { composerId };
+      }
     }
   }
 
@@ -361,6 +622,7 @@ export class CursorScraper extends AbstractScraper<CursorChunk> {
     composerRefs: WorkspaceComposerRef[],
     since: Date,
     wsPathForWarn: string,
+    composerHeaders: Map<string, ComposerHeader> | null,
   ): Iterable<CursorChunk> {
     const getComposer = globalDb.prepare(
       "SELECT value FROM cursorDiskKV WHERE key = ?",
@@ -444,6 +706,12 @@ export class CursorScraper extends AbstractScraper<CursorChunk> {
         composer.unifiedMode ?? ref.unifiedMode,
       );
       const sessionId = ref.composerId;
+      const composerHeader = composerHeaders?.get(ref.composerId);
+      const subagent = composerHeader?.isSubagent === true;
+      // A subagent's first "user" turn is the prompt its parent agent wrote
+      // for it. It is kept, because it says what the subagent was asked, but
+      // not as the person's words.
+      let promptSeen = false;
 
       let messageIndex = 0;
       for (const header of headers) {
@@ -477,13 +745,24 @@ export class CursorScraper extends AbstractScraper<CursorChunk> {
           continue;
         }
 
-        const content = toNonEmptyString(bubble.text) ?? "";
+        let content = toNonEmptyString(bubble.text) ?? "";
+        let role = normalizeRole(bubble.type);
         if (!content) {
-          messageIndex++;
-          continue;
+          // A tool call is a bubble with no text, so reading text alone
+          // dropped every edit, command and search an agent made: 2,200
+          // bubbles became 278 chunks on a real store. One line says what it
+          // did; thinking bubbles have neither text nor a tool and stay out.
+          const toolLine = describeToolBubble(bubble);
+          if (!toolLine) {
+            messageIndex++;
+            continue;
+          }
+          content = toolLine;
+          role = "tool";
+        } else if (subagent && role === "user" && !promptSeen) {
+          promptSeen = true;
+          role = "tool";
         }
-
-        const role = normalizeRole(bubble.type);
 
         yield {
           tool: "cursor",
@@ -497,6 +776,7 @@ export class CursorScraper extends AbstractScraper<CursorChunk> {
             referencedFiles: [],
             model: bubble.modelInfo?.modelName ?? model,
             composerMode,
+            ...(subagent ? { subagent: true, subagentType: composerHeader?.subagentType } : {}),
           },
         };
         messageIndex++;
@@ -544,6 +824,15 @@ export class CursorScraper extends AbstractScraper<CursorChunk> {
       }
     }
     return filtered;
+  }
+}
+
+function canOpen(DatabaseCtor: typeof Database, path: string): boolean {
+  try {
+    new DatabaseCtor(path, { readonly: true, fileMustExist: true }).close();
+    return true;
+  } catch {
+    return false;
   }
 }
 
@@ -650,6 +939,15 @@ function globalStoragePathForStore(storePath: string): string | null {
   return join(normalized.slice(0, index), "globalStorage", "state.vscdb");
 }
 
+/** The `workspaceStorage` directory a store path is, or sits inside. */
+function workspaceStorageDirForStore(storePath: string): string | null {
+  const normalized = storePath.replace(/\\/g, "/").replace(/\/+$/, "");
+  const marker = "/workspaceStorage";
+  const index = normalized.lastIndexOf(marker);
+  if (index === -1) return null;
+  return normalized.slice(0, index + marker.length);
+}
+
 function deriveGlobalStoragePath(workspaceDbPath: string): string | null {
   const normalized = workspaceDbPath.replace(/\\/g, "/");
   const wsIdx = normalized.indexOf("/workspaceStorage/");
@@ -681,6 +979,72 @@ function normalizeRole(value?: number | string): CursorChunk["role"] {
 
 function normalizeComposerMode(value?: string): CursorChunk["metadata"]["composerMode"] {
   return value === "agent" ? "agent" : "normal";
+}
+
+const TOOL_LINE_MAX = 200;
+
+/** Argument names a tool call records its target under, most specific first. */
+const TOOL_TARGET_KEYS = [
+  "relativeWorkspacePath",
+  "targetFile",
+  "filePath",
+  "path",
+  "targetDirectory",
+  "effectiveUri",
+  "title",
+  "pattern",
+  "globPattern",
+  "query",
+  "command",
+  "description",
+];
+
+/**
+ * One short line for a tool-call bubble: `used edit_file_v2: src/a.ts`.
+ *
+ * The arguments are never indexed whole — an edit carries the file's new
+ * content — only the first line of the target, so the index learns what was
+ * touched without holding what was written.
+ */
+function describeToolBubble(bubble: CursorBubbleData): string | undefined {
+  const tool = bubble.toolFormerData;
+  if (!isRecord(tool)) {
+    return undefined;
+  }
+
+  const name = toNonEmptyString(tool.name) ?? "tool";
+  const args = parseToolArguments(tool.params) ?? parseToolArguments(tool.rawArgs) ?? {};
+  let target = "";
+  for (const key of TOOL_TARGET_KEYS) {
+    const value = toNonEmptyString(args[key]);
+    if (value) {
+      target = value.split(/\r?\n/, 1)[0] ?? "";
+      break;
+    }
+  }
+
+  const line = target ? `used ${name}: ${target}` : `used ${name}`;
+  return line.length > TOOL_LINE_MAX ? `${line.slice(0, TOOL_LINE_MAX)}…` : line;
+}
+
+/** Cursor stores a tool's arguments as a JSON string; tolerate an object too. */
+function parseToolArguments(value: unknown): Record<string, unknown> | undefined {
+  if (isRecord(value)) {
+    return value;
+  }
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return isRecord(parsed) ? parsed : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function isTruthyFlag(value: unknown): boolean {
+  return value === true || value === 1 || value === "1" || value === "true";
 }
 
 function toNonEmptyString(value: unknown): string | undefined {

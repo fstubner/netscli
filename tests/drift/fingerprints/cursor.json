@@ -14,6 +14,14 @@
   "globalStorage": {
     "kind": "sqlite-kv",
     "table": "cursorDiskKV",
+    "tables": {
+      "composerHeaders": [
+        "composerId: TEXT",
+        "isSubagent: INTEGER",
+        "subagentTypeName: TEXT",
+        "workspaceId: TEXT"
+      ]
+    },
     "keysByPrefix": {
       "composerData:": [
         "_v: number",
