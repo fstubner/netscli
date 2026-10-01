@@ -14,8 +14,8 @@ NetsCLI focuses on practical network inspection tasks:
 | Task | Use this when |
 | --- | --- |
 | Discover hosts | You want to find reachable devices on a subnet. |
-| Scan TCP ports | You know a host and want port status, latency, service guesses, and optional banner data. |
-| Inspect a host | You want a host profile combining reachability, reverse DNS, and optional port checks. |
+| Scan ports | You know a host and want TCP or UDP port status, latency, the software and version where a service names itself, and banner data. |
+| Inspect a host | You want a host profile: reachability, reverse DNS, MAC address and maker, an OS hint, and optional port checks. |
 | Sweep a subnet | You want discovery plus exposed services across discovered hosts. |
 | Query names | You need DNS, reverse DNS, or local mDNS service information. |
 | Review local inventory | You need local interfaces or the operating system ARP neighbor cache. |
@@ -25,13 +25,13 @@ NetsCLI is not intended to replace tools such as nmap or Wireshark for advanced 
 
 ## Interface model
 
-The core library owns network behavior. Interface layers present the data and workflow that fit their environment instead of reimplementing probes, parsers, or safety limits.
+Every interface runs the same core library, so results and limits are the same whichever you use. Each one presents them in the way that suits it.
 
 | Interface | Best fit |
 | --- | --- |
 | Desktop app | Tabbed workflows, filtering, row details, history, exports, and result review. |
 | Terminal UI | Keyboard-first interactive diagnostics inside a terminal session. |
-| CLI | Repeatable commands, scripts, JSON/YAML output, setup, doctor, and shell workflows. |
+| CLI | Repeatable commands, scripts, JSON, YAML, CSV and Markdown output, setup, doctor, and shell workflows. |
 | MCP server | Structured tools for AI agents that need local network operations. |
 | Rust core | Applications that want the shared operations directly. |
 
@@ -53,6 +53,6 @@ Interfaces may add confirmations or guidance, but they do not bypass the core li
 - Installing on Windows, macOS, or Linux: read [Installation](/docs/install/).
 - Comparing desktop app, TUI, CLI, and MCP coverage: read [Interface coverage](/docs/interface-coverage/).
 - Using the desktop app: read [Desktop app](/docs/desktop/).
-- Automating scans or exporting JSON/YAML: read [CLI](/docs/cli/).
+- Automating scans or exporting JSON, YAML, CSV or Markdown: read [CLI](/docs/cli/).
 - Integrating with agents: read [MCP server](/docs/mcp/).
 - Building on the Rust crates: read [Core library and crates](/docs/core-library/).

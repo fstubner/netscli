@@ -51,7 +51,7 @@ client often has a different PATH from your shell.
 npm fetches the prebuilt binary for your platform on first launch. You need
 Node 18 or newer. Which version runs is up to npx: it may pick up a newer
 release or reuse one it has cached, so the version can differ from the one
-you have elsewhere. Write `netscli@0.3.3` in the args to pin one. The npm
+you have elsewhere. Write `netscli@<version>` in the args to pin one. The npm
 builds leave out packet capture, because it needs libpcap or Npcap present on
 the machine.
 
@@ -88,7 +88,7 @@ there is nothing to look at until a client connects.
 | `ping_host` | Check reachability and latency. |
 | `dns_lookup` | Query DNS records. |
 | `get_arp_table` | Read the local ARP neighbor cache. |
-| `inspect_host` | Build a host profile from reachability, DNS, and ports. |
+| `inspect_host` | Build a host profile: reachability, DNS, MAC address and maker, an OS hint, and ports. |
 | `sweep_network` | Discover hosts and scan selected ports. |
 | `list_network_interfaces` | List local network interfaces. |
 | `discover_mdns` | Discover local mDNS/DNS-SD services. |
@@ -191,7 +191,7 @@ still apply either way.
 
 ## What stays CLI-only
 
-MCP service installation, environment checks, setup, doctor, shell completions, and manpage generation are CLI workflows. They are not exposed in NetsCLI Desktop and do not need MCP tools unless they become shared core operations with a clear agent use case.
+MCP service installation, environment checks, setup, doctor, shell completions, and manpage generation are CLI workflows. They are not available as MCP tools or in NetsCLI Desktop.
 
 ## Troubleshooting
 

@@ -35,7 +35,7 @@ Discovery focuses on host-level data: IP address, hostname when available, MAC a
 
 ## Scan
 
-Use `scan` when you already know the host and want TCP port status.
+Use `scan` when you already know the host and want TCP port status. For UDP, see below.
 
 ```bash
 netscli scan 192.168.1.1 -p 22,80,443
@@ -47,12 +47,12 @@ Port statuses are:
 
 | Status | Meaning |
 | --- | --- |
-| `open` | TCP connect succeeded. NetsCLI may attempt bounded banner, HTTP, or TLS enrichment. |
+| `open` | TCP connect succeeded. NetsCLI then reads what the service sends back (a banner, an HTTP response, TLS details) and, where the service names itself, its software and version. |
 | `closed` | The host actively refused the TCP connection. |
 | `filtered` | The TCP connect attempt timed out or was blocked before connect. |
 | `error` | NetsCLI hit an unexpected probe error. |
 
-`filtered` is intentionally technical. It usually means a firewall, router, host policy, or dropped packet prevented a definitive open or closed answer.
+`filtered` usually means a firewall, router, host policy, or dropped packet prevented a definitive open or closed answer.
 
 ### UDP
 
@@ -150,7 +150,7 @@ Use `ping` for a quick reachability and packet-loss summary.
 netscli ping 192.168.1.1 --count 4
 ```
 
-The result summarizes sent packets, received packets, packet loss, and RTT values. Raw ICMP may require elevated permissions on some platforms; NetsCLI can fall back to TCP-based reachability where appropriate.
+The result summarizes sent packets, received packets, packet loss, and RTT values. Raw ICMP may require elevated permissions on some platforms; without them, NetsCLI checks reachability with a TCP connection instead.
 
 ## Trace route
 

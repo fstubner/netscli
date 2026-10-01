@@ -98,7 +98,7 @@ The details pane changes when multiple rows are selected. Instead of duplicating
 The details pane is operation-specific:
 
 - Scan rows explain open, closed, filtered, and error states.
-- Inspect shows a host overview, checked ports, and raw data.
+- Inspect shows a host overview, the MAC address and maker, an OS hint with its clues, checked ports, and raw data.
 - Discover and Sweep summarize device inventory and exposed services.
 - DNS shows record values and metadata such as TTL or resolver source when available.
 - Interfaces shows state, addresses, MAC, selected/default hints, and loopback or virtual hints.
@@ -166,5 +166,5 @@ Most desktop tools are available in the standard desktop build. Packet capture i
 
 - Packet Capture stays in the tool list in every build. Running a capture needs a build that includes packet-capture support, plus Npcap on Windows or libpcap on Linux/macOS. Without those, the tab opens and shows setup guidance instead of running.
 - mDNS Discovery is included in the standard published desktop build.
-- A tool whose feature is genuinely absent from the build is hidden. That applies to mDNS Discovery; Packet Capture is the deliberate exception, because the published installers ship without it and a hidden tab explained nothing.
+- In a custom build without mDNS support, mDNS Discovery is hidden.
 - If a required runtime library is missing, only that feature is unavailable. The rest of the desktop app keeps working and shows setup guidance for the missing dependency.

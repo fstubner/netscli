@@ -34,17 +34,7 @@ Dependency flow stays one-way:
 Interface crates may depend on the core. The core must not depend on a UI layer, MCP protocol layer, or desktop runtime.
 
 The CLI additionally depends on `netscli-mcp`, because `netscli serve` runs
-the MCP server in-process — the one edge between two interface crates. The
-diagram previously showed all three as siblings, which made `netscli serve`
-look impossible.
-
-## Ownership rules
-
-- Put scan, discovery, ping, DNS, ARP, sweep, inspect, stats, database, and packet capture logic in `netscli-core`.
-- Expose missing operations through `Ops` so CLI, TUI, desktop app, and MCP all benefit.
-- Keep public structures additive when possible.
-- Keep safety limits centralized.
-- Add core tests when behavior changes.
+the MCP server in-process — the one edge between two interface crates.
 
 ## Public facade
 
@@ -55,9 +45,6 @@ Most consumers start from `Ops`.
 | `Ops` | High-level async operation facade used by the CLI, TUI, Tauri backend, and MCP server. |
 | `OpsConfig` | Runtime defaults for scan, ping and DNS timeouts, plus probe concurrency. |
 | Result structs | Shared data returned by scans, discovery, DNS, ARP, interfaces, sweep, inspect, and packet capture. |
-
-Expose new behavior through the facade so every interface gets the
-same capability and the same safety behavior.
 
 Typical integration shape:
 
@@ -82,9 +69,9 @@ Exact method signatures can change as operations gain richer structured data. Pr
 
 | Module | Owns |
 | --- | --- |
-| `scan` | TCP port scanning, status classification, latency, banner, HTTP, and TLS probing. |
+| `scan` | TCP and UDP port scanning, status classification, latency, banner, HTTP and TLS probing, and service versions. |
 | `discover` | Host discovery over a subnet. |
-| `inspect` | Host profile data built from reachability, reverse DNS, and port checks. |
+| `inspect` | Host profile data built from reachability, reverse DNS, MAC address, port checks, and the OS hint. |
 | `sweep` | Discovery plus per-host port checks. |
 | `ping` | Reachability probing, with the ICMP and TCP-connect backends. |
 | `trace` | Route hops, over the platform trace tool. |
@@ -96,23 +83,6 @@ Exact method signatures can change as operations gain richer structured data. Pr
 | `db` | SQLite persistence for host records and scan history. |
 | `ops` | Cross-interface operation orchestration and limits. |
 
-## Interface responsibilities
-
-- CLI: parse arguments and format text, JSON, or YAML.
-- TUI: present terminal state and keyboard interactions.
-- Desktop app: render app state, tables, settings, details, exports, and Tauri command calls.
-- MCP: expose core operations through JSON-RPC tools.
-- Tauri backend: bridge desktop app commands to `netscli-core`.
-
-When adding a new network capability:
-
-1. Add the behavior and tests in `netscli-core`.
-2. Expose it through `Ops`.
-3. Add CLI handling and structured output.
-4. Add TUI and desktop app presentation if the workflow fits those interfaces.
-5. Add MCP exposure only when an agent use case is clear and safe.
-6. Update result-model docs when output fields change.
-
 ## Safety limits
 
 NetsCLI intentionally limits expensive operations:
@@ -122,10 +92,9 @@ NetsCLI intentionally limits expensive operations:
 - Default concurrency: `256`.
 - Default scan timeout: `500 ms`.
 
-## Compatibility rules
+## Contributing
 
-- Change public result structures additively where possible.
-- Avoid renaming CLI flags without a breaking-release note.
-- Keep MCP tool names and input schemas stable.
-- SQLite schema changes require migration planning.
-- Desktop-app-only network behavior is not allowed; network logic belongs in the core.
+The rules for where new code goes, how a new operation reaches every
+interface, and what has to stay compatible are in
+[ARCHITECTURE.md](https://github.com/fstubner/netscli/blob/main/docs/ARCHITECTURE.md)
+in the repository.

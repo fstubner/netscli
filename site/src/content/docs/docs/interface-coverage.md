@@ -3,11 +3,10 @@ title: Interface coverage
 description: What NetsCLI exposes in the desktop app, CLI, TUI, MCP server, and packet-capture builds.
 ---
 
-One Rust core library sits under everything NetsCLI offers. Shared network
-behaviour belongs in the core; each surface exposes the parts that suit how
-it is used.
+All four NetsCLI interfaces run the same network code, so a scan means the
+same thing in each. Each one exposes the parts that suit how it is used.
 
-## What the surfaces actually are
+## What the four interfaces are
 
 **Three of the four are the same binary.** `netscli` with a command is the
 CLI, `netscli` with no command opens the terminal UI, and `netscli serve`
@@ -49,8 +48,7 @@ server does not expose it as a tool.
 
 ### Notes on the dashes
 
-- **Trace route** has no MCP tool. Everything else it needs is in the core,
-  so this is a gap rather than a decision.
+- **Trace route** has no MCP tool yet.
 - **Reverse DNS** on the MCP server means asking `dns_lookup` for a `PTR`
   record, which works but wants the `in-addr.arpa` name rather than an
   address. The other three take an address directly.
@@ -62,9 +60,9 @@ server does not expose it as a tool.
   `--yaml`, `--csv` and `--md` on the CLI, `/export` in the TUI, JSON-RPC results
   over MCP.
 - **First-run setup** (`netscli setup`) and **diagnostics**
-  (`netscli doctor`) are two different commands and used to share a row here.
-  Setup is an interactive wizard; doctor is a headless report that works on
-  every build and is the way to find out what your build can do.
+  (`netscli doctor`) are two different commands. Setup is an interactive
+  wizard; doctor is a report that works on every build and tells you what
+  your build can do.
 
 ### Notes on the ticks
 
@@ -74,8 +72,8 @@ server does not expose it as a tool.
   `cargo install netscli` are all built without it. Each release does publish
   separate `-pcap` CLI assets that have it compiled in. See
   [Installation](/docs/install/#packet-capture).
-- **Structured output** means something different on each surface, which is
-  why it is one row rather than four: the desktop app exports files and
+- **Structured output** means something different on each interface: the
+  desktop app exports files and
   result bundles, the CLI takes `--json`, `--yaml`, `--csv` and `--md`, the
   TUI exports a session with `/export`, and the MCP server returns JSON-RPC
   results.
@@ -128,5 +126,5 @@ Most NetsCLI operations work in the standard published builds. A few capabilitie
 
 - Packet capture runs only on builds that include packet-capture support, and also needs Npcap on Windows or libpcap on Linux/macOS. On the CLI the `pcap` subcommand is absent from standard builds.
 - mDNS discovery is included in the published CLI, desktop app, and MCP server. Library consumers can still build `netscli-core` without the `mdns` feature if they need a leaner dependency set.
-- The desktop app keeps Packet Capture visible in builds without capture support — greyed, with an explanation of what it needs — rather than hiding it. A tool that vanishes leaves nowhere to explain why.
+- The desktop app keeps Packet Capture in its tool list in builds without capture support, with a note saying what it needs. Opening it shows setup guidance, and it cannot be run.
 - If a runtime dependency is missing, NetsCLI keeps the rest of the app usable and explains what to install for that feature.

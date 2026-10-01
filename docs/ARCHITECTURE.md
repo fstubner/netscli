@@ -93,6 +93,18 @@ holds no credentials.
 - Do not add GUI-only, TUI-only, CLI-only, or MCP-only network logic. Interfaces should call `netscli-core` or add a missing operation to `Ops`.
 - Do not weaken safety limits in `ops/` or MCP validation without a separate review.
 
+## Adding A Network Capability
+
+Moved here from the public docs page `core-library.md`, which is for library
+users rather than contributors.
+
+1. Add the behavior and tests in `netscli-core`.
+2. Expose it through `Ops`.
+3. Add CLI handling and structured output.
+4. Add TUI and desktop app presentation if the workflow fits those interfaces.
+5. Add MCP exposure only when an agent use case is clear and safe.
+6. Update the result-model docs when output fields change.
+
 ## Contribution Gates
 
 Run the narrowest relevant checks while iterating, then the full gate before shipping cross-cutting changes:

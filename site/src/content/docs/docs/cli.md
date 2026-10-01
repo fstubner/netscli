@@ -6,7 +6,7 @@ head:
     content: Command-line network scanner (CLI) | NetsCLI docs
 ---
 
-The CLI is the best interface for repeatable diagnostics, automation, and machine-readable output.
+Use the CLI for repeatable diagnostics, automation, and machine-readable output.
 
 ## Common commands
 
@@ -122,7 +122,7 @@ $ netscli scan 127.0.0.1 -p 22,80,443 --json
 ```
 
 `open` is the compatibility boolean older consumers already read; `status`
-carries the four-way answer. Both are present, so a script written against
+carries the full answer, including `open|filtered` for UDP. Both are present, so a script written against
 either keeps working.
 
 ```console
@@ -167,7 +167,7 @@ The CLI exposes shared network operations plus command-line maintenance workflow
 | --- | --- |
 | `discover` | Find reachable hosts on a subnet. |
 | `scan` | Scan TCP ports on one host, or UDP services with `--udp`. |
-| `inspect` | Build a host profile from reachability, reverse DNS, and optional ports. |
+| `inspect` | Build a host profile: reachability, reverse DNS, MAC address and maker, an OS hint, and optional ports. |
 | `sweep` | Discover hosts and scan selected ports across them. |
 | `ping` | Measure reachability and packet loss. |
 | `trace` | Show route hops to a host. |
@@ -204,10 +204,9 @@ Some workflows intentionally stay in the command-line interface:
 - `serve` and `mcp-service` for MCP server launch and supported service management.
 - Shell completions and manpage generation.
 
-The desktop app exposes shared network operations and result exploration. It does not duplicate maintenance workflows unless they become shared core operations with a clear interactive use case.
 
 ## Permissions and limits
 
 Raw ICMP, traceroute, and packet capture can require elevated permissions depending on the platform. Port scans and DNS lookups normally do not.
 
-The core library enforces safety limits for subnet size, port count, concurrency, and timeouts. Interface-specific code does not bypass those limits.
+Limits on subnet size, port count, concurrency, and timeouts apply the same way in every interface.

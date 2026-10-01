@@ -1,6 +1,6 @@
 ---
 title: Installation
-description: Install NetsCLI through package managers, direct release artifacts, scripts, or Cargo.
+description: Install NetsCLI through package managers, direct downloads, scripts, npm, or Cargo.
 head:
   - tag: title
     content: Install NetsCLI on Windows, macOS and Linux | NetsCLI docs
@@ -15,7 +15,9 @@ NetsCLI publishes command-line binaries and desktop installers through GitHub Re
 | Windows | `winget install netscli` | CLI and TUI |
 | Windows | `winget install netscli-gui` | Desktop app |
 | macOS | Homebrew or install script | CLI and TUI |
-| Linux | Install script, Homebrew, AUR, or release artifact | CLI and TUI |
+| macOS | `brew install --cask fstubner/tap/netscli-gui` | Desktop app |
+| Linux | Install script, Homebrew, AUR, or release download | CLI and TUI |
+| Linux | `.deb`, AppImage, or `yay -S netscli-gui-bin` | Desktop app |
 | Rust users | `cargo install netscli` | CLI and TUI from crates.io |
 | Node users | `npx netscli` | CLI and TUI from npm, no install step |
 
@@ -33,9 +35,8 @@ The desktop app is distributed separately:
 winget install netscli-gui
 ```
 
-Both short names resolve today. The full identifiers are `fstubner.netscli`
-and `fstubner.netscli.gui`, and they cannot become ambiguous — use those if a
-short name ever matches more than one package in the catalog.
+If a short name ever matches more than one package, use the full
+identifiers, `fstubner.netscli` and `fstubner.netscli.gui`.
 
 Scoop is also supported, for both the CLI and the desktop app:
 
@@ -45,17 +46,18 @@ scoop install netscli
 scoop install netscli-gui
 ```
 
-Or the PowerShell install script, which picks the right asset for your machine:
+Or the PowerShell install script, which picks the right download for your machine:
 
 ```powershell
 iwr -useb https://netscli.com/install.ps1 | iex
 ```
 
-Direct Windows downloads are attached to GitHub Releases. From 0.3.3 on, both
-`.exe` builds and the `.msi` installer are Authenticode-signed, so Windows shows
-a named publisher rather than an unknown one. Releases before 0.3.3 are
-unsigned. A new certificate still has to build reputation with SmartScreen,
-so you may see a warning for a while regardless.
+Direct Windows downloads are on the
+[releases page](https://github.com/fstubner/netscli/releases/latest). From
+0.3.3 on, the `.exe` downloads and the `.msi` installer are signed, so Windows
+names the publisher instead of showing an unknown one; from 0.3.4 the desktop
+app inside the installer is signed too. While the certificate is new,
+SmartScreen may still show a warning the first time you run one.
 
 ## macOS
 
@@ -71,7 +73,19 @@ Or use the install script:
 curl -fsSL https://netscli.com/install.sh | bash
 ```
 
-Desktop `.dmg` artifacts are attached to GitHub Releases where the release workflow publishes them. macOS may require the usual first-run approval for unsigned or independently distributed apps.
+For the desktop app, use the Homebrew cask:
+
+```bash
+brew install --cask fstubner/tap/netscli-gui
+```
+
+Or download the `.dmg` for Apple Silicon or Intel from the
+[releases page](https://github.com/fstubner/netscli/releases/latest).
+
+The desktop app is not notarized by Apple, so macOS blocks its first launch,
+whichever way you installed it. Open it once, then go to **System Settings →
+Privacy & Security** and click **Open Anyway**. You only need to do this once.
+(Right-click → Open no longer does this on macOS 15 and later.)
 
 ## Linux
 
@@ -93,40 +107,48 @@ On Arch-based systems with an AUR helper:
 yay -S netscli-bin
 ```
 
-Release artifacts may include Linux CLI binaries and desktop packages such as `.deb` or `.AppImage`, depending on the release.
+For the desktop app, download the `.deb` (Debian, Ubuntu and derivatives) or
+the AppImage (any distribution) from the
+[releases page](https://github.com/fstubner/netscli/releases/latest):
+
+```bash
+sudo apt install ./netscli-gui-linux-x86_64.deb
+```
+
+```bash
+chmod +x netscli-gui-linux-x86_64.AppImage
+./netscli-gui-linux-x86_64.AppImage
+```
+
+On Arch-based systems:
+
+```bash
+yay -S netscli-gui-bin
+```
 
 ### If the desktop window opens black or blank
 
-On some hosts the window appears but never paints anything. This is
-WebKitGTK's hardware compositing failing against a driver that only partly
-supports it, and it fails silently, so there is nothing on stderr to go on.
-It has been seen on virtual machines using the `vmwgfx` driver.
+On some Linux machines the desktop app's window opens but stays black or
+blank. It is a graphics driver problem, and has been seen on virtual machines.
 
-**The app should recover by itself.** It notices that a launch never drew
-anything and turns hardware compositing off on the next one, so closing the
-blank window and opening it again is usually enough. It prints the reason to
-stderr when it does this.
+**Close the window and open the app again.** The app notices the blank launch
+and switches to a safer drawing mode the next time, so the second launch
+usually works.
 
-To skip the failed launch, or if the automatic recovery does not fire:
+If it is still blank, start it once with:
 
 ```bash
 netscli-gui --disable-gpu-compositing
 ```
 
-That is remembered, so later launches from the desktop icon keep it. To undo
-it and go back to hardware compositing:
+The app remembers this, so later launches from the desktop icon keep working.
+To go back to the default:
 
 ```bash
 netscli-gui --gpu-compositing
 ```
 
-Compositing is not disabled by default because it costs hardware compositing
-for everyone, including the large majority whose drivers handle it correctly.
-The `WEBKIT_DISABLE_COMPOSITING_MODE=1` environment variable also still works,
-and overrides everything above for that one run.
-
-This applies to Linux only. Windows and macOS use a different web engine that
-has neither the fault nor the setting.
+Windows and macOS are not affected, and the two options do nothing there.
 
 ## Cargo
 
@@ -201,7 +223,7 @@ npm update -g netscli
 `npx netscli` may reuse a copy it has cached. To be sure you get the newest
 release, run `npx netscli@latest`.
 
-For direct release artifacts, download the [latest GitHub release](https://github.com/fstubner/netscli/releases/latest) and replace the previous install with the matching package for your platform.
+For a direct download, get the [latest GitHub release](https://github.com/fstubner/netscli/releases/latest) and replace the previous install with the matching package for your platform.
 
 ## Verifying a download
 
@@ -212,8 +234,7 @@ checked before you run anything.
 
 Each asset ships a `.sha256` sidecar next to it on the release page. The
 install scripts fetch and check it for you, and refuse to install if it is
-missing — a failed checksum request is not treated as permission to skip
-verification. To check a manual download yourself:
+missing. To check a manual download yourself:
 
 ```bash
 # Linux / macOS
@@ -234,10 +255,10 @@ A checksum only proves the file matches its own sidecar, and both come from
 the same place. The signature is what ties the asset to the workflow run that
 built it.
 
-Every asset is signed keylessly with [Sigstore
-cosign](https://docs.sigstore.dev/cosign/overview/) in CI, using the GitHub
-Actions OIDC identity — no key management, and the signature is bound to the
-exact run. Each asset ships a `.sig` and a `.pem` beside it:
+Every asset is signed with [Sigstore
+cosign](https://docs.sigstore.dev/cosign/overview/) by the release workflow,
+and the signature is tied to the exact run that built it. Each asset ships a
+`.sig` and a `.pem` beside it:
 
 ```bash
 cosign verify-blob \
@@ -254,16 +275,14 @@ CLI](https://docs.sigstore.dev/cosign/system_config/installation/). A pass
 confirms the asset was built and signed by this repository's release workflow
 and has not been altered since.
 
-This is separate from platform code signing. From 0.3.3 on, the Windows
-executables and installer also carry an Authenticode signature. The macOS
-`.dmg` is not notarized yet. See the Windows and macOS sections above for
-what your OS will say on first run.
+This is separate from the code signing Windows and macOS check. The Windows
+downloads carry a Windows signature from 0.3.3 on; the macOS app is not
+notarized. See the Windows and macOS sections above for what your system will
+say on first run.
 
 ## Packet capture
 
-**None of the installs above include packet capture.** It is a compile-time feature, and the default builds — the desktop installers, the standard CLI release assets, and `cargo install netscli` — are built without it. That keeps the default install free of any libpcap/Npcap dependency and avoids redistributing Npcap.
-
-Getting it is a deliberate extra step, and the rest of this section is how.
+**None of the installs above include packet capture.** The desktop installers, the standard CLI downloads, and `cargo install netscli` are all built without it, so none of them needs libpcap or Npcap. The rest of this section is how to get a build that has it.
 
 Normal scan, discovery, DNS, ARP, ping, trace, and interface workflows are unaffected and need none of this.
 
