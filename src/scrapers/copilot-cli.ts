@@ -6,6 +6,7 @@ import {
   AbstractScraper,
   describeType,
   driftWarner,
+  emittedPosition,
   estimateTokens,
   fileSize,
   isRecord,
@@ -14,7 +15,7 @@ import {
 import { withDriftReport } from "./drift-log.js";
 import { fileHeadHash, fileTailHash, resumeOffset } from "./base.js";
 import { readJsonlLines } from "./jsonl-reader.js";
-import type { FileCursor } from "../types/scraper.js";
+import type { EmittedPosition, FileCursor } from "../types/scraper.js";
 
 const SCRAPER_NAME = "copilot-cli";
 
@@ -180,7 +181,8 @@ export class CopilotCliScraper extends AbstractScraper<CopilotCliChunk> {
   ): AsyncIterable<CopilotCliChunk> {
     // Resume where the last scan stopped; see the codex scraper for the guards.
     const size = await fileSize(filePath);
-    const cursor = this.cursors[filePath];
+    const saved = this.cursors[filePath];
+    const cursor = saved && this.cursorBackedByIndex(saved) ? saved : undefined;
     const checkHash =
       this.resuming && cursor ? await fileHeadHash(filePath, cursor.offset) : null;
     const checkTail =
@@ -209,6 +211,8 @@ export class CopilotCliScraper extends AbstractScraper<CopilotCliChunk> {
     let gitBranch: string | undefined = resumed?.gitBranch;
     let gitCommit: string | undefined = resumed?.gitCommit;
     let readTo = startAt;
+    /** The last chunk handed out for this file; see `FileCursor.lastEmitted`. */
+    let lastEmitted: EmittedPosition | null | undefined = resumed ? cursor?.lastEmitted : null;
 
     for await (const entry of readJsonlLines(filePath, { start: startAt })) {
       byteAt = entry.endOffset;
@@ -365,7 +369,7 @@ export class CopilotCliScraper extends AbstractScraper<CopilotCliChunk> {
 
       const eventType = typeof event.type === "string" ? event.type : undefined;
 
-      yield {
+      const chunk: CopilotCliChunk = {
         tool: "copilot-cli",
         sessionId,
         timestamp,
@@ -380,6 +384,8 @@ export class CopilotCliScraper extends AbstractScraper<CopilotCliChunk> {
           gitCommit,
         },
       };
+      yield chunk;
+      lastEmitted = emittedPosition(chunk) ?? lastEmitted;
       messageIndex++;
     }
 
@@ -409,6 +415,7 @@ export class CopilotCliScraper extends AbstractScraper<CopilotCliChunk> {
           gitBranch,
           gitCommit,
         },
+        ...(lastEmitted === undefined ? {} : { lastEmitted }),
       };
     }
   }

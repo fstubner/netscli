@@ -6,7 +6,9 @@ import { recordDrift } from "./drift-log.js";
 import type {
   ConversationChunk,
   ConversationScraper,
+  EmittedPosition,
   FileCursor,
+  IndexProbe,
   ScraperState,
 } from "../types/scraper.js";
 
@@ -146,8 +148,37 @@ export abstract class AbstractScraper<T extends ConversationChunk = Conversation
   abstract scrape(since?: Date): AsyncIterable<T>;
   abstract fullSync(): AsyncIterable<T>;
 
+  /** Set by the scan for the duration of a scrape; see `useIndexProbe`. */
+  private indexProbe: IndexProbe | undefined;
+
   async getLastScrapedPosition(): Promise<ScraperState> {
     return this.stateManager.load(this.tool);
+  }
+
+  useIndexProbe(probe: IndexProbe | undefined): void {
+    this.indexProbe = probe;
+  }
+
+  /**
+   * Whether the index still holds what a cursor says was read.
+   *
+   * Only asked when a scan installed a probe; a scraper driven on its own has
+   * no index to disagree with. A cursor from before `lastEmitted` existed is
+   * refused once, so a file read through by an older version is read again —
+   * which is what repairs an index the concurrent prune already damaged,
+   * since nothing else can tell it apart from one that is whole.
+   */
+  protected cursorBackedByIndex(cursor: FileCursor): boolean {
+    if (!this.indexProbe) {
+      return true;
+    }
+    if (cursor.lastEmitted === undefined) {
+      return false;
+    }
+    if (cursor.lastEmitted === null) {
+      return true;
+    }
+    return this.indexProbe(cursor.lastEmitted.sessionId, cursor.lastEmitted.messageIndex);
   }
 
   /**
@@ -269,6 +300,18 @@ async function windowHash(path: string, start: number, length: number): Promise<
   } catch {
     return null;
   }
+}
+
+/**
+ * Where a yielded chunk will sit in the index, or undefined for one the index
+ * will not store. The scan drops blank chunks, so recording one as the last
+ * emitted would name a row that never exists and fail the cursor check on
+ * every scan; see `cursorBackedByIndex`.
+ */
+export function emittedPosition(chunk: ConversationChunk): EmittedPosition | undefined {
+  return chunk.content.trim()
+    ? { sessionId: chunk.sessionId, messageIndex: chunk.metadata.messageIndex ?? 0 }
+    : undefined;
 }
 
 /** A plain object: not null, not an array. The shape every parsed record is checked against first. */

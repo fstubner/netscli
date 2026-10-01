@@ -12,8 +12,13 @@ export interface PreparedStatements {
   /** Sessions whose retrieval units do not reach their last message. */
   selectSessionsMissingUnits: Statement;
   selectSessionMessages: Statement;
-  /** Every message id a session currently holds; see the prune in `scanTool`. */
-  selectMessageIdsForSession: Statement;
+  /**
+   * The message ids a session held when a scan began: every row indexed at or
+   * before a given time. See the prune in `scanTool` for why the time bound.
+   */
+  selectPrunableMessageIds: Statement;
+  /** Whether a session holds a row at a position; the cursor check's probe. */
+  messageAtIndex: Statement;
   /**
    * The lowest position a session already holds, read before this scan writes
    * to it. A scan that reaches at least that far back has accounted for
@@ -217,7 +222,12 @@ export function prepareStatements(db: DatabaseHandle): PreparedStatements {
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   );
 
-  const selectMessageIdsForSession = db.prepare(`SELECT id FROM messages WHERE session_ref = ?`);
+  const selectPrunableMessageIds = db.prepare(
+    `SELECT id FROM messages WHERE session_ref = ? AND indexed_at <= ?`,
+  );
+  const messageAtIndex = db.prepare(
+    `SELECT 1 FROM messages WHERE session_ref = ? AND message_index = ? LIMIT 1`,
+  );
   const deleteMessageById = db.prepare(`DELETE FROM messages WHERE id = ?`);
   const minMessageIndexForSession = db.prepare(
     `SELECT MIN(message_index) AS lowest FROM messages WHERE session_ref = ?`,
@@ -226,7 +236,8 @@ export function prepareStatements(db: DatabaseHandle): PreparedStatements {
   return {
     upsertSession,
     insertMessage,
-    selectMessageIdsForSession,
+    selectPrunableMessageIds,
+    messageAtIndex,
     deleteMessageById,
     minMessageIndexForSession,
     upsertChunkTxn: db.transaction((sessionArgs: unknown[], messageArgs: unknown[]) => {

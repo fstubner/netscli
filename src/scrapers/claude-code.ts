@@ -1,13 +1,20 @@
 import { stat, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import type { ChunkMetadata, ClaudeCodeChunk } from "../types/scraper.js";
-import { AbstractScraper, describeType, estimateTokens, fileSize, isRecord } from "./base.js";
+import {
+  AbstractScraper,
+  describeType,
+  emittedPosition,
+  estimateTokens,
+  fileSize,
+  isRecord,
+} from "./base.js";
 import { encodePathForToolDirectory, pathMatchesProject } from "../utils/project-scope.js";
 import { recordDrift, withDriftReport } from "./drift-log.js";
 import { MAX_LINE_BYTES } from "./limits.js";
 import { fileHeadHash, fileTailHash, resumeOffset } from "./base.js";
 import { readJsonlLines } from "./jsonl-reader.js";
-import type { FileCursor } from "../types/scraper.js";
+import type { EmittedPosition, FileCursor } from "../types/scraper.js";
 
 const SCRAPER_NAME = "claude-code";
 
@@ -256,7 +263,8 @@ export class ClaudeCodeScraper extends AbstractScraper<ClaudeCodeChunk> {
     // Resume where the last scan stopped; see the codex scraper for why these
     // files are safe to resume and what refuses the cursor.
     const size = await fileSize(filePath);
-    const cursor = this.cursors[filePath];
+    const saved = this.cursors[filePath];
+    const cursor = saved && this.cursorBackedByIndex(saved) ? saved : undefined;
     const checkHash =
       this.resuming && cursor ? await fileHeadHash(filePath, cursor.offset) : null;
     const checkTail =
@@ -289,6 +297,11 @@ export class ClaudeCodeScraper extends AbstractScraper<ClaudeCodeChunk> {
     /** Records with no `cwd`, held until `fileIsOurs` is known. */
     const pending: ClaudeCodeChunk[] = [];
     let readTo = startAt;
+    /** The last chunk handed out for this file; see `FileCursor.lastEmitted`. */
+    let lastEmitted: EmittedPosition | null | undefined = resumed ? cursor?.lastEmitted : null;
+    const emitted = (chunk: ClaudeCodeChunk | undefined): void => {
+      lastEmitted = (chunk && emittedPosition(chunk)) ?? lastEmitted;
+    };
 
     for await (const entry of readJsonlLines(filePath, { start: startAt })) {
       byteAt = entry.endOffset;
@@ -342,6 +355,7 @@ export class ClaudeCodeScraper extends AbstractScraper<ClaudeCodeChunk> {
           fileIsOurs = mine;
           if (mine) {
             yield* pending;
+            emitted(pending.at(-1));
           } else if (pending.length > 0) {
             recordDrift(
               SCRAPER_NAME,
@@ -445,10 +459,12 @@ export class ClaudeCodeScraper extends AbstractScraper<ClaudeCodeChunk> {
           continue;
         }
         yield* pending;
+        emitted(pending.at(-1));
         pending.length = 0;
       }
 
       yield chunk;
+      emitted(chunk);
     }
 
     // The file ended without any record naming a project. Nothing better than
@@ -457,6 +473,7 @@ export class ClaudeCodeScraper extends AbstractScraper<ClaudeCodeChunk> {
     if (pending.length > 0) {
       if (exactDirectory) {
         yield* pending;
+        emitted(pending.at(-1));
       } else {
         recordDrift(
           SCRAPER_NAME,
@@ -483,6 +500,7 @@ export class ClaudeCodeScraper extends AbstractScraper<ClaudeCodeChunk> {
           messageIndex,
           projectMatched: fileIsOurs ?? exactDirectory,
         },
+        ...(lastEmitted === undefined ? {} : { lastEmitted }),
       };
     }
   }
