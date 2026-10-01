@@ -1,6 +1,6 @@
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { mkdir, readdir, rename, rm } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import type { Database as DatabaseHandle } from "better-sqlite3";
 import type { ConversationScraper } from "../types/scraper.js";
 import {
@@ -25,6 +25,7 @@ import {
   planRetrievalUnits,
 } from "./retrieval-units.js";
 import { scanTool, waitWithBudget } from "./scan.js";
+import { carryForwardSessions } from "./archive.js";
 import { literalSearch } from "./literal-search.js";
 import {
   MIGRATED_FROM_SETTING,
@@ -685,6 +686,12 @@ export class SqliteHandoffIndex implements SessionService {
       this.scannedTools.add(scanned.tool);
     }
 
+    // After the scan, so what is still on disk has come from the transcripts
+    // and only what is not is taken from a set-aside file.
+    for (const sessionRef of this.carryForwardSetAside()) {
+      touchedSessions.add(sessionRef);
+    }
+
     for (const sessionRef of touchedSessions) {
       // Roll up message_count/preview once per touched session rather than
       // once per inserted message (which made indexing O(N²) per session).
@@ -1225,6 +1232,71 @@ export class SqliteHandoffIndex implements SessionService {
         `it was moved to ${aside} and a new one is being built.
 `,
     );
+  }
+
+  /**
+   * Copy the sessions only a set-aside file still holds back into the index.
+   *
+   * A file is set aside because it is corrupt or in a shape nothing could
+   * migrate, and the new index is rebuilt from the transcripts still on disk.
+   * Sessions whose transcripts were cleaned up have no other copy, and nothing
+   * read the set-aside file, so each set-aside used to drop them from
+   * retrieval for good -- the file kept them where no search could reach.
+   *
+   * Found by listing the directory rather than remembered from the set-aside
+   * itself, so a process that dies between the two, or a file set aside by an
+   * earlier version, is still picked up. Each file is done once, recorded
+   * under `carried_forward:<name>` with what it yielded; a file that could not
+   * be opened for a reason that may pass is left unrecorded and tried again on
+   * the next scan. The file itself is never deleted.
+   *
+   * Returns the refs copied in, for the caller to roll up and window.
+   */
+  private carryForwardSetAside(): string[] {
+    const dir = dirname(this.dbPath);
+    const prefix = `${basename(this.dbPath)}.set-aside-`;
+    let names: string[];
+    try {
+      names = readdirSync(dir);
+    } catch {
+      return [];
+    }
+
+    const db = this.getDb();
+    const copied: string[] = [];
+    for (const name of names.sort()) {
+      if (!name.startsWith(prefix) || /-(wal|shm|journal)$/.test(name)) {
+        continue;
+      }
+      const key = `carried_forward:${name}`;
+      if (getSetting(db, key) !== null) {
+        continue;
+      }
+      const result = carryForwardSessions(db, join(dir, name));
+      if (result === null) {
+        continue;
+      }
+      setSetting(
+        db,
+        key,
+        JSON.stringify({
+          at: new Date().toISOString(),
+          copied: result.copied.length,
+          unreadable: result.unreadable,
+          ...(result.error ? { error: result.error } : {}),
+        }),
+      );
+      copied.push(...result.copied);
+      if (result.copied.length > 0 || result.unreadable > 0 || result.error) {
+        process.stderr.write(
+          `xtctx: carried ${result.copied.length} session(s) forward from ${name}` +
+            (result.unreadable > 0 ? `; ${result.unreadable} could not be read` : "") +
+            (result.error ? `; the file could not be read (${result.error})` : "") +
+            ". The file is kept.\n",
+        );
+      }
+    }
+    return copied;
   }
 
   /**
