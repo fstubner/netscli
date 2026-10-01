@@ -97,13 +97,25 @@ async function newestFiles(root, matcher, limit, maxDepth = 6) {
   return candidates.slice(0, limit).map((entry) => entry.file);
 }
 
-async function jsonlFingerprint(root, matcher) {
+/** The record type a transcript line is filed under. */
+const typeOfRecord = (record) =>
+  typeof record?.type === "string" ? record.type : "(no type field)";
+
+/**
+ * VS Code's chat journal has no `type` field: each record is `{kind, k, v, i}`
+ * and the number in `kind` says what the record does. Filing them under
+ * `(no type field)` would merge snapshots and mutations into one shape.
+ */
+const journalKindOfRecord = (record) =>
+  typeof record?.kind === "number" ? `kind:${record.kind}` : "(no kind field)";
+
+async function jsonlFingerprint(root, matcher, kindOf = typeOfRecord, maxDepth = 6) {
   if (!existsSync(root)) return null;
   const byType = new Map();
   let files = 0;
   let records = 0;
 
-  for (const file of await newestFiles(root, matcher, MAX_FILES)) {
+  for (const file of await newestFiles(root, matcher, MAX_FILES, maxDepth)) {
     files += 1;
     let text;
     try {
@@ -122,7 +134,7 @@ async function jsonlFingerprint(root, matcher) {
       } catch {
         continue;
       }
-      const kind = typeof record?.type === "string" ? record.type : "(no type field)";
+      const kind = kindOf(record);
       const existing = byType.get(kind) ?? new Set();
       for (const entry of shapeOf(record)) existing.add(entry);
       byType.set(kind, existing);
@@ -385,6 +397,18 @@ const TOOLS = {
     ]),
   cursor: cursorFingerprint,
   antigravity: antigravityFingerprint,
+  // The current VS Code format: one journal per chat under
+  // `<workspace>/chatSessions/`, beside the `interactive.sessions` blob that
+  // `copilot` fingerprints. Two files, because they are two formats and the
+  // scraper reads both.
+  "copilot-chat-sessions": () =>
+    jsonlFingerprint(
+      storePaths.defaultCopilotHistoryPath(),
+      (f) => f.endsWith(".jsonl") && /[\\/]chatSessions[\\/][^\\/]+$/.test(f),
+      journalKindOfRecord,
+      // workspaceStorage/<hash>/chatSessions/<file>
+      3,
+    ),
   copilot: async () => {
     const root = storePaths.defaultCopilotHistoryPath();
     if (!existsSync(root)) return null;
