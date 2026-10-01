@@ -17,8 +17,10 @@ summaries, or maintain durable project memory.
 
 Each project opts in once with `xtctx setup`. The MCP server resolves the
 project from the working directory, and in a project that has not opted in it
-says so and names the command, so an agent can offer it. Setup is also what
-puts the context in front of the agent whether it asks or not.
+says so and names the command, so an agent can offer it. Setup does not push
+the transcripts themselves to the agent: in Claude Code a SessionStart hook
+injects a short pointer to recent sessions, and every other tool gets
+instruction text that names the tools to call.
 
 The intended user is a solo developer who switches between local coding agents
 and wants the next agent to recover recent context without a pasted recap.
@@ -36,10 +38,11 @@ into a directory nobody opted in. What you are relying on is the agent
 choosing to call a tool, which the skill prompts it to do.
 
 **`setup`** writes managed blocks into the instruction files each tool already
-reads (`CLAUDE.md`, `AGENTS.md`, Cursor rules, and so on), so the next agent
-receives the handoff without deciding to ask for it. It also installs the
-Claude Code SessionStart hook, wires MCP per tool, and translates the skill
-into each tool's native format.
+reads (`CLAUDE.md`, `AGENTS.md`, Cursor rules, and so on); they tell the agent
+that xtctx exists and which tools to call, and the agent still has to call
+them. For Claude Code it also installs a SessionStart hook that injects a
+short pointer to recent sessions at the start of each session. It wires MCP
+per tool and translates the skill into each tool's native format.
 
 | | Plugin | `setup` |
 |---|---|---|
@@ -47,7 +50,8 @@ into each tool's native format.
 | Handoff skill | yes | yes |
 | Reachable from every project | yes | no |
 | Retrieval in an unconfigured project | no (offers `setup`) | no |
-| Context without the agent asking | no | yes |
+| Pointer to recent sessions injected at session start | no | Claude Code only |
+| Instruction text naming the tools | no | yes |
 | SessionStart hook (Claude Code) | no | yes |
 | Writes into your project | no | yes |
 | Tool coverage | six with a plugin format | every supported tool |
