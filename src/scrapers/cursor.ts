@@ -34,6 +34,18 @@ export const ACCEPTED_DEGRADATIONS = {
 
 const warnDrift = driftWarner(SCRAPER_NAME);
 
+/**
+ * The `composerHeaders` columns the scraper reads. The committed format
+ * fingerprint (`tests/drift/fingerprints/cursor.json`) has to list each, so a
+ * column the scraper starts depending on cannot go unwatched.
+ */
+export const COMPOSER_HEADER_COLUMNS = [
+  "composerId",
+  "workspaceId",
+  "isSubagent",
+  "subagentTypeName",
+] as const;
+
 interface WorkspaceComposerRef {
   composerId: string;
   unifiedMode?: string;
@@ -276,9 +288,7 @@ export class CursorScraper extends AbstractScraper<CursorChunk> {
         );
       }
 
-      const selected = ["composerId", "workspaceId", "isSubagent", "subagentTypeName"].filter(
-        (column) => columns.has(column),
-      );
+      const selected = COMPOSER_HEADER_COLUMNS.filter((column) => columns.has(column));
       const rows = db
         .prepare(`SELECT ${selected.map((column) => `"${column}"`).join(", ")} FROM composerHeaders`)
         .all() as Array<Record<string, unknown>>;
