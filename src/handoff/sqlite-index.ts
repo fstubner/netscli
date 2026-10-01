@@ -450,12 +450,17 @@ export class SqliteHandoffIndex implements SessionService {
     sessionRef: string,
     offset: number,
     limit: number,
+    fromEnd = false,
   ): Promise<SessionMessage[]> {
     this.clearLiteralAdvice();
     await this.refresh({ sessionRef });
     const db = this.getDb();
     const normalizedOffset = Number.isFinite(offset) && offset > 0 ? Math.floor(offset) : 0;
     const normalizedLimit = normalizeLimit(limit, 50);
+    // Reading from the end walks the same ordering backwards. All three sort
+    // keys flip together, so it is the exact reverse of the forward order and
+    // a page read from the end covers the same rows a forward offset would.
+    const direction = fromEnd ? "DESC" : "ASC";
     const rows = db
       .prepare(
         `SELECT id, timestamp, role, content, message_index, source_pointer
@@ -465,16 +470,28 @@ export class SqliteHandoffIndex implements SessionService {
                  SELECT session_ref FROM sessions
                  WHERE ${PROJECT_ROOT_SQL} = ?
                )
-         ORDER BY timestamp ASC, message_index ASC, id ASC
+         ORDER BY timestamp ${direction}, message_index ${direction}, id ${direction}
          LIMIT ? OFFSET ?`,
       )
       .all(sessionRef, this.scopedRoot, normalizedLimit, normalizedOffset) as MessageRow[];
 
-    return rows.map((row) => ({
+    let firstPosition = normalizedOffset;
+    if (fromEnd) {
+      rows.reverse();
+      const total = (
+        db
+          .prepare(`SELECT COUNT(*) AS count FROM messages WHERE session_ref = ?`)
+          .get(sessionRef) as { count: number }
+      ).count;
+      firstPosition = Math.max(0, total - normalizedOffset - rows.length);
+    }
+
+    return rows.map((row, index) => ({
       timestamp: row.timestamp,
       role: row.role,
       content: row.content,
       source_pointer: row.source_pointer ?? undefined,
+      position: firstPosition + index,
     }));
   }
 
