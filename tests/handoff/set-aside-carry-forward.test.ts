@@ -70,10 +70,11 @@ describe("a corrupt index set aside and rebuilt", () => {
     await first.listRecentSessions(10);
     await first.close();
 
-    // The vector table (and its indexes, which a query may read instead) is
+    // The settings table (and its key index, which a lookup reads instead) is
     // read on every open, so damaging it makes the open fail as corrupt;
-    // sessions and messages are untouched.
-    await damagePages(leafPages("%retrieval_unit_vectors%"));
+    // sessions and messages are untouched. Not the vector table: an open with
+    // semantic search off never reads it.
+    await damagePages(leafPages("%settings%"));
     store.age("aged");
 
     const index = open(store);
@@ -100,7 +101,7 @@ describe("a corrupt index set aside and rebuilt", () => {
     const first = open(store);
     await first.listRecentSessions(10);
     await first.close();
-    await damagePages(leafPages("%retrieval_unit_vectors%"));
+    await damagePages(leafPages("%settings%"));
     store.age("aged");
 
     const second = open(store);
@@ -140,7 +141,7 @@ describe("a corrupt index set aside and rebuilt", () => {
 
     const messagePages = leafPages("messages");
     expect(messagePages.length).toBeGreaterThan(3);
-    await damagePages([...leafPages("%retrieval_unit_vectors%"), messagePages[1] as number]);
+    await damagePages([...leafPages("%settings%"), messagePages[1] as number]);
     for (let i = 0; i < 12; i += 1) {
       store.age(`s${String(i).padStart(2, "0")}`);
     }
