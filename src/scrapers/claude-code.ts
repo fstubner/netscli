@@ -186,6 +186,48 @@ export class ClaudeCodeScraper extends AbstractScraper<ClaudeCodeChunk> {
     yield* this.readProjects(projectDirs, encodedProject, since);
   }
 
+  /**
+   * Session ids are the transcript file names, as `readProjectDir` assigns
+   * them, in the same directories it reads. Claude Code deletes transcripts
+   * after 30 days by default, so this is what tells a session the index still
+   * holds from one that also exists on disk.
+   */
+  async listSessionIds(): Promise<Set<string> | null> {
+    let dirs: string[];
+    if (this.projectStoreDir) {
+      dirs = [this.projectStoreDir];
+    } else {
+      try {
+        dirs = this.filterProjectDirs(await readdir(this.claudeProjectsDir)).map((dir) =>
+          join(this.claudeProjectsDir, dir),
+        );
+      } catch {
+        return null;
+      }
+    }
+
+    const ids = new Set<string>();
+    for (const dir of dirs) {
+      let files: string[];
+      try {
+        files = await readdir(dir);
+      } catch (error) {
+        // A project directory that is gone holds no transcripts; one that
+        // cannot be read says nothing either way.
+        if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+          continue;
+        }
+        return null;
+      }
+      for (const file of files) {
+        if (file.endsWith(".jsonl")) {
+          ids.add(file.replace(/\.jsonl$/, ""));
+        }
+      }
+    }
+    return ids;
+  }
+
   private async *readProjects(
     projectDirs: string[],
     encodedProject: string | null,

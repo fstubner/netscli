@@ -120,8 +120,46 @@ export async function buildStatus(inputs: StatusInputs): Promise<HandoffStatus> 
     vector_device: vectorDevice,
     embedding_error: getSetting(db, "last_error:embeddings"),
     redirected_tools: redirectedTools,
+    index_only_sessions: await countIndexOnlySessions(db, scopedRoot, tools),
     tools: toolStatuses,
   };
+}
+
+/**
+ * This project's sessions whose transcript its tool no longer has.
+ *
+ * A directory listing per tool that can give one, compared against the
+ * session ids indexed for that tool. A tool whose scraper cannot list its
+ * store, or whose listing fails, adds nothing: status saying "these exist
+ * only here" must be a fact, and an unreadable store is not evidence that a
+ * transcript is gone.
+ */
+async function countIndexOnlySessions(
+  db: DatabaseHandle,
+  scopedRoot: string,
+  tools: StatusToolRuntime[],
+): Promise<number> {
+  let count = 0;
+  for (const { tool, scraper } of tools) {
+    if (!scraper.listSessionIds) {
+      continue;
+    }
+    let onDisk: Set<string> | null;
+    try {
+      onDisk = await scraper.listSessionIds();
+    } catch {
+      onDisk = null;
+    }
+    if (onDisk === null) {
+      continue;
+    }
+    const indexed = db
+      .prepare(`SELECT source_session_id FROM sessions WHERE tool = ? AND ${PROJECT_ROOT_SQL} = ?`)
+      .pluck()
+      .all(tool, scopedRoot) as string[];
+    count += indexed.filter((id) => !onDisk.has(id)).length;
+  }
+  return count;
 }
 
 interface ProgressInputs {

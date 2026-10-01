@@ -42,6 +42,7 @@ class DetailFixtureService implements SessionService {
       // model fails, and the status contract requires the field either way.
       embedding_error: null,
       redirected_tools: [],
+      index_only_sessions: 0,
       last_scan_at: null,
       last_scan_ms: null,
       sessions: 0,

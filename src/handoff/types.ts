@@ -85,6 +85,16 @@ export interface HandoffStatus {
    * surfaces.
    */
   redirected_tools: string[];
+  /**
+   * This project's sessions whose transcript is no longer where its tool
+   * keeps them, so the index holds the only copy and deleting it loses them.
+   *
+   * Counted only for tools whose scraper can list the sessions on disk
+   * (`ConversationScraper.listSessionIds`) — Claude Code, which deletes
+   * transcripts after 30 days by default. A tool that cannot say contributes
+   * nothing rather than a guess, so this is a floor, never an overcount.
+   */
+  index_only_sessions: number;
   tools: Array<{
     tool: string;
     detected: boolean;

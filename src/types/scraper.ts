@@ -101,6 +101,16 @@ export interface ConversationScraper<
   fullSync(): AsyncIterable<T>;
   getLastScrapedPosition(): Promise<ScraperState>;
   saveScrapedPosition(state: ScraperState): Promise<void>;
+  /**
+   * The ids (`ConversationChunk.sessionId`) of every session whose transcript
+   * is in the store now, without reading any of them; null when the store
+   * cannot be listed.
+   *
+   * Optional, for stores where that is a directory listing. `xtctx status`
+   * uses it to count sessions the index holds the only copy of; a scraper
+   * without it is left out of that count rather than guessed at.
+   */
+  listSessionIds?(): Promise<Set<string> | null>;
 }
 
 export interface ClaudeCodeChunk extends ConversationChunk {
