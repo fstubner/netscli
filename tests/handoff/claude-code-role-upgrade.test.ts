@@ -17,7 +17,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { hashParts } from "@xtctx/handoff/hash";
 import { SqliteHandoffIndex } from "@xtctx/handoff/sqlite-index";
-import { ClaudeCodeScraper } from "@xtctx/scrapers/claude-code";
+import { CLAUDE_CODE_SCRAPER_VERSION, ClaudeCodeScraper } from "@xtctx/scrapers/claude-code";
 
 const records = [
   { type: "user", message: { role: "user", content: "fix the build" }, timestamp: "2026-02-24T10:00:00Z" },
@@ -142,5 +142,68 @@ describe("claude-code role correction on upgrade", () => {
     const after = await scan();
 
     expect(after.map((m) => m.role)).toEqual(["user", "user", "assistant"]);
+  });
+
+  /**
+   * The state a real upgrade starts from: no version, and cursors written
+   * before `lastEmitted` existed, over rows indexed well before this scan.
+   * Three re-read triggers meet here (the version, the refused cursor, and the
+   * prune bounded by scan start); they must add up to one correct read, not
+   * fight each other.
+   */
+  it("upgrades from pre-lastEmitted cursors, prunes the old rows, and leaves checked cursors", async () => {
+    await scan();
+    await downgrade();
+    const statePath = join(state, "claude-code-state.json");
+    const saved = JSON.parse(await readFile(statePath, "utf-8")) as {
+      files: Record<string, Record<string, unknown>>;
+    };
+    for (const cursor of Object.values(saved.files)) delete cursor.lastEmitted;
+    await writeFile(statePath, JSON.stringify(saved));
+    const db = new Database(dbPath);
+    db.prepare("UPDATE messages SET indexed_at = '2026-01-01T00:00:00.000Z'").run();
+    db.close();
+
+    const after = await scan();
+
+    expect(after.map((m) => m.role)).toEqual(["user", "tool", "tool", "assistant"]);
+    const check = new Database(dbPath, { readonly: true });
+    const userRows = check
+      .prepare("SELECT COUNT(*) AS n FROM messages WHERE role = 'user'")
+      .get() as { n: number };
+    check.close();
+    expect(userRows.n).toBe(1);
+
+    const upgraded = JSON.parse(await readFile(statePath, "utf-8")) as {
+      scraperVersion?: number;
+      files: Record<string, { lastEmitted?: { sessionId: string; messageIndex: number } | null }>;
+    };
+    expect(upgraded.scraperVersion).toBe(CLAUDE_CODE_SCRAPER_VERSION);
+    const cursors = Object.values(upgraded.files);
+    expect(cursors).toHaveLength(1);
+    expect(cursors[0]?.lastEmitted).toEqual({ sessionId: "sess", messageIndex: 3 });
+
+    // The next scan trusts that cursor: nothing is read again.
+    const scraper = new ClaudeCodeScraper(projects, state);
+    scraper.useIndexProbe(() => true);
+    const reread: unknown[] = [];
+    for await (const chunk of scraper.scrape()) reread.push(chunk);
+    expect(reread).toEqual([]);
+  });
+
+  it("does not record the version when the re-read stops before the end", async () => {
+    await scan();
+    await downgrade();
+
+    const scraper = new ClaudeCodeScraper(projects, state);
+    for await (const chunk of scraper.scrape()) {
+      expect(chunk.sessionId).toBe("sess");
+      break;
+    }
+
+    const saved = JSON.parse(await readFile(join(state, "claude-code-state.json"), "utf-8")) as {
+      scraperVersion?: number;
+    };
+    expect(saved.scraperVersion).toBeUndefined();
   });
 });
