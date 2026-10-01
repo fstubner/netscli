@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { Command, Option } from "commander";
+import { runExport, runImport } from "./backup.js";
 import { runCalibrate } from "./calibrate.js";
 import { runDisconnect } from "./disconnect.js";
 import { runHook } from "./hook.js";
@@ -177,6 +178,31 @@ export async function main(argv = process.argv): Promise<void> {
         embed: options.embed,
         calibrate: options.calibrate,
       });
+    });
+
+  program
+    .command("export")
+    .option("-p, --project <path>", "Project root (defaults to cwd)")
+    .option(
+      "-o, --out <file>",
+      "File to write; '-' for stdout (default: xtctx-export-<time>.jsonl here). Never overwrites",
+    )
+    .description(
+      "Back up this project's indexed sessions, including those whose transcripts are gone",
+    )
+    .action(async (options: { project?: string; out?: string }) => {
+      const globalOptions = program.opts<{ project?: string }>();
+      await runExport({ projectPath: options.project ?? globalOptions.project, out: options.out });
+    });
+
+  program
+    .command("import")
+    .argument("<file>", "A file written by xtctx export")
+    .option("-p, --project <path>", "Project root (defaults to cwd)")
+    .description("Merge an xtctx export into this project's index; safe to repeat")
+    .action(async (file: string, options: { project?: string }) => {
+      const globalOptions = program.opts<{ project?: string }>();
+      await runImport({ projectPath: options.project ?? globalOptions.project, file });
     });
 
   program

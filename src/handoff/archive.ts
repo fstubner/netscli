@@ -122,8 +122,10 @@ export interface MergeResult {
  * Message ids are deterministic hashes of the message itself, so merging the
  * same session twice adds nothing the second time, and merging one the index
  * already holds adds only the messages it lacks. A session already present
- * keeps its own attribution (`project_root`): the merge widens its time span
- * and fills fields it never had, and changes nothing it did.
+ * has its time span widened and the fields it never had filled; what it does
+ * have is kept, except `project_root`, which is taken from the caller for the
+ * same reason the scan's upsert takes it: merging a session into a project is
+ * the statement that it belongs to that project.
  *
  * Roll-ups and retrieval windows are left to the caller, which already has
  * the code that derives them from messages.
@@ -143,7 +145,8 @@ export function createSessionMerger(
        git_branch = COALESCE(git_branch, excluded.git_branch),
        git_commit = COALESCE(git_commit, excluded.git_commit),
        preview = COALESCE(preview, excluded.preview),
-       source_path = COALESCE(source_path, excluded.source_path)`,
+       source_path = COALESCE(source_path, excluded.source_path),
+       project_root = excluded.project_root`,
   );
   const insertMessage = db.prepare(
     `INSERT OR IGNORE INTO messages

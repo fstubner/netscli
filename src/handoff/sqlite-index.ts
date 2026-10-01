@@ -9,7 +9,9 @@ import {
   type EmbeddingProvider,
 } from "./embeddings.js";
 import type {
+  ExportSummary,
   HandoffStatus,
+  ImportSummary,
   IndexProgress,
   SessionMessage,
   SessionSearchMode,
@@ -25,7 +27,15 @@ import {
   planRetrievalUnits,
 } from "./retrieval-units.js";
 import { scanTool, waitWithBudget } from "./scan.js";
-import { carryForwardSessions } from "./archive.js";
+import { carryForwardSessions, createSessionMerger, readArchivedSession } from "./archive.js";
+import {
+  ExportFormatError,
+  checkHeader,
+  endLine,
+  headerLine,
+  parseSessionLine,
+  sessionLine,
+} from "./export-file.js";
 import { literalSearch } from "./literal-search.js";
 import {
   MIGRATED_FROM_SETTING,
@@ -559,6 +569,138 @@ export class SqliteHandoffIndex implements SessionService {
       vectorModel: this.embeddingProvider.model,
       vectorDevice: this.embeddingProvider.device ?? null,
     });
+  }
+
+  /**
+   * Write this project's sessions and messages out; see `export-file.ts`.
+   *
+   * No scan first. The point of an export is the sessions that exist only
+   * here, and those are already indexed by definition; scanning would add
+   * minutes on a large store for sessions whose transcripts are still on disk.
+   * Each session is read inside its own read transaction, so a server writing
+   * to the index meanwhile cannot leave a session's row and its messages
+   * describing two different moments.
+   */
+  async exportSessions(
+    writeLine: (line: string) => Promise<void>,
+    options: { xtctxVersion?: string } = {},
+  ): Promise<ExportSummary> {
+    await this.whenReady();
+    const db = this.getDb();
+    const refs = db
+      .prepare(
+        `SELECT session_ref FROM sessions WHERE ${PROJECT_ROOT_SQL} = ?
+         ORDER BY started_at ASC, session_ref ASC`,
+      )
+      .pluck()
+      .all(this.scopedRoot) as string[];
+    const readOne = db.transaction((ref: string) => readArchivedSession(db, ref));
+
+    await writeLine(headerLine(this.projectRoot, options.xtctxVersion));
+    let sessions = 0;
+    let messages = 0;
+    for (const ref of refs) {
+      const session = readOne(ref);
+      if (!session) {
+        continue;
+      }
+      await writeLine(sessionLine(session));
+      sessions += 1;
+      messages += session.messages.length;
+    }
+    await writeLine(endLine(sessions, messages));
+    return { sessions, messages };
+  }
+
+  /**
+   * Merge an export into this project's index.
+   *
+   * Every session lands under this project, whatever root it was exported
+   * from: importing is how history moves to a project that has moved. Message
+   * ids are content hashes, so a session the index already holds gains only
+   * the messages it lacks, and importing the same file twice adds nothing.
+   * One transaction per session, so a file cut short or a line that does not
+   * parse costs that line, never a half-written session.
+   *
+   * Throws `ExportFormatError` before writing anything if the file is not an
+   * export this build reads.
+   */
+  async importSessions(lines: AsyncIterable<string>): Promise<ImportSummary> {
+    await this.whenReady();
+    const db = this.getDb();
+    const merge = createSessionMerger(db);
+    const summary: ImportSummary = {
+      sessionsInFile: 0,
+      sessionsAdded: 0,
+      sessionsUpdated: 0,
+      sessionsUnchanged: 0,
+      messagesAdded: 0,
+      invalidLines: [],
+      complete: false,
+    };
+    const changed: string[] = [];
+    let headerSeen = false;
+    let end: { sessions?: unknown } | null = null;
+    let lineNumber = 0;
+
+    for await (const raw of lines) {
+      lineNumber += 1;
+      const line = raw.trim();
+      if (!line) {
+        continue;
+      }
+      let value: Record<string, unknown> | null = null;
+      try {
+        value = JSON.parse(line) as Record<string, unknown>;
+      } catch {
+        // Handled below: the first line must be a header either way.
+      }
+      if (!headerSeen) {
+        checkHeader(value);
+        headerSeen = true;
+        continue;
+      }
+      if (!value || typeof value !== "object") {
+        summary.invalidLines.push({ line: lineNumber, reason: "not a JSON object" });
+        continue;
+      }
+      if (value.type === "end") {
+        end = value;
+        continue;
+      }
+      if (value.type !== "session") {
+        summary.invalidLines.push({ line: lineNumber, reason: `unknown line type ${JSON.stringify(value.type)}` });
+        continue;
+      }
+      summary.sessionsInFile += 1;
+      const session = parseSessionLine(value);
+      if (typeof session === "string") {
+        summary.invalidLines.push({ line: lineNumber, reason: session });
+        continue;
+      }
+      const result = merge(session, this.scopedRoot);
+      summary.messagesAdded += result.messagesAdded;
+      if (result.created) {
+        summary.sessionsAdded += 1;
+      } else if (result.messagesAdded > 0) {
+        summary.sessionsUpdated += 1;
+      } else {
+        summary.sessionsUnchanged += 1;
+      }
+      if (result.created || result.messagesAdded > 0) {
+        changed.push(session.session_ref);
+      }
+    }
+
+    if (!headerSeen) {
+      throw new ExportFormatError("not an xtctx export: the file is empty");
+    }
+    for (const ref of changed) {
+      this.prepared().sessionRollup.run(ref);
+      this.rebuildRetrievalUnitsForSession(ref);
+    }
+    summary.complete = end !== null && end.sessions === summary.sessionsInFile;
+    return summary;
   }
 
   async close(): Promise<void> {

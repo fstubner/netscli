@@ -157,6 +157,19 @@ export interface SessionService {
    */
   embedBacklog?(onProgress?: (embedded: number, total: number) => void): Promise<number>;
   /**
+   * Write this project's sessions and messages as an export file, a line at a
+   * time; see `export-file.ts` for the format. Reads the index as it stands,
+   * without scanning, and never touches a transcript.
+   *
+   * Optional because only `xtctx export` needs it, like `embedBacklog`.
+   */
+  exportSessions?(
+    writeLine: (line: string) => Promise<void>,
+    options?: { xtctxVersion?: string },
+  ): Promise<ExportSummary>;
+  /** Merge an export file's lines into this project's index; see `exportSessions`. */
+  importSessions?(lines: AsyncIterable<string>): Promise<ImportSummary>;
+  /**
    * Make the embedding model's first load wait for this device.
    *
    * For calibration running alongside the index: whichever caller asks for the
@@ -164,6 +177,31 @@ export interface SessionService {
    * measured the device is the one that uses it.
    */
   deferEmbeddingDeviceUntil?(device: Promise<string | undefined>): void;
+}
+
+export interface ExportSummary {
+  sessions: number;
+  messages: number;
+}
+
+export interface ImportSummary {
+  /** Session lines read from the file, valid or not. */
+  sessionsInFile: number;
+  /** Sessions the index did not have. */
+  sessionsAdded: number;
+  /** Sessions it had, which gained messages from the file. */
+  sessionsUpdated: number;
+  /** Sessions it already held in full. */
+  sessionsUnchanged: number;
+  messagesAdded: number;
+  /** Lines skipped because they were not a whole, valid line, and why. */
+  invalidLines: Array<{ line: number; reason: string }>;
+  /**
+   * The file ended with its end line, and that line's session count matched.
+   * False means it was cut short: what it held was imported, and nothing
+   * after the cut can have been.
+   */
+  complete: boolean;
 }
 
 export interface IndexProgress {
