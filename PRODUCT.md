@@ -26,7 +26,11 @@ reported by `xtctx status`.
   tools) that need stable session references and raw-detail pointers —
   served by `xtctx_handoff_manifest`.
 
-Single-user, single-machine. There is no team, sync, or server component.
+Single-user. Handoff itself is single-machine and needs no server. The one
+exception is optional cloud sync, opt-in per project: a logged-in user can
+upload an opted-in project's transcripts so agents on their other machines can
+read them over MCP ([docs/cloud-sync.md](docs/cloud-sync.md)). There is no
+team or shared component.
 
 ## Success
 
@@ -66,7 +70,9 @@ Single-user, single-machine. There is no team, sync, or server component.
 
 Out of scope (deliberately, and documented everywhere the product speaks):
 no daemon, no API server, no dashboard, no generated summaries or briefs,
-no durable memory, no write-back tools, no cloud anything.
+no durable memory, no write-back tools, and nothing leaves the machine unless
+the user opts a project in to cloud sync, which is optional and off by
+default.
 
 ## Constraints
 

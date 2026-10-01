@@ -251,8 +251,13 @@ startup hooks; others receive MCP config plus managed instructions only.
 ## Limits
 
 - xtctx is local-only by default: it never uploads transcripts and runs no
-  telemetry. Cloud sync exists but sends nothing until you log in *and* opt a
-  project in with `xtctx sync enable` ([`docs/cloud-sync.md`](docs/cloud-sync.md)).
+  telemetry. Cloud sync is optional and opt-in per project: it sends nothing
+  until you log in (`xtctx login`) *and* opt a project in (`xtctx sync enable`),
+  and then sends that project's transcript text, including whatever paths or
+  output the agents wrote into it, to the xtctx cloud server, where your other
+  machines' agents can read it over MCP. `xtctx status` says whether it is on
+  for the project and when it last uploaded
+  ([`docs/cloud-sync.md`](docs/cloud-sync.md)).
   A project can opt into an external embedding endpoint by writing
   one into `.xtctx/config.yaml`, in which case window text is sent there to be
   vectorized — never inferred from an environment variable, and `xtctx status`
