@@ -120,6 +120,12 @@ export interface CursorChunk extends ConversationChunk {
     model: string;
     tabContext?: string[];
     codebaseSearchResults?: number;
+    /**
+     * Set on a conversation a parent agent started, whose first "user" turn
+     * is that agent's prompt rather than anything the person typed.
+     */
+    subagent?: boolean;
+    subagentType?: string;
   };
 }
 

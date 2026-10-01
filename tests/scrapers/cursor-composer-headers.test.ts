@@ -54,8 +54,10 @@ interface ComposerSeed {
   /** The file the conversation recorded touching — what a path guess reads. */
   file?: string;
   text?: string;
+  /** An assistant turn after the first, for conversations with two. */
+  reply?: string;
   /** Omit for a conversation with no header row at all. */
-  header?: { workspaceId: string | null };
+  header?: { workspaceId: string | null; isSubagent?: number; subagentTypeName?: string };
 }
 
 function addComposer(composerId: string, seed: ComposerSeed): void {
@@ -66,7 +68,10 @@ function addComposer(composerId: string, seed: ComposerSeed): void {
     `composerData:${composerId}`,
     JSON.stringify({
       composerId,
-      fullConversationHeadersOnly: [{ bubbleId, type: 1 }],
+      fullConversationHeadersOnly: [
+        { bubbleId, type: 1 },
+        ...(seed.reply ? [{ bubbleId: `${bubbleId}-reply`, type: 2 }] : []),
+      ],
       createdAt: new Date("2026-02-24T10:00:00Z").getTime(),
       context: { fileSelections: seed.file ? [{ fsPath: seed.file }] : [] },
     }),
@@ -75,20 +80,34 @@ function addComposer(composerId: string, seed: ComposerSeed): void {
     `bubbleId:${composerId}:${bubbleId}`,
     JSON.stringify({ type: 1, text: seed.text ?? composerId, createdAt: "2026-02-24T10:00:00Z" }),
   );
+  if (seed.reply) {
+    insert.run(
+      `bubbleId:${composerId}:${bubbleId}-reply`,
+      JSON.stringify({ type: 2, text: seed.reply, createdAt: "2026-02-24T10:00:05Z" }),
+    );
+  }
   if (seed.header) {
-    db.prepare("INSERT INTO composerHeaders (composerId, workspaceId) VALUES (?, ?)").run(
+    db.prepare(
+      "INSERT INTO composerHeaders (composerId, workspaceId, isSubagent, subagentTypeName) VALUES (?, ?, ?, ?)",
+    ).run(
       composerId,
       seed.header.workspaceId,
+      seed.header.isSubagent ?? 0,
+      seed.header.subagentTypeName ?? null,
     );
   }
   db.close();
 }
 
-async function collect(projectRoot: string): Promise<string[]> {
+async function collectChunks(projectRoot: string): Promise<CursorChunk[]> {
   const scraper = new CursorScraper(join(rootDir, "workspaceStorage"), stateDir, projectRoot);
   const chunks: CursorChunk[] = [];
   for await (const chunk of scraper.fullSync()) chunks.push(chunk);
-  return chunks.map((chunk) => chunk.content).sort();
+  return chunks;
+}
+
+async function collect(projectRoot: string): Promise<string[]> {
+  return (await collectChunks(projectRoot)).map((chunk) => chunk.content).sort();
 }
 
 describe("CursorScraper attributes conversations by composerHeaders", () => {
@@ -238,5 +257,77 @@ describe("CursorScraper attributes conversations by composerHeaders", () => {
 
     expect(await collect(PROJECT_A)).toEqual(["headerless and ours", "listed by header"]);
     expect(statements.some((statement) => /value\s+LIKE/i.test(statement))).toBe(false);
+  });
+});
+
+/**
+ * A subagent's conversation is stored like any other, and its first "user"
+ * turn is the prompt the parent agent wrote for it. Indexed as a standalone
+ * session with that turn as the user's, it presented the parent agent's
+ * instructions as something the person had said.
+ */
+describe("CursorScraper subagent conversations", () => {
+  beforeEach(async () => {
+    rootDir = await mkdtemp(join(tmpdir(), "xtctx-cursor-subagent-"));
+    stateDir = await mkdtemp(join(tmpdir(), "xtctx-cursor-subagent-state-"));
+    await mkdir(join(rootDir, "globalStorage"), { recursive: true });
+    globalDbPath = join(rootDir, "globalStorage", "state.vscdb");
+    const db = openGlobal();
+    db.exec("CREATE TABLE cursorDiskKV (key TEXT PRIMARY KEY, value TEXT NOT NULL)");
+    db.exec(
+      "CREATE TABLE composerHeaders (composerId TEXT PRIMARY KEY, workspaceId TEXT, isSubagent INTEGER, subagentTypeName TEXT)",
+    );
+    db.close();
+    await addWorkspace("ws-alpha", folderUri(PROJECT_A));
+  });
+
+  afterEach(async () => {
+    await rm(rootDir, { recursive: true, force: true });
+    await rm(stateDir, { recursive: true, force: true });
+  });
+
+  it("marks the conversation and gives the parent's prompt the role 'tool'", async () => {
+    addComposer("child", {
+      text: "explore the repo and report back",
+      reply: "found three modules",
+      header: { workspaceId: "ws-alpha", isSubagent: 1, subagentTypeName: "explore" },
+    });
+
+    const chunks = await collectChunks(PROJECT_A);
+
+    expect(chunks.map((chunk) => [chunk.role, chunk.content])).toEqual([
+      ["tool", "explore the repo and report back"],
+      ["assistant", "found three modules"],
+    ]);
+    for (const chunk of chunks) {
+      expect(chunk.metadata.subagent).toBe(true);
+      expect(chunk.metadata.subagentType).toBe("explore");
+    }
+  });
+
+  it("leaves an ordinary conversation's first turn as the user's and unmarked", async () => {
+    addComposer("parent", {
+      text: "please refactor this",
+      reply: "done",
+      header: { workspaceId: "ws-alpha" },
+    });
+
+    const chunks = await collectChunks(PROJECT_A);
+
+    expect(chunks.map((chunk) => chunk.role)).toEqual(["user", "assistant"]);
+    expect(chunks[0]?.metadata.subagent).toBeUndefined();
+    expect(chunks[0]?.metadata.subagentType).toBeUndefined();
+  });
+
+  it("recognises a subagent by its type name when the flag is not set", async () => {
+    addComposer("typed-only", {
+      text: "a prompt from a parent",
+      header: { workspaceId: "ws-alpha", isSubagent: 0, subagentTypeName: "generalPurpose" },
+    });
+
+    const [chunk] = await collectChunks(PROJECT_A);
+
+    expect(chunk?.role).toBe("tool");
+    expect(chunk?.metadata.subagentType).toBe("generalPurpose");
   });
 });

@@ -49,6 +49,9 @@ interface WorkspaceComposerRef {
  */
 interface ComposerHeader {
   workspaceId?: string;
+  /** A conversation a parent agent started; `subagentType` names its kind. */
+  isSubagent: boolean;
+  subagentType?: string;
 }
 
 /**
@@ -195,7 +198,7 @@ export class CursorScraper extends AbstractScraper<CursorChunk> {
       let globalDb: Database.Database | null = null;
       try {
         globalDb = new DatabaseCtor(wsGlobalPath, { readonly: true, fileMustExist: true });
-        yield* this.readComposerMessages(globalDb, composerRefs, since, wsPath);
+        yield* this.readComposerMessages(globalDb, composerRefs, since, wsPath, headers);
       } catch (err) {
         // Global storage unreadable — treat as schema drift and warn.
         // The cursorDiskKV table is required; if it's gone, something changed.
@@ -271,7 +274,9 @@ export class CursorScraper extends AbstractScraper<CursorChunk> {
         );
       }
 
-      const selected = ["composerId", "workspaceId"].filter((column) => columns.has(column));
+      const selected = ["composerId", "workspaceId", "isSubagent", "subagentTypeName"].filter(
+        (column) => columns.has(column),
+      );
       const rows = db
         .prepare(`SELECT ${selected.map((column) => `"${column}"`).join(", ")} FROM composerHeaders`)
         .all() as Array<Record<string, unknown>>;
@@ -280,7 +285,14 @@ export class CursorScraper extends AbstractScraper<CursorChunk> {
       for (const row of rows) {
         const composerId = toNonEmptyString(row.composerId);
         if (!composerId) continue;
-        headers.set(composerId, { workspaceId: toNonEmptyString(row.workspaceId) });
+        const subagentType = toNonEmptyString(row.subagentTypeName);
+        headers.set(composerId, {
+          workspaceId: toNonEmptyString(row.workspaceId),
+          // The flag is stored as a number or a boolean depending on how
+          // Cursor wrote it; either way a named subagent type says it too.
+          isSubagent: isTruthyFlag(row.isSubagent) || subagentType !== undefined,
+          subagentType,
+        });
       }
       return headers;
     } catch (err) {
@@ -433,7 +445,7 @@ export class CursorScraper extends AbstractScraper<CursorChunk> {
       }
 
       if (attributed.length > 0) {
-        yield* this.readComposerMessages(globalDb, attributed, since, globalPath);
+        yield* this.readComposerMessages(globalDb, attributed, since, globalPath, headers);
       }
       if (guessed.length > 0) {
         // Deliberately not `since`: these are conversations no workspace
@@ -443,7 +455,7 @@ export class CursorScraper extends AbstractScraper<CursorChunk> {
         // reason. Re-emitting is safe: upserts collapse on a chunk id that
         // includes the message index, so a conversation read twice is stored
         // once.
-        yield* this.readComposerMessages(globalDb, guessed, new Date(0), globalPath);
+        yield* this.readComposerMessages(globalDb, guessed, new Date(0), globalPath, headers);
       }
     } catch (err) {
       // The same condition the workspace loop treats as drift and continues
@@ -569,6 +581,7 @@ export class CursorScraper extends AbstractScraper<CursorChunk> {
     composerRefs: WorkspaceComposerRef[],
     since: Date,
     wsPathForWarn: string,
+    composerHeaders: Map<string, ComposerHeader> | null,
   ): Iterable<CursorChunk> {
     const getComposer = globalDb.prepare(
       "SELECT value FROM cursorDiskKV WHERE key = ?",
@@ -652,6 +665,12 @@ export class CursorScraper extends AbstractScraper<CursorChunk> {
         composer.unifiedMode ?? ref.unifiedMode,
       );
       const sessionId = ref.composerId;
+      const composerHeader = composerHeaders?.get(ref.composerId);
+      const subagent = composerHeader?.isSubagent === true;
+      // A subagent's first "user" turn is the prompt its parent agent wrote
+      // for it. It is kept, because it says what the subagent was asked, but
+      // not as the person's words.
+      let promptSeen = false;
 
       let messageIndex = 0;
       for (const header of headers) {
@@ -691,7 +710,11 @@ export class CursorScraper extends AbstractScraper<CursorChunk> {
           continue;
         }
 
-        const role = normalizeRole(bubble.type);
+        let role = normalizeRole(bubble.type);
+        if (subagent && role === "user" && !promptSeen) {
+          promptSeen = true;
+          role = "tool";
+        }
 
         yield {
           tool: "cursor",
@@ -705,6 +728,7 @@ export class CursorScraper extends AbstractScraper<CursorChunk> {
             referencedFiles: [],
             model: bubble.modelInfo?.modelName ?? model,
             composerMode,
+            ...(subagent ? { subagent: true, subagentType: composerHeader?.subagentType } : {}),
           },
         };
         messageIndex++;
@@ -898,6 +922,10 @@ function normalizeRole(value?: number | string): CursorChunk["role"] {
 
 function normalizeComposerMode(value?: string): CursorChunk["metadata"]["composerMode"] {
   return value === "agent" ? "agent" : "normal";
+}
+
+function isTruthyFlag(value: unknown): boolean {
+  return value === true || value === 1 || value === "1" || value === "true";
 }
 
 function toNonEmptyString(value: unknown): string | undefined {
