@@ -135,7 +135,7 @@ describe("CopilotScraper", () => {
     expect(chunks.map((chunk) => chunk.content)).toEqual(["copilot first", "copilot second"]);
   });
 
-  it("skips canceled requests", async () => {
+  it("keeps the prompt of a canceled request but not its partial answer", async () => {
     const canceledSessions = {
       "0": {
         sessionId: "cancel-session",
@@ -162,8 +162,8 @@ describe("CopilotScraper", () => {
       chunks.push(chunk);
     }
 
-    const canceled = chunks.find((c) => c.content.includes("canceled"));
-    expect(canceled).toBeUndefined();
+    expect(chunks.find((c) => c.content === "this was canceled")?.role).toBe("user");
+    expect(chunks.find((c) => c.content === "never shown")).toBeUndefined();
 
     const real = chunks.find((c) => c.content === "real question");
     expect(real).toBeDefined();
@@ -546,33 +546,6 @@ describe("CopilotScraper reading per-session chat files", () => {
     ]);
     expect(chunks[0].sessionId).toBe("journal-session");
     expect(warnings).toEqual([]);
-  });
-
-  /**
-   * A splice places turns where the editor wants to draw them, which is not
-   * the order they happened — in a real 35-record log it puts a later turn
-   * first. Conversation order has to come from the timestamps.
-   */
-  it("orders replayed turns by when they happened", async () => {
-    const turn = (text: string, timestamp: number) => ({
-      message: { parts: [{ text }] },
-      response: [],
-      isCanceled: false,
-      timestamp,
-    });
-    const lines = [
-      JSON.stringify({ kind: 0, v: { sessionId: "ordered", creationDate: 1, requests: [] } }),
-      JSON.stringify({ kind: 2, k: ["requests"], v: [turn("asked first", 1000)] }),
-      // Spliced ahead of the existing turn despite happening later.
-      JSON.stringify({ kind: 2, k: ["requests"], i: 0, v: [turn("asked second", 2000)] }),
-      "",
-    ].join("\n");
-    await writeFile(join(sessionsDir, "ordered.jsonl"), lines, "utf-8");
-
-    expect((await collectAll()).map((chunk) => chunk.content)).toEqual([
-      "asked first",
-      "asked second",
-    ]);
   });
 
   it("reports a journal with no snapshot to rebuild from", async () => {

@@ -89,6 +89,14 @@ export interface ScraperState {
    * full re-read, never correctness.
    */
   files?: Record<string, FileCursor>;
+  /**
+   * The version of the scraper's output that produced the rows already
+   * indexed. Absent means the first version. A scraper whose output changed
+   * for transcripts it has already read bumps its own constant, and a stored
+   * value below it makes the next scan read everything again; see the
+   * claude-code scraper.
+   */
+  scraperVersion?: number;
 }
 
 export interface ConversationScraper<
@@ -166,5 +174,11 @@ export interface CopilotCliChunk extends ConversationChunk {
   tool: "copilot-cli";
   metadata: ChunkMetadata & {
     eventType?: string;
+    /**
+     * Set on output from a subagent the main assistant launched, with the id of
+     * the tool call that launched it.
+     */
+    subagent?: boolean;
+    parentToolCallId?: string;
   };
 }
