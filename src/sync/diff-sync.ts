@@ -1,12 +1,24 @@
 import Database, { type Database as DatabaseHandle } from "better-sqlite3";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { existsSync } from "node:fs";
-import { loadCredentials, type SyncCredentials } from "./client.js";
+import { assertSecureSyncUrl, loadCredentials } from "./client.js";
+import { isOptedIn } from "./consent.js";
 import { getCanonicalRepoId } from "./normalizer.js";
 import { getSetting, setSetting } from "../handoff/schema.js";
 
 const BATCH_SIZE = 100;
-const CLOUD_SYNC_KEY = "cloud_last_synced_indexed_at";
+
+export class NotLoggedInError extends Error {
+  constructor() {
+    super("Not logged in to xtctx cloud. Run `xtctx login` first.");
+  }
+}
+
+export class NotOptedInError extends Error {
+  constructor() {
+    super("This project is not opted in to cloud sync. Run `xtctx sync enable` in it first.");
+  }
+}
 
 export interface DiffSyncResult {
   syncedCount: number;
@@ -15,17 +27,22 @@ export interface DiffSyncResult {
 }
 
 /**
- * Execute an automatic incremental diff sync.
- * Queries turns added/indexed since the last high-water mark across all scrapers
- * and streams them in batches to sync.xtctx.com.
+ * Upload what this project's index has gained since the last upload.
+ *
+ * Reads the project's own index, so only sessions already attributed to this
+ * project can leave the machine. Refuses unless someone is logged in AND this
+ * project is on the user's opt-in list; either alone uploads nothing.
+ *
+ * The high-water mark is kept per account: after logging in as someone else
+ * the project has to be uploaded to them in full, not from where the previous
+ * account left off.
  */
-export async function runDiffSync(options: { projectDir?: string }): Promise<DiffSyncResult> {
-  const projectDir = options.projectDir || process.cwd();
+export async function runDiffSync(options: { projectDir: string }): Promise<DiffSyncResult> {
+  const { projectDir } = options;
   const credentials = await loadCredentials();
-
-  if (!credentials) {
-    throw new Error("Not authenticated. Please run `xtctx login` first.");
-  }
+  if (!credentials) throw new NotLoggedInError();
+  if (!(await isOptedIn(projectDir))) throw new NotOptedInError();
+  assertSecureSyncUrl(credentials.syncUrl);
 
   const dbPath = join(projectDir, ".xtctx", "state", "xtctx.db");
   if (!existsSync(dbPath)) {
@@ -34,25 +51,32 @@ export async function runDiffSync(options: { projectDir?: string }): Promise<Dif
 
   const db: DatabaseHandle = new Database(dbPath);
   try {
-    const lastSynced = getSetting(db, CLOUD_SYNC_KEY) || "1970-01-01T00:00:00.000Z";
-    const { repoId, repoRoot } = await getCanonicalRepoId(projectDir);
+    const key = `cloud_last_synced_indexed_at:${credentials.user.id}`;
+    const { repoId } = await getCanonicalRepoId(projectDir);
+    const projectName = basename(projectDir);
 
+    // Position is (indexed_at, id), not indexed_at alone: a scan stamps many
+    // messages with the same time, and a batch boundary that fell inside such
+    // a run would skip the rest of it for good.
+    const saved = getSetting(db, key) ?? "1970-01-01T00:00:00.000Z|";
+    const split = saved.indexOf("|");
+    let cursorAt = saved.slice(0, split);
+    let cursorId = saved.slice(split + 1);
     let totalSynced = 0;
-    let currentHighWater = lastSynced;
 
-    const queryStmt = db.prepare(`
+    const query = db.prepare(`
       SELECT m.id, m.session_ref, m.tool, m.source_session_id, m.timestamp, m.role,
              m.content, m.message_index, m.content_hash, m.metadata_json, m.source_pointer, m.indexed_at,
-             s.git_branch, s.git_commit, s.preview, s.status
+             s.git_branch, s.git_commit, s.preview
       FROM messages m
       JOIN sessions s ON m.session_ref = s.session_ref
-      WHERE m.indexed_at > ?
-      ORDER BY m.indexed_at ASC
+      WHERE (m.indexed_at, m.id) > (?, ?)
+      ORDER BY m.indexed_at ASC, m.id ASC
       LIMIT ?
     `);
 
     while (true) {
-      const rows = queryStmt.all(currentHighWater, BATCH_SIZE) as any[];
+      const rows = query.all(cursorAt, cursorId, BATCH_SIZE) as Array<Record<string, string | number | null>>;
       if (rows.length === 0) break;
 
       const deltas = rows.map((r) => ({
@@ -61,7 +85,9 @@ export async function runDiffSync(options: { projectDir?: string }): Promise<Dif
         tool: r.tool,
         sourceSessionId: r.source_session_id,
         repoUrl: repoId,
-        projectRoot: repoRoot,
+        // The folder name, not the path: the absolute one carries the user's
+        // account name and directory layout and the server has no use for it.
+        projectRoot: projectName,
         gitBranch: r.git_branch || undefined,
         gitCommit: r.git_commit || undefined,
         timestamp: r.timestamp,
@@ -72,36 +98,27 @@ export async function runDiffSync(options: { projectDir?: string }): Promise<Dif
         metadataJson: r.metadata_json,
         sourcePointer: r.source_pointer,
         preview: r.preview,
-        status: r.status || "active",
+        status: "active",
       }));
 
-      // Push batch delta to Cloudflare
-      const url = `${credentials.syncUrl.replace(/\/$/, "")}/api/stream`;
-      const res = await fetch(url, {
+      const res = await fetch(`${credentials.syncUrl.replace(/\/$/, "")}/api/stream`, {
         method: "POST",
-        headers: {
-          "Authorization": `Bearer ${credentials.token}`,
-          "Content-Type": "application/json",
-        },
+        headers: { Authorization: `Bearer ${credentials.token}`, "Content-Type": "application/json" },
         body: JSON.stringify(deltas),
       });
-
       if (!res.ok) {
         throw new Error(`Sync batch failed (${res.status}): ${await res.text()}`);
       }
 
       totalSynced += rows.length;
-      currentHighWater = rows[rows.length - 1].indexed_at;
-      setSetting(db, CLOUD_SYNC_KEY, currentHighWater);
+      cursorAt = String(rows[rows.length - 1].indexed_at);
+      cursorId = String(rows[rows.length - 1].id);
+      setSetting(db, key, `${cursorAt}|${cursorId}`);
 
       if (rows.length < BATCH_SIZE) break;
     }
 
-    return {
-      syncedCount: totalSynced,
-      latestIndexedAt: currentHighWater,
-      upToDate: totalSynced === 0,
-    };
+    return { syncedCount: totalSynced, latestIndexedAt: totalSynced ? cursorAt : null, upToDate: totalSynced === 0 };
   } finally {
     db.close();
   }

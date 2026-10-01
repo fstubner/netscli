@@ -29,15 +29,19 @@ database_name = "xtctx-db"
 database_id = "your-database-id-here"
 ```
 
-### 3. Run Schema Migrations
-For local testing:
-```bash
-npm run d1:migrate:local
-```
-For production:
+### 3. Create the schema
+
+A new database:
 ```bash
 npm run d1:migrate:remote
 ```
+That applies `schema.sql`, which already includes everything below.
+
+A database created from an earlier `schema.sql` needs the files in `migrations/`, **in order, before you deploy the code that uses them**:
+```bash
+npx wrangler d1 execute xtctx-db --remote --file=./migrations/0001_token_version.sql
+```
+Run each once. For local testing use `--local` instead of `--remote`.
 
 ### 4. Configure GitHub OAuth App
 1. Go to [GitHub Developer Settings](https://github.com/settings/developers) -> **OAuth Apps** -> **New OAuth App**.
@@ -46,11 +50,11 @@ npm run d1:migrate:remote
 4. Enable **Device Flow** checkbox in the OAuth App settings.
 5. Put your `Client ID` in `wrangler.toml` under `GITHUB_CLIENT_ID`.
 
-### 5. Set JWT Secret
+### 5. Set the JWT secret (required)
 ```bash
 npx wrangler secret put JWT_SECRET
 ```
-*(Enter any secure random string)*
+Use a long random value, for example `openssl rand -base64 48`. There is no default: **until it is set, every route except `/health` answers 500.** Changing it later signs everyone out.
 
 ### 6. Deploy to Cloudflare
 ```bash
@@ -59,10 +63,20 @@ npm run deploy
 
 ---
 
+## Security notes
+
+- Tokens are accepted from the `Authorization` header only, last 30 days, and are revoked by `POST /auth/logout` (all of an account's tokens) or `DELETE /api/me` (which also deletes the account's data).
+- Browsers get no CORS headers unless their origin is listed in the `ALLOWED_ORIGINS` variable (comma-separated). The CLI and MCP clients do not need CORS.
+- Errors return a generic body; the detail goes to the Worker's log.
+- The baseline-MCP `/sse` streams live in the `SseSession` Durable Object, so `/message` works from any isolate.
+- `npm test` runs the Worker's tests against an in-memory SQLite.
+
+---
+
 ## Custom Domains (xtctx.com)
 In your Cloudflare dashboard (or `wrangler.toml`), map:
 - `mcp.xtctx.com` -> `xtctx-cloud` Worker (used by Cursor, Claude, Antigravity)
-- `sync.xtctx.com` -> `xtctx-cloud` Worker (used by `xtctx watch` and `xtctx login`)
+- `sync.xtctx.com` -> `xtctx-cloud` Worker (used by `xtctx login` and `xtctx sync`)
 
 ---
 
@@ -73,10 +87,12 @@ In your Cloudflare dashboard (or `wrangler.toml`), map:
 xtctx login
 ```
 
-### Start Real-Time Watcher
+### Choose what uploads
 ```bash
-xtctx watch
+xtctx sync enable   # run in a project: opt it in
+xtctx logout        # revoke tokens; add --delete-data to erase your uploads
 ```
+See [`docs/cloud-sync.md`](../docs/cloud-sync.md) for what is sent and when.
 
 ### Configure Cursor (`.cursor/mcp.json`) or Claude Desktop
 ```json

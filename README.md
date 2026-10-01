@@ -251,7 +251,9 @@ startup hooks; others receive MCP config plus managed instructions only.
 ## Limits
 
 - xtctx is local-only by default: it never uploads transcripts and runs no
-  telemetry. A project can opt into an external embedding endpoint by writing
+  telemetry. Cloud sync exists but sends nothing until you log in *and* opt a
+  project in with `xtctx sync enable` ([`docs/cloud-sync.md`](docs/cloud-sync.md)).
+  A project can opt into an external embedding endpoint by writing
   one into `.xtctx/config.yaml`, in which case window text is sent there to be
   vectorized — never inferred from an environment variable, and `xtctx status`
   names the endpoint in full whenever one is configured.

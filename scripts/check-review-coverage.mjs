@@ -46,7 +46,7 @@ const LAYERS = [
     name: "product-source",
     question: "Is it correct? What input makes it do the wrong thing?",
     why: "The ordinary review. It is listed first so it is visibly not the only one.",
-    match: [/^src\//],
+    match: [/^src\//, /^cloud\/src\//],
   },
   {
     name: "test-suite",
@@ -55,7 +55,7 @@ const LAYERS = [
     why:
       "Reading tests does not find this. Two were found only by hardcoding a value in the source " +
       "and seeing the suite stay green — one of them covering a feature that was broken at the time.",
-    match: [/^tests\//, /^vitest\.config\.ts$/],
+    match: [/^tests\//, /^cloud\/test\//, /^vitest\.config\.ts$/, /^cloud\/vitest\.config\.ts$/],
   },
   {
     name: "gates",
@@ -91,6 +91,7 @@ const LAYERS = [
       // same blank region as no layer at all.
       /^(?!design-direction\.md$|ux-walkthrough\.md$)[^/]+\.md$/,
       /^docs\//,
+      /^cloud\/README\.md$/,
       /^LICENSE$/,
       /^\.xtctx\//,
       // Written by xtctx into its own repository, and read by an agent — a
@@ -120,6 +121,8 @@ const LAYERS = [
       /^\.gitignore$/,
       /^\.gitattributes$/,
       /^\.github\/dependabot\.yml$/,
+      // The Worker's deploy surface: what it binds, what its database looks like.
+      /^cloud\/(wrangler\.toml|package(-lock)?\.json|tsconfig\.json|schema\.sql|migrations\/.*)$/,
     ],
   },
 ];

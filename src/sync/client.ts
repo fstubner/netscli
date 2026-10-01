@@ -1,7 +1,8 @@
-import { homedir } from "node:os";
+import { hostname } from "node:os";
 import { join } from "node:path";
-import { readFile, writeFile, mkdir } from "node:fs/promises";
-import { existsSync } from "node:fs";
+import { readFile, rm } from "node:fs/promises";
+import { writeFileAtomic } from "../utils/atomic-file.js";
+import { xtctxHome } from "./consent.js";
 
 export interface SyncCredentials {
   token: string;
@@ -15,14 +16,18 @@ export interface SyncCredentials {
   syncUrl: string;
 }
 
-const DEFAULT_SYNC_URL = "https://sync.xtctx.com";
+export const DEFAULT_SYNC_URL = "https://sync.xtctx.com";
 
 export function getCredentialsPath(): string {
-  return join(homedir(), ".xtctx", "credentials.json");
+  return join(xtctxHome(), "credentials.json");
 }
 
+/**
+ * The saved login, or one built from XTCTX_TOKEN for a machine nobody logs in
+ * on. Having credentials does not mean anything is uploaded: that also needs
+ * the project to be opted in (see consent.ts).
+ */
 export async function loadCredentials(): Promise<SyncCredentials | null> {
-  const credPath = getCredentialsPath();
   if (process.env.XTCTX_TOKEN) {
     const token = process.env.XTCTX_TOKEN;
     let userId = "env-user";
@@ -38,12 +43,10 @@ export async function loadCredentials(): Promise<SyncCredentials | null> {
         if (payload.device_id && !deviceId) deviceId = payload.device_id;
       }
     } catch {
-      // Ignore JWT decode errors and use defaults
+      // Not a decodable JWT; the server is what judges the token.
     }
 
-    const { hostname } = await import("node:os");
     const machineName = hostname();
-
     return {
       token,
       user: { id: userId, username },
@@ -53,53 +56,38 @@ export async function loadCredentials(): Promise<SyncCredentials | null> {
     };
   }
 
-  if (!existsSync(credPath)) {
-    return null;
-  }
-
   try {
-    const raw = await readFile(credPath, "utf-8");
-    return JSON.parse(raw);
+    return JSON.parse(await readFile(getCredentialsPath(), "utf-8")) as SyncCredentials;
   } catch {
     return null;
   }
 }
 
+/** Written 0600 and atomically: it holds a bearer token. */
 export async function saveCredentials(creds: SyncCredentials): Promise<void> {
-  const credPath = getCredentialsPath();
-  const dir = join(homedir(), ".xtctx");
-  if (!existsSync(dir)) {
-    await mkdir(dir, { recursive: true });
-  }
-  await writeFile(credPath, JSON.stringify(creds, null, 2), "utf-8");
+  await writeFileAtomic(getCredentialsPath(), JSON.stringify(creds, null, 2), { mode: 0o600 });
+}
+
+export async function deleteCredentials(): Promise<void> {
+  await rm(getCredentialsPath(), { force: true });
 }
 
 /**
- * Stream a turn delta to the Cloudflare Worker backend.
+ * A token must not travel in the clear. Plain http is for a server on this
+ * machine, which is what development uses.
  */
-export async function pushTurnDelta(
-  creds: SyncCredentials,
-  delta: Record<string, unknown>
-): Promise<{ success: boolean; sessionRef?: string }> {
-  const url = `${creds.syncUrl.replace(/\/$/, "")}/api/stream`;
-
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${creds.token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      ...delta,
-      deviceId: creds.deviceId,
-      deviceName: creds.deviceName,
-    }),
-  });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Sync failed (${res.status}): ${errText}`);
+export function assertSecureSyncUrl(syncUrl: string): void {
+  const url = new URL(syncUrl);
+  const loopback = ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
+  if (url.protocol !== "https:" && !(url.protocol === "http:" && loopback)) {
+    throw new Error(`Refusing ${syncUrl}: the sync server must be https (http is allowed only for localhost).`);
   }
+}
 
-  return (await res.json()) as { success: boolean; sessionRef?: string };
+export async function callCloud(creds: SyncCredentials, method: string, path: string): Promise<Response> {
+  assertSecureSyncUrl(creds.syncUrl);
+  return fetch(`${creds.syncUrl.replace(/\/$/, "")}${path}`, {
+    method,
+    headers: { Authorization: `Bearer ${creds.token}` },
+  });
 }

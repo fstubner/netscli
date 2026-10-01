@@ -53,7 +53,6 @@ export async function runBackgroundWork(deps: BackgroundDeps): Promise<void> {
     await deps.sessions.listRecentSessions(1);
     await deps.sessions.whenScanSettled();
     await drainIfAffordable(deps.sessions);
-    await syncToCloudIfAuthenticated(log);
   } catch (error) {
     // Reported rather than swallowed. The drain records its own failure in
     // `embedding_error`; this line is for everything else, and for anyone
@@ -61,28 +60,6 @@ export async function runBackgroundWork(deps: BackgroundDeps): Promise<void> {
     log(
       `xtctx: background indexing stopped: ${error instanceof Error ? error.message : String(error)}`,
     );
-  }
-}
-
-async function syncToCloudIfAuthenticated(log: (line: string) => void): Promise<void> {
-  try {
-    const { loadCredentials } = await import("../sync/client.js");
-    const creds = await loadCredentials();
-    if (!creds) return;
-
-    // 1. Run quick incremental diff sync
-    const { runDiffSync } = await import("../sync/diff-sync.js");
-    const result = await runDiffSync({ projectDir: process.cwd() });
-    if (!result.upToDate && result.syncedCount > 0) {
-      log(`xtctx: synced ${result.syncedCount} new turns to cloud`);
-    }
-
-    // 2. Ensure real-time background watcher daemon is running (self-healing)
-    const { ensureDaemonRunning } = await import("../sync/daemon-manager.js");
-    await ensureDaemonRunning();
-  } catch (err: unknown) {
-    // Non-blocking: background sync failure should never crash the MCP server
-    log(`xtctx: background cloud sync skipped: ${err instanceof Error ? err.message : String(err)}`);
   }
 }
 

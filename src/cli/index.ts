@@ -6,8 +6,9 @@ import { runHook } from "./hook.js";
 import { runScan } from "./scan.js";
 import { runSetup } from "./setup.js";
 import { runStatus } from "./status.js";
-import { runLogin } from "./login.js";
-import { runSync } from "./watch.js";
+import { runLogin, runLogout } from "./login.js";
+import { runSync, runSyncSetting } from "./sync.js";
+import { startAutoSync, type AutoSync } from "../sync/auto-sync.js";
 import { createProjectServices } from "../runtime/services.js";
 import { startMcpServer } from "../mcp/server.js";
 import { readXtctxPackage } from "../utils/package-info.js";
@@ -23,6 +24,7 @@ export async function main(argv = process.argv): Promise<void> {
     // like a configured project with no history.
     const unconfiguredProjectRoot = services.config.present ? undefined : services.projectRoot;
     let closed = false;
+    let autoSync: AutoSync | undefined;
     const shutdown = (exit: boolean) => {
       if (closed) return;
       closed = true;
@@ -37,14 +39,18 @@ export async function main(argv = process.argv): Promise<void> {
       // So give the clean close a moment, then leave. Nothing is lost by not
       // waiting: the index is derived data, every chunk is committed as it is
       // written, and an unfinished scan simply resumes on the next run.
-      const graceMs = 2_000;
+      // The cloud flush has its own bound, added on top: it is a network call,
+      // not the scan this grace window exists to cut short.
+      const graceMs = 2_000 + (autoSync ? 1_500 : 0);
       const timer = setTimeout(() => {
         if (exit) process.exit(0);
       }, graceMs);
       timer.unref?.();
 
-      void services.sessions
-        .close()
+      // Upload what the last interval left, then close the index it reads.
+      void (autoSync?.stop() ?? Promise.resolve())
+        .catch(() => {})
+        .then(() => services.sessions.close())
         .catch(() => {})
         .finally(() => {
           clearTimeout(timer);
@@ -100,6 +106,12 @@ export async function main(argv = process.argv): Promise<void> {
     // 19GB Codex store, and the cursor design keeps it from re-reading.
     if (!unconfiguredProjectRoot && !services.config.error) {
       void runBackgroundWork({ sessions: services.sessions });
+      // Uploads only when logged in and this project is opted in; see auto-sync.ts.
+      autoSync = startAutoSync({
+        projectRoot: services.projectRoot,
+        log: (line) => process.stderr.write(`${line}
+`),
+      });
     }
     return;
   }
@@ -163,63 +175,32 @@ export async function main(argv = process.argv): Promise<void> {
     .command("login")
     .option("--sync-url <url>", "Sync server URL (default: https://sync.xtctx.com)")
     .option("--device <name>", "Friendly name for this device")
-    .description("Authenticate this machine with xtctx cloud via GitHub Device Flow")
+    .description("Sign in to xtctx cloud with GitHub (uploads nothing by itself)")
     .action(async (options: { syncUrl?: string; device?: string }) => {
       await runLogin({ syncUrl: options.syncUrl, deviceName: options.device });
     });
 
   program
+    .command("logout")
+    .option("--delete-data", "Also delete everything uploaded to your cloud account", false)
+    .description("Sign out of xtctx cloud and revoke this account's tokens")
+    .action(async (options: { deleteData?: boolean }) => {
+      await runLogout({ deleteData: options.deleteData });
+    });
+
+  program
     .command("sync")
+    .argument("[action]", "enable, disable or status for this project; omit to upload once")
     .option("-p, --project <path>", "Project root (defaults to cwd)")
-    .option("-w, --watch", "Keep running and stream new turns continuously in real time", false)
-    .description("Sync local transcript diffs to xtctx cloud")
-    .action(async (options: { project?: string; watch?: boolean }) => {
+    .option("-w, --watch", "Keep uploading every few seconds until interrupted", false)
+    .description("Cloud sync: choose whether this project uploads, or upload now")
+    .action(async (action: string | undefined, options: { project?: string; watch?: boolean }) => {
       const globalOptions = program.opts<{ project?: string }>();
-      await runSync({ projectDir: options.project ?? globalOptions.project, watch: options.watch });
-    });
-
-  program
-    .command("watch")
-    .option("-p, --project <path>", "Project root (defaults to cwd)")
-    .description("Keep running and stream new turns to xtctx cloud continuously in real time")
-    .action(async (options: { project?: string }) => {
-      const globalOptions = program.opts<{ project?: string }>();
-      await runSync({ projectDir: options.project ?? globalOptions.project, watch: true });
-    });
-
-  program
-    .command("daemon")
-    .argument("[action]", "start, stop, or status (default: status)", "status")
-    .description("Inspect or control the background real-time sync daemon")
-    .action(async (action: string) => {
-      const { getDaemonStatus, ensureDaemonRunning, stopDaemon, getDaemonLogPath } = await import(
-        "../sync/daemon-manager.js"
-      );
-
-      if (action === "start") {
-        const res = await ensureDaemonRunning();
-        if (res.started) {
-          console.log(`✓ Started background sync daemon (PID: ${res.pid})`);
-        } else if (res.pid) {
-          console.log(`✓ Background sync daemon is already running (PID: ${res.pid})`);
-        } else {
-          console.log(`❌ Could not start daemon (are you logged in? Run xtctx login)`);
-        }
-      } else if (action === "stop") {
-        const stopped = await stopDaemon();
-        if (stopped) {
-          console.log(`✓ Stopped background sync daemon`);
-        } else {
-          console.log(`✓ Background sync daemon was not running`);
-        }
+      const projectDir = options.project ?? globalOptions.project;
+      if (action) {
+        await runSyncSetting(action, { projectDir });
       } else {
-        const status = await getDaemonStatus();
-        if (status.running) {
-          console.log(`✓ Background sync daemon: ACTIVE (PID: ${status.pid})`);
-        } else {
-          console.log(`○ Background sync daemon: STOPPED`);
-        }
-        console.log(`- Logs: ${getDaemonLogPath()}`);
+        await runSync({ projectDir, watch: options.watch });
       }
     });
 

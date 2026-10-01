@@ -1,7 +1,14 @@
 import { hostname } from "node:os";
-import { saveCredentials } from "../sync/client.js";
-import { runDiffSync } from "../sync/diff-sync.js";
-import { ensureDaemonRunning } from "../sync/daemon-manager.js";
+import { randomUUID } from "node:crypto";
+import {
+  DEFAULT_SYNC_URL,
+  assertSecureSyncUrl,
+  callCloud,
+  deleteCredentials,
+  getCredentialsPath,
+  loadCredentials,
+  saveCredentials,
+} from "../sync/client.js";
 
 interface DeviceCodeResponse {
   device_code: string;
@@ -11,103 +18,112 @@ interface DeviceCodeResponse {
   interval: number;
 }
 
-export async function runLogin(options: { syncUrl?: string; deviceName?: string }): Promise<void> {
-  const syncUrl = options.syncUrl || process.env.XTCTX_SYNC_URL || "https://sync.xtctx.com";
+interface PollResponse {
+  token?: string;
+  user?: { id: string; username: string; name?: string };
+  error?: string;
+  interval?: number;
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Sign in with GitHub's device flow. Signing in is only that: it stores a
+ * token. Nothing is uploaded until a project is opted in with
+ * `xtctx sync enable`.
+ */
+export async function runLogin(options: {
+  syncUrl?: string;
+  deviceName?: string;
+  /** Test seam; the real flow waits as long as GitHub says. */
+  wait?: (ms: number) => Promise<unknown>;
+}): Promise<void> {
+  const syncUrl = options.syncUrl || process.env.XTCTX_SYNC_URL || DEFAULT_SYNC_URL;
   const deviceName = options.deviceName || hostname() || "default-device";
+  const wait = options.wait ?? sleep;
+  const base = syncUrl.replace(/\/$/, "");
 
-  console.log(`\nConnecting to xtctx cloud at ${syncUrl}...`);
+  assertSecureSyncUrl(syncUrl);
 
-  let codeData: DeviceCodeResponse;
-  try {
-    const res = await fetch(`${syncUrl.replace(/\/$/, "")}/auth/device/code`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-    });
-    if (!res.ok) {
-      throw new Error(`Failed to request device authorization (${res.status}): ${await res.text()}`);
-    }
-    codeData = (await res.json()) as DeviceCodeResponse;
-  } catch (err: unknown) {
-    console.error("\n❌ Could not connect to auth service:", err instanceof Error ? err.message : String(err));
-    process.exit(1);
+  const codeRes = await fetch(`${base}/auth/device/code`, { method: "POST" });
+  if (!codeRes.ok) {
+    throw new Error(`Could not start login (${codeRes.status}).`);
   }
+  const code = (await codeRes.json()) as DeviceCodeResponse;
 
-  console.log("\n=======================================================");
-  console.log(`  1. Copy your one-time code:  \x1b[1m\x1b[32m${codeData.user_code}\x1b[0m`);
-  console.log(`  2. Open in your browser:     \x1b[34m${codeData.verification_uri}\x1b[0m`);
-  console.log("=======================================================\n");
+  console.log(`\n  1. Copy your one-time code:  ${code.user_code}`);
+  console.log(`  2. Open in your browser:     ${code.verification_uri}\n`);
+  console.log("Waiting for authorization in the browser...");
 
-  console.log("Waiting for authorization in browser...");
+  // GitHub says how long the code lives and how often to ask; ignoring either
+  // gets the client rate-limited or leaves it waiting on a code that is dead.
+  const deadline = Date.now() + (code.expires_in || 900) * 1000;
+  let intervalMs = (code.interval || 5) * 1000;
 
-  const interval = (codeData.interval || 5) * 1000;
-  const pollUrl = `${syncUrl.replace(/\/$/, "")}/auth/device/poll`;
+  while (Date.now() < deadline) {
+    await wait(intervalMs);
 
-  while (true) {
-    await new Promise((r) => setTimeout(r, interval));
-
+    let poll: PollResponse;
     try {
-      const pollRes = await fetch(pollUrl, {
+      const res = await fetch(`${base}/auth/device/poll`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          device_code: codeData.device_code,
-          device_name: deviceName,
-        }),
+        body: JSON.stringify({ device_code: code.device_code, device_name: deviceName }),
       });
-
-      const pollData = (await pollRes.json()) as {
-        token?: string;
-        user?: { id: string; username: string; name?: string };
-        error?: string;
-      };
-
-      if (pollData.token && pollData.user) {
-        await saveCredentials({
-          token: pollData.token,
-          user: pollData.user,
-          deviceId: `dev_${Date.now()}`,
-          deviceName,
-          syncUrl,
-        });
-
-        console.log(`\n✓ Successfully authenticated as \x1b[1m${pollData.user.username}\x1b[0m`);
-        console.log(`✓ Device registered as: \x1b[32m${deviceName}\x1b[0m`);
-        console.log("✓ Credentials saved to ~/.xtctx/credentials.json");
-
-        // Automatically trigger initial diff sync
-        console.log("\nSyncing existing local sessions to xtctx cloud...");
-        try {
-          const diff = await runDiffSync({ projectDir: process.cwd() });
-          if (diff.upToDate) {
-            console.log("✓ Cloud sync is up to date (0 pending diffs)");
-          } else {
-            console.log(`✓ Automatically synced ${diff.syncedCount} turns to xtctx cloud!`);
-          }
-        } catch (err: unknown) {
-          console.warn(`⚠️ Note: Cloud sync deferred (${err instanceof Error ? err.message : String(err)})`);
-        }
-
-        // Automatically start detached background sync daemon
-        try {
-          const daemon = await ensureDaemonRunning();
-          if (daemon.started) {
-            console.log(`✓ Background sync daemon started (PID: ${daemon.pid})`);
-          } else if (daemon.pid) {
-            console.log(`✓ Background sync daemon is active (PID: ${daemon.pid})`);
-          }
-        } catch {
-          // Ignore
-        }
-        console.log();
-        return;
-      }
-
-      if (pollData.error && pollData.error !== "authorization_pending") {
-        console.error(`\n❌ Authentication error: ${pollData.error}`);
-        process.exit(1);
-      }
+      poll = (await res.json()) as PollResponse;
     } catch {
-      // Continue polling until timeout or success
+      continue; // a network blip; the deadline bounds how long this goes on
+    }
+
+    if (poll.token && poll.user) {
+      await saveCredentials({
+        token: poll.token,
+        user: poll.user,
+        deviceId: `dev_${randomUUID()}`,
+        deviceName,
+        syncUrl,
+      });
+      console.log(`\nLogged in as ${poll.user.username}. Saved to ${getCredentialsPath()}.`);
+      console.log("Nothing is uploaded yet. To upload a project's transcripts, run in it:  xtctx sync enable");
+      return;
+    }
+
+    if (poll.error === "slow_down") {
+      intervalMs = poll.interval ? poll.interval * 1000 : intervalMs + 5000;
+    } else if (poll.error && poll.error !== "authorization_pending") {
+      throw new Error(`Login failed: ${poll.error}`);
     }
   }
+  throw new Error("The login code expired before it was authorized. Run `xtctx login` again.");
+}
+
+/**
+ * Sign out: ask the server to revoke this account's tokens, then forget ours.
+ * With deleteData it first deletes everything the account has uploaded, and
+ * keeps the local login if that fails so it can be retried.
+ */
+export async function runLogout(options: { deleteData?: boolean }): Promise<void> {
+  const creds = await loadCredentials();
+  if (!creds) {
+    console.log("Not logged in.");
+    return;
+  }
+
+  try {
+    const res = options.deleteData
+      ? await callCloud(creds, "DELETE", "/api/me")
+      : await callCloud(creds, "POST", "/auth/logout");
+    // 401 means the server already refuses this token, which is the state we want.
+    if (!res.ok && res.status !== 401) throw new Error(`server answered ${res.status}`);
+    if (options.deleteData) console.log("Deleted everything xtctx cloud held for your account.");
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (options.deleteData) {
+      throw new Error(`Could not delete your cloud data (${message}). You are still logged in; try again.`);
+    }
+    console.warn(`Could not reach the server to revoke your token (${message}). It stays valid until it expires.`);
+  }
+
+  await deleteCredentials();
+  console.log("Logged out.");
 }
