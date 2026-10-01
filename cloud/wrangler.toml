@@ -16,11 +16,21 @@ binding = "DB"
 database_name = "xtctx-db"
 database_id = "f64a7fc9-60a3-41be-964f-efbca6897f88"
 
+# Holds the open SSE streams for the baseline MCP transport.
+[[durable_objects.bindings]]
+name = "SSE"
+class_name = "SseSession"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["SseSession"]
+
 [vars]
 # Public GitHub OAuth App Client ID (for Device Flow)
 GITHUB_CLIENT_ID = "Ov23liFUTodqfoH9mgHA"
 ENVIRONMENT = "production"
 
 # Secrets to set via `wrangler secret put <NAME>`:
-# - JWT_SECRET: Secret key for signing user tokens
+# - JWT_SECRET: REQUIRED. Key for signing user tokens; the Worker answers 500 until it is set.
+# Optional var: ALLOWED_ORIGINS (comma-separated browser origins to send CORS headers to; none by default).
 # - GITHUB_CLIENT_SECRET: (Optional) If using Web Application flow instead of Device Flow

@@ -169,12 +169,15 @@ export async function processJsonRpc(
         result
       };
     } catch (err: unknown) {
+      // Detail goes to the Worker's log; the caller gets nothing that names
+      // a table or a query.
+      console.error("tool call failed", err);
       return {
         jsonrpc: "2.0",
         id,
         error: {
           code: -32000,
-          message: err instanceof Error ? err.message : String(err)
+          message: "Tool call failed"
         }
       };
     }

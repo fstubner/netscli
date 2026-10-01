@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS users (
     display_name TEXT,
     email TEXT,
     created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL
+    updated_at INTEGER NOT NULL,
+    token_version INTEGER NOT NULL DEFAULT 0 -- bumped on logout; see migrations/0001
 );
 
 CREATE TABLE IF NOT EXISTS devices (

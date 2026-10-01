@@ -1,85 +1,76 @@
 import type { Env, AuthUser } from "./types.js";
+import { getTokenVersion } from "./db.js";
 
-const DEFAULT_JWT_SECRET = "xtctx-cloud-default-secret-change-in-production";
+/** Tokens last a month. Revocation (below) is what ends one sooner. */
+export const TOKEN_TTL_SECONDS = 60 * 60 * 24 * 30;
+
+const encoder = new TextEncoder();
+
+function toBase64Url(bytes: Uint8Array): string {
+  let binary = "";
+  for (const b of bytes) binary += String.fromCharCode(b);
+  return btoa(binary).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+}
+
+function fromBase64Url(text: string): Uint8Array {
+  let base64 = text.replace(/-/g, "+").replace(/_/g, "/");
+  while (base64.length % 4) base64 += "=";
+  const binary = atob(base64);
+  return Uint8Array.from(binary, (c) => c.charCodeAt(0));
+}
+
+function hmacKey(secret: string, usage: "sign" | "verify"): Promise<CryptoKey> {
+  return crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, [usage]);
+}
 
 /**
  * Mint an HMAC-SHA256 JWT using standard Web Crypto API.
  */
-export async function createJwt(payload: Record<string, unknown>, secretStr: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const secretKey = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(secretStr),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
+export async function createJwt(
+  payload: Record<string, unknown>,
+  secret: string,
+  ttlSeconds = TOKEN_TTL_SECONDS,
+): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  const header = toBase64Url(encoder.encode(JSON.stringify({ alg: "HS256", typ: "JWT" })));
+  const body = toBase64Url(encoder.encode(JSON.stringify({ ...payload, exp: now + ttlSeconds, iat: now })));
+  const signature = await crypto.subtle.sign("HMAC", await hmacKey(secret, "sign"), encoder.encode(`${header}.${body}`));
+  return `${header}.${body}.${toBase64Url(new Uint8Array(signature))}`;
+}
 
-  const header = { alg: "HS256", typ: "JWT" };
-  const encodedHeader = btoa(JSON.stringify(header)).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
-  
-  const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 90; // 90 days validity
-  const fullPayload = { ...payload, exp, iat: Math.floor(Date.now() / 1000) };
-  const encodedPayload = btoa(JSON.stringify(fullPayload)).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
-
-  const dataToSign = encoder.encode(`${encodedHeader}.${encodedPayload}`);
-  const signatureBuffer = await crypto.subtle.sign("HMAC", secretKey, dataToSign);
-  
-  const signatureBytes = new Uint8Array(signatureBuffer);
-  let binary = "";
-  for (let i = 0; i < signatureBytes.length; i++) {
-    binary += String.fromCharCode(signatureBytes[i]);
-  }
-  const encodedSignature = btoa(binary).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
-
-  return `${encodedHeader}.${encodedPayload}.${encodedSignature}`;
+interface VerifiedToken extends AuthUser {
+  tokenVersion: number;
 }
 
 /**
- * Verify an HMAC-SHA256 JWT using standard Web Crypto API.
+ * Check a token's signature and expiry. Says nothing about revocation; that
+ * needs the database, see `authenticateRequest`.
  */
-export async function verifyJwt(token: string, secretStr: string): Promise<AuthUser | null> {
+export async function verifyJwt(token: string, secret: string): Promise<VerifiedToken | null> {
   try {
     const parts = token.split(".");
     if (parts.length !== 3) return null;
+    const [header, body, signature] = parts;
 
-    const [encodedHeader, encodedPayload, encodedSignature] = parts;
-    const encoder = new TextEncoder();
+    if (JSON.parse(new TextDecoder().decode(fromBase64Url(header))).alg !== "HS256") return null;
 
-    const secretKey = await crypto.subtle.importKey(
-      "raw",
-      encoder.encode(secretStr),
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["verify"]
+    const valid = await crypto.subtle.verify(
+      "HMAC",
+      await hmacKey(secret, "verify"),
+      fromBase64Url(signature),
+      encoder.encode(`${header}.${body}`),
     );
+    if (!valid) return null;
 
-    // Decode signature from base64url
-    let base64 = encodedSignature.replace(/-/g, "+").replace(/_/g, "/");
-    while (base64.length % 4) base64 += "=";
-    const binary = atob(base64);
-    const signatureBytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      signatureBytes[i] = binary.charCodeAt(i);
-    }
-
-    const dataToVerify = encoder.encode(`${encodedHeader}.${encodedPayload}`);
-    const isValid = await crypto.subtle.verify("HMAC", secretKey, signatureBytes, dataToVerify);
-    if (!isValid) return null;
-
-    // Decode payload
-    let payloadBase64 = encodedPayload.replace(/-/g, "+").replace(/_/g, "/");
-    while (payloadBase64.length % 4) payloadBase64 += "=";
-    const payload = JSON.parse(atob(payloadBase64));
-
-    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
-      return null; // Expired
-    }
+    const payload = JSON.parse(new TextDecoder().decode(fromBase64Url(body)));
+    if (typeof payload.sub !== "string" || typeof payload.exp !== "number") return null;
+    if (payload.exp < Math.floor(Date.now() / 1000)) return null;
 
     return {
       userId: payload.sub,
-      username: payload.username,
+      username: String(payload.username ?? ""),
       deviceId: payload.device_id,
+      tokenVersion: Number(payload.ver ?? -1),
     };
   } catch {
     return null;
@@ -87,25 +78,28 @@ export async function verifyJwt(token: string, secretStr: string): Promise<AuthU
 }
 
 /**
- * Extract and authenticate user from request Authorization header or query param.
+ * Authenticate from the Authorization header, and only from there: a token in
+ * the URL ends up in access logs and browser history.
+ *
+ * A valid signature is not enough. The user must still exist and the token's
+ * version must match the user's current one, which is how logout and
+ * delete-my-data take effect on a token that has not expired. Fails closed
+ * when no secret is configured; the caller reports that as a server fault
+ * before getting here.
  */
 export async function authenticateRequest(request: Request, env: Env): Promise<AuthUser | null> {
-  const authHeader = request.headers.get("Authorization");
-  const secret = env.JWT_SECRET || DEFAULT_JWT_SECRET;
+  if (!env.JWT_SECRET) return null;
 
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    const token = authHeader.slice(7).trim();
-    return await verifyJwt(token, secret);
-  }
+  const header = request.headers.get("Authorization");
+  if (!header?.startsWith("Bearer ")) return null;
 
-  // Also support token query param for SSE transports that cannot set custom headers
-  const url = new URL(request.url);
-  const tokenParam = url.searchParams.get("token");
-  if (tokenParam) {
-    return await verifyJwt(tokenParam, secret);
-  }
+  const verified = await verifyJwt(header.slice(7).trim(), env.JWT_SECRET);
+  if (!verified) return null;
 
-  return null;
+  const current = await getTokenVersion(env, verified.userId);
+  if (current === null || current !== verified.tokenVersion) return null;
+
+  return { userId: verified.userId, username: verified.username, deviceId: verified.deviceId };
 }
 
 /**

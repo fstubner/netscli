@@ -17,25 +17,19 @@ export async function ingestTurnDelta(
   const nowTs = Date.now();
   const statements: D1PreparedStatement[] = [];
 
-  // Ensure user record exists/updated
-  statements.push(
-    env.DB.prepare(
-      `INSERT INTO users (id, username, created_at, updated_at)
-       VALUES (?, ?, ?, ?)
-       ON CONFLICT(id) DO UPDATE SET updated_at = excluded.updated_at`
-    ).bind(user.userId, user.username, nowTs, nowTs)
-  );
-
   for (const delta of deltas) {
     const sessionRef = `${user.userId}:${delta.tool}:${delta.sourceSessionId}`;
     const deviceName = delta.deviceName || delta.deviceId;
+    // Device ids come from the client and are the table's primary key, so two
+    // users picking the same one would otherwise share a row. Scoped to the user.
+    const deviceId = `${user.userId}:${delta.deviceId}`;
 
     statements.push(
       env.DB.prepare(
         `INSERT INTO devices (id, user_id, device_name, last_seen_at, created_at)
          VALUES (?, ?, ?, ?, ?)
          ON CONFLICT(id) DO UPDATE SET last_seen_at = excluded.last_seen_at`
-      ).bind(delta.deviceId, user.userId, deviceName, nowTs, nowTs)
+      ).bind(deviceId, user.userId, deviceName, nowTs, nowTs)
     );
 
     statements.push(
@@ -54,7 +48,7 @@ export async function ingestTurnDelta(
       ).bind(
         sessionRef,
         user.userId,
-        delta.deviceId,
+        deviceId,
         delta.tool,
         delta.sourceSessionId,
         delta.repoUrl,
@@ -178,4 +172,66 @@ export async function getSessionMessages(
     session,
     messages: messagesResult.results || [],
   };
+}
+
+const ROLES = new Set(["user", "assistant", "system", "tool"]);
+const MAX_BATCH = 200;
+
+/**
+ * Validate an ingest body. Returns null for anything malformed, so a bad
+ * request is a 400 and never reaches a query.
+ */
+export function parseTurnDeltas(input: unknown): StreamTurnDelta[] | null {
+  const list = Array.isArray(input) ? input : [input];
+  if (list.length === 0 || list.length > MAX_BATCH) return null;
+
+  const text = (v: unknown) => typeof v === "string" && v.length > 0;
+  for (const d of list as Record<string, unknown>[]) {
+    if (typeof d !== "object" || d === null) return null;
+    if (
+      !text(d.deviceId) || !text(d.tool) || !text(d.sourceSessionId) || !text(d.repoUrl) ||
+      !text(d.projectRoot) || !text(d.timestamp) || !text(d.contentHash) ||
+      typeof d.content !== "string" || !ROLES.has(d.role as string) ||
+      !Number.isInteger(d.messageIndex)
+    ) {
+      return null;
+    }
+  }
+  return list as StreamTurnDelta[];
+}
+
+export async function upsertUser(env: Env, userId: string, username: string): Promise<void> {
+  const now = Date.now();
+  await env.DB.prepare(
+    `INSERT INTO users (id, username, created_at, updated_at) VALUES (?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET username = excluded.username, updated_at = excluded.updated_at`
+  ).bind(userId, username, now, now).run();
+}
+
+/** The user's current token version, or null when there is no such user. */
+export async function getTokenVersion(env: Env, userId: string): Promise<number | null> {
+  const row = await env.DB.prepare(`SELECT token_version FROM users WHERE id = ?`)
+    .bind(userId).first<{ token_version: number }>();
+  return row ? row.token_version : null;
+}
+
+/** Invalidate every token issued to this user so far. */
+export async function bumpTokenVersion(env: Env, userId: string): Promise<void> {
+  await env.DB.prepare(`UPDATE users SET token_version = token_version + 1 WHERE id = ?`).bind(userId).run();
+}
+
+/**
+ * Remove everything held for a user, children first, then the account row.
+ * With the row gone no token for it authenticates, so this also signs the user
+ * out everywhere.
+ */
+export async function deleteUserData(env: Env, userId: string): Promise<void> {
+  const owned = `(SELECT session_ref FROM sessions WHERE user_id = ?)`;
+  await env.DB.batch([
+    env.DB.prepare(`DELETE FROM retrieval_units WHERE session_ref IN ${owned}`).bind(userId),
+    env.DB.prepare(`DELETE FROM messages WHERE session_ref IN ${owned}`).bind(userId),
+    env.DB.prepare(`DELETE FROM sessions WHERE user_id = ?`).bind(userId),
+    env.DB.prepare(`DELETE FROM devices WHERE user_id = ?`).bind(userId),
+    env.DB.prepare(`DELETE FROM users WHERE id = ?`).bind(userId),
+  ]);
 }

@@ -1,8 +1,13 @@
 export interface Env {
   DB: D1Database;
+  /** Holds the open baseline-MCP SSE streams; see sse-session.ts. */
+  SSE: DurableObjectNamespace;
   GITHUB_CLIENT_ID: string;
   GITHUB_CLIENT_SECRET?: string;
+  /** Required. Requests are refused with a 500 while it is unset. */
   JWT_SECRET?: string;
+  /** Comma-separated browser origins to send CORS headers to. Unset means none. */
+  ALLOWED_ORIGINS?: string;
   ENVIRONMENT?: string;
 }
 
