@@ -5,7 +5,7 @@ import { AbstractScraper, describeType, estimateTokens, fileSize, isRecord } fro
 import { encodePathForToolDirectory, pathMatchesProject } from "../utils/project-scope.js";
 import { recordDrift, withDriftReport } from "./drift-log.js";
 import { MAX_LINE_BYTES } from "./limits.js";
-import { fileHeadHash, resumeOffset } from "./base.js";
+import { fileHeadHash, fileTailHash, resumeOffset } from "./base.js";
 import { readJsonlLines } from "./jsonl-reader.js";
 import type { FileCursor } from "../types/scraper.js";
 
@@ -100,9 +100,22 @@ export class ClaudeCodeScraper extends AbstractScraper<ClaudeCodeChunk> {
     return [this.claudeProjectsDir];
   }
 
+  /**
+   * Everything after each file's byte cursor, with no timestamp cutoff unless
+   * one is passed.
+   *
+   * This used to default to the index's saved `lastTimestamp`. For an
+   * append-only file the cursor already says exactly what is new, and the
+   * timestamp only second-guessed it, wrongly in both directions it could:
+   * a line appended with an earlier stamp than the newest one indexed was
+   * skipped while the cursor moved past it, so no scan ever read it again;
+   * and a file re-read from the top because it was rewritten had every
+   * rewritten turn filtered out as old, so the index kept the text it had
+   * replaced. A file with no usable cursor is read whole and its rows are
+   * upserted by deterministic id, so the cost of not filtering is a re-read.
+   */
   async *scrape(since?: Date): AsyncIterable<ClaudeCodeChunk> {
-    const state = await this.getLastScrapedPosition();
-    const cutoff = since ?? state.lastTimestamp;
+    const cutoff = since ?? new Date(0);
     yield* withDriftReport(SCRAPER_NAME, this.readAllSessions(cutoff, true), this.stateDir);
   }
 
@@ -246,7 +259,10 @@ export class ClaudeCodeScraper extends AbstractScraper<ClaudeCodeChunk> {
     const cursor = this.cursors[filePath];
     const checkHash =
       this.resuming && cursor ? await fileHeadHash(filePath, cursor.offset) : null;
-    const startAt = size === null ? 0 : resumeOffset(cursor, size, checkHash ?? undefined);
+    const checkTail =
+      this.resuming && cursor ? await fileTailHash(filePath, cursor.offset) : null;
+    const startAt =
+      size === null ? 0 : resumeOffset(cursor, size, checkHash ?? undefined, checkTail ?? undefined);
     if (size !== null && startAt > 0 && startAt >= size) {
       return;
     }
@@ -456,10 +472,12 @@ export class ClaudeCodeScraper extends AbstractScraper<ClaudeCodeChunk> {
     // resume re-derive ownership from a point where no `cwd` is left to see.
     if (this.resuming && size !== null) {
       const headHash = await fileHeadHash(filePath, readTo);
+      const tailHash = await fileTailHash(filePath, readTo);
       this.updatedCursors[filePath] = {
         offset: readTo,
         size,
         ...(headHash ? { headHash } : {}),
+        ...(tailHash ? { tailHash } : {}),
         context: {
           sessionId,
           messageIndex,

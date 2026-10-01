@@ -72,6 +72,11 @@ export interface FileCursor {
    * garbage. An append never changes the head; a rewrite almost always does.
    */
   headHash?: string;
+  /**
+   * Hash of the bytes just before the offset, for a rewrite past the head;
+   * see `fileTailHash`. Absent on short files, where the head covers it all.
+   */
+  tailHash?: string;
   /** Absent means resume is unsafe, so the file is read from the start. */
   context?: FileCursorContext;
 }

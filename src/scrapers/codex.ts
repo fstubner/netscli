@@ -15,7 +15,7 @@ import {
 import { pathMatchesProject } from "../utils/project-scope.js";
 import { withDriftReport } from "./drift-log.js";
 import { MAX_LINE_BYTES } from "./limits.js";
-import { fileHeadHash, resumeOffset } from "./base.js";
+import { fileHeadHash, fileTailHash, resumeOffset } from "./base.js";
 import { readJsonlLines } from "./jsonl-reader.js";
 import type { FileCursor } from "../types/scraper.js";
 
@@ -86,9 +86,22 @@ export class CodexCliScraper extends AbstractScraper<CodexChunk> {
     return [this.codexSessionsPath];
   }
 
+  /**
+   * Everything after each file's byte cursor, with no timestamp cutoff unless
+   * one is passed.
+   *
+   * This used to default to the index's saved `lastTimestamp`. For an
+   * append-only file the cursor already says exactly what is new, and the
+   * timestamp only second-guessed it, wrongly in both directions it could:
+   * a line appended with an earlier stamp than the newest one indexed was
+   * skipped while the cursor moved past it, so no scan ever read it again;
+   * and a file re-read from the top because it was rewritten had every
+   * rewritten turn filtered out as old, so the index kept the text it had
+   * replaced. A file with no usable cursor is read whole and its rows are
+   * upserted by deterministic id, so the cost of not filtering is a re-read.
+   */
   async *scrape(since?: Date): AsyncIterable<CodexChunk> {
-    const state = await this.getLastScrapedPosition();
-    const cutoff = since ?? state.lastTimestamp;
+    const cutoff = since ?? new Date(0);
     yield* withDriftReport(SCRAPER_NAME, this.readAllSessions(cutoff, true), this.stateDir);
   }
 
@@ -160,7 +173,10 @@ export class CodexCliScraper extends AbstractScraper<CodexChunk> {
       // cannot change it. See `fileHeadHash`.
       const checkHash =
         resume && cursor ? await fileHeadHash(filePath, cursor.offset) : null;
-      const startAt = size === null ? 0 : resumeOffset(cursor, size, checkHash ?? undefined);
+      const checkTail =
+        resume && cursor ? await fileTailHash(filePath, cursor.offset) : null;
+      const startAt =
+        size === null ? 0 : resumeOffset(cursor, size, checkHash ?? undefined, checkTail ?? undefined);
       if (size !== null && startAt > 0 && startAt >= size) {
         continue;
       }
@@ -447,10 +463,12 @@ export class CodexCliScraper extends AbstractScraper<CodexChunk> {
       // a position mid-read would skip whatever the failure interrupted.
       if (resume && size !== null) {
         const recordHash = await fileHeadHash(filePath, readTo);
+        const recordTail = await fileTailHash(filePath, readTo);
         updated[filePath] = {
           offset: readTo,
           size,
           ...(recordHash ? { headHash: recordHash } : {}),
+          ...(recordTail ? { tailHash: recordTail } : {}),
           context: {
             sessionId,
             messageIndex,
