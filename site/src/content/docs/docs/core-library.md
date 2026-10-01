@@ -3,7 +3,7 @@ title: Core library and crates
 description: NetsCLI Rust crate ownership, core library boundaries, and integration rules.
 ---
 
-NetsCLI is split into Rust crates and interface apps. `netscli-core` owns network behavior; the CLI, TUI, desktop app, and MCP server call into it rather than carrying separate implementations.
+NetsCLI is split into Rust crates and interface apps. `netscli-core` owns network behavior, and the CLI, TUI, desktop app, and MCP server call into it rather than carrying separate implementations.
 
 Interface layers use the core `Ops` facade instead of implementing their own probes, packet parsing, DNS behavior, or scan safety logic.
 
@@ -87,10 +87,10 @@ Exact method signatures can change as operations gain richer structured data. Pr
 
 NetsCLI intentionally limits expensive operations:
 
-- Maximum subnet size: `/16`.
-- Maximum ports per scan: `4096`.
-- Default concurrency: `256`.
-- Default scan timeout: `500 ms`.
+- Subnets up to `/16`.
+- Up to `4096` ports per scan.
+- `256` probes in flight by default.
+- A `500 ms` scan timeout by default.
 
 ## Contributing
 

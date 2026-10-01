@@ -52,10 +52,7 @@ netscli discover --json | jq '.[].ip'
 
 ### CSV and Markdown
 
-Commands that return a list also take `--csv`, for a spreadsheet or a script
-that wants columns, and `--md`, for a Markdown table to paste into an issue
-or a wiki: `discover`, `scan`, `sweep`, `dns`, `ping`, `arp`, `interfaces`,
-`mdns` and `pcap`.
+Commands that return a list also take `--csv`, for a spreadsheet or a script that wants columns, and `--md`, for a Markdown table to paste into an issue or a wiki. They are `discover`, `scan`, `sweep`, `dns`, `ping`, `arp`, `interfaces`, `mdns` and `pcap`.
 
 ```bash
 netscli discover 192.168.1.0/24 --csv > hosts.csv
@@ -93,8 +90,7 @@ $ netscli dns netscli.com --record MX --md
 
 ## Example output
 
-Captured from a real run against loopback, so every port reads `filtered` —
-nothing is listening on 127.0.0.1 for these ports. A host with services up
+Captured from a real run against loopback, so every port reads `filtered`, because nothing is listening on 127.0.0.1 for these ports. A host with services up
 returns `open` with latency, and a banner where one was offered.
 
 ```console
@@ -121,8 +117,7 @@ $ netscli scan 127.0.0.1 -p 22,80,443 --json
 ]
 ```
 
-`open` is the compatibility boolean older consumers already read; `status`
-carries the full answer, including `open|filtered` for UDP. Both are present, so a script written against
+`open` is the compatibility boolean older consumers already read, and `status` carries the full answer, including `open|filtered` for UDP. Both are present, so a script written against
 either keeps working.
 
 ```console
@@ -194,7 +189,7 @@ netscli dns --help
 
 `--concurrency` / `-j` is a global option for limiting in-flight network work. It is useful on fragile gateways or when scanning larger local ranges.
 
-The help output is the source of truth for flags. The docs explain workflow and intent; the binary explains exact syntax.
+The help output is the source of truth for flags. The docs explain workflow and intent, and the binary explains exact syntax.
 
 ## CLI-only workflows
 

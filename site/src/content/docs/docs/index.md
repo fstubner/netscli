@@ -3,7 +3,7 @@ title: Overview
 description: NetsCLI documentation for the shared Rust core, CLI, TUI, desktop app, and MCP server.
 ---
 
-NetsCLI is a cross-platform network scanner written in Rust. It is built around one shared core library and several interfaces: a desktop app, terminal UI, command-line interface, and MCP server.
+NetsCLI is a cross-platform network scanner written in Rust. It is built around one shared core library and four interfaces, a desktop app, a terminal UI, a command-line interface, and an MCP server.
 
 The goal is consistency. A port scan, DNS lookup, host inspection, or ARP cache read means the same thing whether you run it from the desktop app, a shell script, the TUI, or an AI agent.
 
@@ -49,10 +49,10 @@ Interfaces may add confirmations or guidance, but they do not bypass the core li
 
 ## Useful starting points
 
-- New to NetsCLI: read [Operations](/docs/operations/) first.
-- Installing on Windows, macOS, or Linux: read [Installation](/docs/install/).
-- Comparing desktop app, TUI, CLI, and MCP coverage: read [Interface coverage](/docs/interface-coverage/).
-- Using the desktop app: read [Desktop app](/docs/desktop/).
-- Automating scans or exporting JSON, YAML, CSV or Markdown, read [CLI](/docs/cli/).
-- Integrating with agents: read [MCP server](/docs/mcp/).
-- Building on the Rust crates: read [Core library and crates](/docs/core-library/).
+- If you are new to NetsCLI, start with [Operations](/docs/operations/).
+- [Installation](/docs/install/) covers Windows, macOS and Linux.
+- [Interface coverage](/docs/interface-coverage/) compares the desktop app, TUI, CLI and MCP server.
+- [Desktop app](/docs/desktop/) is the guide to the desktop app.
+- [CLI](/docs/cli/) covers automating scans and exporting JSON, YAML, CSV or Markdown.
+- [MCP server](/docs/mcp/) covers connecting AI agents.
+- [Core library and crates](/docs/core-library/) is for building on the Rust crates.

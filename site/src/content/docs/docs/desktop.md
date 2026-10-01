@@ -51,7 +51,7 @@ Use the CLI instead when you need setup, doctor, shell completions, manpages, se
 
 ## Operation tabs
 
-Tabs show the operation name and a short identifier such as host, subnet, interface, or record name. They do not show the full command; the command preview lives in the command bar.
+Tabs show the operation name and a short identifier such as host, subnet, interface, or record name. They do not show the full command. The command preview lives in the command bar.
 
 Supported operations include:
 
@@ -137,12 +137,9 @@ Settings control:
 ## Updates
 
 When the app opens, it checks GitHub for a newer release. If there is one, a
-notice appears in the corner. The check fetches one small file and nothing
-else; turn it off under **Settings → Release Notifications**.
+notice appears in the corner. The check fetches one small file and nothing else. You can turn it off under **Settings → Release Notifications**.
 
-Where the app can update itself, the notice opens a dialog with the new
-version's release notes and three choices: **Install and restart**, **Later**
-or **Skip this version**. Nothing downloads until you choose to install. The
+Where the app can update itself, the notice opens a dialog with the new version's release notes and three choices, **Install and restart**, **Later** or **Skip this version**. Nothing downloads until you choose to install. The
 update is checked against NetsCLI's signing key before it is installed. On
 Windows the installer shows a progress bar and may ask for administrator
 permission, then the app reopens.
@@ -156,9 +153,9 @@ These installs update themselves:
 These installs belong to a package manager, so the notice links to the
 release page instead and the package manager does the update:
 
-- Scoop: `scoop update netscli-gui`
-- The AUR package: your AUR helper
-- A `.deb`: install the newer `.deb`
+- Scoop updates with `scoop update netscli-gui`
+- The AUR package updates through your AUR helper
+- A `.deb` updates by installing the newer `.deb`
 
 ## Build and runtime availability
 

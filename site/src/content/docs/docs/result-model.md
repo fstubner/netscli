@@ -26,9 +26,9 @@ Port scans include the existing compatibility fields plus richer status data.
 | `protocol` | `tcp` or `udp`. |
 | `open` | Compatibility boolean for older consumers. |
 | `service` | Best-effort service guess, from the port number. |
-| `product` | The software on the port, when it named itself: from the SSH identification line, an HTTP `Server` header, an FTP or mail greeting, or MySQL's connection greeting; or when it answered the one read-only question netscli asks Redis (`INFO server`) and Memcached (`version`). Omitted otherwise. |
+| `product` | The software on the port, when it named itself in the SSH identification line, an HTTP `Server` header, an FTP or mail greeting, or MySQL's connection greeting, or when it answered the one read-only question netscli asks Redis (`INFO server`) and Memcached (`version`). Omitted otherwise. |
 | `version` | That software's version, when it gave one (`9.6p1` for OpenSSH). Omitted otherwise. |
-| `status` | `open`, `closed`, `filtered`, or `error`; for UDP also `open\|filtered`, meaning no reply and no refusal. |
+| `status` | `open`, `closed`, `filtered`, or `error`, and for UDP also `open\|filtered`, meaning no reply and no refusal. |
 | `latency_ms` | TCP connect/probe latency where available. |
 | `banner` | Bounded plaintext banner when captured. |
 | `http` | HTTP status/header data when a HTTP-like probe succeeds. |
@@ -41,9 +41,7 @@ Port scans include the existing compatibility fields plus richer status data.
 Banner, HTTP, TLS, and raw preview data are probe results. They are useful diagnostics, not proof that a service is trustworthy.
 
 `product` and `version` come only from what the service said about itself,
-so they are exactly as trustworthy as that: a server
-can claim any name, and many hide their version on purpose. A port with no
-`product` didn't name itself; it doesn't mean nothing is there.
+so they are exactly as trustworthy as that. A server can claim any name, and many hide their version on purpose. A port with no `product` didn't name itself, which doesn't mean nothing is there.
 
 ## Host inventory
 
@@ -114,7 +112,7 @@ Inspect is a host profile. It combines host-level data with optional port scan d
 | `host` | Original target. |
 | `ip` | Resolved IP address. |
 | `hostname` | Reverse DNS name when available. |
-| `ping` | Reachability object with `alive`, `method`, `rtt_ms`, `seq`, and optional `error` and `ttl` (the reply's time-to-live, where the platform reports it; Windows does). |
+| `ping` | Reachability object with `alive`, `method`, `rtt_ms`, `seq`, and optional `error` and `ttl` (the reply's time-to-live, where the platform reports it, which Windows does). |
 | `ports` | Port scan rows using the same model as `scan`. |
 | `open_ports` | Convenience list containing only open port rows. |
 | `mac`, `vendor` | From the local ARP table, so only for a host on the same network segment. |
@@ -139,8 +137,7 @@ mDNS/DNS-SD returns service announcements rather than generic host rows. A singl
 
 Interface rows describe local network interfaces. ARP rows describe the local
 neighbor cache. These are two different shapes, and unlike everywhere else on
-this page, the desktop app does not show them under the field names the data
-carries — so both are given here.
+this page, the desktop app does not show them under the field names the data carries, so both are given here.
 
 ### Interfaces
 
@@ -152,11 +149,10 @@ carries — so both are given here.
 | `ips` | Addresses | Addresses, with prefix length. |
 | `mac` | MAC | MAC address when available. |
 | `is_up` | State | Whether the interface is up. |
-| `is_loopback` | — | Whether the interface is loopback. |
+| `is_loopback` | None | Whether the interface is loopback. |
 
 `is_up` and `is_loopback` are booleans in the data. The desktop app renders
-the first as `up` or `down`, and has no column for the second — it feeds the
-**Kind** column instead, which has no field of its own and shows `loopback`,
+the first as `up` or `down`, and has no column for the second. It feeds the **Kind** column instead, which has no field of its own and shows `loopback`,
 `virtual`, `vpn` or `physical`, derived from `is_loopback` and the name.
 
 ### ARP entries

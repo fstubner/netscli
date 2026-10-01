@@ -31,7 +31,7 @@ Use `discover` when you want an inventory of reachable hosts on a subnet.
 netscli discover 192.168.1.0/24
 ```
 
-Discovery focuses on host-level data: IP address, hostname when available, MAC address, vendor, and response time. It does not scan service ports. Use `sweep` when you also need exposed services.
+Discovery focuses on host-level data, meaning IP address, hostname when available, MAC address, vendor, and response time. It does not scan service ports. Use `sweep` when you also need exposed services.
 
 ## Scan
 
@@ -56,9 +56,7 @@ Port statuses are:
 
 ### UDP
 
-Add `--udp` to probe UDP instead. With no port list it checks the services
-that answer an unauthenticated request on most networks: DNS (53), NTP (123),
-NetBIOS (137), SSDP (1900) and mDNS (5353).
+Add `--udp` to probe UDP instead. With no port list it checks the services that answer an unauthenticated request on most networks, DNS (53), NTP (123), NetBIOS (137), SSDP (1900) and mDNS (5353).
 
 ```bash
 netscli scan 192.168.1.254 --udp
@@ -66,8 +64,7 @@ netscli scan 192.168.1.254 --udp -p 53,123
 ```
 
 UDP has no handshake, so a port only answers a request its service
-understands. Each of those ports gets the request its service expects; any
-other port you list gets an empty datagram. Ports read as `53/udp`, and the
+understands. Each of those ports gets the request its service expects, and any other port you list gets an empty datagram. Ports read as `53/udp`, and the
 statuses mean something slightly different:
 
 <div data-ui-table="row-headers"></div>
@@ -79,8 +76,7 @@ statuses mean something slightly different:
 | `open\|filtered` | No reply and no refusal. The service may be there and ignored the probe, or a firewall dropped it. UDP can't tell those apart. |
 | `error` | NetsCLI hit an unexpected probe error. |
 
-UDP scanning needs no administrator rights. SNMP isn't probed: getting an
-answer means sending the default community string `public`, which some
+UDP scanning needs no administrator rights. SNMP isn't probed, because getting an answer means sending the default community string `public`, which some
 networks log as a login attempt.
 
 ## Inspect
@@ -118,17 +114,15 @@ OS: Windows 11 or Server 2025 (build 26100) (hint)
 
 | Clue | What it says |
 | --- | --- |
-| SMB | A Windows host states its exact version, build and computer name at the start of an SMB connection, before any login. Inspect asks port 445 for it whether or not 445 is in your port list; no credentials are sent. |
-| SSH banner | OpenSSH usually names the distribution: `Ubuntu`, `Debian`, `Raspbian`, `FreeBSD`, or `for_Windows`. |
+| SMB | A Windows host states its exact version, build and computer name at the start of an SMB connection, before any login. Inspect asks port 445 for it whether or not 445 is in your port list. No credentials are sent. |
+| SSH banner | OpenSSH usually names the distribution, such as `Ubuntu`, `Debian`, `Raspbian`, `FreeBSD`, or `for_Windows`. |
 | HTTP server | `(Ubuntu)`, `(Debian)` and similar in a `Server` header, or IIS, which only runs on Windows. |
 | Open ports | 135 and 445 together are Windows' RPC and file sharing. |
 | MAC vendor | An Apple or Raspberry Pi network card. |
 | Ping TTL | Hosts start at 64 (Linux, macOS, most Unix), 128 (Windows) or 255 (network equipment). Only Windows reports the TTL today. |
 
 The strongest clue sets the family and the rest are listed under it, including
-any that disagree. It is a hint, not a fingerprint: nmap's `-O` sends crafted
-packets and needs administrator rights; this needs neither, and a host can
-still run anything behind any of these clues.
+any that disagree. It is a hint, not a fingerprint. nmap's `-O` sends crafted packets and needs administrator rights. This needs neither, and a host can still run anything behind any of these clues.
 
 ## Sweep
 
@@ -210,4 +204,4 @@ Packet capture is optional and requires a build with packet-capture support plus
 netscli pcap --interface "Eth 2.5G" --duration 5 --max-packets 1000
 ```
 
-NetsCLI can summarize captured packets into practical rows: number, time, source, destination, protocol, length, and info. It is not a Wireshark replacement, but it gives enough structure to inspect small captures from the CLI or desktop app.
+NetsCLI can summarize captured packets into practical rows with number, time, source, destination, protocol, length, and info. It is not a Wireshark replacement, but it gives enough structure to inspect small captures from the CLI or desktop app.

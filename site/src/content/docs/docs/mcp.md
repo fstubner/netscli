@@ -29,8 +29,7 @@ Point the client at the binary you have.
 ```
 
 This is the one to prefer. You get the version you installed rather than
-whatever is newest, there is no second copy of the binary, and packet
-capture works — the other two routes cannot offer it.
+whatever is newest, there is no second copy of the binary, and packet capture works, which the other two routes cannot offer.
 
 If the client cannot find `netscli`, give the full path instead. A GUI
 client often has a different PATH from your shell.
@@ -49,8 +48,7 @@ client often has a different PATH from your shell.
 ```
 
 npm fetches the prebuilt binary for your platform on first launch. You need
-Node 18 or newer. Which version runs is up to npx: it may pick up a newer
-release or reuse one it has cached, so the version can differ from the one
+Node 18 or newer. Which version runs is up to npx. It may pick up a newer release or reuse one it has cached, so the version can differ from the one
 you have elsewhere. Write `netscli@<version>` in the args to pin one. The npm
 builds leave out packet capture, because it needs libpcap or Npcap present on
 the machine.
@@ -59,16 +57,13 @@ the machine.
 
 Download the `.mcpb` bundle for your platform from the
 [latest release](https://github.com/fstubner/netscli/releases/latest) and
-open it with a client that supports MCP bundles. The bundle carries the
-binary, so nothing else is needed — no PATH entry, no Node.
+open it with a client that supports MCP bundles. The bundle carries the binary, so nothing else is needed, no PATH entry and no Node.
 
-Bundles are named `netscli-<version>-<platform>-<arch>.mcpb`. Pick the one
-matching your machine; the format has no way to check that for you, and the
+Bundles are named `netscli-<version>-<platform>-<arch>.mcpb`. Pick the one matching your machine. The format has no way to check that for you, and the
 wrong architecture will simply fail to start.
 
 The install prompt includes a switch for scanning beyond your local
-networks. Leave it off unless you know you need it — see
-[Reaching past your local network](#reaching-past-your-local-network).
+networks. Leave it off unless you know you need it. See [Reaching past your local network](#reaching-past-your-local-network).
 
 ## Run it yourself
 
@@ -101,9 +96,7 @@ Tool inputs stay stable. Structured output may gain additive fields as the share
 
 ## A request and its response
 
-Captured from a real session against loopback. The client writes one JSON
-object per line to stdin; the server answers on stdout. Most clients do this
-for you — this is what they are exchanging.
+Captured from a real session against loopback. The client writes one JSON object per line to stdin, and the server answers on stdout. Most clients do this for you, and this is what they are exchanging.
 
 Opening the connection:
 
@@ -148,7 +141,7 @@ server down, which is why a client that exits mid-scan leaves nothing behind.
 
 Packet-capture tools appear only in MCP builds that include packet-capture support. Captures also need Npcap on Windows or libpcap on Linux/macOS. Supported builds expose two packet-capture styles.
 
-Use the job-style flow by default: start the capture, poll status, then fetch the completed result. This avoids MCP client and stdio transport timeouts when captures run longer than expected.
+Use the job-style flow by default. Start the capture, poll status, then fetch the completed result. This avoids MCP client and stdio transport timeouts when captures run longer than expected.
 
 | Flow | Use this when |
 | --- | --- |
@@ -165,15 +158,12 @@ Because an MCP client can trigger local network operations, connect it only to c
 
 ### Reaching past your local network
 
-By default this server refuses any target outside your own networks —
-private ranges, loopback, link-local, and carrier-grade NAT, which covers
-Tailscale and similar overlays. Ask it to scan a public address and it
+By default this server refuses any target outside your own networks. That means private ranges, loopback, link-local, and carrier-grade NAT, which covers Tailscale and similar overlays. Ask it to scan a public address and it
 returns an error rather than sending packets.
 
 Every other part of netscli does what you type. This one is driven by a
 model, which may be reading a web page, an issue comment, or a file someone
-else wrote, so the instruction to scan a stranger can arrive from outside
-you entirely — and the packets still leave from your machine and your IP.
+else wrote, so the instruction to scan a stranger can arrive from outside you entirely, and the packets still leave from your machine and your IP.
 
 Scanning public hosts you are responsible for is a fair reason to lift it:
 
@@ -185,9 +175,7 @@ In a client config, set it in the server's `env` block. In an `.mcpb`
 bundle it is the switch shown when you install.
 
 This is a policy layer, not a security boundary. It stops a model being
-steered into scanning strangers. It does not stop you, and it is not meant
-to — the size limits on subnets, ports and concurrency are separate and
-still apply either way.
+steered into scanning strangers. It does not stop you, and it is not meant to. The size limits on subnets, ports and concurrency are separate and still apply either way.
 
 ## What stays CLI-only
 

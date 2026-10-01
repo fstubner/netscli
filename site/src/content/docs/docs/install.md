@@ -185,8 +185,7 @@ What the npm build leaves out:
   cannot arrange. Use a package from the sections above if you need it.
 - **The desktop app.** npm installs the CLI and TUI only.
 
-If you mainly want the MCP server, see [MCP server](/docs/mcp/) — the npm
-package is one of three ways to connect it.
+If you mainly want the MCP server, see [MCP server](/docs/mcp/). The npm package is one of three ways to connect it.
 
 ## Updating
 
@@ -210,9 +209,7 @@ Update a Homebrew install:
 brew upgrade netscli
 ```
 
-The desktop app can also update itself from 0.3.4 on. It checks for a new
-release when it opens and offers to install it; see
-[Updates](/docs/desktop/#updates) for which installs can do this.
+The desktop app can also update itself from 0.3.4 on. It checks for a new release when it opens and offers to install it. See [Updates](/docs/desktop/#updates) for which installs can do this.
 
 Update a global npm install:
 
@@ -269,8 +266,7 @@ cosign verify-blob \
   netscli-linux-x86_64
 ```
 
-Substitute the asset name you downloaded — the same command works for the
-desktop `.msi`, `.dmg`, `.deb` and `.AppImage`. It needs the [cosign
+Substitute the asset name you downloaded. The same command works for the desktop `.msi`, `.dmg`, `.deb` and `.AppImage`. It needs the [cosign
 CLI](https://docs.sigstore.dev/cosign/system_config/installation/). A pass
 confirms the asset was built and signed by this repository's release workflow
 and has not been altered since.
@@ -290,7 +286,7 @@ If you do want packet capture, you need **both** a build that has the feature co
 
 ### CLI with packet capture
 
-The install script does both at once — it selects the `-pcap` build *and* installs the system library:
+The install script does both at once. It selects the `-pcap` build *and* installs the system library.
 
 ```bash
 curl -fsSL https://netscli.com/install.sh | NETSCLI_PCAP=1 bash
@@ -302,7 +298,7 @@ $env:NETSCLI_PCAP=1; iwr -useb https://netscli.com/install.ps1 | iex
 
 On Windows this runs the Npcap installer, which needs administrator rights. Add `NETSCLI_SKIP_NPCAP=1` (or `NETSCLI_SKIP_LIBPCAP=1` on Unix) if you manage the capture library yourself.
 
-Alternatively, download the `-pcap` asset directly from the [latest release](https://github.com/fstubner/netscli/releases/latest) — `netscli-linux-x86_64-pcap`, `netscli-macos-aarch64-pcap`, `netscli-windows-x86_64-pcap.exe`, and so on — and install the capture library separately. There is no `-pcap` musl build.
+Alternatively, download the `-pcap` asset directly from the [latest release](https://github.com/fstubner/netscli/releases/latest) (`netscli-linux-x86_64-pcap`, `netscli-macos-aarch64-pcap`, `netscli-windows-x86_64-pcap.exe`, and so on) and install the capture library separately. There is no `-pcap` musl build.
 
 Or build it yourself, which needs the development headers (`libpcap-dev` on Debian/Ubuntu, or the [Npcap SDK](https://npcap.com/#download) on Windows):
 
@@ -324,7 +320,7 @@ npm run tauri build -- --features pcap
 
 | Platform | Requirement |
 | --- | --- |
-| Windows | Npcap installed. `wpcap.dll` lives in `C:\Windows\System32\Npcap\`, which is not on `PATH` by default — add it, or let `NETSCLI_PCAP=1` do it. |
+| Windows | Npcap installed. `wpcap.dll` lives in `C:\Windows\System32\Npcap\`, which is not on `PATH` by default. Add it, or let `NETSCLI_PCAP=1` do it. |
 | Linux | libpcap installed, plus capture permissions (`CAP_NET_RAW` or root). |
 | macOS | libpcap available, plus capture permissions where required. |
 
@@ -336,4 +332,4 @@ npm run tauri build -- --features pcap
 netscli doctor
 ```
 
-Note that `netscli pcap --check` only exists on builds that were compiled with the feature — on a standard build the subcommand is absent entirely and you will get an "unrecognized subcommand" error rather than a useful message. Use `doctor` to find out which build you have.
+Note that `netscli pcap --check` only exists on builds that were compiled with the feature. On a standard build the subcommand is absent entirely, and you will get an "unrecognized subcommand" error rather than a useful message. Use `doctor` to find out which build you have.

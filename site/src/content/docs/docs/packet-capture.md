@@ -84,7 +84,7 @@ Expected workflow:
 5. Inspect selected packet fields and raw preview in the details pane.
 6. Open the capture file or containing folder when a file was written.
 
-Save behavior follows the global save settings: default save folder or ask where to save.
+Save behavior follows the global save settings, either the default save folder or asking where to save.
 
 ## What it is not
 
