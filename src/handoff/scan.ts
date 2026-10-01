@@ -54,6 +54,27 @@ interface ScanToolDeps {
   stmts: PreparedStatements;
   /** Canonical and normalized; see `canonicalRoot` in sqlite-index. */
   scopedRoot: string;
+  /**
+   * Awaited after every chunk is written. Lets the caller yield the event loop
+   * during a long scan and stop it by throwing `ScanInterrupted`.
+   */
+  checkpoint?: () => Promise<void>;
+}
+
+/**
+ * Thrown from a checkpoint to stop a scan between two writes.
+ *
+ * Not a failure of the store, so it is not recorded against the tool, and the
+ * scan stops the way a killed process does: everything written stays
+ * written, nothing after the last write is claimed — the scraper's cursors
+ * and the timestamp cursor are saved only when a scrape runs to its end — and
+ * the sessions it touched stay marked for the windows it did not build.
+ */
+export class ScanInterrupted extends Error {
+  constructor(reason: string) {
+    super(`scan interrupted: ${reason}`);
+    this.name = "ScanInterrupted";
+  }
 }
 
 interface ScanToolResult {
@@ -163,6 +184,7 @@ export async function scanTool(
       if (!latestTimestamp || chunk.timestamp > latestTimestamp) {
         latestTimestamp = chunk.timestamp;
       }
+      await deps.checkpoint?.();
     }
 
     // Only after the scrape completed. A scrape that threw has an incomplete
@@ -177,6 +199,9 @@ export async function scanTool(
     }
     clearSetting(db, `last_error:${scraper.tool}`);
   } catch (error) {
+    if (error instanceof ScanInterrupted) {
+      throw error;
+    }
     setSetting(
       db,
       `last_error:${scraper.tool}`,
