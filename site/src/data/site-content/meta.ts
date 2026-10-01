@@ -30,7 +30,7 @@ export const meta: Meta = {
   author: { name: 'Felix Stubner', url: 'https://github.com/fstubner' },
   ogImage: 'https://netscli.com/assets/tui-discover.png',
   ogImageAlt:
-    'netscli terminal UI running /discover with sanitized lab hostnames, vendors, and response times',
+    'netscli terminal UI running /discover with demo hostnames, vendors, and response times',
   faviconPath: '/favicon.svg',
   themeColor: '#111',
 };

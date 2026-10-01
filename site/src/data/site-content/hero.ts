@@ -70,7 +70,7 @@ export const hero: Hero = {
   heroImage: '/assets/tui-discover.png',
   heroImageWebp: '/assets/tui-discover.webp',
   heroImageAlt:
-    'netscli terminal UI running /discover with sanitized lab hostnames, vendors, and response times',
+    'netscli terminal UI running /discover with demo hostnames, vendors, and response times',
   heroImageWidth: 1640,
   heroImageHeight: 930,
   sourceUrl: 'https://github.com/fstubner/netscli',

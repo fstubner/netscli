@@ -15,7 +15,7 @@ export const surfaces: SurfaceCard[] = [
       src: '/gui-scan.png',
       webp: '/gui-scan.webp',
       alt:
-        'NetsCLI Desktop dark theme scan view showing sanitized demo port results, row details, command preview, and status bar',
+        'NetsCLI Desktop dark theme scan view showing demo port results, row details, command preview, and status bar',
       width: 1377,
       height: 740,
     },
@@ -28,7 +28,7 @@ export const surfaces: SurfaceCard[] = [
       src: '/assets/tui-discover.png',
       webp: '/assets/tui-discover.webp',
       alt:
-        'netscli terminal UI running /discover with sanitized lab hostnames, vendors, and response times',
+        'netscli terminal UI running /discover with demo hostnames, vendors, and response times',
       width: 1640,
       height: 930,
     },
@@ -37,7 +37,7 @@ export const surfaces: SurfaceCard[] = [
   {
     title: 'Command line',
     body:
-      'Use the CLI for repeatable diagnostics and automation. Network operations expose <code>--json</code> and <code>--yaml</code> output, so scripts and other tools can consume the same data the desktop app displays.',
+      'Use the CLI for repeatable diagnostics and automation. Network operations take <code>--json</code> and <code>--yaml</code>, and lists also <code>--csv</code> and <code>--md</code>, so scripts and other tools can consume the same data the desktop app displays.',
     // `--resolve` on the discover line is load-bearing, not decoration.
     // `hostname` is only populated when the flag is passed (core's
     // discover.rs guards the reverse-lookup pass on it), so without it this
