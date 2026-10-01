@@ -93,8 +93,10 @@ site-search button {
   border-color: var(--ui-hover-border);
 }
 
-/* ---- Mobile menu button -------------------------------------------- */
-starlight-menu-button button {
+/* ---- Mobile menu button --------------------------------------------
+   Starlight 0.42's `button.sl-menu-button`; open is the sidebar popover
+   being open, which is how Starlight itself styles the open state. */
+.sl-menu-button {
   border: 1px solid var(--sl-color-hairline-light);
   border-radius: 6px;
   background: rgba(var(--ui-lift-rgb), 0.035);
@@ -102,23 +104,23 @@ starlight-menu-button button {
   box-shadow: none;
 }
 
-starlight-menu-button button:hover,
-starlight-menu-button button:focus-visible,
-starlight-menu-button[aria-expanded='true'] button {
+.sl-menu-button:hover,
+.sl-menu-button:focus-visible,
+.sl-menu-button:has(~ :popover-open) {
   background: rgba(var(--ui-accent-rgb), 0.12);
   border-color: rgba(var(--ui-accent-rgb), 0.28);
   color: var(--sl-color-white);
 }
 
-html[data-theme='light'] starlight-menu-button button {
+html[data-theme='light'] .sl-menu-button {
   background: rgba(var(--ui-hairline-rgb), 0.035);
 }
 
 /* Restated for the light theme: the light resting rule above outranks the
    theme-neutral state rule, so without this the light button never lit. */
-html[data-theme='light'] starlight-menu-button button:hover,
-html[data-theme='light'] starlight-menu-button button:focus-visible,
-html[data-theme='light'] starlight-menu-button[aria-expanded='true'] button {
+html[data-theme='light'] .sl-menu-button:hover,
+html[data-theme='light'] .sl-menu-button:focus-visible,
+html[data-theme='light'] .sl-menu-button:has(~ :popover-open) {
   background: rgba(var(--ui-accent-rgb), 0.12);
   color: var(--sl-color-white);
 }
