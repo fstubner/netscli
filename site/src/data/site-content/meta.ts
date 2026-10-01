@@ -6,7 +6,7 @@ export const meta: Meta = {
   // a search result shows on words nobody searches for. The interfaces are the
   // differentiator, and MCP is the one term here with real intent behind it
   // and almost no competition.
-  title: 'NetsCLI — Network Scanner for Desktop, CLI, and MCP',
+  title: 'NetsCLI | Network Scanner for Desktop, CLI, and MCP',
   // 153 characters. The previous one ran to 172 and was cut around 158, which
   // truncated the MCP mention off the end -- the most valuable word in it. It
   // also ran operations and interfaces through a single "for" series

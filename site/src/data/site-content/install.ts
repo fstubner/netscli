@@ -4,7 +4,7 @@ import { INSTALL_PS1_COMMAND, INSTALL_SH_COMMAND } from './install-urls';
 export const installCopy: SectionCopy = {
   heading: 'Get started',
   leadHtml:
-    'Install the desktop app or the command line — both drive the same Rust core. <a href="/docs/install/">Full install guide →</a>',
+    'Install the desktop app or the command line. Both drive the same Rust core. <a href="/docs/install/">Full install guide →</a>',
 };
 
 const RELEASE_DOWNLOAD = 'https://github.com/fstubner/netscli/releases/latest/download';
@@ -24,7 +24,7 @@ const RELEASE_DOWNLOAD = 'https://github.com/fstubner/netscli/releases/latest/do
  *  refusal with no Open button. Apple's support page for opening an app from
  *  an unknown developer gives only the System Settings route, which is what
  *  this names now. */
-const MACOS_UNSIGNED_HINT = 'Unsigned — open it once, then System Settings → Privacy & Security → Open Anyway';
+const MACOS_UNSIGNED_HINT = 'Unsigned. Open it once, then System Settings → Privacy & Security → Open Anyway';
 
 export const installByPlatform: Record<Platform, PlatformInstall> = {
   windows: {
@@ -128,7 +128,7 @@ export const installByPlatform: Record<Platform, PlatformInstall> = {
       {
         label: 'AppImage',
         href: `${RELEASE_DOWNLOAD}/netscli-gui-linux-x86_64.AppImage`,
-        hint: 'Any distro — chmod +x and run',
+        hint: 'Any distro. chmod +x and run',
       },
       {
         label: 'AUR (Arch)',
@@ -171,7 +171,7 @@ export const tryCommands: TryCommand[] = [
  * alternative route for every platform, which is what made it read as a wall
  * rather than a choice. */
 export const installBinariesNote =
-  'Rust users can <code>cargo install netscli</code>. Every binary and installer is checksummed and signed with <a href="https://docs.sigstore.dev/cosign/overview/">Sigstore cosign</a> — see <a href="/docs/install/#verifying-a-download">how to verify a download</a>, plus standalone binaries and packet-capture builds.';
+  'Rust users can <code>cargo install netscli</code>. Every binary and installer is checksummed and signed with <a href="https://docs.sigstore.dev/cosign/overview/">Sigstore cosign</a>. The install guide shows <a href="/docs/install/#verifying-a-download">how to verify a download</a> and lists the standalone binaries and packet-capture builds.';
 
 // Two things /llms.txt says that no page does: a build-from-source route,
 // listed after the per-platform quickstart, and any caveat a reader acting
@@ -182,6 +182,6 @@ export const installFromSource = 'cargo install netscli';
 
 export const installNotes = [
   'Packet capture is a compile-time feature. No published desktop installer',
-  'includes it; capture-enabled CLI assets are published separately and also',
+  'includes it. Capture-enabled CLI assets are published separately and also',
   'need a system capture library (libpcap or Npcap).',
 ];

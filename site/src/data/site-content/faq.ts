@@ -29,7 +29,7 @@ export const faq: FaqItem[] = [
     // search engine and answer engine reads. The visible `aHtml` below was
     // already a template literal and rendered correctly, which is why the
     // page looked fine.
-    a: `Install the netscli package for the CLI, terminal UI, and MCP server. On Windows, run: winget install netscli (the full identifier fstubner.netscli also works). On Linux or macOS, run: ${INSTALL_SH_COMMAND}. For the desktop app, run winget install netscli-gui on Windows or brew install --cask fstubner/tap/netscli-gui on macOS, or download it from GitHub releases. Linux has a .deb and an AppImage. With Rust installed you can also run: cargo install netscli.`,
+    a: `Install the netscli package for the CLI, terminal UI, and MCP server. On Windows, run winget install netscli (the full identifier fstubner.netscli also works). On Linux or macOS, run ${INSTALL_SH_COMMAND}. For the desktop app, run winget install netscli-gui on Windows or brew install --cask fstubner/tap/netscli-gui on macOS, or download it from GitHub releases. Linux has a .deb and an AppImage. With Rust installed you can also run cargo install netscli.`,
     aHtml: `
       <p>Install the <code>netscli</code> package for the CLI, terminal UI, and MCP server:</p>
       <div class="faq-command-list" aria-label="Install commands">
@@ -48,9 +48,9 @@ export const faq: FaqItem[] = [
   {
     group: 'Interfaces and integrations',
     q: 'Can I use NetsCLI with Claude Code, Cursor, or another AI agent?',
-    a: 'Yes. Running `netscli serve` starts a Model Context Protocol (MCP) server over stdio. It exposes structured local-network tools for host discovery, port scanning, ping, DNS, ARP, host inspection, network sweep, interface listing, and mDNS discovery. Packet-capture builds can also expose capture tools. Packet capture uses a job-style flow for long-running work: start the capture, poll status, then fetch the result.',
+    a: 'Yes. Running `netscli serve` starts a Model Context Protocol (MCP) server over stdio. It exposes structured local-network tools for host discovery, port scanning, ping, DNS, ARP, host inspection, network sweep, interface listing, and mDNS discovery. Packet-capture builds can also expose capture tools. Packet capture uses a job-style flow for long-running work. Start the capture, poll status, then fetch the result.',
     aHtml:
-      'Yes. Running <code>netscli serve</code> starts a Model Context Protocol (MCP) server over stdio. It exposes structured local-network tools for host discovery, port scanning, ping, DNS, ARP, host inspection, network sweep, interface listing, and mDNS discovery. Packet-capture builds can also expose capture tools. Packet capture uses a job-style flow for long-running work: start the capture, poll status, then fetch the result.',
+      'Yes. Running <code>netscli serve</code> starts a Model Context Protocol (MCP) server over stdio. It exposes structured local-network tools for host discovery, port scanning, ping, DNS, ARP, host inspection, network sweep, interface listing, and mDNS discovery. Packet-capture builds can also expose capture tools. Packet capture uses a job-style flow for long-running work. Start the capture, poll status, then fetch the result.',
   },
   {
     group: 'Install and updates',
@@ -69,9 +69,9 @@ export const faq: FaqItem[] = [
   {
     group: 'Limits and dependencies',
     q: 'Does NetsCLI require libpcap or other system dependencies?',
-    a: 'Not for the normal scan, discovery, DNS, ARP, ping, trace, or interface workflows. Packet capture is the exception: it requires libpcap on Linux/macOS or Npcap on Windows at runtime, and only works in the separate packet-capture downloads.',
+    a: 'Not for the normal scan, discovery, DNS, ARP, ping, trace, or interface workflows. Packet capture is the exception. It requires libpcap on Linux/macOS or Npcap on Windows at runtime, and only works in the separate packet-capture downloads.',
     aHtml:
-      'Not for the normal scan, discovery, DNS, ARP, ping, trace, or interface workflows. Packet capture is the exception: it requires libpcap on Linux/macOS or Npcap on Windows at runtime, and only works in the separate packet-capture downloads.',
+      'Not for the normal scan, discovery, DNS, ARP, ping, trace, or interface workflows. Packet capture is the exception. It requires libpcap on Linux/macOS or Npcap on Windows at runtime, and only works in the separate packet-capture downloads.',
   },
   {
     group: 'Network workflows',
@@ -88,9 +88,9 @@ export const faq: FaqItem[] = [
     // folders and remote shutdown, and a comparison that omitted the thing a
     // reader can see on that page in ten seconds would discredit the rest of
     // the answer.
-    a: 'NetsCLI overlaps with those tools for common LAN discovery tasks: finding live hosts, scanning TCP ports, resolving hostnames, and showing MAC vendors from the local ARP cache. It is not a drop-in clone of either. Advanced IP Scanner is Windows-only and closed-source freeware. NetsCLI runs on Windows, macOS, and Linux, is MIT-licensed, and offers the same scans from a desktop app, a terminal UI, a CLI, and an MCP server, with JSON, YAML, CSV and Markdown output. Angry IP Scanner is also open source and cross-platform, and ships its own command-line interface. What NetsCLI does not do is remote administration: Advanced IP Scanner can open shared folders, control machines over RDP or Radmin, and switch them off remotely, and NetsCLI has no equivalent.',
+    a: 'NetsCLI overlaps with those tools for common LAN discovery tasks, such as finding live hosts, scanning TCP ports, resolving hostnames, and showing MAC vendors from the local ARP cache. It is not a drop-in clone of either. Advanced IP Scanner is Windows-only and closed-source freeware. NetsCLI runs on Windows, macOS, and Linux, is MIT-licensed, and offers the same scans from a desktop app, a terminal UI, a CLI, and an MCP server, with JSON, YAML, CSV and Markdown output. Angry IP Scanner is also open source and cross-platform, and ships its own command-line interface. NetsCLI does not do remote administration. Advanced IP Scanner can open shared folders, control machines over RDP or Radmin, and switch them off remotely, and NetsCLI has no equivalent.',
     aHtml:
-      'NetsCLI overlaps with those tools for common LAN discovery tasks: finding live hosts, scanning TCP ports, resolving hostnames, and showing MAC vendors from the local ARP cache. It is not a drop-in clone of either. Advanced IP Scanner is Windows-only and closed-source freeware. NetsCLI runs on Windows, macOS, and Linux, is MIT-licensed, and offers the same scans from a <a href="#surfaces">desktop app, terminal UI, CLI, and MCP server</a>, with <code>--json</code>, <code>--yaml</code>, <code>--csv</code> and <code>--md</code> output. Angry IP Scanner is also open source and cross-platform, and ships its own command-line interface. What NetsCLI does not do is remote administration: Advanced IP Scanner can open shared folders, control machines over RDP or Radmin, and switch them off remotely, and NetsCLI has no equivalent.',
+      'NetsCLI overlaps with those tools for common LAN discovery tasks, such as finding live hosts, scanning TCP ports, resolving hostnames, and showing MAC vendors from the local ARP cache. It is not a drop-in clone of either. Advanced IP Scanner is Windows-only and closed-source freeware. NetsCLI runs on Windows, macOS, and Linux, is MIT-licensed, and offers the same scans from a <a href="#surfaces">desktop app, terminal UI, CLI, and MCP server</a>, with <code>--json</code>, <code>--yaml</code>, <code>--csv</code> and <code>--md</code> output. Angry IP Scanner is also open source and cross-platform, and ships its own command-line interface. NetsCLI does not do remote administration. Advanced IP Scanner can open shared folders, control machines over RDP or Radmin, and switch them off remotely, and NetsCLI has no equivalent.',
   },
   {
     group: 'Network workflows',
@@ -112,8 +112,8 @@ export const faq: FaqItem[] = [
     aHtml: `
       <p>Yes. NetsCLI is MIT-licensed and free for personal, open-source, and commercial use.</p>
       <div class="faq-command-list" aria-label="Package manager commands">
-        <div class="faq-command"><span>Winget — CLI</span><code>winget install netscli</code></div>
-        <div class="faq-command"><span>Winget — app</span><code>winget install netscli-gui</code></div>
+        <div class="faq-command"><span>Winget (CLI)</span><code>winget install netscli</code></div>
+        <div class="faq-command"><span>Winget (app)</span><code>winget install netscli-gui</code></div>
         <div class="faq-command"><span>Scoop</span><code>scoop bucket add fstubner https://github.com/fstubner/scoop-bucket &amp;&amp; scoop install netscli</code></div>
         <div class="faq-command"><span>Homebrew</span><code>brew tap fstubner/tap &amp;&amp; brew install netscli</code></div>
         <div class="faq-command"><span>Install script</span><code>${INSTALL_SH_COMMAND}</code></div>
@@ -124,14 +124,14 @@ export const faq: FaqItem[] = [
   {
     group: 'Network workflows',
     q: 'Can NetsCLI replace nmap, and does it have a TUI?',
-    a: 'NetsCLI covers the simpler cases nmap is often reached for: host discovery, TCP and UDP port scans, DNS lookups, and ARP-table inspection on a local network, with direct subcommands and structured output. It also ships a terminal UI — run netscli with no arguments to get an interactive, keyboard-driven scanner in the terminal, which nmap itself does not provide. For advanced service detection, NSE scripts, and OS fingerprinting, nmap remains the better tool.',
+    a: 'NetsCLI covers the simpler cases nmap is often reached for, such as host discovery, TCP and UDP port scans, DNS lookups, and ARP-table inspection on a local network, with direct subcommands and structured output. It also ships a terminal UI. Run netscli with no arguments to get an interactive, keyboard-driven scanner in the terminal, which nmap itself does not provide. For advanced service detection, NSE scripts, and OS fingerprinting, nmap remains the better tool.',
     aHtml:
-      'NetsCLI covers the simpler cases nmap is often reached for: host discovery, TCP and UDP port scans, DNS lookups, and ARP-table inspection on a local network, with direct subcommands and structured output. It also ships a <a href="#surfaces">terminal UI</a> — run <code>netscli</code> with no arguments to get an interactive, keyboard-driven scanner in the terminal, which nmap itself does not provide. For advanced service detection, NSE scripts, and OS fingerprinting, nmap remains the better tool.',
+      'NetsCLI covers the simpler cases nmap is often reached for, such as host discovery, TCP and UDP port scans, DNS lookups, and ARP-table inspection on a local network, with direct subcommands and structured output. It also ships a <a href="#surfaces">terminal UI</a>. Run <code>netscli</code> with no arguments to get an interactive, keyboard-driven scanner in the terminal, which nmap itself does not provide. For advanced service detection, NSE scripts, and OS fingerprinting, nmap remains the better tool.',
   },
   {
     group: 'Network workflows',
     q: 'Is there a netscan command for Linux or Windows?',
-    a: 'There is no standard netscan command on Linux, macOS, or Windows. People searching for one usually want a command-line network scanner, which is what NetsCLI is: netscli discover lists live hosts on your subnet, netscli scan checks TCP or UDP ports on a host, and netscli sweep does both across a range. Several unrelated third-party tools also use the name NetScan, so check which one you mean before installing.',
+    a: 'There is no standard netscan command on Linux, macOS, or Windows. People searching for one usually want a command-line network scanner, which is what NetsCLI is. netscli discover lists live hosts on your subnet, netscli scan checks TCP or UDP ports on a host, and netscli sweep does both across a range. Several unrelated third-party tools also use the name NetScan, so check which one you mean before installing.',
     aHtml:
       '<p>There is no standard <code>netscan</code> command on Linux, macOS, or Windows. People searching for one usually want a command-line network scanner, which is what NetsCLI is:</p><div class="faq-command-list" aria-label="Scanning commands"><div class="faq-command"><span>Live hosts</span><code>netscli discover</code></div><div class="faq-command"><span>Ports on a host</span><code>netscli scan router.local -p 22,80,443</code></div><div class="faq-command"><span>Both, across a range</span><code>netscli sweep</code></div></div><p>Several unrelated third-party tools also use the name NetScan, so check which one you mean before installing.</p>',
   },

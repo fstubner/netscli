@@ -3,7 +3,7 @@ import type { SectionCopy, SurfaceCard } from './types';
 export const surfacesCopy: SectionCopy = {
   heading: 'Choose how to work with your network',
   leadHtml:
-    'Four ways in, one engine behind them. Whichever you pick — desktop app, terminal UI, CLI or MCP — a port scan means the same thing and returns the same answer. <a href="/docs/">Full docs →</a>',
+    'Four ways in, one engine behind them. Whichever you pick (desktop app, terminal UI, CLI or MCP), a port scan means the same thing and returns the same answer. <a href="/docs/">Full docs →</a>',
 };
 
 export const surfaces: SurfaceCard[] = [
@@ -23,7 +23,7 @@ export const surfaces: SurfaceCard[] = [
   {
     title: 'Terminal UI',
     body:
-      'Run <code>netscli</code> with no subcommand to start the terminal UI. It is the one to reach for when you are already in a shell and want to stay there — history and autocomplete included, with local interface activity beside the results.',
+      'Run <code>netscli</code> with no subcommand to start the terminal UI. It is the one to reach for when you are already in a shell and want to stay there. History and autocomplete are included, with local interface activity beside the results.',
     image: {
       src: '/assets/tui-discover.png',
       webp: '/assets/tui-discover.webp',

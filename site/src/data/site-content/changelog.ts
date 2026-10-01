@@ -40,13 +40,13 @@ export const releaseSummaries: Record<string, string> = {
   'v0.2.4':
     'v0.2.3 built the GUI installers but never attached them. Publishing is repaired here, along with the AUR deploy action that was blocking Linux packages.',
   'v0.2.3':
-    'GUI installer builds move again once the Tauri JavaScript and Rust versions agree, and the AUR packaging handoff is fixed. CLI packages were already usable from v0.2.2; the GUI artifacts needed these pipeline fixes.',
+    'GUI installer builds move again once the Tauri JavaScript and Rust versions agree, and the AUR packaging handoff is fixed. CLI packages were already usable from v0.2.2, and the GUI artifacts needed these pipeline fixes.',
   'v0.2.2':
     'This is a release-pipeline recovery build. It refreshes Cargo.lock so locked release builds can run reproducibly after dependency bumps, giving package-manager users a working replacement for the failed v0.2.1 artifacts.',
   'v0.2.1':
     'Desktop installers and signed release assets mean you no longer need a Rust toolchain to install. Adds concurrency tuning for networks that struggle with large parallel scans.',
   'v0.2.0':
-    'Turns the initial scanner into something distributable. mDNS discovery and typed core errors on the product side; shell completions, man pages, package-manager templates and signed artifacts on the shipping side.',
+    'Turns the initial scanner into something distributable. mDNS discovery and typed core errors on the product side, and shell completions, man pages, package-manager templates and signed artifacts on the shipping side.',
   'v0.1.1':
     'Cleans up the first public version with crate documentation, security notes and a structured changelog, plus the release workflow fixes that make binaries and pcap variants reproducible.',
   'v0.1.0':
