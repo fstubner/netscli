@@ -25,16 +25,41 @@ export async function workspaceMatchesProject(
   workspaceDbPath: string,
   projectRoot: string,
 ): Promise<boolean> {
+  return (await classifyWorkspace(workspaceDbPath, projectRoot)) === "match";
+}
+
+/**
+ * Whose a workspace is, for a caller that has to tell "not this project" from
+ * "cannot tell".
+ *
+ * `workspaceMatchesProject` folds both into `false`, which is right for a
+ * filter and wrong for Cursor's conversation headers: a header names a
+ * workspace, and a workspace that is plainly another project's settles the
+ * conversation, while one whose `workspace.json` is gone or names no folder
+ * (a multi-root workspace) settles nothing and leaves it to be placed by the
+ * files it recorded.
+ *
+ * - `match`: the folder is this project.
+ * - `other`: a folder is recorded and it is not this project — including a
+ *   remote folder this machine cannot be the owner of.
+ * - `unknown`: no usable folder to compare, which is not evidence either way.
+ */
+export type WorkspaceOwnership = "match" | "other" | "unknown";
+
+export async function classifyWorkspace(
+  workspaceDbPath: string,
+  projectRoot: string,
+): Promise<WorkspaceOwnership> {
   try {
     const raw = await readFile(join(dirname(workspaceDbPath), "workspace.json"), "utf-8");
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     const folder = typeof parsed.folder === "string" ? parsed.folder : undefined;
     if (!folder) {
-      return false;
+      return "unknown";
     }
     const folderPath = folder.startsWith("file:") ? fileURLToPath(folder) : folder;
     if (pathMatchesProject(folderPath, projectRoot)) {
-      return true;
+      return "match";
     }
 
     // A `vscode-remote://` folder is a URI, not a path, so the comparison
@@ -43,13 +68,13 @@ export async function workspaceMatchesProject(
     // of a WSL folder are offered here instead.
     for (const candidate of wslWorkspacePaths(folder)) {
       if (pathMatchesProject(candidate, projectRoot)) {
-        return true;
+        return "match";
       }
     }
 
-    return false;
+    return "other";
   } catch {
-    return false;
+    return "unknown";
   }
 }
 
