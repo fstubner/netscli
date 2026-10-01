@@ -22,7 +22,11 @@ scrapers -> .xtctx/state/xtctx.db -> MCP tools
 ```
 
 `.xtctx/state/xtctx.db` is built from the transcripts, which remain
-authoritative while they exist. It is not disposable: the index keeps sessions whose transcripts have since been deleted (Claude Code deletes them after 30 days by default), so for those it is the only copy.
+authoritative while they exist. For every session still on disk the index is
+derived data; for the older ones whose transcripts have since been deleted
+(Claude Code deletes them after 30 days by default) it is the only copy, and
+deleting it loses them. `xtctx status` counts those sessions, and `xtctx
+export` / `xtctx import` keep a copy outside the index.
 
 Antigravity is the exception to simple file parsing: its `.pb` conversation
 files are treated as encrypted/private implementation detail. When Antigravity
@@ -83,7 +87,7 @@ xtctx falls back to keyword retrieval and records the reason, which
 
 ## Storage
 
-The SQLite cache stores:
+The SQLite index stores:
 
 - transcript sessions
 - transcript messages
@@ -92,9 +96,23 @@ The SQLite cache stores:
 - local embedding vectors as BLOBs
 - setup/status metadata
 
-There is no required external database. An index that will not open is moved
-aside rather than deleted, and a new one is built from the transcripts still
-on disk.
+Only sessions and messages hold anything that cannot be recomputed; the rest
+is derived from messages. There is no required external database.
+
+The schema is versioned, and an index from an older version is migrated in
+place (`MIGRATIONS` in `src/handoff/schema.ts`), then the next scan re-reads
+every transcript still on disk to refresh what an older build wrote. An index
+that is corrupt, or older in a shape no migration recognises, is moved aside
+to `xtctx.db.set-aside-<time>` rather than deleted, and a new one is built
+from the transcripts still on disk; after that first full scan, every session
+the new index lacks is copied in from the set-aside file, each read on its
+own so a damaged page costs only the sessions on it. An index from a newer
+schema is refused rather than set aside.
+
+`xtctx export` writes the project's sessions and messages to a JSON Lines
+file (format documented in `src/handoff/export-file.ts`) and `xtctx import`
+merges one back. Message ids are content hashes, so importing twice adds
+nothing; windows are rebuilt on import and vectors re-embedded as usual.
 
 ## Drift And Limits
 

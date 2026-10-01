@@ -7,8 +7,8 @@ boundaries between them, and what each part is allowed to trust.
 
 ## Parts
 
-- **CLI** (`src/cli/`) — `setup`, `status`, `scan`, `calibrate`,
-  `disconnect`, and the internal `--hook session-start` entry point. Bare `xtctx` on a non-TTY stdio pair
+- **CLI** (`src/cli/`) — `setup`, `status`, `scan`, `export`, `import`,
+  `calibrate`, `disconnect`, and the internal `--hook session-start` entry point. Bare `xtctx` on a non-TTY stdio pair
   starts the MCP server.
 - **MCP server** (`src/mcp/`) — stdio JSON-RPC server exposing exactly five
   read-only tools. Spawned by coding agents via `npx -y xtctx`.
@@ -20,9 +20,16 @@ boundaries between them, and what each part is allowed to trust.
   (`.xtctx/state/xtctx.db`, WAL, schema-versioned) holding sessions,
   messages, retrieval windows, FTS index, and embedding vectors. Refreshed
   on demand from the scrapers and at MCP server start. Derived from the
-  transcripts, but not disposable: the index keeps sessions whose transcripts have since been deleted (Claude Code deletes them after 30 days by default), so for those it is the only copy. A database that will not
-  open (corruption, schema mismatch) is moved aside to
-  `xtctx.db.set-aside-<time>`, never deleted, and a new one is built.
+  transcripts for every session still on disk, and the only copy of the
+  sessions whose transcripts have since been deleted (Claude Code deletes
+  them after 30 days by default); deleting it loses those. An index from an
+  older schema is migrated in place. One that is corrupt, or older in a shape
+  no migration recognises, is moved aside to `xtctx.db.set-aside-<time>`,
+  never deleted; a new one is built from the transcripts, and the first full
+  scan copies every session it lacks back out of the set-aside file. One from
+  a newer schema is refused. `xtctx export` writes the project's sessions and
+  messages to a JSON Lines file and `xtctx import` merges one back, without
+  duplicates.
 - **Drift log** (`src/scrapers/drift-log.ts`) — per-tool record of the
   places another tool's transcripts did not match what the scraper expected,
   summarised once per scan and kept in `.xtctx/state/<tool>-drift.json`.
@@ -150,11 +157,17 @@ the transcripts remain authoritative.
 - **`.xtctx/config.yaml` is semi-trusted.** It is repo-committable, so a
   cloned repo can point `storePath` anywhere on disk. Store paths are used
   read-only, but treat overrides in a foreign repo as a risk surface.
-- **The index is trusted state, and not disposable.** It is built from the
-  transcripts but keeps sessions whose transcripts have since been deleted,
-  so it is never deleted: a corrupt index or one from an older schema is
-  moved to `xtctx.db.set-aside-<time>` and rebuilt, one from a newer schema
-  is refused, and `setup --repair` leaves it alone.
+- **The index is trusted state, and not disposable.** It is derived from the
+  transcripts still on disk but is the only copy of sessions whose
+  transcripts have since been deleted, so it is never deleted: an older
+  schema is migrated in place, a corrupt index (or an older one no migration
+  fits) is moved to `xtctx.db.set-aside-<time>` and rebuilt with the set-aside
+  file's missing sessions carried forward, one from a newer schema is
+  refused, and `setup --repair` leaves it alone.
+- **An export file is untrusted input**, like the transcripts it came from:
+  `xtctx import` checks the header and every line before writing it, binds
+  every value as a SQL parameter, and its content reaches agents through the
+  same fenced MCP output as any other transcript text.
 - **The registry and npm supply chain** are trusted at install time; CI
   pins action SHAs and publishes via OIDC with provenance, no long-lived
   tokens.

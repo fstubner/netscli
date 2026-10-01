@@ -9,10 +9,14 @@ transcript store into a per-project SQLite index and serves it back — to any
 of those tools — through a small read-only MCP server, so the next agent can
 pick up where the last one left off.
 
-Raw local transcripts are authoritative. xtctx never summarizes and never
-persists derived "memory". The index is built from the transcripts, but it
-keeps sessions whose transcripts have since been deleted, so it is not
-disposable and xtctx never deletes it. It sends transcript content nowhere
+Raw local transcripts are authoritative while they exist. xtctx never
+summarizes and never persists derived "memory". The index is derived from
+the transcripts for every session still on disk, and is the only copy of the
+older ones whose transcripts have since been deleted (Claude Code deletes
+them after 30 days by default). Deleting the index loses those, so xtctx
+never deletes it: schema upgrades migrate it in place, a corrupt one is set
+aside and its sessions carried into the rebuilt one, and `xtctx export` /
+`xtctx import` keep a copy elsewhere. It sends transcript content nowhere
 unless a project opts in to an external embedding endpoint, written into
 `.xtctx/config.yaml` by hand, trusted by the user in
 `XTCTX_TRUSTED_EMBEDDING_ENDPOINTS` (a repository cannot set that), and

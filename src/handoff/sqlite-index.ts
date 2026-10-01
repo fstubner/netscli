@@ -1,6 +1,6 @@
-import { existsSync, realpathSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { mkdir, readdir, rename, rm } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import type { Database as DatabaseHandle } from "better-sqlite3";
 import type { ConversationScraper } from "../types/scraper.js";
 import {
@@ -9,7 +9,9 @@ import {
   type EmbeddingProvider,
 } from "./embeddings.js";
 import type {
+  ExportSummary,
   HandoffStatus,
+  ImportSummary,
   IndexProgress,
   SessionMessage,
   SessionSearchMode,
@@ -31,11 +33,22 @@ import {
   ScanLease,
   lastCompletedScanFrom,
 } from "./scan-lease.js";
+import { carryForwardSessions, createSessionMerger, readArchivedSession } from "./archive.js";
+import {
+  ExportFormatError,
+  checkHeader,
+  endLine,
+  headerLine,
+  parseSessionLine,
+  sessionLine,
+} from "./export-file.js";
 import { literalSearch } from "./literal-search.js";
 import {
+  MIGRATED_FROM_SETTING,
   type PreparedStatements,
   SchemaVersionError,
   clearSetting,
+  getSetting,
   isCorruptDatabaseError,
   openDatabase,
   placeholders,
@@ -45,6 +58,7 @@ import {
 } from "./schema.js";
 import {
   PROJECT_ROOT_SQL,
+  canonicalRoot,
   countWhere,
   normalizeRootForCompare,
   retrievalUnitSelect,
@@ -243,27 +257,6 @@ function embeddingWarmBudgetFromEnv(): number | undefined {
  * Swept against the eval; see the table on `blendScores`.
  */
 const CANDIDATE_WINDOWS_PER_SESSION = 12;
-
-/**
- * The project root as the filesystem reports it, so writes and reads agree.
- *
- * Resolving at both ends is what makes the comparison work at all. One
- * directory has two names whenever a symlink is involved — a macOS temp
- * directory is `/var/...` and `/private/var/...`, and `createProjectServices`
- * already resolves it while a directly-constructed index did not. Rows
- * written under one name were then invisible under the other, which reads as
- * an empty project rather than as a bug.
- *
- * Falls back to the given path when it is not on disk, which is the case for
- * diagnostics and for a project that has moved.
- */
-function canonicalRoot(projectRoot: string): string {
-  try {
-    return realpathSync(projectRoot);
-  } catch {
-    return projectRoot;
-  }
-}
 
 export class SqliteHandoffIndex implements SessionService {
   private db: DatabaseHandle | null = null;
@@ -596,6 +589,138 @@ export class SqliteHandoffIndex implements SessionService {
     });
   }
 
+  /**
+   * Write this project's sessions and messages out; see `export-file.ts`.
+   *
+   * No scan first. The point of an export is the sessions that exist only
+   * here, and those are already indexed by definition; scanning would add
+   * minutes on a large store for sessions whose transcripts are still on disk.
+   * Each session is read inside its own read transaction, so a server writing
+   * to the index meanwhile cannot leave a session's row and its messages
+   * describing two different moments.
+   */
+  async exportSessions(
+    writeLine: (line: string) => Promise<void>,
+    options: { xtctxVersion?: string } = {},
+  ): Promise<ExportSummary> {
+    await this.whenReady();
+    const db = this.getDb();
+    const refs = db
+      .prepare(
+        `SELECT session_ref FROM sessions WHERE ${PROJECT_ROOT_SQL} = ?
+         ORDER BY started_at ASC, session_ref ASC`,
+      )
+      .pluck()
+      .all(this.scopedRoot) as string[];
+    const readOne = db.transaction((ref: string) => readArchivedSession(db, ref));
+
+    await writeLine(headerLine(this.projectRoot, options.xtctxVersion));
+    let sessions = 0;
+    let messages = 0;
+    for (const ref of refs) {
+      const session = readOne(ref);
+      if (!session) {
+        continue;
+      }
+      await writeLine(sessionLine(session));
+      sessions += 1;
+      messages += session.messages.length;
+    }
+    await writeLine(endLine(sessions, messages));
+    return { sessions, messages };
+  }
+
+  /**
+   * Merge an export into this project's index.
+   *
+   * Every session lands under this project, whatever root it was exported
+   * from: importing is how history moves to a project that has moved. Message
+   * ids are content hashes, so a session the index already holds gains only
+   * the messages it lacks, and importing the same file twice adds nothing.
+   * One transaction per session, so a file cut short or a line that does not
+   * parse costs that line, never a half-written session.
+   *
+   * Throws `ExportFormatError` before writing anything if the file is not an
+   * export this build reads.
+   */
+  async importSessions(lines: AsyncIterable<string>): Promise<ImportSummary> {
+    await this.whenReady();
+    const db = this.getDb();
+    const merge = createSessionMerger(db);
+    const summary: ImportSummary = {
+      sessionsInFile: 0,
+      sessionsAdded: 0,
+      sessionsUpdated: 0,
+      sessionsUnchanged: 0,
+      messagesAdded: 0,
+      invalidLines: [],
+      complete: false,
+    };
+    const changed: string[] = [];
+    let headerSeen = false;
+    let end: { sessions?: unknown } | null = null;
+    let lineNumber = 0;
+
+    for await (const raw of lines) {
+      lineNumber += 1;
+      const line = raw.trim();
+      if (!line) {
+        continue;
+      }
+      let value: Record<string, unknown> | null = null;
+      try {
+        value = JSON.parse(line) as Record<string, unknown>;
+      } catch {
+        // Handled below: the first line must be a header either way.
+      }
+      if (!headerSeen) {
+        checkHeader(value);
+        headerSeen = true;
+        continue;
+      }
+      if (!value || typeof value !== "object") {
+        summary.invalidLines.push({ line: lineNumber, reason: "not a JSON object" });
+        continue;
+      }
+      if (value.type === "end") {
+        end = value;
+        continue;
+      }
+      if (value.type !== "session") {
+        summary.invalidLines.push({ line: lineNumber, reason: `unknown line type ${JSON.stringify(value.type)}` });
+        continue;
+      }
+      summary.sessionsInFile += 1;
+      const session = parseSessionLine(value);
+      if (typeof session === "string") {
+        summary.invalidLines.push({ line: lineNumber, reason: session });
+        continue;
+      }
+      const result = merge(session, this.scopedRoot);
+      summary.messagesAdded += result.messagesAdded;
+      if (result.created) {
+        summary.sessionsAdded += 1;
+      } else if (result.messagesAdded > 0) {
+        summary.sessionsUpdated += 1;
+      } else {
+        summary.sessionsUnchanged += 1;
+      }
+      if (result.created || result.messagesAdded > 0) {
+        changed.push(session.session_ref);
+      }
+    }
+
+    if (!headerSeen) {
+      throw new ExportFormatError("not an xtctx export: the file is empty");
+    }
+    for (const ref of changed) {
+      this.prepared().sessionRollup.run(ref);
+      this.rebuildRetrievalUnitsForSession(ref);
+    }
+    summary.complete = end !== null && end.sessions === summary.sessionsInFile;
+    return summary;
+  }
+
   async close(): Promise<void> {
     // Set first, so a retry that starts after this cannot open the database
     // again, and one already running closes what it opened (see initialize).
@@ -844,6 +969,12 @@ export class SqliteHandoffIndex implements SessionService {
         touchedSessions.add(sessionRef);
       }
       this.scannedTools.add(scanned.tool);
+    }
+
+    // After the scan, so what is still on disk has come from the transcripts
+    // and only what is not is taken from a set-aside file.
+    for (const sessionRef of this.carryForwardSetAside()) {
+      touchedSessions.add(sessionRef);
     }
 
     for (const sessionRef of touchedSessions) {
@@ -1290,10 +1421,13 @@ export class SqliteHandoffIndex implements SessionService {
       await this.openAndPrepare();
     } catch (error) {
       // Only a file that is itself unusable -- corrupt, or from an OLDER
-      // schema -- is set aside and a fresh one rebuilt from the transcript
-      // stores. Set aside, not deleted: the index keeps sessions whose
-      // transcripts are gone (Claude Code deletes them after 30 days by
-      // default), so for those it is the only copy.
+      // schema in a shape no migration recognises -- is set aside and a fresh
+      // one rebuilt from the transcript stores. An older schema that can be
+      // migrated never reaches here; `openDatabase` upgrades it in place.
+      // Set aside, not deleted: the index keeps sessions whose transcripts
+      // are gone (Claude Code deletes them after 30 days by default), so for
+      // those it is the only copy -- and the first scan after the rebuild
+      // copies them back out of it (see `carryForwardSetAside`).
       //
       // Anything else stands, and the next call retries (see whenReady): a
       // lock held by another xtctx server is normal with one server per
@@ -1356,6 +1490,15 @@ export class SqliteHandoffIndex implements SessionService {
       await this.clearScraperCursors();
     }
 
+    // A schema migration left the rows an older build wrote; re-reading every
+    // session still on disk is what refreshes them. See MIGRATED_FROM_SETTING.
+    // Cursors first, setting second: a process that dies in between re-reads
+    // twice rather than not at all.
+    if (getSetting(this.db, MIGRATED_FROM_SETTING) !== null) {
+      await this.clearScraperCursors();
+      clearSetting(this.db, MIGRATED_FROM_SETTING);
+    }
+
     dropVectorsFromOtherModels(this.getDb(), this.embeddingProvider.model);
   }
 
@@ -1400,6 +1543,71 @@ export class SqliteHandoffIndex implements SessionService {
         `it was moved to ${aside} and a new one is being built.
 `,
     );
+  }
+
+  /**
+   * Copy the sessions only a set-aside file still holds back into the index.
+   *
+   * A file is set aside because it is corrupt or in a shape nothing could
+   * migrate, and the new index is rebuilt from the transcripts still on disk.
+   * Sessions whose transcripts were cleaned up have no other copy, and nothing
+   * read the set-aside file, so each set-aside used to drop them from
+   * retrieval for good -- the file kept them where no search could reach.
+   *
+   * Found by listing the directory rather than remembered from the set-aside
+   * itself, so a process that dies between the two, or a file set aside by an
+   * earlier version, is still picked up. Each file is done once, recorded
+   * under `carried_forward:<name>` with what it yielded; a file that could not
+   * be opened for a reason that may pass is left unrecorded and tried again on
+   * the next scan. The file itself is never deleted.
+   *
+   * Returns the refs copied in, for the caller to roll up and window.
+   */
+  private carryForwardSetAside(): string[] {
+    const dir = dirname(this.dbPath);
+    const prefix = `${basename(this.dbPath)}.set-aside-`;
+    let names: string[];
+    try {
+      names = readdirSync(dir);
+    } catch {
+      return [];
+    }
+
+    const db = this.getDb();
+    const copied: string[] = [];
+    for (const name of names.sort()) {
+      if (!name.startsWith(prefix) || /-(wal|shm|journal)$/.test(name)) {
+        continue;
+      }
+      const key = `carried_forward:${name}`;
+      if (getSetting(db, key) !== null) {
+        continue;
+      }
+      const result = carryForwardSessions(db, join(dir, name));
+      if (result === null) {
+        continue;
+      }
+      setSetting(
+        db,
+        key,
+        JSON.stringify({
+          at: new Date().toISOString(),
+          copied: result.copied.length,
+          unreadable: result.unreadable,
+          ...(result.error ? { error: result.error } : {}),
+        }),
+      );
+      copied.push(...result.copied);
+      if (result.copied.length > 0 || result.unreadable > 0 || result.error) {
+        process.stderr.write(
+          `xtctx: carried ${result.copied.length} session(s) forward from ${name}` +
+            (result.unreadable > 0 ? `; ${result.unreadable} could not be read` : "") +
+            (result.error ? `; the file could not be read (${result.error})` : "") +
+            ". The file is kept.\n",
+        );
+      }
+    }
+    return copied;
   }
 
   /**

@@ -123,6 +123,15 @@ export async function renderStatusBlock(
     `Data     ${status.sessions} sessions, ${status.messages} messages, ` +
       `${status.retrieval_units} retrieval windows, ${status.vectorized_units} vectorized`,
   );
+  // The index is the only copy of these, and nothing else in this report
+  // says so: deleting `.xtctx/state`, or losing the disk, loses them.
+  if (status.index_only_sessions > 0) {
+    const count = status.index_only_sessions;
+    lines.push(
+      `Backup   ${count} session${count === 1 ? " exists" : "s exist"} only in this index; ` +
+        `back ${count === 1 ? "it" : "them"} up with \`xtctx export\``,
+    );
+  }
   // A backlog is only meaningful as a duration: "1762 windows left" says
   // nothing until it says "about 30 seconds".
   const backlog = estimateVectorBacklog(
