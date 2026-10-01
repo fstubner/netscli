@@ -184,15 +184,31 @@ export function defaultClaudeProjectsDir(): string {
   return join(home, ".claude", "projects");
 }
 
-/** @internal Exported for tests only. */
-export function defaultCursorStorePath(): string {
-  const appData = process.env.APPDATA;
-  if (appData) {
+/**
+ * Cursor is a VS Code fork and keeps `User/workspaceStorage` where VS Code
+ * does, so the location is computed the way `defaultCopilotHistoryPath` does
+ * it. Without `APPDATA` this used to answer `~/.cursor/workspaceStorage`, a
+ * directory that holds Cursor's extensions and settings but no conversations,
+ * so on macOS and Linux Cursor read as installed-with-nothing in `status`.
+ *
+ * The platform and home are parameters so each platform's answer can be
+ * checked from any machine.
+ * @internal Exported for tests only.
+ */
+export function defaultCursorStorePath(
+  platform: NodeJS.Platform = process.platform,
+  home: string = process.env.USERPROFILE ?? process.env.HOME ?? "",
+): string {
+  if (platform === "win32") {
+    const appData = process.env.APPDATA ?? join(home, "AppData", "Roaming");
     return join(appData, "Cursor", "User", "workspaceStorage");
   }
 
-  const home = process.env.USERPROFILE ?? process.env.HOME ?? "";
-  return join(home, ".cursor", "workspaceStorage");
+  if (platform === "linux") {
+    return join(home, ".config", "Cursor", "User", "workspaceStorage");
+  }
+
+  return join(home, "Library", "Application Support", "Cursor", "User", "workspaceStorage");
 }
 
 /** @internal Exported for tests only. */

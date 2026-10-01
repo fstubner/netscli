@@ -2,7 +2,7 @@ import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { defaultOpenCodeStorePath } from "@xtctx/tools/sources";
+import { defaultCursorStorePath, defaultOpenCodeStorePath } from "@xtctx/tools/sources";
 
 /**
  * Default store paths are a guess about where another tool keeps its data, and
@@ -64,5 +64,57 @@ describe("defaultOpenCodeStorePath", () => {
     const result = defaultOpenCodeStorePath();
 
     expect(result.endsWith("opencode.db")).toBe(true);
+  });
+});
+
+/**
+ * Cursor keeps its conversations under `User/workspaceStorage` of its
+ * VS Code-style user directory. Without `APPDATA` the default used to be
+ * `~/.cursor/workspaceStorage` on every platform, which is where Cursor keeps
+ * extensions, not conversations — so on macOS and Linux a real install read as
+ * having no sessions, and nothing said why.
+ */
+describe("defaultCursorStorePath", () => {
+  const home = join("/", "home", "someone");
+  let saved: NodeJS.ProcessEnv;
+
+  beforeEach(() => {
+    saved = { ...process.env };
+    process.env.APPDATA = join(home, "AppData", "Roaming");
+  });
+
+  afterEach(() => {
+    for (const key of Object.keys(process.env)) delete process.env[key];
+    Object.assign(process.env, saved);
+  });
+
+  it("uses Application Support on macOS", () => {
+    delete process.env.APPDATA;
+
+    expect(defaultCursorStorePath("darwin", home)).toBe(
+      join(home, "Library", "Application Support", "Cursor", "User", "workspaceStorage"),
+    );
+  });
+
+  it("uses ~/.config on Linux", () => {
+    delete process.env.APPDATA;
+
+    expect(defaultCursorStorePath("linux", home)).toBe(
+      join(home, ".config", "Cursor", "User", "workspaceStorage"),
+    );
+  });
+
+  it("uses APPDATA on Windows", () => {
+    expect(defaultCursorStorePath("win32", home)).toBe(
+      join(home, "AppData", "Roaming", "Cursor", "User", "workspaceStorage"),
+    );
+  });
+
+  it("derives the Windows location from home when APPDATA is unset", () => {
+    delete process.env.APPDATA;
+
+    expect(defaultCursorStorePath("win32", home)).toBe(
+      join(home, "AppData", "Roaming", "Cursor", "User", "workspaceStorage"),
+    );
   });
 });
