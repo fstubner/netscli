@@ -544,6 +544,7 @@ const NON_TEXT_RESPONSE_KINDS = new Set([
   "notebookEditGroup",
   "confirmation",
   "progressMessage",
+  "progressTask",
   "progressTaskSerialized",
   "prepareToolInvocation",
   "mcpServersStarting",
