@@ -4,6 +4,7 @@ import {
   assertSecureSyncUrl,
   callCloud,
   clientHeader,
+  NO_KEEP_ALIVE,
   deleteCredentials,
   getCredentialsPath,
   loadSavedCredentials,
@@ -48,7 +49,7 @@ export async function runLogin(options: {
 
   assertSecureSyncUrl(syncUrl);
 
-  const codeRes = await fetch(`${base}/auth/device/code`, { method: "POST", headers: { "X-Xtctx-Client": clientHeader() } });
+  const codeRes = await fetch(`${base}/auth/device/code`, { method: "POST", headers: { "X-Xtctx-Client": clientHeader(), ...NO_KEEP_ALIVE } });
   if (!codeRes.ok) {
     throw new Error(`Could not start login (${codeRes.status}).`);
   }
@@ -70,7 +71,7 @@ export async function runLogin(options: {
     try {
       const res = await fetch(`${base}/auth/device/poll`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "X-Xtctx-Client": clientHeader() },
+        headers: { "Content-Type": "application/json", "X-Xtctx-Client": clientHeader(), ...NO_KEEP_ALIVE },
         body: JSON.stringify({ device_code: code.device_code }),
       });
       poll = (await res.json()) as PollResponse;

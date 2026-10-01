@@ -133,6 +133,19 @@ export function assertSecureSyncUrl(syncUrl: string): void {
   }
 }
 
+/**
+ * Every cloud request closes its connection when it is done.
+ *
+ * On Windows, Node 24.14 aborts with `Assertion failed: !(handle->flags &
+ * UV_HANDLE_CLOSING)` (exit 0xC0000409) when `process.exit` runs while fetch
+ * still holds a pooled keep-alive socket after a POST. The MCP server does
+ * exactly that: an upload tick, then the final upload on shutdown, then exit.
+ * It crashed in 10 of 10 such runs; with this header, 0 of 8 in a standalone
+ * reproduction. Uploads are seconds apart, so reusing the connection saves
+ * nothing worth the crash.
+ */
+export const NO_KEEP_ALIVE = { Connection: "close" } as const;
+
 /** Sent on every request, so the server can tell which client versions are out there. */
 export function clientHeader(): string {
   return `xtctx/${readXtctxPackage(import.meta.url).version}`;
@@ -145,7 +158,11 @@ export async function callCloud(
   body?: unknown,
 ): Promise<Response> {
   assertSecureSyncUrl(creds.syncUrl);
-  const headers: Record<string, string> = { Authorization: `Bearer ${creds.token}`, "X-Xtctx-Client": clientHeader() };
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${creds.token}`,
+    "X-Xtctx-Client": clientHeader(),
+    ...NO_KEEP_ALIVE,
+  };
   if (body !== undefined) headers["Content-Type"] = "application/json";
   return fetch(`${creds.syncUrl.replace(/\/$/, "")}${path}`, {
     method,
