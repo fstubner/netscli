@@ -27,3 +27,15 @@ updates:
       interval: weekly
     commit-message:
       prefix: deps
+
+  # The Worker: wrangler, workers-types and the OAuth provider move often, and
+  # the provider is security-relevant.
+  - package-ecosystem: npm
+    directory: /cloud
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: deps
+    groups:
+      dev-dependencies:
+        dependency-type: development
