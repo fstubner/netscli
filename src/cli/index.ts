@@ -174,7 +174,7 @@ export async function main(argv = process.argv): Promise<void> {
   program
     .command("login")
     .option("--sync-url <url>", "Sync server URL (default: https://sync.xtctx.com)")
-    .option("--device <name>", "Friendly name for this device")
+    .option("--device <name>", "Name this device shows as in the cloud (default: a random label)")
     .description("Sign in to xtctx cloud with GitHub (uploads nothing by itself)")
     .action(async (options: { syncUrl?: string; device?: string }) => {
       await runLogin({ syncUrl: options.syncUrl, deviceName: options.device });
@@ -190,15 +190,16 @@ export async function main(argv = process.argv): Promise<void> {
 
   program
     .command("sync")
-    .argument("[action]", "enable, disable or status for this project; omit to upload once")
+    .argument("[action]", "enable, disable or status for this project; device [name]; token; omit to upload once")
+    .argument("[value]", "the new name, for `sync device <name>`")
     .option("-p, --project <path>", "Project root (defaults to cwd)")
     .option("-w, --watch", "Keep uploading every few seconds until interrupted", false)
     .description("Cloud sync: choose whether this project uploads, or upload now")
-    .action(async (action: string | undefined, options: { project?: string; watch?: boolean }) => {
+    .action(async (action: string | undefined, value: string | undefined, options: { project?: string; watch?: boolean }) => {
       const globalOptions = program.opts<{ project?: string }>();
       const projectDir = options.project ?? globalOptions.project;
       if (action) {
-        await runSyncSetting(action, { projectDir });
+        await runSyncSetting(action, { projectDir, value });
       } else {
         await runSync({ projectDir, watch: options.watch });
       }

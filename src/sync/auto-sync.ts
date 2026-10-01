@@ -25,7 +25,9 @@ export interface AutoSyncOptions {
  * Each tick asks `runDiffSync`, which refuses unless someone is logged in and
  * the project is opted in, so a project that is neither costs two small file
  * reads per tick and sends nothing. Ticks never overlap: the next is
- * scheduled when the previous one finishes.
+ * scheduled when the previous one finishes. Across processes (two agents
+ * open in one project each run a server) a lock in ~/.xtctx lets one upload
+ * at a time; the others find it busy and wait for their next tick.
  */
 export function startAutoSync(options: AutoSyncOptions): AutoSync {
   const { projectRoot, log } = options;
@@ -41,11 +43,16 @@ export function startAutoSync(options: AutoSyncOptions): AutoSync {
   const tick = async (): Promise<void> => {
     try {
       const result = await sync({ projectDir: projectRoot });
-      if (result.syncedCount > 0) log(`xtctx: synced ${result.syncedCount} new turns to cloud`);
+      if (result.busy) return; // another process is uploading this project
+      if (result.syncedCount > 0) log(`xtctx: sent ${result.syncedCount} message(s) to xtctx cloud`);
+      for (const s of result.skipped) {
+        log(`xtctx: cloud sync skipped message ${s.messageId} in ${s.sessionRef}: ${s.reason}`);
+      }
       lastError = "";
     } catch (err) {
       if (err instanceof NotLoggedInError || err instanceof NotOptedInError) return;
-      // Said once per distinct failure, not every ten seconds.
+      // Said once per distinct failure, not every ten seconds. The failure is
+      // also recorded for `xtctx sync status`.
       const message = err instanceof Error ? err.message : String(err);
       if (message !== lastError) log(`xtctx: cloud sync failed: ${message}`);
       lastError = message;

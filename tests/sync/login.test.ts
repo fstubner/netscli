@@ -1,4 +1,5 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { hostname } from "node:os";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { runLogin, runLogout } from "@xtctx/cli/login";
 import { getCredentialsPath, saveCredentials } from "@xtctx/sync/client";
@@ -67,6 +68,38 @@ describe("login and logout", () => {
     expect(url).toBe("https://sync.test/auth/logout");
     expect(init.method).toBe("POST");
     expect(existsSync(getCredentialsPath())).toBe(false);
+  });
+
+  it("names the device with a random label, not the hostname, unless told otherwise", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => Response.json(String(url).endsWith("/code") ? code : { token: "tok", user })));
+    const { wait } = clock();
+    await runLogin({ syncUrl: "https://sync.test", wait });
+    const saved = JSON.parse(readFileSync(getCredentialsPath(), "utf-8"));
+    expect(saved.deviceName).toMatch(/^device-[0-9a-f]{6}$/);
+    expect(saved.deviceName).not.toContain(hostname());
+
+    await runLogin({ syncUrl: "https://sync.test", wait, deviceName: "work laptop" });
+    expect(JSON.parse(readFileSync(getCredentialsPath(), "utf-8")).deviceName).toBe("work laptop");
+  });
+
+  it("says plainly when the account is not on the server's allowlist", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url: string) =>
+      String(url).endsWith("/code") ? Response.json(code) : Response.json({ error: "not_allowed" }, { status: 403 }),
+    ));
+    const { wait } = clock();
+    await expect(runLogin({ syncUrl: "https://sync.test", wait })).rejects.toThrow(/not allowed on this xtctx cloud server/);
+    expect(existsSync(getCredentialsPath())).toBe(false);
+  });
+
+  it("delete-data with a login the server no longer accepts deletes nothing, says so, and keeps the login", async () => {
+    await saveCredentials({ token: "tok", user, deviceId: "d", deviceName: "n", syncUrl: "https://sync.test" });
+    vi.stubGlobal("fetch", vi.fn(async () => Response.json({ error: "unauthorized" }, { status: 401 })));
+    const log = vi.spyOn(console, "log");
+
+    await expect(runLogout({ deleteData: true })).rejects.toThrow(/nothing was deleted.*xtctx login/s);
+
+    expect(existsSync(getCredentialsPath())).toBe(true);
+    expect(log.mock.calls.flat().join(" ")).not.toMatch(/Deleted/);
   });
 
   it("delete-data keeps the login when the server could not delete", async () => {

@@ -1,7 +1,9 @@
+import { createHash, randomBytes } from "node:crypto";
 import { hostname } from "node:os";
 import { join } from "node:path";
 import { readFile, rm } from "node:fs/promises";
 import { writeFileAtomic } from "../utils/atomic-file.js";
+import { readXtctxPackage } from "../utils/package-info.js";
 import { xtctxHome } from "./consent.js";
 
 export interface SyncCredentials {
@@ -23,44 +25,91 @@ export function getCredentialsPath(): string {
 }
 
 /**
- * The saved login, or one built from XTCTX_TOKEN for a machine nobody logs in
- * on. Having credentials does not mean anything is uploaded: that also needs
- * the project to be opted in (see consent.ts).
+ * A name for this device that says nothing about it. The hostname used to be
+ * the default, and it often carries a person's name or an employer's asset
+ * tag; `xtctx login --device <name>` or `xtctx sync device <name>` sets one.
  */
-export async function loadCredentials(): Promise<SyncCredentials | null> {
-  if (process.env.XTCTX_TOKEN) {
-    const token = process.env.XTCTX_TOKEN;
-    let userId = "env-user";
-    let username = "developer";
-    let deviceId = process.env.XTCTX_DEVICE_ID;
+export function randomDeviceName(): string {
+  return `device-${randomBytes(3).toString("hex")}`;
+}
 
-    try {
-      const parts = token.split(".");
-      if (parts.length >= 2) {
-        const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf-8"));
-        if (payload.sub) userId = payload.sub;
-        if (payload.username) username = payload.username;
-        if (payload.device_id && !deviceId) deviceId = payload.device_id;
-      }
-    } catch {
-      // Not a decodable JWT; the server is what judges the token.
-    }
-
-    const machineName = hostname();
-    return {
-      token,
-      user: { id: userId, username },
-      deviceId: deviceId || `device-${machineName.toLowerCase().replace(/[^a-z0-9_-]/g, "")}`,
-      deviceName: process.env.XTCTX_DEVICE_NAME || machineName,
-      syncUrl: process.env.XTCTX_SYNC_URL || DEFAULT_SYNC_URL,
-    };
-  }
-
+/** The saved login from `xtctx login`, or null. */
+export async function loadSavedCredentials(): Promise<SyncCredentials | null> {
   try {
     return JSON.parse(await readFile(getCredentialsPath(), "utf-8")) as SyncCredentials;
   } catch {
     return null;
   }
+}
+
+/** Credentials described by XTCTX_TOKEN / XTCTX_SYNC_URL, or null when neither is set. */
+function credentialsFromEnv(saved: SyncCredentials | null): SyncCredentials | null {
+  const envToken = process.env.XTCTX_TOKEN || undefined;
+  const envUrl = process.env.XTCTX_SYNC_URL || undefined;
+  if (!envToken && !envUrl) return null;
+  if (!envToken) return saved ? { ...saved, syncUrl: envUrl! } : null;
+
+  let userId = "env-user";
+  let username = "developer";
+  try {
+    const payload = JSON.parse(Buffer.from(envToken.split(".")[1] ?? "", "base64url").toString("utf-8"));
+    if (typeof payload.sub === "string") userId = payload.sub;
+    if (typeof payload.username === "string") username = payload.username;
+  } catch {
+    // Not a decodable JWT; the server is what judges the token.
+  }
+  // Stable across runs without saying anything about the machine.
+  const stableId = `device-${createHash("sha256").update(hostname()).digest("hex").slice(0, 12)}`;
+  return {
+    token: envToken,
+    user: { id: userId, username },
+    deviceId: process.env.XTCTX_DEVICE_ID || saved?.deviceId || stableId,
+    deviceName: process.env.XTCTX_DEVICE_NAME || saved?.deviceName || stableId,
+    syncUrl: envUrl || saved?.syncUrl || DEFAULT_SYNC_URL,
+  };
+}
+
+/**
+ * The login in effect: XTCTX_TOKEN / XTCTX_SYNC_URL when set, otherwise the
+ * saved one. For showing who is logged in; uploads go through
+ * `resolveUploadCredentials`, which is stricter about the environment.
+ */
+export async function loadCredentials(): Promise<SyncCredentials | null> {
+  const saved = await loadSavedCredentials();
+  return credentialsFromEnv(saved) ?? saved;
+}
+
+export class EnvCredentialsRefusedError extends Error {
+  constructor() {
+    super(
+      "XTCTX_TOKEN or XTCTX_SYNC_URL is set and differs from your saved login, so this project's uploads " +
+        "would go to another account or server than the one you signed in to. Refusing to upload. " +
+        "Unset them, or set XTCTX_ALLOW_ENV_CREDENTIALS=1 if that is what you want.",
+    );
+    this.name = "EnvCredentialsRefusedError";
+  }
+}
+
+const sameUrl = (a: string, b: string) => a.replace(/\/+$/, "") === b.replace(/\/+$/, "");
+
+/**
+ * The credentials an upload may use.
+ *
+ * Environment variables reach a process from places the user does not see,
+ * such as an MCP config's `env` block, which a repository can ship. One that
+ * sets XTCTX_TOKEN or XTCTX_SYNC_URL could otherwise send an opted-in
+ * project's transcripts to someone else's account or server. So when they
+ * name anything other than the saved login (including when there is no saved
+ * login), uploading also needs XTCTX_ALLOW_ENV_CREDENTIALS=1. Null when there
+ * is no login at all.
+ */
+export async function resolveUploadCredentials(): Promise<SyncCredentials | null> {
+  const saved = await loadSavedCredentials();
+  const fromEnv = credentialsFromEnv(saved);
+  if (!fromEnv) return saved;
+  const matchesSaved = saved !== null && fromEnv.token === saved.token && sameUrl(fromEnv.syncUrl, saved.syncUrl);
+  if (!matchesSaved && process.env.XTCTX_ALLOW_ENV_CREDENTIALS !== "1") throw new EnvCredentialsRefusedError();
+  return fromEnv;
 }
 
 /** Written 0600 and atomically: it holds a bearer token. */
@@ -84,10 +133,23 @@ export function assertSecureSyncUrl(syncUrl: string): void {
   }
 }
 
-export async function callCloud(creds: SyncCredentials, method: string, path: string): Promise<Response> {
+/** Sent on every request, so the server can tell which client versions are out there. */
+export function clientHeader(): string {
+  return `xtctx/${readXtctxPackage(import.meta.url).version}`;
+}
+
+export async function callCloud(
+  creds: SyncCredentials,
+  method: string,
+  path: string,
+  body?: unknown,
+): Promise<Response> {
   assertSecureSyncUrl(creds.syncUrl);
+  const headers: Record<string, string> = { Authorization: `Bearer ${creds.token}`, "X-Xtctx-Client": clientHeader() };
+  if (body !== undefined) headers["Content-Type"] = "application/json";
   return fetch(`${creds.syncUrl.replace(/\/$/, "")}${path}`, {
     method,
-    headers: { Authorization: `Bearer ${creds.token}` },
+    headers,
+    body: body === undefined ? undefined : JSON.stringify(body),
   });
 }

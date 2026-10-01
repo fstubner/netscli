@@ -12,6 +12,7 @@ import {
 import { readDriftLog, type DriftLogFile } from "../scrapers/drift-log.js";
 import { SUPPORTED_TOOLS } from "../tools/sources.js";
 import { readXtctxPackage } from "../utils/package-info.js";
+import { describeCloudSync } from "../sync/report.js";
 
 interface StatusOptions {
   projectPath?: string;
@@ -174,6 +175,13 @@ export async function renderStatusBlock(
     const endpoint = status.vector_model.slice("openai:".length);
     lines.push(`Embedding  external endpoint — window text is sent to ${endpoint}`);
   }
+  // Cloud upload is the other thing that sends transcripts off this machine,
+  // so whether it is on here, and whether it is working, is always stated.
+  const cloud = await describeCloudSync(services.projectRoot).catch((err: unknown) => [
+    `unknown (${err instanceof Error ? err.message : String(err)})`,
+  ]);
+  lines.push(`Cloud    ${cloud[0]}`);
+  for (const line of cloud.slice(1)) lines.push(`         ${line}`);
   lines.push("");
   lines.push("Tools:");
 

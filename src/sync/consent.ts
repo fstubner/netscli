@@ -20,7 +20,7 @@ function consentPath(): string {
  * its reader in to sending their transcripts anywhere. Logging in does not
  * add to it either; the two are separate decisions.
  */
-async function projectKey(projectRoot: string): Promise<string> {
+export async function projectKey(projectRoot: string): Promise<string> {
   const real = await realpath(projectRoot).catch(() => projectRoot);
   return process.platform === "win32" ? real.toLowerCase() : real;
 }
