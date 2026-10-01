@@ -33,7 +33,7 @@ use crate::mdns::MdnsService;
 /// sweep has: a /24 measured 2317-3466ms against this 1500ms. The window is
 /// visible only when the sweep finishes first, on a /30 or a near-empty
 /// range, where it added about 1.4s.
-const BROWSE_WINDOW_MS: u64 = 1500;
+const BROWSE_WINDOW_MS: u64 = 1000;
 
 /// Start listening now, so the browse overlaps the sweep instead of following
 /// it.

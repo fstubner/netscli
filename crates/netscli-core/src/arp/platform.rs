@@ -2,6 +2,8 @@ mod command;
 mod interfaces;
 mod mutate;
 mod table;
+#[cfg(target_os = "windows")]
+mod windows_table;
 
 use std::net::IpAddr;
 
