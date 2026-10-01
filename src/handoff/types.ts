@@ -63,6 +63,17 @@ export interface HandoffStatus {
   vector_ms_per_segment: number | null;
   vector_model: string;
   /**
+   * How semantic search is answered here.
+   *
+   * `off` is the default for a fresh install: the local model is an add-on
+   * (`xtctx embeddings enable`), and until it is installed every search is
+   * keyword-only, by design rather than by failure. `remote` is an
+   * OpenAI-compatible endpoint, which needs no local runtime.
+   */
+  semantic_search: "local" | "remote" | "off";
+  /** Why `semantic_search` is off, or null when it is not. */
+  semantic_off_reason: "not_enabled" | "disabled_by_env" | null;
+  /**
    * ONNX execution provider embedding actually runs on, or null when this
    * machine has not been calibrated and is therefore on the CPU default.
    *

@@ -3,11 +3,8 @@ import { mkdir, readdir, rename, rm } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import type { Database as DatabaseHandle } from "better-sqlite3";
 import type { ConversationScraper } from "../types/scraper.js";
-import {
-  DEFAULT_EMBEDDING_MODEL,
-  TransformersEmbeddingProvider,
-  type EmbeddingProvider,
-} from "./embeddings.js";
+import type { EmbeddingProvider } from "./embeddings.js";
+import { createEmbeddingProvider, defaultEmbeddingConfig } from "./embedding-config.js";
 import type {
   HandoffStatus,
   IndexProgress,
@@ -17,7 +14,7 @@ import type {
   SessionSummary,
 } from "./types.js";
 import { cosineSimilarity, deserializeVector } from "./vector.js";
-import { NullEmbeddingProvider } from "./null-embeddings.js";
+import { semanticOffMessage } from "./null-embeddings.js";
 import {
   DEFAULT_WINDOW_SIZE,
   DEFAULT_WINDOW_STRIDE,
@@ -197,9 +194,7 @@ const DEFAULT_EMBEDDING_WARM_BUDGET_MS = 5_000;
  * provider directly, so it still exercises the real thing.
  */
 function defaultEmbeddingProvider(): EmbeddingProvider {
-  return process.env.XTCTX_DISABLE_EMBEDDINGS === "1"
-    ? new NullEmbeddingProvider()
-    : new TransformersEmbeddingProvider(DEFAULT_EMBEDDING_MODEL);
+  return createEmbeddingProvider(defaultEmbeddingConfig());
 }
 
 /**
@@ -516,6 +511,18 @@ export class SqliteHandoffIndex implements SessionService {
       return this.keywordSearch(trimmed, limit, toolFilter, branchFilter);
     }
 
+    // Semantic search off: hybrid is keyword, and says nothing about it. This
+    // is the default state of an install (the model is an add-on), so it must
+    // not be reported as a failure on every search. An explicit `vector`
+    // request has no other route, so that one is told how to turn it on.
+    const semanticOff = this.embeddingProvider.semanticOff;
+    if (semanticOff !== undefined) {
+      if (normalizedMode === "vector") {
+        throw new Error(semanticOffMessage(semanticOff));
+      }
+      return this.keywordSearch(trimmed, limit, toolFilter, branchFilter);
+    }
+
     // Loading the embedding model is a one-off that takes minutes on a cold
     // cache. Hybrid is the default mode, so blocking it on that made the first
     // search of a session look broken. Start the load, answer from keyword,
@@ -575,6 +582,7 @@ export class SqliteHandoffIndex implements SessionService {
       redirectedTools: this.redirectedTools,
       vectorModel: this.embeddingProvider.model,
       vectorDevice: this.embeddingProvider.device ?? null,
+      semanticOff: this.embeddingProvider.semanticOff ?? null,
     });
   }
 
@@ -664,6 +672,10 @@ export class SqliteHandoffIndex implements SessionService {
   }
 
   private countUnvectorizedUnits(): number {
+    // Nothing is outstanding when nothing will ever be built.
+    if (this.embeddingProvider.semanticOff !== undefined) {
+      return 0;
+    }
     try {
       return countUnvectorizedUnits(this.getDb(), this.embeddingProvider.model);
     } catch {
@@ -1068,6 +1080,10 @@ export class SqliteHandoffIndex implements SessionService {
 
   async embedBacklog(onProgress?: (embedded: number, total: number) => void): Promise<number> {
     await this.whenScanSettled();
+    const semanticOff = this.embeddingProvider.semanticOff;
+    if (semanticOff !== undefined) {
+      throw new Error(semanticOffMessage(semanticOff));
+    }
     // No `isReady` check and no degrading to keyword: `embedBatch` loads the
     // model itself and this command has nothing else it could be asking for,
     // so it waits however long that takes.
@@ -1098,7 +1114,7 @@ export class SqliteHandoffIndex implements SessionService {
   }
 
   private async ensureVectors(toolFilter?: string[]): Promise<void> {
-    if (this.freezeVectors) {
+    if (this.freezeVectors || this.embeddingProvider.semanticOff !== undefined) {
       return;
     }
     this.vectorBacklog = await ensureVectors({
@@ -1187,7 +1203,13 @@ export class SqliteHandoffIndex implements SessionService {
       await this.clearScraperCursors();
     }
 
-    dropVectorsFromOtherModels(this.getDb(), this.embeddingProvider.model);
+    // Not when semantic search is off. The provider's identity is a placeholder
+    // then, and treating it as "another model" deleted every vector an index
+    // had, on the first open without the add-on, for no reason: switching the
+    // model back on would then re-embed the whole history.
+    if (this.embeddingProvider.semanticOff === undefined) {
+      dropVectorsFromOtherModels(this.getDb(), this.embeddingProvider.model);
+    }
   }
 
   /**

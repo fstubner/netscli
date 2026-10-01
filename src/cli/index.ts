@@ -10,6 +10,8 @@ import { createProjectServices } from "../runtime/services.js";
 import { startMcpServer } from "../mcp/server.js";
 import { readXtctxPackage } from "../utils/package-info.js";
 import { runBackgroundWork } from "../runtime/background.js";
+import { localEmbeddingsActive } from "../handoff/embedding-config.js";
+import { runEmbeddingsDisable, runEmbeddingsEnable } from "./embeddings.js";
 
 const { version: CLI_VERSION } = readXtctxPackage(import.meta.url);
 
@@ -97,7 +99,10 @@ export async function main(argv = process.argv): Promise<void> {
     // incremental scan this costs measured 9.7s in the background against a
     // 19GB Codex store, and the cursor design keeps it from re-reading.
     if (!unconfiguredProjectRoot && !services.config.error) {
-      void runBackgroundWork({ sessions: services.sessions });
+      void runBackgroundWork({
+        sessions: services.sessions,
+        localEmbeddings: localEmbeddingsActive(services.config.embedding),
+      });
     }
     return;
   }
@@ -185,6 +190,25 @@ export async function main(argv = process.argv): Promise<void> {
     .description("Find the fastest device on this machine for indexing, and use it")
     .action(async (options: { force: boolean }) => {
       await runCalibrate({ force: options.force });
+    });
+
+  const embeddings = program
+    .command("embeddings")
+    .description("Turn local semantic search on or off (it is an optional add-on)");
+
+  embeddings
+    .command("enable")
+    .option("-y, --yes", "Install without asking, for scripts and agents", false)
+    .description("Install the local embedding model so search can match by meaning as well as by keyword")
+    .action(async (options: { yes: boolean }) => {
+      await runEmbeddingsEnable({ yes: options.yes });
+    });
+
+  embeddings
+    .command("disable")
+    .description("Remove the local embedding model and its runtime; search goes back to keyword only")
+    .action(async () => {
+      await runEmbeddingsDisable();
     });
 
   program
