@@ -36,12 +36,14 @@ interface SessionRow {
   time_created: number;
   title: string | null;
   directory: string | null;
+  time_updated: number | null;
 }
 
 interface MessageRow {
   id: string;
   session_id: string;
   time_created: number;
+  time_updated: number | null;
   data: string;
 }
 
@@ -154,31 +156,29 @@ export class OpenCodeScraper extends AbstractScraper<OpenCodeChunk> {
   ): Iterable<OpenCodeChunk> {
     let sessions: SessionRow[];
     try {
-      sessions = db
-        .prepare(
-          "SELECT id, time_created, title, directory FROM session ORDER BY time_created ASC",
-        )
-        .all() as SessionRow[];
-    } catch {
-      // Older opencode schemas may lack the directory column; retry without it.
-      try {
-        sessions = (
-          db
-            .prepare("SELECT id, time_created, title FROM session ORDER BY time_created ASC")
-            .all() as Omit<SessionRow, "directory">[]
-        ).map((row) => ({ ...row, directory: null }));
-      } catch (err) {
-        const message = (err as Error).message;
-        if (/not a database|file is encrypted|malformed|corrupt/i.test(message)) {
-          // Corruption, not schema drift — surface it rather than reporting
-          // an empty store.
-          throw new Error(
-            `[${SCRAPER_NAME}] opencode database at ${this.opencodeDbPath} is unreadable: ${message}`,
-          );
-        }
-        warnDrift(this.opencodeDbPath, `session table query failed: ${message}`);
-        return;
+      // Columns are looked up rather than assumed: older schemas lack
+      // `directory`, and `time_updated` is what says a session changed.
+      const columns = tableColumns(db, "session");
+      const selected = ["id", "time_created", "title"];
+      for (const optional of ["directory", "time_updated"]) {
+        if (columns.has(optional)) selected.push(optional);
       }
+      sessions = (
+        db
+          .prepare(`SELECT ${selected.join(", ")} FROM session ORDER BY time_created ASC`)
+          .all() as Array<Partial<SessionRow> & Pick<SessionRow, "id" | "time_created" | "title">>
+      ).map((row) => ({ directory: null, time_updated: null, ...row }));
+    } catch (err) {
+      const message = (err as Error).message;
+      if (/not a database|file is encrypted|malformed|corrupt/i.test(message)) {
+        // Corruption, not schema drift — surface it rather than reporting
+        // an empty store.
+        throw new Error(
+          `[${SCRAPER_NAME}] opencode database at ${this.opencodeDbPath} is unreadable: ${message}`,
+        );
+      }
+      warnDrift(this.opencodeDbPath, `session table query failed: ${message}`);
+      return;
     }
 
     if (this.projectRoot) {
@@ -205,8 +205,11 @@ export class OpenCodeScraper extends AbstractScraper<OpenCodeChunk> {
     let getMessages: import("better-sqlite3").Statement;
     let getParts: import("better-sqlite3").Statement;
     try {
+      const messageColumns = tableColumns(db, "message");
       getMessages = db.prepare(
-        "SELECT id, session_id, time_created, data FROM message WHERE session_id = ? ORDER BY time_created ASC, id ASC",
+        `SELECT id, session_id, time_created, ${
+          messageColumns.has("time_updated") ? "time_updated" : "NULL AS time_updated"
+        }, data FROM message WHERE session_id = ? ORDER BY time_created ASC, id ASC`,
       );
       getParts = db.prepare(
         "SELECT id, message_id, time_created, data FROM part WHERE message_id = ? ORDER BY time_created ASC, id ASC",
@@ -230,6 +233,21 @@ export class OpenCodeScraper extends AbstractScraper<OpenCodeChunk> {
         );
         continue;
       }
+
+      interface ParsedMessage {
+        row: MessageRow;
+        data: MessageData;
+        role: OpenCodeChunk["role"];
+        timestamp: Date;
+        messageIndex: number;
+      }
+      const parsed: ParsedMessage[] = [];
+
+      // Whether anything in the session has changed since the cursor. A full
+      // read always has, and the session row's own `time_updated` counts: a
+      // message still streaming when it was last read is edited in place, so
+      // it is older than the cursor yet different from what was stored.
+      let changed = since.getTime() <= 0 || timeAfter(session.time_updated, since);
 
       let messageIndex = 0;
       for (const msg of messages) {
@@ -271,11 +289,25 @@ export class OpenCodeScraper extends AbstractScraper<OpenCodeChunk> {
         // Timestamp: prefer msgData.time.created, fall back to msg.time_created.
         const tsValue = msgData.time?.created ?? msg.time_created;
         const timestamp = toDate(tsValue);
-        if (since.getTime() > 0 && timestamp <= since) {
-          messageIndex++;
-          continue;
+        if (timestamp > since || timeAfter(msg.time_updated, since)) {
+          changed = true;
         }
 
+        parsed.push({ row: msg, data: msgData, role, timestamp, messageIndex });
+        messageIndex++;
+      }
+
+      // A session is read whole or not at all. Reading only the messages past
+      // the cursor missed one that was still streaming at the last scan, and
+      // when a later read did pick it up its final text arrived under a new id
+      // beside the partial row already stored. A read from the first message
+      // lets the index replace what it holds for the session instead, and
+      // costs one session's rows rather than a gap.
+      if (!changed) {
+        continue;
+      }
+
+      for (const { row: msg, data: msgData, role, timestamp, messageIndex: index } of parsed) {
         let parts: PartRow[];
         try {
           parts = getParts.all(msg.id) as PartRow[];
@@ -284,7 +316,6 @@ export class OpenCodeScraper extends AbstractScraper<OpenCodeChunk> {
             `${this.opencodeDbPath}#message:${msg.id}`,
             `part query failed: ${(err as Error).message}`,
           );
-          messageIndex++;
           continue;
         }
 
@@ -345,7 +376,7 @@ export class OpenCodeScraper extends AbstractScraper<OpenCodeChunk> {
             role,
             content,
             metadata: {
-              messageIndex,
+              messageIndex: index,
               tokenEstimate: estimateTokens(content),
               referencedFiles: [],
               ...metadata,
@@ -367,14 +398,13 @@ export class OpenCodeScraper extends AbstractScraper<OpenCodeChunk> {
             role: "tool",
             content: toolContent,
             metadata: {
-              messageIndex,
+              messageIndex: index,
               tokenEstimate: estimateTokens(toolContent),
               referencedFiles: [],
               ...metadata,
             },
           };
         }
-        messageIndex++;
       }
     }
   }
@@ -409,6 +439,20 @@ function describeToolPart(part: PartData): string {
 
   const line = target ? `used ${name}: ${target}` : `used ${name}`;
   return line.length > TOOL_LINE_MAX ? `${line.slice(0, TOOL_LINE_MAX)}…` : line;
+}
+
+/** The column names of a table; empty when there is no such table. */
+function tableColumns(db: import("better-sqlite3").Database, table: string): Set<string> {
+  return new Set(
+    (db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>).map(
+      (column) => column.name,
+    ),
+  );
+}
+
+/** Whether a row's time column is later than the cursor; absent counts as not. */
+function timeAfter(value: unknown, since: Date): boolean {
+  return value !== null && value !== undefined && toDate(value) > since;
 }
 
 function normalizeRole(value: unknown): OpenCodeChunk["role"] {
