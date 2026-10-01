@@ -96,8 +96,9 @@ npm packages named in `opencode.json` — but does not implement the Agent
 Plugins standard the package above is built against, so `setup` is the only
 route there.
 
-Either route registers the same MCP server (`npx -y xtctx`) and the same
-handoff skill.
+Either route registers the same MCP server and the same handoff skill. The
+plugin runs `npx -y xtctx`; `setup` writes `npx -y xtctx@<version>`, pinned
+to the xtctx that ran it, and re-running setup is what moves the pin.
 
 One thing to know about the plugin specifically: it is installed from this
 repository, so its skill text comes from `main`, while the server it launches
@@ -150,7 +151,8 @@ npx -y xtctx export
 npx -y xtctx disconnect antigravity
 ```
 
-`xtctx setup` writes project-level MCP config with `npx -y xtctx`, installs
+`xtctx setup` writes project-level MCP config with `npx -y xtctx@<version>`
+(the version that ran setup; `xtctx status` shows it on its `Pinned` line), installs
 real hooks where a tool supports them, and writes managed instruction blocks
 that point agents to the MCP retrieval tools. It also syncs selected project
 skills from `.xtctx/skills` into verified native or adapter surfaces for
@@ -244,7 +246,7 @@ Generated MCP clients should use:
   "mcpServers": {
     "xtctx": {
       "command": "npx",
-      "args": ["-y", "xtctx"]
+      "args": ["-y", "xtctx@<version>"]
     }
   }
 }

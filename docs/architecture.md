@@ -41,7 +41,8 @@ that file).
 `xtctx setup` writes:
 
 - `.xtctx/config.yaml`
-- native MCP config using command `npx` and args `["-y", "xtctx"]`
+- native MCP config using command `npx` and args `["-y", "xtctx@<version>"]`,
+  pinned to the xtctx that ran setup
 - managed instruction blocks for supported tools
 - executable startup hooks only for tools that actually support them
 - `.xtctx/skills/<skill-id>/SKILL.md` canonical project skills

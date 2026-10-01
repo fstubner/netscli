@@ -16,6 +16,8 @@ leaves this heading in place and empties it when a version is cut.
 * **search:** a literal mode that answers without the index ([#343](https://github.com/fstubner/xtctx/issues/343))
 * **hook:** background scan on session start; take the transcript location from the tool instead of deriving it ([#322](https://github.com/fstubner/xtctx/issues/322), [#300](https://github.com/fstubner/xtctx/issues/300))
 * **mcp:** name an unconfigured project instead of answering with silence ([#315](https://github.com/fstubner/xtctx/issues/315))
+* **index:** `xtctx export` and `xtctx import`; migrate an older index in place and carry sessions forward from one set aside; `xtctx status` counts sessions that exist only in the index
+* **embeddings:** semantic search is an optional add-on, off until `xtctx embeddings enable` installs the local model; keyword-only is a working state that status reports
 
 ### Bug Fixes
 
@@ -33,6 +35,11 @@ leaves this heading in place and empties it when a version is cut.
 * **scrapers:** see a project opened through WSL ([#375](https://github.com/fstubner/xtctx/issues/375))
 * **security:** scrub every unfenced field and fail closed on an undecided resume ([#312](https://github.com/fstubner/xtctx/issues/312), [#314](https://github.com/fstubner/xtctx/issues/314))
 * **release:** publish as its own run so npm trusted publishing accepts it ([#390](https://github.com/fstubner/xtctx/issues/390))
+* **index:** one scanner per project across servers, a prune that never deletes rows its scan did not see, cursors refused when the index lost their rows, and rewritten or late-stamped history read again
+* **claude-code:** index tool results as tool output rather than the user, keep a one-line trace of each tool call, strip terminal colour codes, and correct already-indexed rows once on upgrade; session detail returns the end of a session first
+* **copilot:** replay chat journals as truncate-then-push, stamp each request with its own time and render response items by kind; file Copilot CLI subagent output as tool output; correct already-indexed rows once on upgrade
+* **cursor, opencode:** attribute Cursor conversations by composer headers, mark subagents, find the store on macOS and Linux, trace tool calls, and re-read an opencode session whenever it changes
+* **setup:** pin the hook and MCP configs to the version that ran setup, shrink the managed instruction block, and label session previews as untrusted transcript text
 
 ### Performance
 
