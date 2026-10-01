@@ -116,6 +116,7 @@ the counts fill in over the first few calls rather than all at once.
 ```bash
 npx -y xtctx setup
 npx -y xtctx status
+npx -y xtctx export
 npx -y xtctx disconnect antigravity
 ```
 
@@ -131,15 +132,17 @@ to also configure the global-only GitHub Copilot CLI surface.
 index, detected transcript stores, hook mode, managed-block drift, and stale
 generated references. It also reports selected skills, generated skill targets,
 target drift, and tools that do not have a verified skill surface.
-It reports the current local cache rather than forcing a transcript scan. If
+It reports the current local index rather than forcing a transcript scan. If
 the index is empty, ask a configured agent to call `xtctx_recent_sessions`.
+When the index holds sessions whose transcripts are gone, it says how many and
+points at `xtctx export`.
 
 `xtctx disconnect <tool>` stops xtctx from managing one tool for the project.
 It removes the xtctx MCP entry for that tool, removes managed instruction
 blocks where that tool owns them, removes supported startup hooks, and marks the
 tool disabled in `.xtctx/config.yaml`. It removes generated skill adapters for
 that tool. It does not delete transcript sources, canonical project skills, or
-the local SQLite cache. Use `xtctx disconnect --all` to remove xtctx from every
+the local SQLite index. Use `xtctx disconnect --all` to remove xtctx from every
 supported tool — that one also deletes `.xtctx/skills`, since with nothing left
 managing skills the synced source is xtctx's own scaffolding. A skill you
 wrote yourself and selected at setup is kept where you wrote it. Antigravity and Copilot CLI keep one MCP config for every
@@ -159,6 +162,20 @@ away from every other project on the machine, so it is an explicit step now.
 To remove xtctx from a machine entirely: `xtctx disconnect --all --global-mcp`
 in each project you set up, then delete each project's `.xtctx` directory,
 which holds the config and the indexed transcripts and is deliberately kept.
+Run `xtctx export` first if you want to keep the sessions whose transcripts
+are already gone: the index is their only copy.
+
+`xtctx export` writes this project's indexed sessions and messages to a JSON
+Lines file (`xtctx-export-<time>.jsonl` in the current directory, or
+`--out <file>`; `--out -` for stdout). It reads the index as it stands, never
+touches a transcript, and never overwrites an existing file. `xtctx import
+<file>` merges an export back into a project's index — after the index was
+deleted, on another machine, or into a project that has moved. Sessions keep
+their ids, so importing the same file twice, or into an index that already
+has some of its sessions, adds only what is missing. Retrieval windows are
+rebuilt on import and vectors re-embedded as usual; the file holds sessions
+and messages only. The export holds raw conversation text, so treat it like
+the index: keep it, and do not commit it.
 
 `xtctx scan` reads every enabled transcript store into the project's index and
 exits. The MCP server does the same thing on its own every time it starts, so
@@ -214,10 +231,13 @@ When invoked in a normal terminal, it shows the human CLI.
 
 The server scans transcript stores when it starts and on each call, updating
 `.xtctx/state/xtctx.db` as it goes. The source transcripts remain
-authoritative while they exist, but the index is not disposable: it keeps
-sessions whose transcripts have since been deleted (Claude Code deletes them
-after 30 days by default), so for those it is the only copy. Keep it, and do
-not commit it: it holds raw conversation text.
+authoritative while they exist, and for those sessions the index is derived
+data. It is also the only copy of sessions whose transcripts have since been
+deleted (Claude Code deletes them after 30 days by default), so deleting it
+loses those. xtctx never deletes it: an upgrade migrates it in place, and a
+corrupt one is moved aside, rebuilt, and has those sessions copied back in.
+Keep it, back it up with `xtctx export`, and do not commit it: it holds raw
+conversation text.
 
 With the plugin installed, a project that has also run `setup` reaches the
 same server under two names in Claude Code (`xtctx` from `.mcp.json` and
@@ -289,7 +309,7 @@ Skill sync uses real target surfaces only:
 
 - `.xtctx/config.yaml`: project xtctx configuration
 - `.xtctx/skills/<skill-id>/SKILL.md`: canonical local project skills
-- `.xtctx/state/xtctx.db`: local handoff cache, never commit
+- `.xtctx/state/xtctx.db`: local handoff index, the only copy of sessions whose transcripts are gone; back up with `xtctx export`, never commit
 - `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.cursor/rules/xtctx.mdc`, `.github/copilot-instructions.md`: managed handoff instructions where applicable
 
 Content outside `<!-- xtctx:begin -->` / `<!-- xtctx:end -->` fences is

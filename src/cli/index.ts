@@ -34,8 +34,8 @@ export async function main(argv = process.argv): Promise<void> {
       // accumulates those.
       //
       // So give the clean close a moment, then leave. Nothing is lost by not
-      // waiting: the index is derived data, every chunk is committed as it is
-      // written, and an unfinished scan simply resumes on the next run.
+      // waiting: every chunk is committed as it is written, and an
+      // unfinished scan simply resumes on the next run.
       const graceMs = 2_000;
       const timer = setTimeout(() => {
         if (exit) process.exit(0);
@@ -57,10 +57,9 @@ export async function main(argv = process.argv): Promise<void> {
     // server otherwise sat there for 84 seconds while a scan finished. An MCP
     // host that spawns a server per session accumulates those.
     //
-    // Nothing is lost by leaving before a scan finishes: the index is derived
-    // data, every chunk is committed as it is written, and a scraper's cursor
-    // only advances once its loop completes, so interrupted work is re-read
-    // rather than skipped.
+    // Nothing is lost by leaving before a scan finishes: every chunk is
+    // committed as it is written, and a scraper's cursor only advances once
+    // its loop completes, so interrupted work is re-read rather than skipped.
     //
     // A tool call still in flight when stdin closes may go unanswered — the
     // grace window above is enough for ordinary calls, not for one waiting on
