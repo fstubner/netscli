@@ -1,8 +1,14 @@
 import type { Env, AuthUser } from "./types.js";
-import { getTokenVersion } from "./db.js";
+import { SCOPE_ACCOUNT_DELETE, SCOPE_READ, SCOPE_SYNC_WRITE } from "./types.js";
+import { getAccountState } from "./db.js";
 
-/** Tokens last a month. Revocation (below) is what ends one sooner. */
-export const TOKEN_TTL_SECONDS = 60 * 60 * 24 * 30;
+/** A CLI login lasts a month. Revocation (below) is what ends one sooner. */
+export const CLI_TOKEN_TTL_SECONDS = 60 * 60 * 24 * 30;
+/** A read-only token for pasting into an MCP client config. */
+export const READ_TOKEN_TTL_SECONDS = 60 * 60 * 24 * 90;
+
+/** What `xtctx login` gets: everything the CLI does. */
+export const CLI_SCOPES = [SCOPE_READ, SCOPE_SYNC_WRITE, SCOPE_ACCOUNT_DELETE];
 
 const encoder = new TextEncoder();
 
@@ -23,13 +29,27 @@ function hmacKey(secret: string, usage: "sign" | "verify"): Promise<CryptoKey> {
   return crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, [usage]);
 }
 
+/** The canonical MCP resource: what OAuth tokens and pasted tokens are bound to. */
+export function mcpResource(env: Env): string {
+  return `${publicOrigin(env)}/mcp`;
+}
+
+/** The audience of tokens accepted by `/api/*`; only the CLI's own tokens carry it. */
+export function apiAudience(env: Env): string {
+  return `${publicOrigin(env)}/api`;
+}
+
+export function publicOrigin(env: Env): string {
+  return new URL(env.PUBLIC_URL).origin;
+}
+
 /**
  * Mint an HMAC-SHA256 JWT using standard Web Crypto API.
  */
 export async function createJwt(
   payload: Record<string, unknown>,
   secret: string,
-  ttlSeconds = TOKEN_TTL_SECONDS,
+  ttlSeconds = CLI_TOKEN_TTL_SECONDS,
 ): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   const header = toBase64Url(encoder.encode(JSON.stringify({ alg: "HS256", typ: "JWT" })));
@@ -38,13 +58,40 @@ export async function createJwt(
   return `${header}.${body}.${toBase64Url(new Uint8Array(signature))}`;
 }
 
-interface VerifiedToken extends AuthUser {
-  tokenVersion: number;
+/** Mint a token for the CLI or for pasting, bound to this deployment's audiences. */
+export async function mintToken(
+  env: Env,
+  claims: { userId: string; username: string; deviceId?: string; epoch: number; scopes: string[] },
+  ttlSeconds: number,
+): Promise<string> {
+  const audiences = [mcpResource(env)];
+  if (claims.scopes.includes(SCOPE_SYNC_WRITE) || claims.scopes.includes(SCOPE_ACCOUNT_DELETE)) {
+    audiences.push(apiAudience(env));
+  }
+  return createJwt(
+    {
+      iss: publicOrigin(env),
+      aud: audiences,
+      sub: claims.userId,
+      username: claims.username,
+      device_id: claims.deviceId,
+      ver: claims.epoch,
+      scope: claims.scopes.join(" "),
+    },
+    env.JWT_SECRET!,
+    ttlSeconds,
+  );
+}
+
+export interface VerifiedToken extends AuthUser {
+  epoch: number;
+  scopes: string[];
+  audiences: string[];
 }
 
 /**
  * Check a token's signature and expiry. Says nothing about revocation; that
- * needs the database, see `authenticateRequest`.
+ * needs the database, see `authenticateToken`.
  */
 export async function verifyJwt(token: string, secret: string): Promise<VerifiedToken | null> {
   try {
@@ -64,52 +111,104 @@ export async function verifyJwt(token: string, secret: string): Promise<Verified
 
     const payload = JSON.parse(new TextDecoder().decode(fromBase64Url(body)));
     if (typeof payload.sub !== "string" || typeof payload.exp !== "number") return null;
-    if (payload.exp < Math.floor(Date.now() / 1000)) return null;
+    if (payload.exp <= Math.floor(Date.now() / 1000)) return null;
+    // Tokens from before scopes existed carry neither of these and are
+    // refused: their holders sign in again.
+    if (typeof payload.scope !== "string" || !Array.isArray(payload.aud)) return null;
+    if (typeof payload.ver !== "number") return null;
 
     return {
       userId: payload.sub,
       username: String(payload.username ?? ""),
-      deviceId: payload.device_id,
-      tokenVersion: Number(payload.ver ?? -1),
+      deviceId: typeof payload.device_id === "string" ? payload.device_id : undefined,
+      epoch: payload.ver,
+      scopes: payload.scope.split(" ").filter(Boolean),
+      audiences: payload.aud.filter((a: unknown): a is string => typeof a === "string"),
     };
   } catch {
     return null;
   }
 }
 
-/**
- * Authenticate from the Authorization header, and only from there: a token in
- * the URL ends up in access logs and browser history.
- *
- * A valid signature is not enough. The user must still exist and the token's
- * version must match the user's current one, which is how logout and
- * delete-my-data take effect on a token that has not expired. Fails closed
- * when no secret is configured; the caller reports that as a server fault
- * before getting here.
- */
-export async function authenticateRequest(request: Request, env: Env): Promise<AuthUser | null> {
-  if (!env.JWT_SECRET) return null;
+/** The GitHub ids allowed to sign in. Empty means nobody. */
+export function allowedGithubIds(env: Env): Set<string> {
+  return new Set(
+    (env.ALLOWED_GITHUB_IDS ?? "")
+      .split(",")
+      .map((id) => id.trim())
+      .filter((id) => /^\d+$/.test(id)),
+  );
+}
 
-  const header = request.headers.get("Authorization");
-  if (!header?.startsWith("Bearer ")) return null;
-
-  const verified = await verifyJwt(header.slice(7).trim(), env.JWT_SECRET);
-  if (!verified) return null;
-
-  const current = await getTokenVersion(env, verified.userId);
-  if (current === null || current !== verified.tokenVersion) return null;
-
-  return { userId: verified.userId, username: verified.username, deviceId: verified.deviceId };
+export function isAllowedUser(env: Env, userId: string): boolean {
+  const match = /^github:(\d+)$/.exec(userId);
+  return match !== null && allowedGithubIds(env).has(match[1]);
 }
 
 /**
- * Return RFC 9728 OAuth Protected Resource Metadata for native MCP clients.
+ * Whether an account may still use a token minted at `epoch`: the account
+ * exists, the epoch has not moved since (logout and delete-my-data move it),
+ * and, unless `ignoreAllowlist`, its GitHub id is still on the allowlist.
+ * Removing someone from ALLOWED_GITHUB_IDS ends their access at once; they
+ * keep the ability to sign out and delete their data.
  */
-export function getProtectedResourceMetadata(baseUrl: string) {
-  return {
-    resource: baseUrl,
-    authorization_servers: ["https://github.com/login/oauth"],
-    bearer_methods_supported: ["header"],
-    scopes_supported: ["read:user", "user:email"],
-  };
+export async function isAccountCurrent(
+  env: Env,
+  userId: string,
+  epoch: number,
+  options: { ignoreAllowlist?: boolean } = {},
+): Promise<boolean> {
+  if (!options.ignoreAllowlist && !isAllowedUser(env, userId)) return false;
+  const state = await getAccountState(env, userId);
+  return state.exists && state.epoch === epoch;
+}
+
+/**
+ * Authenticate one of this server's own JWTs (the CLI's, or a pasted read
+ * token) from the Authorization header, and only from there: a token in the
+ * URL ends up in access logs and browser history.
+ *
+ * The token must name `audience`, and its account must be current; see
+ * `isAccountCurrent`. Scope checks are the caller's.
+ */
+export async function authenticateToken(
+  request: Request,
+  env: Env,
+  audience: string,
+  options: { ignoreAllowlist?: boolean } = {},
+): Promise<VerifiedToken | null> {
+  if (!env.JWT_SECRET) return null;
+  const header = request.headers.get("Authorization");
+  const match = header ? /^Bearer[\t ]+(\S+)$/i.exec(header) : null;
+  if (!match) return null;
+  return verifyBearer(match[1], env, audience, options);
+}
+
+export async function verifyBearer(
+  token: string,
+  env: Env,
+  audience: string,
+  options: { ignoreAllowlist?: boolean } = {},
+): Promise<VerifiedToken | null> {
+  if (!env.JWT_SECRET) return null;
+  const verified = await verifyJwt(token, env.JWT_SECRET);
+  if (!verified || !verified.audiences.includes(audience)) return null;
+  if (!(await isAccountCurrent(env, verified.userId, verified.epoch, options))) return null;
+  return verified;
+}
+
+/**
+ * RFC 6750 challenge for the routes this file guards. The MCP ones (`/sse`,
+ * `/message`) point at the protected-resource metadata so a client can find
+ * the authorization server; `/api/*` has no OAuth resource of its own.
+ */
+export function bearerChallenge(
+  env: Env,
+  options: { mcp?: boolean; error?: "invalid_token" | "insufficient_scope"; scope?: string[] } = {},
+): string {
+  const parts = [`Bearer realm="xtctx-cloud"`];
+  if (options.mcp) parts.push(`resource_metadata="${publicOrigin(env)}/.well-known/oauth-protected-resource/mcp"`);
+  if (options.error) parts.push(`error="${options.error}"`);
+  if (options.scope?.length) parts.push(`scope="${options.scope.join(" ")}"`);
+  return parts.join(", ");
 }

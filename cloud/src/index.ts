@@ -1,190 +1,190 @@
-import type { Env } from "./types.js";
-import { authenticateRequest, getProtectedResourceMetadata, createJwt } from "./auth.js";
-import {
-  bumpTokenVersion,
-  deleteUserData,
-  getTokenVersion,
-  ingestTurnDelta,
-  parseTurnDeltas,
-  upsertUser,
-} from "./db.js";
-import { processJsonRpc } from "./mcp.js";
+import { OAuthError, OAuthProvider, insufficientScope } from "@cloudflare/workers-oauth-provider";
+import type { Env, AuthUser } from "./types.js";
+import { SCOPE_READ } from "./types.js";
+import { isAccountCurrent, mcpResource, publicOrigin, verifyBearer } from "./auth.js";
+import { MAX_MCP_BODY_BYTES, allowedOrigins, handleApp, readBodyCapped } from "./app.js";
+import { handleMcpPost, LEGACY_VERSIONS, MODERN_VERSIONS } from "./mcp.js";
+import type { OAuthGrantProps } from "./oauth.js";
+import { SERVER_NAME, SERVER_VERSION } from "./version.js";
 
 export { SseSession } from "./sse-session.js";
 
-const SESSION_ID = /^[0-9a-f-]{36}$/;
+/** OAuth access tokens are short-lived; the refresh token carries the grant. */
+const ACCESS_TOKEN_TTL_SECONDS = 60 * 60;
+const REFRESH_TOKEN_TTL_SECONDS = 60 * 60 * 24 * 30;
 
-/**
- * CORS is for browsers, and nothing here is called from one: the CLI and MCP
- * clients are not subject to it. So the default is no CORS headers at all,
- * and an origin gets them only by being listed in ALLOWED_ORIGINS.
- */
-function corsHeaders(request: Request, env: Env): Record<string, string> {
-  const origin = request.headers.get("Origin");
-  const allowed = (env.ALLOWED_ORIGINS ?? "").split(",").map((o) => o.trim()).filter(Boolean);
-  const headers: Record<string, string> = { Vary: "Origin" };
-  if (origin && allowed.includes(origin)) {
-    headers["Access-Control-Allow-Origin"] = origin;
-    headers["Access-Control-Allow-Methods"] = "GET, POST, DELETE, OPTIONS";
-    headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Mcp-Session-Id";
-  }
-  return headers;
+interface CliTokenProps {
+  kind: "cli";
+  userId: string;
+  username: string;
+  deviceId?: string;
+  epoch: number;
+  scopes: string[];
 }
 
-export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    const cors = corsHeaders(request, env);
-    const json = (body: unknown, status = 200, extra: Record<string, string> = {}) =>
-      new Response(JSON.stringify(body), {
-        status,
-        headers: { ...cors, "Content-Type": "application/json", ...extra },
+type McpProps = OAuthGrantProps | CliTokenProps;
+
+/**
+ * `POST /mcp`, reached only with a token the provider accepted for the MCP
+ * resource: one it issued through `/authorize`, or one of this server's own
+ * (see `resolveExternalToken`).
+ */
+const mcpApiHandler = {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const { props, auth } = ctx as unknown as {
+      props: McpProps;
+      auth: { scope: string[]; audience: string; token: string };
+    };
+    const scopes = props.kind === "oauth" ? auth.scope : props.scopes;
+    // The provider checked the token; whether the account behind it still may
+    // read is ours: logout and delete-my-data move the epoch, and the
+    // allowlist can drop someone.
+    if (props.kind === "oauth" && !(await isAccountCurrent(env, props.userId, props.epoch))) {
+      return new Response(JSON.stringify({ error: "invalid_token" }), {
+        status: 401,
+        headers: {
+          "Content-Type": "application/json",
+          "WWW-Authenticate": `Bearer realm="OAuth", resource_metadata="${publicOrigin(env)}/.well-known/oauth-protected-resource/mcp", error="invalid_token"`,
+        },
       });
+    }
+    if (!scopes.includes(SCOPE_READ)) return insufficientScope(auth as never, [SCOPE_READ]);
+
+    const text = await readBodyCapped(request, MAX_MCP_BODY_BYTES);
+    if (text === null) {
+      return Response.json({ jsonrpc: "2.0", id: null, error: { code: -32600, message: "Request too large" } }, { status: 413 });
+    }
+    const user: AuthUser = { userId: props.userId, username: props.username };
+    return handleMcpPost(env, user, request, text);
+  },
+};
+
+const providers = new Map<string, OAuthProvider<Env>>();
+
+/** One provider per public origin: its endpoints and resource are absolute URLs. */
+function providerFor(env: Env): OAuthProvider<Env> {
+  const origin = publicOrigin(env);
+  let provider = providers.get(origin);
+  if (provider) return provider;
+
+  provider = new OAuthProvider<Env>({
+    apiRoute: "/mcp",
+    apiHandler: mcpApiHandler as never,
+    defaultHandler: { fetch: (request: Request, env: Env) => handleApp(request, env) } as never,
+    authorizeEndpoint: `${origin}/authorize`,
+    tokenEndpoint: `${origin}/oauth/token`,
+    // Deprecated by MCP 2026-07-28 in favour of Client ID Metadata Documents
+    // (enabled below), and kept because clients in use today still register
+    // this way.
+    clientRegistrationEndpoint: `${origin}/oauth/register`,
+    clientIdMetadataDocumentEnabled: true,
+    scopesSupported: [SCOPE_READ],
+    requiredScopes: [SCOPE_READ],
+    accessTokenTTL: ACCESS_TOKEN_TTL_SECONDS,
+    refreshTokenTTL: REFRESH_TOKEN_TTL_SECONDS,
+    resourceMetadata: {
+      resource: mcpResource(env),
+      authorization_servers: [origin],
+      bearer_methods_supported: ["header"],
+      resource_name: "xtctx cloud",
+    },
+    // This server's own JWTs at /mcp: the CLI's login, or a pasted read
+    // token. Both name the MCP resource in `aud`, so this is the same
+    // audience check the provider applies to its own tokens.
+    resolveExternalToken: async ({ token, env }) => {
+      const verified = await verifyBearer(token, env, mcpResource(env));
+      if (!verified) return null;
+      const props: CliTokenProps = {
+        kind: "cli",
+        userId: verified.userId,
+        username: verified.username,
+        deviceId: verified.deviceId,
+        epoch: verified.epoch,
+        scopes: verified.scopes,
+      };
+      return { props, audience: mcpResource(env) };
+    },
+    // A refresh after logout or delete-my-data, or after the account left the
+    // allowlist, ends the grant instead of minting a token that /mcp refuses.
+    tokenExchangeCallback: async ({ grantType, props, env }) => {
+      if (grantType !== "refresh_token") return;
+      const p = props as OAuthGrantProps;
+      if (!(await isAccountCurrent(env, p.userId, p.epoch))) {
+        throw new OAuthError("invalid_grant", { description: "This sign-in has been revoked" });
+      }
+    },
+    onError: ({ code, status, internal }) => {
+      if (status >= 500) console.error(JSON.stringify({ event: "oauth_error", code, status, internal }));
+    },
+  });
+  providers.set(origin, provider);
+  return provider;
+}
+
+function withServerHeaders(response: Response): Response {
+  const headers = new Headers(response.headers);
+  headers.set("X-Xtctx-Server-Version", SERVER_VERSION);
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
+
+const PROTECTED_RESOURCE_ROOT = "/.well-known/oauth-protected-resource";
+
+export default {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const json = (body: unknown, status = 200, extra: Record<string, string> = {}) =>
+      new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", ...extra } });
 
     try {
       const url = new URL(request.url);
 
-      if (request.method === "OPTIONS") {
-        return new Response(null, { status: 204, headers: cors });
-      }
-
       if (url.pathname === "/" || url.pathname === "/health") {
-        return json({
-          status: "ok",
-          service: "xtctx-cloud",
-          mcp: {
-            supportedVersions: ["2026-07-28", "2024-11-05"],
-            endpoints: { stateless: "/mcp", sse: "/sse" },
-          },
-        });
+        return withServerHeaders(
+          json({
+            status: "ok",
+            service: SERVER_NAME,
+            version: SERVER_VERSION,
+            mcp: {
+              supportedVersions: [...MODERN_VERSIONS, ...LEGACY_VERSIONS],
+              endpoints: { streamableHttp: "/mcp", sse: "/sse" },
+            },
+          }),
+        );
       }
 
       // Without a signing secret nothing below can be trusted, so none of it
       // runs. There used to be a built-in default, which made every token
       // forgeable on a deployment that forgot to set one.
-      if (!env.JWT_SECRET) {
-        console.error("JWT_SECRET is not set; refusing to serve");
-        return json({ error: "server_misconfigured" }, 500);
+      if (!env.JWT_SECRET || !env.PUBLIC_URL) {
+        console.error(JSON.stringify({ event: "misconfigured", jwtSecret: !!env.JWT_SECRET, publicUrl: !!env.PUBLIC_URL }));
+        return withServerHeaders(json({ error: "server_misconfigured" }, 500));
       }
 
-      if (url.pathname === "/.well-known/oauth-protected-resource") {
-        return json(getProtectedResourceMetadata(url.origin));
-      }
-
-      if (url.pathname === "/auth/device/code" && request.method === "POST") {
-        const ghRes = await fetch("https://github.com/login/device/code", {
-          method: "POST",
-          headers: { Accept: "application/json", "Content-Type": "application/json" },
-          body: JSON.stringify({ client_id: env.GITHUB_CLIENT_ID, scope: "read:user user:email" }),
-        });
-        return json(await ghRes.json());
-      }
-
-      if (url.pathname === "/auth/device/poll" && request.method === "POST") {
-        const body = (await request.json()) as { device_code?: string; device_name?: string };
-        if (typeof body.device_code !== "string") return json({ error: "invalid_request" }, 400);
-
-        const ghRes = await fetch("https://github.com/login/oauth/access_token", {
-          method: "POST",
-          headers: { Accept: "application/json", "Content-Type": "application/json" },
-          body: JSON.stringify({
-            client_id: env.GITHUB_CLIENT_ID,
-            device_code: body.device_code,
-            grant_type: "urn:ietf:params:oauth:grant-type:device_code",
-          }),
-        });
-        const data = (await ghRes.json()) as { access_token?: string; error?: string };
-        if (!data.access_token) return json(data, 400);
-
-        const userRes = await fetch("https://api.github.com/user", {
-          headers: { Authorization: `Bearer ${data.access_token}`, "User-Agent": "xtctx-cloud" },
-        });
-        const ghUser = (await userRes.json()) as { id?: number; login?: string; name?: string };
-        if (!userRes.ok || typeof ghUser.id !== "number" || !ghUser.login) {
-          return json({ error: "github_user_unavailable" }, 502);
+      if (url.pathname === "/mcp" || url.pathname.startsWith("/mcp/")) {
+        // Streamable HTTP: a present Origin that is not ours is refused
+        // (DNS rebinding). CLI and agent clients send none.
+        const origin = request.headers.get("Origin");
+        if (origin && origin !== publicOrigin(env) && !allowedOrigins(env).includes(origin)) {
+          return withServerHeaders(json({ jsonrpc: "2.0", error: { code: -32600, message: "Origin not allowed" } }, 403));
         }
-
-        const userId = `github:${ghUser.id}`;
-        await upsertUser(env, userId, ghUser.login);
-        const token = await createJwt(
-          {
-            sub: userId,
-            username: ghUser.login,
-            device_id: body.device_name || "default",
-            ver: await getTokenVersion(env, userId),
-          },
-          env.JWT_SECRET,
-        );
-        return json({ token, user: { id: userId, username: ghUser.login, name: ghUser.name } });
-      }
-
-      const user = await authenticateRequest(request, env);
-      if (!user) {
-        return json({ error: "unauthorized" }, 401, {
-          "WWW-Authenticate": 'Bearer realm="xtctx-cloud", error="invalid_token"',
-        });
-      }
-
-      // Sign out everywhere: tokens carry the user's version, and this moves it.
-      if (url.pathname === "/auth/logout" && request.method === "POST") {
-        await bumpTokenVersion(env, user.userId);
-        return json({ success: true });
-      }
-
-      // Delete everything held for this user, then their account row, which
-      // also ends every token they hold.
-      if (url.pathname === "/api/me" && request.method === "DELETE") {
-        await deleteUserData(env, user.userId);
-        return json({ success: true });
-      }
-
-      if (url.pathname === "/api/stream" && request.method === "POST") {
-        const deltas = parseTurnDeltas(await request.json());
-        if (!deltas) return json({ error: "invalid_request" }, 400);
-        return json(await ingestTurnDelta(env, user, deltas));
-      }
-
-      // Modern MCP endpoint (stateless, 2026-07-28 spec)
-      if (url.pathname === "/mcp" && request.method === "POST") {
-        const payload = await processJsonRpc(env, user, (await request.json()) as Record<string, unknown>);
-        if (!payload) return new Response(null, { status: 204, headers: cors });
-        return json(payload);
-      }
-
-      // Baseline MCP endpoint (SSE stream, 2024-11-05 spec). The stream is held
-      // in a Durable Object so /message reaches it from any isolate.
-      if (url.pathname === "/sse" && request.method === "GET") {
-        const sessionId = crypto.randomUUID();
-        const stub = env.SSE.get(env.SSE.idFromName(sessionId));
-        const stream = await stub.fetch("https://sse/connect", {
-          method: "POST",
-          body: JSON.stringify({ userId: user.userId, endpoint: `${url.origin}/message?sessionId=${sessionId}` }),
-        });
-        return new Response(stream.body, {
-          headers: { ...cors, "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
-        });
-      }
-
-      if (url.pathname === "/message" && request.method === "POST") {
-        const sessionId = url.searchParams.get("sessionId") ?? "";
-        if (!SESSION_ID.test(sessionId)) return json({ error: "session_not_found" }, 404);
-
-        const payload = await processJsonRpc(env, user, (await request.json()) as Record<string, unknown>);
-        if (payload) {
-          const stub = env.SSE.get(env.SSE.idFromName(sessionId));
-          const sent = await stub.fetch("https://sse/send", {
-            method: "POST",
-            body: JSON.stringify({ userId: user.userId, payload }),
-          });
-          if (!sent.ok) return json({ error: "session_not_found" }, 404);
+        // No GET stream and no sessions to DELETE: both eras get 405.
+        if (request.method !== "POST" && request.method !== "OPTIONS") {
+          return withServerHeaders(new Response(null, { status: 405, headers: { Allow: "POST" } }));
         }
-        return json({ status: "accepted" }, 202);
       }
 
-      return json({ error: "not_found" }, 404);
+      // RFC 9728 puts this resource's metadata at the /mcp form; some clients
+      // (Claude Code among them) also try the root form, so it answers too,
+      // with the same document.
+      if (url.pathname === PROTECTED_RESOURCE_ROOT && (request.method === "GET" || request.method === "HEAD")) {
+        const aliased = new Request(`${publicOrigin(env)}${PROTECTED_RESOURCE_ROOT}/mcp`, { method: request.method });
+        return withServerHeaders(await providerFor(env).fetch(aliased, env, ctx));
+      }
+
+      return withServerHeaders(await providerFor(env).fetch(request, env, ctx));
     } catch (err: unknown) {
       // The detail is for whoever reads the Worker's logs, not for the caller.
-      console.error("unhandled error", err);
-      return json({ error: "internal_error" }, 500);
+      console.error(JSON.stringify({ event: "unhandled_error", error: err instanceof Error ? err.stack ?? err.message : String(err) }));
+      return withServerHeaders(json({ error: "internal_error" }, 500));
     }
   },
 };

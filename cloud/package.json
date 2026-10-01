@@ -1,15 +1,15 @@
 {
   "name": "xtctx-cloud",
-  "version": "0.1.0",
-  "description": "Cloudflare Edge MCP server and real-time continuous memory store for xtctx",
+  "version": "0.2.0",
+  "description": "Optional xtctx cloud: an MCP server over transcripts uploaded from opted-in projects",
   "type": "module",
   "private": true,
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "d1:create": "wrangler d1 create xtctx-db",
-    "d1:migrate:local": "wrangler d1 execute xtctx-db --local --file=./schema.sql",
-    "d1:migrate:remote": "wrangler d1 execute xtctx-db --remote --file=./schema.sql",
+    "d1:migrate:local": "wrangler d1 migrations apply xtctx-db --local",
+    "d1:migrate:remote": "wrangler d1 migrations apply xtctx-db --remote",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
@@ -21,6 +21,6 @@
     "wrangler": "^4.145.0"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.6.0"
+    "@cloudflare/workers-oauth-provider": "1.2.1"
   }
 }

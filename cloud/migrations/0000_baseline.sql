@@ -1,4 +1,9 @@
--- xtctx Cloudflare D1 Multi-Tenant Memory Schema
+-- Baseline: the schema as it stood when migrations started being tracked by
+-- `wrangler d1 migrations apply` (schema.sql plus the old 0001_token_version).
+--
+-- Every statement is IF NOT EXISTS, so applying this to a database created
+-- before then changes nothing; see cloud/README.md ("A database created
+-- before tracked migrations") for the one check to make first.
 
 CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,               -- e.g. "github:123456"
@@ -7,7 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
     email TEXT,
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL,
-    token_version INTEGER NOT NULL DEFAULT 0 -- bumped on logout; see migrations/0001
+    token_version INTEGER NOT NULL DEFAULT 0 -- superseded by token_epochs in 0001
 );
 
 CREATE TABLE IF NOT EXISTS devices (
