@@ -93,7 +93,7 @@ describe("status and sessions only the index holds", () => {
     await rm(join(storeDir(), "session-aged.jsonl"));
 
     expect(await report()).toContain(
-      "Backup   1 session exists only in this index; back them up with `xtctx export`",
+      "Backup   1 session exists only in this index; back it up with `xtctx export`",
     );
   });
 

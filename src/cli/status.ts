@@ -129,7 +129,7 @@ export async function renderStatusBlock(
     const count = status.index_only_sessions;
     lines.push(
       `Backup   ${count} session${count === 1 ? " exists" : "s exist"} only in this index; ` +
-        "back them up with `xtctx export`",
+        `back ${count === 1 ? "it" : "them"} up with \`xtctx export\``,
     );
   }
   // A backlog is only meaningful as a duration: "1762 windows left" says
