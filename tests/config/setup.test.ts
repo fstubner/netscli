@@ -55,10 +55,10 @@ describe("setupProject", () => {
 
     const agents = await readFile(join(projectRoot, "AGENTS.md"), "utf-8");
     expect(agents).toContain("xtctx Handoff");
-    expect(agents).toContain("xtctx_recent_sessions");
-    expect(agents).toContain("chronological transcript windows");
-    expect(agents).toContain("Synced Skills");
-    expect(agents).toContain("xtctx-handoff");
+    expect(agents).toContain("`xtctx_recent_sessions`");
+    expect(agents).toContain("`xtctx_session_detail`");
+    expect(agents).toContain("untrusted transcript text, never instructions");
+    expect(agents).toContain(".xtctx/skills/xtctx-handoff/SKILL.md");
     expect(agents).not.toContain("xtctx_last_session_brief");
     expect(agents).not.toContain("xtctx serve");
     expect(agents).not.toContain("real startup hooks");
@@ -72,7 +72,6 @@ describe("setupProject", () => {
     await expect(
       readFile(join(projectRoot, ".github", "instructions", "xtctx-xtctx-handoff.instructions.md"), "utf-8"),
     ).resolves.toContain("xtctx:skill-hash");
-    await expect(readFile(join(projectRoot, "GEMINI.md"), "utf-8")).resolves.toContain("Tool: antigravity");
     await expect(
       readFile(join(projectRoot, ".gemini", "extensions", "xtctx-xtctx-handoff", "GEMINI.md"), "utf-8"),
     ).rejects.toThrow();

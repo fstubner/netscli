@@ -192,13 +192,7 @@ export async function setupProject(options: SetupOptions = {}): Promise<SetupRes
     if (isOff(target.tool)) {
       continue;
     }
-    const block = renderManagedBlock({
-      projectRoot,
-      tool: target.tool,
-      hookMode: target.hookMode,
-      serverDefinition,
-      skills: skillSync.selected,
-    });
+    const block = renderManagedBlock({ skills: skillSync.selected });
     writes.push({
       path: target.path,
       kind: `memory:${target.tool}`,

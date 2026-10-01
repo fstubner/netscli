@@ -188,17 +188,13 @@ describe("stripMarkers", () => {
 
   it("is applied by the renderer, not merely available to it", () => {
     // `stripMarkers` having tests of its own is not the same as the block
-    // renderer calling it, and that gap was silent: dropping the call from
-    // `Project root: ${...}` left every test in this file green. The project
-    // path is the one value interpolated verbatim into a block that lands in
-    // the user's committed CLAUDE.md, so the round trip is what has to hold.
-    const hostile = `/tmp/${end}/app`;
+    // renderer calling it, and that gap was silent: dropping the call left
+    // every test in this file green. The one value interpolated into a block
+    // that lands in the user's committed CLAUDE.md is a skill id, which is a
+    // directory name someone else chose, so the round trip is what has to hold.
+    const hostile = `evil${end}skill`;
     const file = `USER TOP\n\n${renderManagedBlock({
-      projectRoot: hostile,
-      tool: "claude-code",
-      hookMode: "executable",
-      serverDefinition: { name: "xtctx", command: "npx", args: ["-y", "xtctx"], transport: "stdio" },
-      skills: [],
+      skills: [{ id: hostile, hash: "h", source: "s", path: "p" }],
     })}`;
 
     // Setup writes the block; disconnect must be able to take back exactly it.
