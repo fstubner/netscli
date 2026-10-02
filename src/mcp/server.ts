@@ -210,11 +210,15 @@ export function createToolHandlers(
   const handlers = new Map<string, ToolHandler>();
 
   if (dependencies.unconfiguredProjectRoot) {
+    // `--yes` because the agent is who runs it, after the user agreed in the
+    // chat, and an agent's shell is not interactive: setup without it stops
+    // at "Refusing non-interactive setup without --yes", so the command this
+    // named failed on the first try every time.
     for (const name of TOOL_NAMES) {
       handlers.set(name, asRequestedFormat(name, notConfigured(dependencies.unconfiguredProjectRoot), {
         status: "not_configured",
         project_root: dependencies.unconfiguredProjectRoot,
-        setup_command: "npx -y xtctx setup",
+        setup_command: SETUP_COMMAND,
       }));
     }
     return handlers;
@@ -335,6 +339,9 @@ const TOOL_NAMES = [
  * an `isError` response is something an agent reports as broken rather than
  * acts on.
  */
+/** What the tools name in a project that is not set up; see createToolHandlers. */
+const SETUP_COMMAND = "npx -y xtctx setup --yes";
+
 function notConfigured(projectRoot: string): ToolHandler {
   return async () =>
     [
@@ -345,10 +352,12 @@ function notConfigured(projectRoot: string): ToolHandler {
       "",
       "To enable cross-tool handoff, run in the project root:",
       "",
-      "    npx -y xtctx setup",
+      `    ${SETUP_COMMAND}`,
       "",
       "Offer that to the user rather than running it unprompted — setup writes",
       "configuration into the repository and into one machine-global file.",
+      "`--yes` is the user's agreement, given in the chat; setup needs it",
+      "because it will not prompt in a non-interactive shell.",
     ].join("\n");
 }
 
