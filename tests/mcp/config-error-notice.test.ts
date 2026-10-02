@@ -77,7 +77,9 @@ describe("an unreadable config over MCP", () => {
     const answer = (await handler({ format: "json" })) as Record<string, unknown>;
 
     expect(answer.status).toBe("not_configured");
-    expect(answer.setup_command).toBe("npx -y xtctx setup");
+    // With --yes: the agent runs it, in a shell setup will not prompt in, and
+    // without the flag setup refuses there.
+    expect(answer.setup_command).toBe("npx -y xtctx setup --yes");
     // And stays prose when not asked.
     expect(typeof (await handler({}))).toBe("string");
   });
@@ -88,5 +90,6 @@ describe("an unreadable config over MCP", () => {
     const [, handler] = [...handlers][0];
 
     expect(prose(await handler({}))).toContain("not configured for xtctx");
+    expect(prose(await handler({}))).toContain("npx -y xtctx setup --yes");
   });
 });
