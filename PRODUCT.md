@@ -17,10 +17,11 @@ them after 30 days by default). Deleting the index loses those, so xtctx
 never deletes it: schema upgrades migrate it in place, a corrupt one is set
 aside and its sessions carried into the rebuilt one, and `xtctx export` /
 `xtctx import` keep a copy elsewhere. It sends transcript content nowhere
-unless a project opts in to an external embedding endpoint, written into
-`.xtctx/config.yaml` by hand, trusted by the user in
-`XTCTX_TRUSTED_EMBEDDING_ENDPOINTS` (a repository cannot set that), and
-reported by `xtctx status`.
+unless the user opts a project in to one of two things, both off by default
+and both reported by `xtctx status`: cloud sync (`xtctx login` and then
+`xtctx sync enable` in that project), or an external embedding endpoint,
+written into `.xtctx/config.yaml` by hand and trusted by the user in
+`XTCTX_TRUSTED_EMBEDDING_ENDPOINTS` (a repository cannot set that).
 
 ## Users
 
@@ -30,7 +31,11 @@ reported by `xtctx status`.
   tools) that need stable session references and raw-detail pointers —
   served by `xtctx_handoff_manifest`.
 
-Single-user, single-machine. There is no team, sync, or server component.
+Single-user. Handoff itself is single-machine and needs no server. The one
+exception is optional cloud sync, opt-in per project: a logged-in user can
+upload an opted-in project's transcripts so agents on their other machines can
+read them over MCP ([docs/cloud-sync.md](docs/cloud-sync.md)). There is no
+team or shared component.
 
 ## Success
 
@@ -68,11 +73,15 @@ Single-user, single-machine. There is no team, sync, or server component.
   index now, `--embed` to finish vectorizing too), `embeddings enable|disable`
   (install or remove the optional local model; keyword search needs none of
   it), `calibrate` (time the embedding model on this machine's devices and use
-  the fastest), `disconnect`.
+  the fastest), `export` / `import` (keep a copy of the index's sessions
+  outside it), `disconnect`, and for the optional cloud sync `login`,
+  `logout` and `sync` (`sync enable` opts the current project in).
 
 Out of scope (deliberately, and documented everywhere the product speaks):
 no daemon, no API server, no dashboard, no generated summaries or briefs,
-no durable memory, no write-back tools, no cloud anything.
+no durable memory, no write-back tools, and nothing leaves the machine unless
+the user opts a project in to cloud sync, which is optional and off by
+default.
 
 ## Constraints
 
@@ -90,13 +99,17 @@ no durable memory, no write-back tools, no cloud anything.
   atomic, merge-preserving, and never clobber unparsable user content.
 - Transcript content handed to a model is untrusted data; the MCP layer
   fences it and never grows write capabilities.
-- Everything runs local by default. Three network dependencies exist. Two are
+- Everything runs local by default. Four network dependencies exist. Two are
   unavoidable and narrow: the one-time embedding-model download from Hugging
   Face (and the runtime from npm), made only when the user runs
   `xtctx embeddings enable`, and loopback-only HTTPS calls to Antigravity's local language server
   (127.0.0.1, exact-PID + CSRF matched; certificate verification is off
-  because the server is self-signed). The third is opt-in and is the only one
-  that carries transcript text: an OpenAI-compatible embedding endpoint named
-  in `.xtctx/config.yaml`. It is never inferred from the environment, the API
-  key is never stored in that file, and `xtctx status` prints the endpoint
-  whenever one is set.
+  because the server is self-signed). The other two are opt-in, and they are
+  the only ones that carry transcript text. One is an OpenAI-compatible
+  embedding endpoint named in `.xtctx/config.yaml`: it is never inferred from
+  the environment, the API key is never stored in that file, and `xtctx
+  status` prints the endpoint whenever one is set. The other is cloud sync,
+  which uploads an opted-in project's sessions to the xtctx cloud Worker
+  (`cloud/`) only while someone is logged in; the opt-in list lives in the
+  user's home directory, so a repository cannot opt itself in, and `xtctx
+  status` says whether it is on ([docs/cloud-sync.md](docs/cloud-sync.md)).

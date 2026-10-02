@@ -18,6 +18,8 @@ leaves this heading in place and empties it when a version is cut.
 * **mcp:** name an unconfigured project instead of answering with silence ([#315](https://github.com/fstubner/xtctx/issues/315))
 * **index:** `xtctx export` and `xtctx import`; migrate an older index in place and carry sessions forward from one set aside; `xtctx status` counts sessions that exist only in the index
 * **embeddings:** semantic search is an optional add-on, off until `xtctx embeddings enable` installs the local model; keyword-only is a working state that status reports
+* **cloud:** optional cloud sync, off by default and opt-in per project: `xtctx login` then `xtctx sync enable`, after which the MCP server uploads that project's sessions every 10 seconds and once on shutdown, and agents on your other machines read them from the cloud's MCP endpoint (OAuth sign-in for MCP clients, `xtctx sync token` for those without it). `xtctx status` and `xtctx sync status` say whether it is on and when it last uploaded or failed; `xtctx logout --delete-data` removes what was sent. What is and is not uploaded is listed in `docs/cloud-sync.md`
+* **cloud:** each session's cloud copy is kept equal to the index, including after a scraper upgrade re-reads sessions under new message ids; metadata is cut to an allowlist with absolute paths dropped
 
 ### Bug Fixes
 

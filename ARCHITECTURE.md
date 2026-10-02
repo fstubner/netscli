@@ -1,14 +1,18 @@
 # xtctx — Architecture
 
-One npm package, no services. Everything runs in the invoking process on the
-developer's machine. `docs/architecture.md` describes module internals; this
-document fixes the parts, how a handoff actually flows through them, the
-boundaries between them, and what each part is allowed to trust.
+One npm package, no services on the handoff path. Everything runs in the
+invoking process on the developer's machine. The one exception is optional and
+off by default: cloud sync, which uploads an opted-in project's sessions to a
+separate Worker (`cloud/`) so the same user's agents on other machines can read
+them. Handoff never depends on it. `docs/architecture.md` describes module
+internals; this document fixes the parts, how a handoff actually flows through
+them, the boundaries between them, and what each part is allowed to trust.
 
 ## Parts
 
 - **CLI** (`src/cli/`) — `setup`, `status`, `scan`, `export`, `import`,
-  `calibrate`, `disconnect`, and the internal `--hook session-start` entry point. Bare `xtctx` on a non-TTY stdio pair
+  `embeddings enable|disable`, `calibrate`, `disconnect`, the cloud-sync
+  commands `login`, `logout` and `sync`, and the internal `--hook session-start` entry point. Bare `xtctx` on a non-TTY stdio pair
   starts the MCP server.
 - **MCP server** (`src/mcp/`) — stdio JSON-RPC server exposing exactly five
   read-only tools. Spawned by coding agents via `npx -y xtctx`.
@@ -46,6 +50,17 @@ boundaries between them, and what each part is allowed to trust.
 - **Config writers** (`src/config/`) — setup/disconnect logic that edits
   other tools' config files (MCP config, managed instruction blocks,
   synced skills, the Claude Code hook in `.claude/settings.json`).
+- **Cloud sync client** (`src/sync/`) — optional. Uploads a project's
+  sessions from its index when, and only when, someone is logged in
+  (`~/.xtctx/credentials.json`) and the project is on the opt-in list
+  (`~/.xtctx/cloud-projects.json`). Runs inside the MCP server every 10
+  seconds and once on shutdown, or from `xtctx sync`; reads the index through
+  its own read-only connection; keeps its position per project and account in
+  `~/.xtctx/sync/`, never in the index. See `docs/cloud-sync.md`.
+- **Cloud Worker** (`cloud/`) — a separate Cloudflare Worker, not shipped in
+  the npm package. Stores uploads in D1 and serves them back over MCP to the
+  same account. Has its own tests (`npm run test:cloud`) and deploy steps
+  (`cloud/README.md`).
 - **Landing site** (`landing/`) — static Astro site on GitHub Pages;
   no runtime relationship to the package.
 
@@ -123,6 +138,17 @@ would otherwise never vectorize anything; `hybrid` deliberately answers from
 keyword while the model is still loading, so the first call after a cold start
 is fast rather than blocked.
 
+**Cloud sync, when a project opts in.** The MCP server starts an upload loop
+next to its scan. Each tick reads the sessions this project's index
+attributes to this project, sends what changed under the index's own message
+ids, and compares the server's per-session count with the local one; on a
+mismatch (a re-read replaced rows under new ids, or deleted some) it sends the
+session whole with every id it holds, and the server deletes the rest, so the
+cloud copy ends equal to the index. (A session with more ids than fit in one
+request is resent but not pruned.) On shutdown the final upload runs
+alongside the index close, inside the same bounded grace window, so it never
+holds up releasing the scan lease.
+
 **What comes back is raw.** Sessions, message text, and pointers — never a
 generated summary. A recap is the lossy artefact this exists to replace, and
 the transcripts remain authoritative.
@@ -148,6 +174,11 @@ the transcripts remain authoritative.
   Managed markdown blocks touch nothing outside their markers — including the
   tail of the file, which is why setup does not trim it and removal gives back
   exactly the separator it added.
+- **Index → cloud:** only with a login and a per-project opt-in, both in the
+  user's home directory. Metadata is cut to an allowlist with absolute paths
+  dropped, `source_pointer` is never sent, and environment credentials that
+  differ from the saved login refuse to upload unless explicitly allowed.
+  Message text goes as written.
 - **Process boundary:** the MCP server writes logs to stderr only — stdout
   is the JSON-RPC transport. The session-start hook fails open: it must
   never break a host agent's startup.
@@ -183,6 +214,11 @@ the transcripts remain authoritative.
   `xtctx import` checks the header and every line before writing it, binds
   every value as a SQL parameter, and its content reaches agents through the
   same fenced MCP output as any other transcript text.
+- **The opt-in is the user's, never the repository's.** Cloud sync reads its
+  login and opt-in list from the home directory, not `.xtctx/config.yaml`, so
+  a cloned repository cannot turn uploading on. The Worker treats every upload
+  as untrusted input: it validates the body, caps sizes, and scopes rows to
+  the authenticated account.
 - **The registry and npm supply chain** are trusted at install time; CI
   pins action SHAs and publishes via OIDC with provenance, no long-lived
   tokens.

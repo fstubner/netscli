@@ -8,8 +8,17 @@ detail on demand. xtctx does not run a background service, web UI,
 generated-summary pipeline, or durable memory writeback layer.
 
 The architecture is intentionally scoped to one local developer switching
-between coding tools. Shared team memory, cloud sync, telemetry, and hosted
-retrieval are outside the product surface.
+between coding tools. Shared team memory and telemetry are outside the product
+surface.
+
+Cloud sync is the one optional part that leaves the machine, and it is opt-in
+per project: only when the user has logged in (`xtctx login`) and opted the
+project in (`xtctx sync enable`) does the MCP server upload that project's
+index to the Worker in `cloud/`, every 10 seconds while it runs and once on
+shutdown. The Worker serves the uploads back over MCP to the same user's
+agents on other machines. It is not on the handoff path: everything above
+works with it off, which is the default. See
+[cloud-sync.md](cloud-sync.md) and [`cloud/README.md`](../cloud/README.md).
 
 ## Runtime Shape
 
@@ -19,6 +28,7 @@ tool transcript/artifact stores
         v
 scrapers -> .xtctx/state/xtctx.db -> MCP tools
                                    -> setup/status diagnostics
+                                   -> cloud upload (optional, opted-in projects only)
 ```
 
 `.xtctx/state/xtctx.db` is built from the transcripts, which remain
@@ -75,8 +85,10 @@ raw-detail pointers; it does not persist task state.
 Startup hooks are lightweight handoff openers. They do not update the local
 index unless a future hook explicitly calls a bounded scan path.
 
-Semantic search uses local embeddings over sliding windows of raw transcript
-turns. Each embedded window includes the session reference, message range, turn
+Semantic search is an optional add-on: until `xtctx embeddings enable`
+installs the local model (or a project names an external endpoint), every
+search is keyword-only, and status says so. Once on, it embeds sliding windows
+of raw transcript turns. Each embedded window includes the session reference, message range, turn
 order, message index, role, timestamp, and raw message content. Retrieval ranks
 semantic similarity together with keyword, recency, and continuity signals, then
 returns the matched message range so the agent can drill into the raw session.

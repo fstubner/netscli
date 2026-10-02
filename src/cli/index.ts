@@ -7,6 +7,9 @@ import { runHook } from "./hook.js";
 import { runScan } from "./scan.js";
 import { runSetup } from "./setup.js";
 import { runStatus } from "./status.js";
+import { runLogin, runLogout } from "./login.js";
+import { runSync, runSyncSetting } from "./sync.js";
+import { startAutoSync, type AutoSync } from "../sync/auto-sync.js";
 import { createProjectServices } from "../runtime/services.js";
 import { startMcpServer } from "../mcp/server.js";
 import { readXtctxPackage } from "../utils/package-info.js";
@@ -24,6 +27,7 @@ export async function main(argv = process.argv): Promise<void> {
     // like a configured project with no history.
     const unconfiguredProjectRoot = services.config.present ? undefined : services.projectRoot;
     let closed = false;
+    let autoSync: AutoSync | undefined;
     const shutdown = (exit: boolean) => {
       if (closed) return;
       closed = true;
@@ -44,15 +48,22 @@ export async function main(argv = process.argv): Promise<void> {
       // scan lease and empties the write-ahead log on the way out. The timer
       // is the backstop for work that cannot be interrupted. It used to be
       // the usual way out, which also meant the index was never closed.
-      const graceMs = 2_000;
+      //
+      // The cloud flush has its own bound, added on top: it is a network call,
+      // not the scan this grace window exists to cut short.
+      const graceMs = 2_000 + (autoSync ? 1_500 : 0);
       const timer = setTimeout(() => {
         if (exit) process.exit(0);
       }, graceMs);
       timer.unref?.();
 
-      void services.sessions
-        .close()
-        .catch(() => {})
+      // Upload what the last interval left while the index closes. Side by
+      // side, not one after the other: the upload reads the index through its
+      // own read-only connection, so closing this one does not disturb it, and
+      // a slow upload must not hold back the close that stops the scan and
+      // releases the scan lease. Each statement the upload runs is its own
+      // short read, so it does not keep the close from emptying the log.
+      void Promise.allSettled([autoSync?.stop() ?? Promise.resolve(), services.sessions.close()])
         .finally(() => {
           clearTimeout(timer);
           if (exit) process.exit(0);
@@ -108,6 +119,11 @@ export async function main(argv = process.argv): Promise<void> {
       void runBackgroundWork({
         sessions: services.sessions,
         localEmbeddings: localEmbeddingsActive(services.config.embedding),
+      });
+      // Uploads only when logged in and this project is opted in; see auto-sync.ts.
+      autoSync = startAutoSync({
+        projectRoot: services.projectRoot,
+        log: (line) => process.stderr.write(`${line}\n`),
       });
     }
     return;
@@ -166,6 +182,40 @@ export async function main(argv = process.argv): Promise<void> {
     .action(async (options: { project?: string; verbose?: boolean }) => {
       const globalOptions = program.opts<{ project?: string }>();
       await runStatus({ projectPath: options.project ?? globalOptions.project, verbose: options.verbose });
+    });
+
+  program
+    .command("login")
+    .option("--sync-url <url>", "Sync server URL (default: https://sync.xtctx.com)")
+    .option("--device <name>", "Name this device shows as in the cloud (default: a random label)")
+    .description("Sign in to xtctx cloud with GitHub (uploads nothing by itself)")
+    .action(async (options: { syncUrl?: string; device?: string }) => {
+      await runLogin({ syncUrl: options.syncUrl, deviceName: options.device });
+    });
+
+  program
+    .command("logout")
+    .option("--delete-data", "Also delete everything uploaded to your cloud account", false)
+    .description("Sign out of xtctx cloud and revoke this account's tokens")
+    .action(async (options: { deleteData?: boolean }) => {
+      await runLogout({ deleteData: options.deleteData });
+    });
+
+  program
+    .command("sync")
+    .argument("[action]", "enable, disable or status for this project; device [name]; token; omit to upload once")
+    .argument("[value]", "the new name, for `sync device <name>`")
+    .option("-p, --project <path>", "Project root (defaults to cwd)")
+    .option("-w, --watch", "Keep uploading every few seconds until interrupted", false)
+    .description("Cloud sync: choose whether this project uploads, or upload now")
+    .action(async (action: string | undefined, value: string | undefined, options: { project?: string; watch?: boolean }) => {
+      const globalOptions = program.opts<{ project?: string }>();
+      const projectDir = options.project ?? globalOptions.project;
+      if (action) {
+        await runSyncSetting(action, { projectDir, value });
+      } else {
+        await runSync({ projectDir, watch: options.watch });
+      }
     });
 
   program

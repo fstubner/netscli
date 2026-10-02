@@ -1,6 +1,7 @@
 node_modules/
 dist/
 landing/dist/
+.wrangler/
 .xtctx/.store/
 .xtctx/config.yaml
 .xtctx/skills/

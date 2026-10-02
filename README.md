@@ -13,7 +13,9 @@ xtctx is local cross-tool handoff for AI coding agents.
 It indexes the transcript files your local coding agents already write, and
 exposes them over MCP so the next tool you open can find recent sessions and
 read the raw messages. It does not run a daemon, host an API, generate
-summaries, or maintain durable project memory.
+summaries, or maintain durable project memory. Everything stays on your
+machine unless you opt a project in to cloud sync, which is optional and off
+by default ([`docs/cloud-sync.md`](docs/cloud-sync.md)).
 
 Each project opts in once with `xtctx setup`. The MCP server resolves the
 project from the working directory, and in a project that has not opted in it
@@ -167,7 +169,8 @@ target drift, and tools that do not have a verified skill surface.
 It reports the current local index rather than forcing a transcript scan. If
 the index is empty, ask a configured agent to call `xtctx_recent_sessions`.
 When the index holds sessions whose transcripts are gone, it says how many and
-points at `xtctx export`.
+points at `xtctx export`. Its `Cloud` line says whether cloud sync is on for
+the project, and when it last uploaded or failed.
 
 `xtctx disconnect <tool>` stops xtctx from managing one tool for the project.
 It removes the xtctx MCP entry for that tool, removes managed instruction
@@ -307,7 +310,14 @@ startup hooks; others receive MCP config plus managed instructions only.
 ## Limits
 
 - xtctx is local-only by default: it never uploads transcripts and runs no
-  telemetry. A project can opt into an external embedding endpoint by writing
+  telemetry. Cloud sync is optional and opt-in per project: it sends nothing
+  until you log in (`xtctx login`) *and* opt a project in (`xtctx sync enable`),
+  and then sends that project's transcript text, including whatever paths or
+  output the agents wrote into it, to the xtctx cloud server, where your other
+  machines' agents can read it over MCP. `xtctx status` says whether it is on
+  for the project and when it last uploaded
+  ([`docs/cloud-sync.md`](docs/cloud-sync.md)).
+  A project can opt into an external embedding endpoint by writing
   one into `.xtctx/config.yaml`, in which case window text is sent there to be
   vectorized — never inferred from an environment variable, and `xtctx status`
   names the endpoint in full whenever one is configured.

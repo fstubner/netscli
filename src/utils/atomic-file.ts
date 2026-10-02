@@ -3,6 +3,8 @@ import { mkdir, realpath, rename, rm, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 
 interface WriteFileAtomicOptions {
+  /** File mode for a secret, e.g. 0o600. Ignored on Windows, which has no such bits. */
+  mode?: number;
   /**
    * Directory the write must stay inside, after symlinks are resolved.
    *
@@ -88,7 +90,7 @@ export async function writeFileAtomic(
   // Random suffix, and `wx` so the open fails rather than following a
   // symlink someone pre-created at a guessable temp path.
   const tmpPath = `${filePath}.${randomBytes(6).toString("hex")}.xtctx-tmp`;
-  await writeFile(tmpPath, content, { encoding: "utf-8", flag: "wx" });
+  await writeFile(tmpPath, content, { encoding: "utf-8", flag: "wx", mode: options.mode });
   try {
     await rename(tmpPath, filePath);
   } catch (err) {

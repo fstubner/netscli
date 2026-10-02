@@ -34,7 +34,8 @@ local-only. It does not upload transcripts or run telemetry" is true of what
 xtctx does on its own and should say so:
 
 > xtctx is local-only by default: it never uploads transcripts and runs no
-> telemetry. A project can opt into an external embedding endpoint, in which
+> telemetry; cloud sync sends nothing until you log in and opt a project in.
+> A project can opt into an external embedding endpoint, in which
 > case window text is sent there for vectorizing — `xtctx status` reports the
 > endpoint whenever one is configured.
 

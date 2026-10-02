@@ -1,0 +1,58 @@
+name = "xtctx-cloud"
+main = "src/index.ts"
+compatibility_date = "2026-07-28"
+# global_fetch_strictly_public: the OAuth provider fetches Client ID Metadata
+# Documents from URLs a client names; this keeps those fetches on the public
+# internet (SSRF protection), and the provider only advertises CIMD with it.
+compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
+# Only the custom domains below serve this Worker; no *.workers.dev alias that
+# would answer with a different origin than the one tokens are bound to.
+workers_dev = false
+
+routes = [
+  { pattern = "mcp.xtctx.com", custom_domain = true },
+  { pattern = "sync.xtctx.com", custom_domain = true }
+]
+
+[observability]
+enabled = true
+
+# D1: sessions, messages, accounts, revocation epochs.
+# Schema: `npm run d1:migrate:remote` (wrangler d1 migrations apply).
+[[d1_databases]]
+binding = "DB"
+database_name = "xtctx-db"
+database_id = "f64a7fc9-60a3-41be-964f-efbca6897f88"
+migrations_dir = "migrations"
+
+# KV: OAuth grants, tokens and registered clients (workers-oauth-provider).
+# Create it with `npx wrangler kv namespace create OAUTH_KV` and put the id here.
+[[kv_namespaces]]
+binding = "OAUTH_KV"
+id = "REPLACE_WITH_OAUTH_KV_NAMESPACE_ID"
+
+# Holds the open SSE streams for the baseline MCP transport.
+[[durable_objects.bindings]]
+name = "SSE"
+class_name = "SseSession"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["SseSession"]
+
+[vars]
+# The origin MCP clients connect to; the MCP resource is PUBLIC_URL + "/mcp"
+# and every token is bound to it.
+PUBLIC_URL = "https://mcp.xtctx.com"
+# Public GitHub OAuth App client id (device flow for the CLI, web flow for /authorize).
+GITHUB_CLIENT_ID = "Ov23liFUTodqfoH9mgHA"
+# Comma-separated numeric GitHub user ids allowed to sign in. Empty means
+# nobody can (fail closed). Find yours: https://api.github.com/users/<login> -> "id".
+ALLOWED_GITHUB_IDS = ""
+ENVIRONMENT = "production"
+
+# Secrets, set with `npx wrangler secret put <NAME>`:
+# - JWT_SECRET: REQUIRED. Signs the CLI's tokens; every route but /health answers 500 until it is set.
+# - GITHUB_CLIENT_SECRET: needed for browser sign-in at /authorize (MCP clients). Without it the
+#   CLI's device flow still works and /authorize answers 503.
+# Optional var: ALLOWED_ORIGINS (comma-separated browser origins to send CORS headers to; none by default).

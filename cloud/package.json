@@ -1,0 +1,26 @@
+{
+  "name": "xtctx-cloud",
+  "version": "0.2.0",
+  "description": "Optional xtctx cloud: an MCP server over transcripts uploaded from opted-in projects",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "d1:create": "wrangler d1 create xtctx-db",
+    "d1:migrate:local": "wrangler d1 migrations apply xtctx-db --local",
+    "d1:migrate:remote": "wrangler d1 migrations apply xtctx-db --remote",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260930.2",
+    "@types/node": "^24.19.0",
+    "typescript": "^5.8.0",
+    "vitest": "^4.1.11",
+    "wrangler": "^4.145.0"
+  },
+  "dependencies": {
+    "@cloudflare/workers-oauth-provider": "1.2.1"
+  }
+}
