@@ -93,6 +93,11 @@ its heading and collects entries; the date and the link go on with the tag.
   `ff:ff:ff:ff:ff:ff`, and discovery listed it as a host that ignored ping
   (and a sweep then scanned it). The network and broadcast addresses, and broadcast and
   multicast MACs, are no longer reported.
+- **Closed ports showed as filtered on Windows.** Windows waits about two
+  seconds before reporting a refused connection, and the scan stops waiting
+  after half a second, so a port that was plainly closed came back as
+  filtered. The scan now reports it as closed straight away. A scan of 1,024
+  ports on a LAN machine went from 1,022 filtered to 1,022 closed.
 - **The macOS app could be refused as broken on Apple Silicon.** Its only
   signature was the one Apple's linker puts on every arm64 program, which
   claims the app's files are sealed when nothing sealed them. macOS's own

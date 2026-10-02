@@ -107,16 +107,14 @@ async fn test_scan_closed_local_port_records_latency() {
         .await
         .expect("valid port list");
 
+    // Nothing listens, so the OS answers with a RST and the port is closed,
+    // well inside the timeout. Windows used to retry the SYN for about 2 s
+    // first, so this read as filtered there.
     assert_eq!(results.len(), 1);
     let result = results.remove(0);
     assert!(!result.open);
-    assert!(matches!(
-        result.status,
-        PortStatus::Closed | PortStatus::Filtered | PortStatus::Error
-    ));
-    if matches!(result.status, PortStatus::Closed) {
-        assert!(result.latency_ms.is_some());
-    }
+    assert_eq!(result.status, PortStatus::Closed);
+    assert!(result.latency_ms.is_some_and(|ms| ms < 500));
 }
 
 #[tokio::test]
