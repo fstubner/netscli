@@ -1,12 +1,15 @@
+#[cfg(any(target_os = "linux", target_os = "macos"))]
 use mac_address::MacAddress;
+#[cfg(any(target_os = "linux", target_os = "macos"))]
 use std::net::IpAddr;
 
-#[cfg(any(target_os = "windows", target_os = "macos"))]
+#[cfg(target_os = "macos")]
 use super::command;
 use crate::arp::types::ArpEntry;
 #[cfg(not(any(target_os = "linux", target_os = "windows", target_os = "macos")))]
 use crate::error::Error;
 use crate::error::Result;
+#[cfg(any(target_os = "linux", target_os = "macos"))]
 use crate::oui::lookup_vendor;
 
 #[cfg(target_os = "linux")]
@@ -42,57 +45,7 @@ pub(super) fn get_arp_table() -> Result<Vec<ArpEntry>> {
 
 #[cfg(target_os = "windows")]
 pub(super) fn get_arp_table() -> Result<Vec<ArpEntry>> {
-    use std::str::FromStr;
-
-    let output = command::arp_command().arg("-a").output()?;
-    let text = String::from_utf8_lossy(&output.stdout);
-    let mut entries = Vec::new();
-
-    // `arp -a` on Windows groups entries by interface. Each group begins with
-    // a header like `Interface: 192.168.1.2 --- 0x5` followed by a column
-    // header (`Internet Address      Physical Address      Type`) and then
-    // rows. Track the current interface IP so entries are correctly attributed
-    // instead of all being flattened to "unknown".
-    let mut current_interface = String::from("unknown");
-
-    for line in text.lines() {
-        let trimmed = line.trim();
-        if trimmed.is_empty() {
-            continue;
-        }
-
-        if let Some(rest) = trimmed.strip_prefix("Interface:") {
-            if let Some(iface_ip) = rest.split_whitespace().next() {
-                current_interface = iface_ip.to_string();
-            }
-            continue;
-        }
-
-        if trimmed.starts_with("Internet Address") {
-            continue;
-        }
-
-        let parts: Vec<&str> = trimmed.split_whitespace().collect();
-        if parts.len() < 3 {
-            continue;
-        }
-
-        let Ok(ip) = IpAddr::from_str(parts[0]) else {
-            continue;
-        };
-        let Ok(mac) = MacAddress::from_str(parts[1]) else {
-            continue;
-        };
-
-        let vendor = lookup_vendor(parts[1]);
-        entries.push(ArpEntry {
-            ip,
-            mac,
-            interface: current_interface.clone(),
-            vendor,
-        });
-    }
-    Ok(entries)
+    super::windows_table::read()
 }
 
 #[cfg(target_os = "macos")]

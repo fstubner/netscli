@@ -78,8 +78,21 @@ its heading and collects entries; the date and the link go on with the tag.
   itself if it was built with the updater, so 0.3.4 is the first that can,
   and 0.3.5 is the first update it will install.
 
+### Changed
+
+- **Discovery reads the Windows device table directly** instead of running
+  `arp -a` and parsing its text. On an idle machine that makes no measurable
+  difference (`arp -a` took 65 ms), but it removes a program start from every
+  discover and sweep, and under heavy CPU load `arp -a` took about 4 seconds
+  on the same machine.
+
 ### Fixed
 
+- **Discovery reported the broadcast address as a device.** The network's
+  device table on Windows lists `x.x.x.255` with the MAC
+  `ff:ff:ff:ff:ff:ff`, and discovery listed it as a host that ignored ping
+  (and a sweep then scanned it). The network and broadcast addresses, and broadcast and
+  multicast MACs, are no longer reported.
 - **The macOS app could be refused as broken on Apple Silicon.** Its only
   signature was the one Apple's linker puts on every arm64 program, which
   claims the app's files are sealed when nothing sealed them. macOS's own
