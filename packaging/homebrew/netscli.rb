@@ -30,7 +30,7 @@
 class Netscli < Formula
   desc "Network diagnostics CLI, terminal UI, and MCP server"
   homepage "https://netscli.com"
-  version "0.3.3"
+  version "0.3.4"
   license "MIT"
 
   on_macos do
