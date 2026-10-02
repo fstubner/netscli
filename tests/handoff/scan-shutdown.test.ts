@@ -104,7 +104,10 @@ describe("a scan shares its thread", () => {
     // before, one stretch held the thread for over nine-tenths of the scan
     // (1,515ms of 1,621ms on this corpus); the longest now is one session's
     // windows, a small fraction of it.
-    expect(took).toBeGreaterThan(1_000);
+    // The floor only checks the corpus gave the ratio something to measure.
+    // It was 1,000ms and failed at 994ms on a fast CI runner; the ratio below
+    // is the assertion that matters.
+    expect(took).toBeGreaterThan(500);
     expect(longestGap).toBeLessThan(took / 4);
   });
 
