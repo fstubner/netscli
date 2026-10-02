@@ -1,3 +1,4 @@
+mod connect;
 mod constants;
 mod network;
 mod ports;
@@ -8,6 +9,7 @@ mod ports;
 mod system_tools;
 mod terminal;
 
+pub(crate) use connect::connect as tcp_connect;
 pub use constants::{
     DEFAULT_CONCURRENCY, DEFAULT_DNS_TIMEOUT_MS, DEFAULT_PING_TIMEOUT_MS, DEFAULT_PORTS,
     DEFAULT_SCAN_TIMEOUT_MS, DEFAULT_SUBNET, MAX_MDNS_TIMEOUT_MS, MAX_PING_COUNT,

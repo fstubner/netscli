@@ -4,10 +4,9 @@ use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Arc,
 };
-use std::time::{Duration, Instant};
+use std::time::Instant;
 use tokio::net::TcpStream;
 use tokio::sync::Semaphore;
-use tokio::time::timeout;
 
 use super::probes::{as_text, ask, first_banner_line, probe_http, probe_tls, read_greeting, Quiet};
 use super::services::{classify_connect_error, guess_service, is_http_port, is_tls_port};
@@ -128,10 +127,8 @@ impl PortScanner {
         let addr = SocketAddr::new(target, port);
         let service = Self::guess_service(port);
         let started = Instant::now();
-        let result = timeout(Duration::from_millis(timeout_ms), TcpStream::connect(addr)).await;
-
-        match result {
-            Ok(Ok(stream)) => {
+        match crate::common::tcp_connect(addr, timeout_ms).await {
+            Ok(stream) => {
                 let latency_ms = started.elapsed().as_millis() as u64;
                 let mut result = PortResult::new(port, PortStatus::Open, service.clone())
                     .with_latency(latency_ms);
@@ -145,7 +142,7 @@ impl PortScanner {
                 }
                 result
             }
-            Ok(Err(e)) => match classify_connect_error(e.kind()) {
+            Err(e) => match classify_connect_error(e.kind()) {
                 PortStatus::Closed => PortResult::new(port, PortStatus::Closed, service)
                     .with_latency(started.elapsed().as_millis() as u64),
                 PortStatus::Filtered => PortResult::new(port, PortStatus::Filtered, service),
@@ -155,7 +152,6 @@ impl PortScanner {
                         .with_error(e.to_string())
                 }
             },
-            Err(_) => PortResult::new(port, PortStatus::Filtered, service),
         }
     }
 
