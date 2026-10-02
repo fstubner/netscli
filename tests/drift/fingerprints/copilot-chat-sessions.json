@@ -1,0 +1,36 @@
+{
+  "kind": "jsonl",
+  "recordTypes": {
+    "kind:0": [
+      "kind: number",
+      "v.creationDate: number",
+      "v.requests: array<empty>",
+      "v.sessionId: string"
+    ],
+    "kind:1": [
+      "k: array<number|string>",
+      "k[]: number",
+      "k[]: string",
+      "kind: number",
+      "v: array<object>",
+      "v[].value: string"
+    ],
+    "kind:2": [
+      "i: number",
+      "k: array<number|string>",
+      "k: array<string>",
+      "k[]: number",
+      "k[]: string",
+      "kind: number",
+      "v: array<object>",
+      "v[].isCanceled: boolean",
+      "v[].message.parts: array<object>",
+      "v[].message.parts[]: object",
+      "v[].model: string",
+      "v[].response: array<object>",
+      "v[].response[].value: string",
+      "v[].timestamp: number",
+      "v[].value: string"
+    ]
+  }
+}

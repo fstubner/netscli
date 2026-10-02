@@ -94,3 +94,68 @@ describe("smoke fixtures match the real formats", () => {
     });
   }
 });
+
+/**
+ * VS Code Copilot's current chat store: one journal per chat under
+ * `<workspace>/chatSessions/*.jsonl`, whose records are `{kind, k, v, i}` with
+ * no `type`. `copilot.json` fingerprints only the older `interactive.sessions`
+ * blob, so this format had nothing to drift against.
+ *
+ * `copilot-chat-sessions.json` is filed by `kind`. It was first written from the
+ * fixture journal the replay tests use, not from a real store, and
+ * `npm run capture:formats -- --write` merges what a real machine holds into it.
+ * Two checks follow from that:
+ *
+ *  - the fixture may not write a field the fingerprint does not know, so a
+ *    fixture cannot drift away from the format unnoticed; and
+ *  - the fingerprint may not hold a record kind the replay does not apply, so
+ *    when a real capture first records one (a delete, say) this fails until
+ *    `journal.ts` handles it, instead of the reader warning on it in production.
+ */
+const JOURNAL_KINDS_APPLIED = ["kind:0", "kind:1", "kind:2"];
+
+describe("copilot chat-session journal fixture matches its fingerprint", () => {
+  async function load() {
+    const path = join("tests", "drift", "fingerprints", "copilot-chat-sessions.json");
+    expect(existsSync(path), "no chat-session journal fingerprint committed").toBe(true);
+    const fingerprint = JSON.parse(await readFile(path, "utf-8")) as JsonlFingerprint;
+    const fixture = await readFile(
+      join("tests", "scrapers", "fixtures", "copilot-chat-journal.jsonl"),
+      "utf-8",
+    );
+    return { fingerprint, fixture };
+  }
+
+  it("applies every record kind the fingerprint records", async () => {
+    const { fingerprint } = await load();
+
+    expect(Object.keys(fingerprint.recordTypes).sort()).toEqual(JOURNAL_KINDS_APPLIED);
+  });
+
+  it("writes no field the fingerprint does not know", async () => {
+    const { fingerprint, fixture } = await load();
+
+    const unknown: string[] = [];
+    let recordsChecked = 0;
+    for (const line of fixture.split(/\r?\n/)) {
+      if (!line.trim()) continue;
+      const record = JSON.parse(line) as { kind?: unknown };
+      const kind = typeof record.kind === "number" ? `kind:${record.kind}` : "(no kind field)";
+      const known = fingerprint.recordTypes[kind];
+      if (!known) {
+        unknown.push(`record kind "${kind}" appears in no fingerprinted journal`);
+        continue;
+      }
+      recordsChecked += 1;
+      for (const entry of shapeOf(record)) {
+        const path = entry.slice(0, entry.lastIndexOf(": "));
+        if (!known.some((real: string) => real.slice(0, real.lastIndexOf(": ")) === path)) {
+          unknown.push(`${kind}.${path} appears in no fingerprinted journal`);
+        }
+      }
+    }
+
+    expect(recordsChecked).toBeGreaterThan(0);
+    expect(unknown).toEqual([]);
+  });
+});

@@ -9,10 +9,14 @@ transcript store into a per-project SQLite index and serves it back — to any
 of those tools — through a small read-only MCP server, so the next agent can
 pick up where the last one left off.
 
-Raw local transcripts are authoritative. xtctx never summarizes and never
-persists derived "memory". The index is built from the transcripts, but it
-keeps sessions whose transcripts have since been deleted, so it is not
-disposable and xtctx never deletes it. It sends transcript content nowhere
+Raw local transcripts are authoritative while they exist. xtctx never
+summarizes and never persists derived "memory". The index is derived from
+the transcripts for every session still on disk, and is the only copy of the
+older ones whose transcripts have since been deleted (Claude Code deletes
+them after 30 days by default). Deleting the index loses those, so xtctx
+never deletes it: schema upgrades migrate it in place, a corrupt one is set
+aside and its sessions carried into the rebuilt one, and `xtctx export` /
+`xtctx import` keep a copy elsewhere. It sends transcript content nowhere
 unless a project opts in to an external embedding endpoint, written into
 `.xtctx/config.yaml` by hand, trusted by the user in
 `XTCTX_TRUSTED_EMBEDDING_ENDPOINTS` (a repository cannot set that), and
@@ -55,14 +59,16 @@ Single-user, single-machine. There is no team, sync, or server component.
 - Scrapers for the seven supported tools, project-scoped, incremental, and
   tolerant of upstream schema drift (warn, never silently drop).
 - One per-project SQLite index (`.xtctx/state/xtctx.db`) with keyword (FTS5)
-  and semantic (local bge-small embeddings) search over chronological windows.
+  and, once the optional add-on is enabled with `xtctx embeddings enable`,
+  semantic (local bge-small embeddings) search over chronological windows.
 - Five read-only MCP tools: recent sessions, session detail, search,
   continuity status, handoff manifest.
 - CLI: `setup` (wire MCP config, managed instruction blocks, skills, and the
   Claude Code SessionStart hook), `status`, `scan` (read the stores into the
-  index now, `--embed` to finish vectorizing too), `calibrate` (time the
-  embedding model on this machine's devices and use the fastest),
-  `disconnect`.
+  index now, `--embed` to finish vectorizing too), `embeddings enable|disable`
+  (install or remove the optional local model; keyword search needs none of
+  it), `calibrate` (time the embedding model on this machine's devices and use
+  the fastest), `disconnect`.
 
 Out of scope (deliberately, and documented everywhere the product speaks):
 no daemon, no API server, no dashboard, no generated summaries or briefs,
@@ -71,7 +77,10 @@ no durable memory, no write-back tools, no cloud anything.
 ## Constraints
 
 - Node ≥ 24, distributed via npm (`npx -y xtctx`); no install step beyond
-  what a coding agent's MCP config can express.
+  what a coding agent's MCP config can express. The default install carries no
+  ML runtime (about 55 MB on disk against 550 MB with it, measured), because
+  an MCP client will not wait minutes for `npx` to fetch one: the local model
+  is an add-on, installed by `xtctx embeddings enable`.
 - Transcript stores belong to other tools: all reads are read-only
   (`readonly` + `fileMustExist` for SQLite stores) and must survive those
   tools changing their formats — drift is detected by tests, committed format
@@ -83,7 +92,8 @@ no durable memory, no write-back tools, no cloud anything.
   fences it and never grows write capabilities.
 - Everything runs local by default. Three network dependencies exist. Two are
   unavoidable and narrow: the one-time embedding-model download from Hugging
-  Face, and loopback-only HTTPS calls to Antigravity's local language server
+  Face (and the runtime from npm), made only when the user runs
+  `xtctx embeddings enable`, and loopback-only HTTPS calls to Antigravity's local language server
   (127.0.0.1, exact-PID + CSRF matched; certificate verification is off
   because the server is self-signed). The third is opt-in and is the only one
   that carries transcript text: an OpenAI-compatible embedding endpoint named

@@ -1,6 +1,6 @@
 import Database from "better-sqlite3";
 import type { Database as DatabaseHandle, Statement, Transaction } from "better-sqlite3";
-import { PROJECT_ROOT_SQL } from "./queries.js";
+import { PROJECT_ROOT_SQL, canonicalRoot, normalizeRootForCompare } from "./queries.js";
 
 export interface PreparedStatements {
   upsertSession: Statement;
@@ -9,11 +9,23 @@ export interface PreparedStatements {
   sessionRollup: Statement;
   /** Repairs roll-ups a previous scan died before reaching. See its prepare. */
   reconcileSessionRollups: Statement;
-  /** Sessions whose retrieval units do not reach their last message. */
-  selectSessionsMissingUnits: Statement;
+  /**
+   * Sessions whose retrieval units are missing or stale: marked stale by a
+   * scan that wrote to them, or not reaching their last message.
+   */
+  selectSessionsNeedingUnits: Statement;
+  /** Records that a session's units must be rebuilt; see `unitsStaleKey`. */
+  markUnitsStale: Statement;
+  /** Clears that record, once the units are rebuilt. */
+  clearUnitsStale: Statement;
   selectSessionMessages: Statement;
-  /** Every message id a session currently holds; see the prune in `scanTool`. */
-  selectMessageIdsForSession: Statement;
+  /**
+   * The message ids a session held when a scan began: every row indexed at or
+   * before a given time. See the prune in `scanTool` for why the time bound.
+   */
+  selectPrunableMessageIds: Statement;
+  /** Whether a session holds a row at a position; the cursor check's probe. */
+  messageAtIndex: Statement;
   /**
    * The lowest position a session already holds, read before this scan writes
    * to it. A scan that reaches at least that far back has accounted for
@@ -35,9 +47,18 @@ export interface CountRow {
 }
 
 /**
- * Bumped whenever the schema shape changes. There are no migrations: an index
- * from an OLDER version is set aside and rebuilt (see SqliteHandoffIndex), and
- * one from a NEWER version is refused, because setting it aside would hide
+ * Bumped whenever the schema shape changes, together with a step in
+ * `MIGRATIONS` that brings an index from the previous version up to it.
+ *
+ * Migrated in place, not rebuilt. An index from an older version used to be
+ * set aside and rebuilt from the transcripts still on disk -- and before that,
+ * deleted -- which silently dropped every session whose transcript had since
+ * been cleaned up (Claude Code deletes them after 30 days by default). For
+ * those sessions the index is the only copy, so a schema bump cost them on
+ * every upgrade. Set-aside is now kept for a file that is corrupt, or older
+ * but in a shape no step recognises; see SqliteHandoffIndex.
+ *
+ * One from a NEWER version is refused, because setting it aside would hide
  * history from the newer xtctx that wrote it -- two installed versions sharing
  * one index would each set the other's aside on every start.
  */
@@ -45,20 +66,37 @@ export interface CountRow {
 // filters on it. An index written by version 2 holds raw roots, which mostly
 // still compare equal — but not where `realpath` differs, and there the rows
 // go quiet rather than wrong. The scraper cursors would not re-add them, so
-// the rebuild has to be forced rather than waited for.
+// the re-read has to be forced rather than waited for (see
+// `MIGRATED_FROM_SETTING`).
 const SCHEMA_VERSION = 3;
 
-/** The index on disk was written by a different schema version. */
+/**
+ * Written by a migration, read and cleared by the index on open.
+ *
+ * A migration fixes the shape, not the rows: whatever an older build wrote is
+ * still there as it wrote it. Clearing the scraper cursors makes the next scan
+ * re-read every session still on disk, which is what refreshes those rows --
+ * the job a rebuild used to do -- while sessions whose transcripts are gone
+ * stay as they are. A setting rather than a return value so that a process
+ * which dies between the migration and the cursor reset leaves the
+ * instruction behind for the next one.
+ */
+export const MIGRATED_FROM_SETTING = "schema_migrated_from";
+
+/** The index on disk was written by a schema version this build cannot use as it is. */
 export class SchemaVersionError extends Error {
   constructor(
     readonly found: number,
     readonly supported: number,
+    /** Why an older index could not be migrated. */
+    readonly reason?: string,
   ) {
     super(
       found > supported
         ? `xtctx index schema version ${found} is newer than this xtctx supports (${supported}); ` +
             "upgrade xtctx rather than rebuilding the index"
-        : `xtctx index schema version ${found} does not match supported version ${supported}`,
+        : `xtctx index schema version ${found} could not be migrated to version ${supported}` +
+            (reason ? `: ${reason}` : ""),
     );
     this.name = "SchemaVersionError";
   }
@@ -66,6 +104,148 @@ export class SchemaVersionError extends Error {
   get newer(): boolean {
     return this.found > this.supported;
   }
+}
+
+/**
+ * `MIGRATIONS[n]` takes an index written at version n to version n + 1, in
+ * place. After the last step, `createSchema` adds anything new that is a whole
+ * table or index, and `assertCurrentShape` checks the result before the
+ * version is stamped, so a step only has to change what already exists.
+ *
+ * Every step must be safe to run on a file that already has its change: an
+ * index whose schema was created but whose version was never stamped (a
+ * process killed between the two) reads as version 0 with every table
+ * current.
+ */
+const MIGRATIONS: Record<number, (db: DatabaseHandle) => void> = {
+  // 0 -> 1 (269fefb): the unversioned index wrote a `messages_fts` table that
+  // nothing read, and keyed vectors on `unit_id` alone although each row
+  // names its model. Those vectors were also built from only the first ~256
+  // tokens of a window, which the same version fixed, so they are dropped
+  // rather than carried: they are recomputed from the windows anyway.
+  0: (db) => {
+    db.exec("DROP TABLE IF EXISTS messages_fts");
+    const keyColumns = (
+      db.prepare("PRAGMA table_info(retrieval_unit_vectors)").all() as Array<{ pk: number }>
+    ).filter((column) => column.pk > 0);
+    if (keyColumns.length === 1) {
+      db.exec("DROP TABLE retrieval_unit_vectors");
+    }
+  },
+  // 1 -> 2 (#123): sessions record the git branch and commit they ran on.
+  // Existing rows get NULL; the forced re-read fills them for every session
+  // still on disk, and the upsert's COALESCE keeps them once set.
+  1: (db) => {
+    addColumnIfMissing(db, "sessions", "git_branch", "TEXT");
+    addColumnIfMissing(db, "sessions", "git_commit", "TEXT");
+  },
+  // 2 -> 3 (#311): `project_root` is stored canonicalised. Rows written raw
+  // are resolved the same way the index resolves the root it reads under, so
+  // a session that is no longer on disk -- and so will never be re-read --
+  // still lands under the name its project is read by.
+  2: (db) => {
+    const roots = db.prepare("SELECT DISTINCT project_root FROM sessions").pluck().all() as string[];
+    const update = db.prepare("UPDATE sessions SET project_root = ? WHERE project_root = ?");
+    for (const root of roots) {
+      const canonical = normalizeRootForCompare(canonicalRoot(root));
+      if (canonical !== root) {
+        update.run(canonical, root);
+      }
+    }
+  },
+};
+
+function columnNames(db: DatabaseHandle, table: string): string[] {
+  return (db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>).map(
+    (column) => column.name,
+  );
+}
+
+function addColumnIfMissing(db: DatabaseHandle, table: string, column: string, type: string): void {
+  if (!columnNames(db, table).includes(column)) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
+  }
+}
+
+/**
+ * Throw unless every table holds every column this build reads.
+ *
+ * `CREATE TABLE IF NOT EXISTS` leaves an existing table exactly as it is, so
+ * a file whose tables are not the shape its version number claims would
+ * otherwise be stamped current and then fail at runtime with "no such
+ * column". Compared against a schema created fresh, so there is no second
+ * list of columns to keep in step with `createSchema`.
+ */
+function assertCurrentShape(db: DatabaseHandle, found: number): void {
+  const reference = new Database(":memory:");
+  try {
+    createSchema(reference);
+    for (const table of ["sessions", "messages", "retrieval_units", "retrieval_unit_vectors", "settings"]) {
+      const have = new Set(columnNames(db, table));
+      const missing = columnNames(reference, table).filter((column) => !have.has(column));
+      if (missing.length > 0) {
+        throw new SchemaVersionError(
+          found,
+          SCHEMA_VERSION,
+          `its ${table} table has no ${missing.join(", ")}`,
+        );
+      }
+    }
+  } finally {
+    reference.close();
+  }
+}
+
+/**
+ * Bring an older index up to `SCHEMA_VERSION`, in one transaction.
+ *
+ * `BEGIN IMMEDIATE`, and the version read again inside it: with one server
+ * per MCP client, several processes open the same file at once, and whichever
+ * takes the write lock second must find the work already done rather than
+ * run it over a file that has moved on. A lock it cannot get within the busy
+ * timeout surfaces as an ordinary lock error, which the index retries on the
+ * next call without touching the file.
+ *
+ * A step that fails on SQL -- a table or column the history never had --
+ * means the file is not what its version claims. That is reported as a
+ * `SchemaVersionError` for an older version, which sets it aside; everything
+ * else (corruption, a lock) is rethrown as it is so it is handled as that.
+ * The transaction rolls back either way, so a file is set aside as it was
+ * found, not half-migrated.
+ */
+function migrateSchema(db: DatabaseHandle): void {
+  db.transaction(() => {
+    const found = db.pragma("user_version", { simple: true }) as number;
+    if (found === SCHEMA_VERSION) {
+      return;
+    }
+    if (found > SCHEMA_VERSION) {
+      throw new SchemaVersionError(found, SCHEMA_VERSION);
+    }
+    try {
+      for (let version = found; version < SCHEMA_VERSION; version += 1) {
+        const step = MIGRATIONS[version];
+        if (!step) {
+          throw new SchemaVersionError(found, SCHEMA_VERSION, `no migration from version ${version}`);
+        }
+        step(db);
+      }
+      createSchema(db);
+      assertCurrentShape(db, found);
+    } catch (error) {
+      const code = (error as { code?: unknown } | null)?.code;
+      if (code === "SQLITE_ERROR") {
+        throw new SchemaVersionError(
+          found,
+          SCHEMA_VERSION,
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+      throw error;
+    }
+    setSetting(db, MIGRATED_FROM_SETTING, String(found));
+    db.pragma(`user_version = ${SCHEMA_VERSION}`);
+  }).immediate();
 }
 
 /**
@@ -87,8 +267,12 @@ export function openDatabase(dbPath: string): DatabaseHandle {
       db.prepare("SELECT COUNT(*) AS count FROM sqlite_master").get() as CountRow
     ).count;
     const version = db.pragma("user_version", { simple: true }) as number;
-    if (objectCount > 0 && version !== SCHEMA_VERSION) {
+    if (objectCount > 0 && version > SCHEMA_VERSION) {
       throw new SchemaVersionError(version, SCHEMA_VERSION);
+    }
+    if (objectCount > 0 && version < SCHEMA_VERSION) {
+      migrateSchema(db);
+      return db;
     }
     createSchema(db);
     // Only when it changes. Writing it on every open took the write lock, so
@@ -217,7 +401,12 @@ export function prepareStatements(db: DatabaseHandle): PreparedStatements {
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   );
 
-  const selectMessageIdsForSession = db.prepare(`SELECT id FROM messages WHERE session_ref = ?`);
+  const selectPrunableMessageIds = db.prepare(
+    `SELECT id FROM messages WHERE session_ref = ? AND indexed_at <= ?`,
+  );
+  const messageAtIndex = db.prepare(
+    `SELECT 1 FROM messages WHERE session_ref = ? AND message_index = ? LIMIT 1`,
+  );
   const deleteMessageById = db.prepare(`DELETE FROM messages WHERE id = ?`);
   const minMessageIndexForSession = db.prepare(
     `SELECT MIN(message_index) AS lowest FROM messages WHERE session_ref = ?`,
@@ -226,7 +415,8 @@ export function prepareStatements(db: DatabaseHandle): PreparedStatements {
   return {
     upsertSession,
     insertMessage,
-    selectMessageIdsForSession,
+    selectPrunableMessageIds,
+    messageAtIndex,
     deleteMessageById,
     minMessageIndexForSession,
     upsertChunkTxn: db.transaction((sessionArgs: unknown[], messageArgs: unknown[]) => {
@@ -286,27 +476,35 @@ export function prepareStatements(db: DatabaseHandle): PreparedStatements {
        )`,
     ),
     /**
-     * Sessions whose windows stop short of their last message.
+     * Sessions whose windows are missing or out of date, most recent first.
      *
-     * `MAX(message_end_index)` against `MAX(message_index)` is exact rather
-     * than approximate: on a healthy index every session reports a gap of
-     * zero, so this returns nothing and the scan pays one indexed pass.
-     * Ordered by recency because the repair is bounded per scan.
+     * Two signals, because each misses what the other catches. A scan marks
+     * every session it writes to before writing (`markUnitsStale`) and the
+     * rebuild clears the mark, so a scan cut off in between leaves the mark
+     * behind — including where a turn was replaced at a position the windows
+     * already reach, which no comparison of positions can see. The coverage
+     * check covers indexes written before the marks existed: windows that
+     * stop short of the session's last message. On a healthy index both find
+     * nothing, and this costs one indexed pass over the project's sessions.
      */
-    selectSessionsMissingUnits: db.prepare(
+    selectSessionsNeedingUnits: db.prepare(
       `SELECT s.session_ref
        FROM sessions s
        WHERE ${PROJECT_ROOT_SQL.replace("project_root", "s.project_root")} = ?
-         AND COALESCE(
-               (SELECT MAX(u.message_end_index) FROM retrieval_units u
-                WHERE u.session_ref = s.session_ref), -1
-             ) < COALESCE(
-               (SELECT MAX(m.message_index) FROM messages m
-                WHERE m.session_ref = s.session_ref), -1
-             )
-       ORDER BY s.last_activity_at DESC
-       LIMIT ?`,
+         AND (
+           EXISTS (SELECT 1 FROM settings st WHERE st.key = '${UNITS_STALE_PREFIX}' || s.session_ref)
+           OR COALESCE(
+                (SELECT MAX(u.message_end_index) FROM retrieval_units u
+                 WHERE u.session_ref = s.session_ref), -1
+              ) < COALESCE(
+                (SELECT MAX(m.message_index) FROM messages m
+                 WHERE m.session_ref = s.session_ref), -1
+              )
+         )
+       ORDER BY s.last_activity_at DESC`,
     ),
+    markUnitsStale: db.prepare(`INSERT OR IGNORE INTO settings(key, value) VALUES (?, ?)`),
+    clearUnitsStale: db.prepare(`DELETE FROM settings WHERE key = ?`),
     selectSessionMessages: db.prepare(
       `SELECT id, timestamp, role, content, message_index, source_pointer
        FROM messages
@@ -367,6 +565,14 @@ export function prepareStatements(db: DatabaseHandle): PreparedStatements {
     ),
     deleteUnit: db.prepare("DELETE FROM retrieval_units WHERE id = ?"),
   };
+}
+
+/** Prefix of the `settings` keys that mark a session's units stale. */
+const UNITS_STALE_PREFIX = "units_stale:";
+
+/** The `settings` key marking one session's retrieval units as needing a rebuild. */
+export function unitsStaleKey(sessionRef: string): string {
+  return `${UNITS_STALE_PREFIX}${sessionRef}`;
 }
 
 export function placeholders(countValue: number): string {

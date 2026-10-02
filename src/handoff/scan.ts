@@ -1,7 +1,7 @@
 import type { Database as DatabaseHandle } from "better-sqlite3";
 import type { ConversationChunk, ConversationScraper } from "../types/scraper.js";
 import { hashParts } from "./hash.js";
-import { type PreparedStatements, clearSetting, setSetting } from "./schema.js";
+import { type PreparedStatements, clearSetting, setSetting, unitsStaleKey } from "./schema.js";
 
 /**
  * How often a session still streaming in from a scraper has its count and
@@ -52,8 +52,29 @@ export async function waitWithBudget(
 interface ScanToolDeps {
   db: DatabaseHandle;
   stmts: PreparedStatements;
-  /** Canonical and normalized; see `canonicalRoot` in sqlite-index. */
+  /** Canonical and normalized; see `canonicalRoot` in queries. */
   scopedRoot: string;
+  /**
+   * Awaited after every chunk is written. Lets the caller yield the event loop
+   * during a long scan and stop it by throwing `ScanInterrupted`.
+   */
+  checkpoint?: () => Promise<void>;
+}
+
+/**
+ * Thrown from a checkpoint to stop a scan between two writes.
+ *
+ * Not a failure of the store, so it is not recorded against the tool, and the
+ * scan stops the way a killed process does: everything written stays
+ * written, nothing after the last write is claimed — the scraper's cursors
+ * and the timestamp cursor are saved only when a scrape runs to its end — and
+ * the sessions it touched stay marked for the windows it did not build.
+ */
+export class ScanInterrupted extends Error {
+  constructor(reason: string) {
+    super(`scan interrupted: ${reason}`);
+    this.name = "ScanInterrupted";
+  }
 }
 
 interface ScanToolResult {
@@ -89,6 +110,9 @@ export async function scanTool(
   const writtenIds = new Map<string, Set<string>>();
   const lowestWritten = new Map<string, number>();
   const lowestStored = new Map<string, number | null>();
+  // Taken before anything is read. Rows indexed after it were written by
+  // someone else while this scan ran, and are never this scan's to prune.
+  const scanStartedAt = new Date().toISOString();
   if (!(await safeDetect(scraper))) {
     // Not installed here, so there is nothing to wait for — read, rather
     // than outstanding forever.
@@ -110,6 +134,12 @@ export async function scanTool(
   // itself.
   let openSession: string | null = null;
   let openSessionRolledUpAt = 0;
+  // Lets a scraper with byte cursors refuse one the index no longer backs.
+  const tool = scraper.tool;
+  scraper.useIndexProbe?.(
+    (sessionId, messageIndex) =>
+      stmts.messageAtIndex.get(`${tool}:${sessionId}`, messageIndex) !== undefined,
+  );
   try {
     for await (const chunk of scraper.scrape()) {
       // Before the write, or the row about to be inserted would move the
@@ -120,6 +150,9 @@ export async function scanTool(
           | { lowest: number | null }
           | undefined;
         lowestStored.set(chunkSessionRef, row?.lowest ?? null);
+        // Committed before the first row, so a scan cut off anywhere after
+        // this leaves the session marked for the rebuild it never reached.
+        stmts.markUnitsStale.run(unitsStaleKey(chunkSessionRef), new Date().toISOString());
       }
 
       const written = upsertChunk(stmts, scopedRoot, chunk);
@@ -151,12 +184,13 @@ export async function scanTool(
       if (!latestTimestamp || chunk.timestamp > latestTimestamp) {
         latestTimestamp = chunk.timestamp;
       }
+      await deps.checkpoint?.();
     }
 
     // Only after the scrape completed. A scrape that threw has an incomplete
     // set of written ids, and pruning against it would delete rows for
     // everything it never reached.
-    pruneRereadSessions(db, stmts, writtenIds, lowestWritten, lowestStored);
+    pruneRereadSessions(db, stmts, writtenIds, lowestWritten, lowestStored, scanStartedAt);
 
     if (latestTimestamp) {
       await scraper.saveScrapedPosition({
@@ -165,6 +199,9 @@ export async function scanTool(
     }
     clearSetting(db, `last_error:${scraper.tool}`);
   } catch (error) {
+    if (error instanceof ScanInterrupted) {
+      throw error;
+    }
     setSetting(
       db,
       `last_error:${scraper.tool}`,
@@ -175,6 +212,7 @@ export async function scanTool(
     // advancing would skip that content permanently. Re-scraping the
     // same window is safe (message ids are deterministic hashes).
   } finally {
+    scraper.useIndexProbe?.(undefined);
     // The last session a scraper yielded has nobody to move past it.
     if (openSession !== null) {
       stmts.sessionRollup.run(openSession);
@@ -283,6 +321,19 @@ function upsertChunk(
  * that version of this prune never ran on real data while its test, whose
  * fixture started at 0, passed.
  *
+ * Only rows indexed no later than this scan began are candidates. Another
+ * server scanning the same index can insert rows for lines appended after this
+ * scan read the file; they are absent from what this scan wrote for the
+ * plainest reason, that it never saw them, and deleting them lost them for
+ * good — the other server's cursor already sat past those lines. Measured with
+ * three servers over a 10,000-message corpus while sessions grew: 70 to 74
+ * rows lost in every run. One scanner per project at a time (`ScanLease`) is
+ * what prevents the overlap; this bound is what keeps an overlap that happens
+ * anyway — a lease taken over from a holder that stalled past its expiry —
+ * from costing data. A row indexed at the very millisecond the
+ * scan began is still a candidate: whoever wrote it read those lines before
+ * this scan started reading, so this scan read them too.
+ *
  * The caller re-runs the roll-up and rebuilds retrieval units for every
  * touched session afterwards, which is what repairs `message_count` and the
  * search windows over the rows this removes.
@@ -293,6 +344,7 @@ function pruneRereadSessions(
   writtenIds: Map<string, Set<string>>,
   lowestWritten: Map<string, number>,
   lowestStored: Map<string, number | null>,
+  scanStartedAt: string,
 ): void {
   for (const [sessionRef, written] of writtenIds) {
     if (written.size === 0) {
@@ -306,7 +358,9 @@ function pruneRereadSessions(
       continue;
     }
 
-    const stale = (stmts.selectMessageIdsForSession.all(sessionRef) as Array<{ id: string }>)
+    const stale = (
+      stmts.selectPrunableMessageIds.all(sessionRef, scanStartedAt) as Array<{ id: string }>
+    )
       .map((row) => row.id)
       .filter((id) => !written.has(id));
     if (stale.length === 0) {

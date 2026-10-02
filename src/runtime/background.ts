@@ -4,6 +4,7 @@ import {
   readDeviceVerdict,
   type DeviceVerdict,
 } from "../handoff/device.js";
+import { isRuntimeInstalled } from "../handoff/embedding-runtime.js";
 import type { SessionService } from "../handoff/types.js";
 import { BACKGROUND_EMBED_BUDGET_MS, estimateVectorBacklog } from "../utils/duration.js";
 
@@ -22,6 +23,12 @@ export interface BackgroundDeps {
   readVerdict?: () => Promise<DeviceVerdict | null>;
   calibrate?: () => Promise<DeviceVerdict>;
   env?: NodeJS.ProcessEnv;
+  /**
+   * Whether this project embeds with the local model: configured for it, and
+   * the add-on installed. Calibration times that model, so it only runs when
+   * this is true. Defaults to whether the add-on is installed.
+   */
+  localEmbeddings?: boolean;
   /** Where background failures are reported; stderr in the real server. */
   log?: (line: string) => void;
 }
@@ -79,6 +86,12 @@ async function calibrateFirstIfNeeded(
   // No model is ever loaded with this set, and calibration loads one per
   // device. This guard was missing twice, in two places, in two days.
   if (env.XTCTX_DISABLE_EMBEDDINGS === "1") {
+    return;
+  }
+  // Nothing to time without the local model, which is the default state of an
+  // install: the model is an add-on. Calibrating would load it, or fail to,
+  // for a search mode that is off.
+  if (!(deps.localEmbeddings ?? isRuntimeInstalled({ env }))) {
     return;
   }
   const readVerdict = deps.readVerdict ?? (() => readDeviceVerdict());

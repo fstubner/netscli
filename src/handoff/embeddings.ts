@@ -1,3 +1,5 @@
+import { importTransformers } from "./embedding-runtime.js";
+
 /**
  * The embedding model, chosen on retrieval quality once indexing cost stopped
  * being the binding constraint.
@@ -198,7 +200,18 @@ export interface EmbeddingProvider {
    * cold cache behind a flaky network fails once and succeeds next time.
    */
   loadError?(): string | undefined;
+  /**
+   * Set when semantic search is off: no vectors can be built or compared.
+   *
+   * Search answers from keyword without calling this provider at all, nothing
+   * counts as a vectorizing backlog, and vectors already in the index are left
+   * alone. They are not "from another model", they are from one that is not
+   * switched on. Says why, so `xtctx status` can name the way back.
+   */
+  readonly semanticOff?: SemanticOffReason;
 }
+
+export type SemanticOffReason = "not_enabled" | "disabled_by_env";
 
 type FeatureExtractionOutput = {
   data: Float32Array | Float64Array | number[];
@@ -395,10 +408,11 @@ export class TransformersEmbeddingProvider implements EmbeddingProvider {
 
     process.stderr.write(`xtctx: Initializing local embedding provider (${this.model})...\n`);
 
+    // From the per-user runtime directory, not from this package: the
+    // library is an add-on installed by `xtctx embeddings enable`.
     const pipeline =
       this.loadPipeline ??
-      ((await import("@huggingface/transformers")) as unknown as { pipeline: PipelineFactory })
-        .pipeline;
+      ((await importTransformers()) as { pipeline: PipelineFactory }).pipeline;
     const extractor = await pipeline("feature-extraction", this.model, {
       dtype: this.dtype,
       ...(this.deviceName === undefined ? {} : { device: this.deviceName }),

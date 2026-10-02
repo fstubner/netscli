@@ -236,7 +236,14 @@ Two lessons about sweeping, both cheap to repeat:
   `XTCTX_DISABLE_EMBEDDINGS=1`; search degrades to keyword without vectors, so
   a test not asserting embeddings loses nothing. The real provider is still
   exercised: `tests/handoff/embeddings.test.ts` builds it directly and runs in
-  the default suite, and the eval embeds a whole corpus.
+  the default suite, and the eval embeds a whole corpus. The library is not a
+  package dependency (it is the optional add-on `xtctx embeddings enable`
+  installs), so those, the smoke test and the bake-off script set
+  `XTCTX_EMBEDDING_RUNTIME_DIR` to the repository root, where it is a
+  devDependency. `tests/handoff/embedding-runtime.test.ts` pins that nothing in
+  `src/` imports it and that the install runs from the shipped lockfile (npm
+  mocked); `tests/handoff/semantic-off.test.ts` covers search and status with
+  semantic search off.
 - **`toFtsQuery` escapes a quote that cannot reach it.** The term pattern does
   not admit `"`, so the escaping is unreachable belt-and-braces. Kept, and
   pinned by a test that says so, rather than removed.

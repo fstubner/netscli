@@ -6,7 +6,9 @@ import { recordDrift } from "./drift-log.js";
 import type {
   ConversationChunk,
   ConversationScraper,
+  EmittedPosition,
   FileCursor,
+  IndexProbe,
   ScraperState,
 } from "../types/scraper.js";
 
@@ -146,8 +148,37 @@ export abstract class AbstractScraper<T extends ConversationChunk = Conversation
   abstract scrape(since?: Date): AsyncIterable<T>;
   abstract fullSync(): AsyncIterable<T>;
 
+  /** Set by the scan for the duration of a scrape; see `useIndexProbe`. */
+  private indexProbe: IndexProbe | undefined;
+
   async getLastScrapedPosition(): Promise<ScraperState> {
     return this.stateManager.load(this.tool);
+  }
+
+  useIndexProbe(probe: IndexProbe | undefined): void {
+    this.indexProbe = probe;
+  }
+
+  /**
+   * Whether the index still holds what a cursor says was read.
+   *
+   * Only asked when a scan installed a probe; a scraper driven on its own has
+   * no index to disagree with. A cursor from before `lastEmitted` existed is
+   * refused once, so a file read through by an older version is read again —
+   * which is what repairs an index the concurrent prune already damaged,
+   * since nothing else can tell it apart from one that is whole.
+   */
+  protected cursorBackedByIndex(cursor: FileCursor): boolean {
+    if (!this.indexProbe) {
+      return true;
+    }
+    if (cursor.lastEmitted === undefined) {
+      return false;
+    }
+    if (cursor.lastEmitted === null) {
+      return true;
+    }
+    return this.indexProbe(cursor.lastEmitted.sessionId, cursor.lastEmitted.messageIndex);
   }
 
   /**
@@ -185,6 +216,7 @@ export function resumeOffset(
   cursor: FileCursor | undefined,
   currentSize: number,
   currentHeadHash?: string,
+  currentTailHash?: string,
 ): number {
   // No context means the derived state a resumed read depends on was never
   // recorded, so resuming would drop or misattribute everything after it.
@@ -197,6 +229,10 @@ export function resumeOffset(
   // A head that no longer matches means the file was rewritten rather than
   // appended to, so the offset points into different content.
   if (cursor.headHash !== undefined && cursor.headHash !== currentHeadHash) {
+    return 0;
+  }
+  // The same, for a rewrite further in. See `fileTailHash`.
+  if (cursor.tailHash !== undefined && cursor.tailHash !== currentTailHash) {
     return 0;
   }
   return cursor.offset;
@@ -218,17 +254,41 @@ const FILE_HEAD_HASH_BYTES = 1024;
  * the safe direction: the cost is a re-read.
  */
 export async function fileHeadHash(path: string, upTo: number): Promise<string | null> {
-  const window = Math.min(FILE_HEAD_HASH_BYTES, Math.max(0, upTo));
-  if (window === 0) {
+  return windowHash(path, 0, Math.min(FILE_HEAD_HASH_BYTES, Math.max(0, upTo)));
+}
+
+/**
+ * Hash the bytes just before `upTo`, or null when there is nothing the head
+ * hash does not already cover, or when they cannot be read.
+ *
+ * The head alone missed a rewrite past its first kilobyte. A transcript
+ * rewritten with one early turn changed resumed at the old offset into
+ * different content: the head was intact and the file had not shrunk, so
+ * the read started mid-record and the changed turn kept its old text in the
+ * index. Any rewrite that changes the length of something before the offset
+ * moves the bytes that end there, so this window catches it.
+ *
+ * Sampled, not exhaustive: a same-length edit in the middle of a long file
+ * changes neither window. Hashing the whole prefix would catch it, at the
+ * price of re-reading every byte of every file on every scan, which is the
+ * 18GB re-read resuming exists to avoid.
+ */
+export async function fileTailHash(path: string, upTo: number): Promise<string | null> {
+  const start = Math.max(0, upTo - FILE_HEAD_HASH_BYTES);
+  return start === 0 ? null : windowHash(path, start, upTo - start);
+}
+
+async function windowHash(path: string, start: number, length: number): Promise<string | null> {
+  if (length <= 0) {
     return null;
   }
 
   try {
     const handle = await open(path, "r");
     try {
-      const buffer = Buffer.alloc(window);
-      const { bytesRead } = await handle.read(buffer, 0, window, 0);
-      if (bytesRead < window) {
+      const buffer = Buffer.alloc(length);
+      const { bytesRead } = await handle.read(buffer, 0, length, start);
+      if (bytesRead < length) {
         // Shorter than the window it was recorded over: rewritten, not
         // appended to.
         return null;
@@ -240,6 +300,18 @@ export async function fileHeadHash(path: string, upTo: number): Promise<string |
   } catch {
     return null;
   }
+}
+
+/**
+ * Where a yielded chunk will sit in the index, or undefined for one the index
+ * will not store. The scan drops blank chunks, so recording one as the last
+ * emitted would name a row that never exists and fail the cursor check on
+ * every scan; see `cursorBackedByIndex`.
+ */
+export function emittedPosition(chunk: ConversationChunk): EmittedPosition | undefined {
+  return chunk.content.trim()
+    ? { sessionId: chunk.sessionId, messageIndex: chunk.metadata.messageIndex ?? 0 }
+    : undefined;
 }
 
 /** A plain object: not null, not an array. The shape every parsed record is checked against first. */

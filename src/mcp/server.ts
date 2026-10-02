@@ -91,13 +91,27 @@ export function buildToolDefinitions(): Tool[] {
     },
     {
       name: "xtctx_session_detail",
-      description: "Return raw messages from a session_ref returned by xtctx_recent_sessions or xtctx_search_sessions.",
+      description:
+        "Return raw messages from a session_ref returned by xtctx_recent_sessions or xtctx_search_sessions. " +
+        "By default returns the MOST RECENT messages (the end of the session, where the work stood), oldest-first within the page. " +
+        "Each message shows its position counted from the start; the response names the offset for earlier messages. " +
+        "An explicit offset counts from the start unless from_end is true. " +
+        "Output is capped (about 40k characters; long tool output is excerpted), and says when messages were omitted.",
       inputSchema: {
         type: "object",
         properties: {
           session_ref: { type: "string", description: "Session reference, e.g. codex:abc123" },
-          offset: { type: "number", description: "Message offset for pagination" },
+          offset: {
+            type: "number",
+            description:
+              "Message offset for pagination, counted from the start of the session (or back from the newest message when from_end is true). Omit for the newest messages.",
+          },
           limit: { type: "number", description: "Max messages to return. Default: 50" },
+          from_end: {
+            type: "boolean",
+            description:
+              "Count offset back from the newest message. Default: true when offset is omitted, false when offset is given.",
+          },
           format: {
             type: "string",
             enum: ["markdown", "json"],

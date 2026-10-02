@@ -121,6 +121,10 @@ describe("MCP server over stdio", () => {
     // loads inside a spawned server and vectorises, so it has to opt back in
     // for the child it spawns rather than inherit the suite's default.
     delete env.XTCTX_DISABLE_EMBEDDINGS;
+    // The library is an add-on loaded from a runtime directory, and the sandbox
+    // home has none. This repository has it as a devDependency, so the
+    // repository root is one.
+    env.XTCTX_EMBEDDING_RUNTIME_DIR = process.cwd();
     proc = spawn(process.execPath, [resolve("node_modules/tsx/dist/cli.mjs"), resolve("src/cli/index.ts")], {
       cwd: projectRoot,
       env,

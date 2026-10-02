@@ -385,6 +385,9 @@ async function buildCursorFixture(
 
   const globalDb = new Database(join(rootDir, "globalStorage", "state.vscdb"));
   globalDb.exec("CREATE TABLE cursorDiskKV (key TEXT PRIMARY KEY, value TEXT NOT NULL)");
+  // Current Cursor has this table; a baseline without it would warn about its
+  // absence and fail the battery's "baseline must not warn" check.
+  globalDb.exec("CREATE TABLE composerHeaders (composerId TEXT PRIMARY KEY, workspaceId TEXT)");
   const ins = globalDb.prepare("INSERT INTO cursorDiskKV (key, value) VALUES (?, ?)");
   ins.run(`composerData:c1`, JSON.stringify(composer));
   ins.run(`bubbleId:c1:b1`, JSON.stringify(bubble1));

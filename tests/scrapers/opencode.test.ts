@@ -10,7 +10,8 @@ import type { OpenCodeChunk } from "@xtctx/types/scraper";
  * opencode stores conversations in a single SQLite database with three
  * tables: session, message, part. The scraper joins by session_id and
  * message_id, then concatenates type === "text" parts to form the chunk
- * content. Reasoning, file, tool, and step parts are skipped silently.
+ * content. Tool parts become a line of their own; reasoning, file and step
+ * parts are skipped silently.
  */
 
 interface SessionFixture {
@@ -264,8 +265,11 @@ describe("OpenCodeScraper", () => {
     const chunks: OpenCodeChunk[] = [];
     for await (const chunk of scraper.fullSync()) chunks.push(chunk);
 
-    expect(chunks).toHaveLength(1);
-    expect(chunks[0].content).toBe("first\nsecond");
+    // The text parts join; the tool part between them is a line of its own.
+    expect(chunks.map((chunk) => [chunk.role, chunk.content])).toEqual([
+      ["assistant", "first\nsecond"],
+      ["tool", "used read"],
+    ]);
   });
 
   it("walks multiple sessions in time order", async () => {
@@ -306,7 +310,12 @@ describe("OpenCodeScraper", () => {
     expect(chunks.map((c) => c.sessionId)).toEqual(["sess-A", "sess-B"]);
   });
 
-  it("respects since cursor and emits only newer chunks", async () => {
+  /**
+   * A session is read whole when anything in it is newer than the cursor, and
+   * not at all when nothing is. Reading only the newer messages missed one
+   * that was still streaming at the last scan; see opencode-session-reread.
+   */
+  it("respects since cursor: reads a session with newer rows whole, and skips one without", async () => {
     const t0 = new Date("2026-02-24T10:00:00Z").getTime();
     const t1 = new Date("2026-02-24T10:05:00Z").getTime();
     buildOpenCodeDb(dbPath, [
@@ -328,14 +337,25 @@ describe("OpenCodeScraper", () => {
           },
         ],
       },
+      {
+        id: "sess-quiet",
+        time_created: t0,
+        messages: [
+          {
+            id: "m3",
+            role: "user",
+            time_created: t0,
+            parts: [{ id: "p3", time_created: 0, data: { type: "text", text: "untouched" } }],
+          },
+        ],
+      },
     ]);
 
     const scraper = new OpenCodeScraper(dbPath, stateDir);
     const chunks: OpenCodeChunk[] = [];
     for await (const chunk of scraper.scrape(new Date(t0))) chunks.push(chunk);
 
-    expect(chunks).toHaveLength(1);
-    expect(chunks[0].content).toBe("after");
+    expect(chunks.map((chunk) => chunk.content)).toEqual(["before", "after"]);
   });
 
   it("normalizes role values", async () => {

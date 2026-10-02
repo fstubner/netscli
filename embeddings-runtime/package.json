@@ -1,0 +1,14 @@
+{
+  "name": "xtctx-embeddings-runtime",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The local embedding runtime. `xtctx embeddings enable` installs exactly this, from the lockfile beside it, into ~/.xtctx/embeddings.",
+  "dependencies": {
+    "@huggingface/transformers": "4.2.0"
+  },
+  "overrides": {
+    "protobufjs": "^7.5.5",
+    "sharp": "^0.35.3",
+    "adm-zip": "^0.6.1"
+  }
+}

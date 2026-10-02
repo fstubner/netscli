@@ -203,9 +203,20 @@ jobs:
           # Insert above the previous newest entry, keeping the file's header.
           # Release Please owned this file before; its format is preserved so
           # the existing entries stay readable alongside the new ones.
-          first_entry=$(grep -n '^## ' CHANGELOG.md | head -n1 | cut -d: -f1 || true)
+          #
+          # An `## [Unreleased]` section, when present, stays at the top and
+          # the new entry goes beneath it: inserting above the first `## `
+          # heading would put the release above Unreleased and leave the
+          # section describing work that has now shipped. Its hand-written
+          # body is replaced by the generated notes (which cover the same
+          # commits), so the heading is kept and the body dropped.
+          first_entry=$(grep -n '^## ' CHANGELOG.md | grep -v ':## \[Unreleased\]' | head -n1 | cut -d: -f1 || true)
+          unreleased=$(grep -n '^## \[Unreleased\]' CHANGELOG.md | head -n1 | cut -d: -f1 || true)
           if [ -n "${first_entry:-}" ]; then
-            head -n "$((first_entry - 1))" CHANGELOG.md > /tmp/new.md
+            head -n "$(( ${unreleased:-$first_entry} - 1 ))" CHANGELOG.md > /tmp/new.md
+            if [ -n "${unreleased:-}" ]; then
+              printf '## [Unreleased]\n\n' >> /tmp/new.md
+            fi
             cat /tmp/entry.md >> /tmp/new.md
             tail -n +"${first_entry}" CHANGELOG.md >> /tmp/new.md
           else

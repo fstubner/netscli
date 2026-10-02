@@ -20,6 +20,28 @@ import { SCRAPER_NAME, warnDrift } from "./shared.js";
 const SESSIONS_KEY = "interactive.sessions";
 
 /**
+ * Bumped when the scraper's output for a session it has already read changes,
+ * so that already-indexed rows are corrected rather than kept. Same mechanism
+ * as `CLAUDE_CODE_SCRAPER_VERSION`.
+ *
+ * 1 (absent from state): journal splices applied as inserts, so turns were
+ *    duplicated and answers attached to the wrong requests; every turn stamped
+ *    with the session's creation date; response items joined by `.value`, which
+ *    dropped inline file references and tool calls and let thinking text in;
+ *    cancelled requests dropped whole.
+ * 2: journals replayed as truncate-then-push; per-request timestamps; response
+ *    items rendered by kind; a cancelled request keeps its prompt.
+ *
+ * A stored version below this makes the next scan ignore its `since` cutoff
+ * once, so every chat file still on disk is read again. The rows that read
+ * writes carry new ids (the id hashes content, role and timestamp) and the
+ * index's re-read prune then deletes the old rows of each re-read session.
+ * Sessions whose files are gone keep their old rows: those rows are the only
+ * copy, which is why this corrects in place instead of rebuilding the index.
+ */
+export const COPILOT_SCRAPER_VERSION = 2;
+
+/**
  * Shapes that the Copilot scraper tolerates silently without logging.
  * Each entry documents the shape being accepted and why it is not drift.
  * Anything not listed here that falls outside the happy path MUST warn
@@ -36,7 +58,7 @@ export const ACCEPTED_DEGRADATIONS = {
   noInteractiveSessionsKey: "workspaceStorage has no chat history",
   /** ItemTable shape varies across VS Code versions; tolerate open/query failure. */
   unreadableItemTable: "ItemTable row is unreadable or unexpected shape",
-  /** A canceled request is intentionally skipped — not drift. */
+  /** A canceled request keeps its prompt; its partial answer is not indexed — not drift. */
   canceledRequest: "request was canceled by the user",
   /** Some sessions legitimately have no user-text (agent-only runs); skip silently. */
   emptyUserText: "request has no user-visible text parts",
@@ -46,10 +68,16 @@ export const ACCEPTED_DEGRADATIONS = {
   unknownFieldsAlongside: "unknown sibling field added by a newer VS Code version",
 };
 
-/** Shape of a single Copilot request/response pair inside ItemTable. */
+/**
+ * Shape of a single Copilot request/response pair.
+ *
+ * `response` is a list of typed items (`kind`), or a plain string in the 2023
+ * format; `timestamp` is epoch milliseconds and only newer VS Code writes it.
+ */
 interface CopilotRequest {
   message?: { parts?: Array<{ text?: string }> };
-  response?: Array<{ value?: string }>;
+  response?: unknown;
+  timestamp?: number;
   isCanceled?: boolean;
   model?: string;
   agentId?: string;
@@ -88,7 +116,21 @@ export class CopilotScraper extends AbstractScraper<CopilotChunk> {
   }
 
   async *scrape(since?: Date): AsyncIterable<CopilotChunk> {
-    yield* withDriftReport(SCRAPER_NAME, this.readAllMessages(since), this.stateDir);
+    const stored = (await this.getLastScrapedPosition()).scraperVersion ?? 1;
+    const outdated = stored < COPILOT_SCRAPER_VERSION;
+    // An outdated state ignores the cutoff, so no chat file is skipped as
+    // unchanged and every session on disk is read again.
+    yield* withDriftReport(
+      SCRAPER_NAME,
+      this.readAllMessages(outdated ? undefined : since),
+      this.stateDir,
+    );
+    // Reached only when the read ran to the end: a scan that throws abandons
+    // the generator before this line, so an interrupted re-read does not mark
+    // itself done and the next scan starts it again.
+    if (outdated) {
+      await this.saveScrapedPosition({ scraperVersion: COPILOT_SCRAPER_VERSION });
+    }
   }
 
   async *fullSync(): AsyncIterable<CopilotChunk> {
@@ -335,17 +377,24 @@ export class CopilotScraper extends AbstractScraper<CopilotChunk> {
       );
     }
 
-    // Copilot only stamps a session-level creationDate — individual turns
-    // inherit it. Using creationDate for the scrape cursor drops whole
-    // sessions that existed before the cursor but gained NEW turns after
-    // it, causing permanent turn loss (P1 from review). Fix: emit every
-    // turn every cycle and rely on chunk-ID-based upsert dedupe upstream
-    // (the ID basis now includes messageIndex so duplicates collapse
-    // safely). Note: sinceMs is still referenced below so that a future
-    // per-turn timestamp upgrade only needs a narrow edit.
+    // Turns are not filtered by time. The older formats stamp only a
+    // session-level creationDate, so a cursor on turn times would drop whole
+    // sessions that existed before it but gained NEW turns after it
+    // (permanent turn loss, P1 from review). Every turn is emitted every
+    // cycle and chunk-ID-based upsert dedupe upstream collapses the repeats
+    // (the ID basis includes messageIndex). `sinceMs` stays referenced for the
+    // day a per-turn cutoff is safe.
     void sinceMs;
 
     const creationDate = toDate(session.creationDate);
+    // Newer VS Code stamps each request with its own `timestamp`; the session's
+    // creation date is all older formats have, so it is the fallback rather
+    // than the answer. Using it for every turn made a week-long chat read as
+    // one instant.
+    const turnTime = (req: CopilotRequest): Date =>
+      typeof req.timestamp === "number" && Number.isFinite(req.timestamp) && req.timestamp > 0
+        ? toDate(req.timestamp)
+        : creationDate;
 
     if (session.requests !== undefined && !Array.isArray(session.requests)) {
       // Schema drift: 'requests' was renamed or retyped. This is the
@@ -386,33 +435,37 @@ export class CopilotScraper extends AbstractScraper<CopilotChunk> {
         continue;
       }
 
-      if (req.isCanceled) {
-        // ACCEPTED_DEGRADATIONS.canceledRequest
-        continue;
-      }
+      const request = req as CopilotRequest;
+      const timestamp = turnTime(request);
+      const completionType = request.agentId ? "agent" : "chat";
 
-      const userText = extractUserText(req as CopilotRequest);
+      const userText = extractUserText(request);
       if (userText) {
         yield this.parseRaw({
           sessionId,
           role: "user",
           content: userText,
-          timestamp: creationDate,
-          model: (req as CopilotRequest).model,
-          completionType: (req as CopilotRequest).agentId ? "agent" : "chat",
+          timestamp,
+          model: request.model,
+          completionType,
           messageIndex: messageIndex++,
         });
       }
 
-      const assistantText = extractAssistantText(req as CopilotRequest);
-      if (assistantText) {
+      if (request.isCanceled) {
+        // ACCEPTED_DEGRADATIONS.canceledRequest — the prompt above was asked
+        // and is kept; what the model had written when stopped is not.
+        continue;
+      }
+
+      for (const part of responseChunks(request.response, `${location}#${sessionId}`)) {
         yield this.parseRaw({
           sessionId,
-          role: "assistant",
-          content: assistantText,
-          timestamp: creationDate,
-          model: (req as CopilotRequest).model,
-          completionType: (req as CopilotRequest).agentId ? "agent" : "chat",
+          role: part.role,
+          content: part.content,
+          timestamp,
+          model: request.model,
+          completionType,
           messageIndex: messageIndex++,
         });
       }
@@ -475,19 +528,135 @@ function extractUserText(req: CopilotRequest): string | undefined {
   return text.length > 0 ? text : undefined;
 }
 
-/** Concatenates all value segments from an assistant response. */
-function extractAssistantText(req: CopilotRequest): string | undefined {
-  const response = req.response;
-  if (!Array.isArray(response)) {
-    return undefined;
+/**
+ * Response item kinds that carry no conversation text and are skipped without
+ * a warning. Any other `kind` we do not render is reported, since it may be
+ * text under a name we have not seen.
+ *
+ * `thinking` is the model's reasoning, not what it said; the rest are editor
+ * affordances (undo markers, edit previews, confirmation prompts, progress).
+ */
+const NON_TEXT_RESPONSE_KINDS = new Set([
+  "thinking",
+  "undoStop",
+  "codeblockUri",
+  "textEditGroup",
+  "notebookEditGroup",
+  "confirmation",
+  "progressMessage",
+  "progressTask",
+  "progressTaskSerialized",
+  "prepareToolInvocation",
+  "mcpServersStarting",
+  "extensions",
+  "warning",
+  "command",
+  "treeData",
+]);
+
+/** Longest tool line kept; a tool message can quote a whole command. */
+const MAX_TOOL_LINE = 200;
+
+interface ResponsePart {
+  role: "assistant" | "tool";
+  content: string;
+}
+
+/**
+ * Turn one response into assistant text and one-line tool chunks.
+ *
+ * Items are selected by `kind`. Joining the `.value` of every item, as this
+ * used to, dropped inline file references (a list of files read "- \n- ") and
+ * let the model's thinking in as if it were its answer. Text around a tool
+ * call becomes separate assistant chunks, so the tool line sits where the call
+ * happened.
+ */
+function* responseChunks(response: unknown, location: string): Iterable<ResponsePart> {
+  // The 2023 format stored the answer as one string.
+  if (typeof response === "string") {
+    const text = response.trim();
+    if (text) yield { role: "assistant", content: text };
+    return;
   }
+  if (!Array.isArray(response)) return;
 
-  const text = response
-    .map((r) => r.value ?? "")
-    .join("")
-    .trim();
+  let text = "";
+  const flushText = function* (): Iterable<ResponsePart> {
+    const content = text.trim();
+    text = "";
+    if (content) yield { role: "assistant", content };
+  };
 
-  return text.length > 0 ? text : undefined;
+  for (const item of response) {
+    if (!isRecord(item)) continue;
+    const kind = item.kind;
+
+    if (kind === undefined || kind === "markdownContent" || kind === "markdownVuln") {
+      // A bare `{value}` is markdown too; only the typed forms nest it.
+      text += markdownText(item);
+    } else if (kind === "inlineReference") {
+      text += referenceText(item);
+    } else if (kind === "toolInvocationSerialized") {
+      yield* flushText();
+      yield { role: "tool", content: toolLine(item) };
+    } else if (typeof kind !== "string" || !NON_TEXT_RESPONSE_KINDS.has(kind)) {
+      warnDrift(location, `unrecognised response item kind ${JSON.stringify(kind)}`);
+    }
+  }
+  yield* flushText();
+}
+
+function markdownText(item: Record<string, unknown>): string {
+  if (typeof item.value === "string") return item.value;
+  if (isRecord(item.content) && typeof item.content.value === "string") return item.content.value;
+  return "";
+}
+
+/** A reference as text: its display name if it has one, else the path it points at. */
+function referenceText(item: Record<string, unknown>): string {
+  if (typeof item.name === "string" && item.name) return item.name;
+  const ref = item.inlineReference;
+  // Either a URI object, or a location wrapping one under `uri`.
+  const uri = isRecord(ref) && isRecord(ref.uri) ? ref.uri : ref;
+  if (typeof uri === "string") return uri;
+  if (!isRecord(uri)) return "";
+  if (typeof uri.fsPath === "string") return uri.fsPath;
+  return typeof uri.path === "string" ? safeDecode(uri.path) : "";
+}
+
+function safeDecode(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+/** `ran <tool>: <what it did>`, on one line. */
+function toolLine(item: Record<string, unknown>): string {
+  const name = typeof item.toolId === "string" && item.toolId ? item.toolId : "tool";
+  // The past-tense wording names what happened ("Read x.ts"); the invocation
+  // wording is what was about to ("Reading x.ts") and is the fallback.
+  const message = messageText(item.pastTenseMessage) || messageText(item.invocationMessage);
+  const line = message ? `ran ${name}: ${message}` : `ran ${name}`;
+  return line.length > MAX_TOOL_LINE ? `${line.slice(0, MAX_TOOL_LINE - 1)}…` : line;
+}
+
+/** A message that is a string or `{value}` markdown, as plain single-line text. */
+function messageText(message: unknown): string {
+  const raw = typeof message === "string" ? message : isRecord(message) ? message.value : undefined;
+  if (typeof raw !== "string") return "";
+  return (
+    raw
+      // `[label](uri)`; an empty label (a file link) falls back to the path.
+      .replace(
+        /\[([^\]]*)\]\(([^)\s]*)\)/g,
+        (_match, label: string, target: string) =>
+          label || safeDecode(target.replace(/^file:\/\//, "")),
+      )
+      .replace(/\s+/g, " ")
+      .trim()
+  );
 }
 
 function normalizeRole(value?: string): CopilotChunk["role"] {
