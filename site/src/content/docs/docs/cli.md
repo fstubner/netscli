@@ -6,7 +6,7 @@ head:
     content: Command-line network scanner (CLI) | NetsCLI docs
 ---
 
-The CLI is the best interface for repeatable diagnostics, automation, and machine-readable output.
+Use the CLI for repeatable diagnostics, automation, and machine-readable output.
 
 ## Common commands
 
@@ -52,10 +52,7 @@ netscli discover --json | jq '.[].ip'
 
 ### CSV and Markdown
 
-Commands that return a list also take `--csv`, for a spreadsheet or a script
-that wants columns, and `--md`, for a Markdown table to paste into an issue
-or a wiki: `discover`, `scan`, `sweep`, `dns`, `ping`, `arp`, `interfaces`,
-`mdns` and `pcap`.
+Commands that return a list also take `--csv`, for a spreadsheet or a script that wants columns, and `--md`, for a Markdown table to paste into an issue or a wiki. They are `discover`, `scan`, `sweep`, `dns`, `ping`, `arp`, `interfaces`, `mdns` and `pcap`.
 
 ```bash
 netscli discover 192.168.1.0/24 --csv > hosts.csv
@@ -93,8 +90,7 @@ $ netscli dns netscli.com --record MX --md
 
 ## Example output
 
-Captured from a real run against loopback, so every port reads `filtered` —
-nothing is listening on 127.0.0.1 for these ports. A host with services up
+Captured from a real run against loopback, so every port reads `filtered`, because nothing is listening on 127.0.0.1 for these ports. A host with services up
 returns `open` with latency, and a banner where one was offered.
 
 ```console
@@ -121,8 +117,7 @@ $ netscli scan 127.0.0.1 -p 22,80,443 --json
 ]
 ```
 
-`open` is the compatibility boolean older consumers already read; `status`
-carries the four-way answer. Both are present, so a script written against
+`open` is the compatibility boolean older consumers already read, and `status` carries the full answer, including `open|filtered` for UDP. Both are present, so a script written against
 either keeps working.
 
 ```console
@@ -167,7 +162,7 @@ The CLI exposes shared network operations plus command-line maintenance workflow
 | --- | --- |
 | `discover` | Find reachable hosts on a subnet. |
 | `scan` | Scan TCP ports on one host, or UDP services with `--udp`. |
-| `inspect` | Build a host profile from reachability, reverse DNS, and optional ports. |
+| `inspect` | Build a host profile with reachability, reverse DNS, MAC address and maker, an OS hint, and optional ports. |
 | `sweep` | Discover hosts and scan selected ports across them. |
 | `ping` | Measure reachability and packet loss. |
 | `trace` | Show route hops to a host. |
@@ -194,7 +189,7 @@ netscli dns --help
 
 `--concurrency` / `-j` is a global option for limiting in-flight network work. It is useful on fragile gateways or when scanning larger local ranges.
 
-The help output is the source of truth for flags. The docs explain workflow and intent; the binary explains exact syntax.
+The help output is the source of truth for flags. The docs explain workflow and intent, and the binary explains exact syntax.
 
 ## CLI-only workflows
 
@@ -204,10 +199,9 @@ Some workflows intentionally stay in the command-line interface:
 - `serve` and `mcp-service` for MCP server launch and supported service management.
 - Shell completions and manpage generation.
 
-The desktop app exposes shared network operations and result exploration. It does not duplicate maintenance workflows unless they become shared core operations with a clear interactive use case.
 
 ## Permissions and limits
 
 Raw ICMP, traceroute, and packet capture can require elevated permissions depending on the platform. Port scans and DNS lookups normally do not.
 
-The core library enforces safety limits for subnet size, port count, concurrency, and timeouts. Interface-specific code does not bypass those limits.
+Limits on subnet size, port count, concurrency, and timeouts apply the same way in every interface.

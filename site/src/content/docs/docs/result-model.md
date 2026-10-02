@@ -23,12 +23,12 @@ Port scans include the existing compatibility fields plus richer status data.
 | Field | Meaning |
 | --- | --- |
 | `port` | Port number. |
-| `protocol` | `tcp` or `udp`. Results from before UDP scanning have no other kind. |
+| `protocol` | `tcp` or `udp`. |
 | `open` | Compatibility boolean for older consumers. |
 | `service` | Best-effort service guess, from the port number. |
-| `product` | The software on the port, when it named itself: from the SSH identification line, an HTTP `Server` header, an FTP or mail greeting, or MySQL's connection greeting; or when it answered the one read-only question netscli asks Redis (`INFO server`) and Memcached (`version`). Omitted otherwise. |
+| `product` | The software on the port, when it named itself in the SSH identification line, an HTTP `Server` header, an FTP or mail greeting, or MySQL's connection greeting, or when it answered the one read-only question netscli asks Redis (`INFO server`) and Memcached (`version`). Omitted otherwise. |
 | `version` | That software's version, when it gave one (`9.6p1` for OpenSSH). Omitted otherwise. |
-| `status` | `open`, `closed`, `filtered`, or `error`; for UDP also `open\|filtered`, meaning no reply and no refusal. |
+| `status` | `open`, `closed`, `filtered`, or `error`, and for UDP also `open\|filtered`, meaning no reply and no refusal. |
 | `latency_ms` | TCP connect/probe latency where available. |
 | `banner` | Bounded plaintext banner when captured. |
 | `http` | HTTP status/header data when a HTTP-like probe succeeds. |
@@ -41,9 +41,7 @@ Port scans include the existing compatibility fields plus richer status data.
 Banner, HTTP, TLS, and raw preview data are probe results. They are useful diagnostics, not proof that a service is trustworthy.
 
 `product` and `version` come only from what the service said about itself,
-so they are exactly as trustworthy as that: a server
-can claim any name, and many hide their version on purpose. A port with no
-`product` didn't name itself; it doesn't mean nothing is there.
+so they are exactly as trustworthy as that. A server can claim any name, and many hide their version on purpose. A port with no `product` didn't name itself, which doesn't mean nothing is there.
 
 ## Host inventory
 
@@ -56,7 +54,7 @@ Discovery and sweep results describe hosts. A host row carries:
 | `ip` | Host address. |
 | `hostname` | Reverse DNS, LLMNR/NetBIOS, or the host's own mDNS name when available. |
 | `mac` | MAC address when present in ARP/vendor data. |
-| `vendor` | OUI vendor lookup. |
+| `vendor` | Network card maker, looked up from the MAC address. |
 | `rtt_ms` | Reachability latency. |
 | `found_by` | Which probe found the host. |
 | `hostname_source` | Where `hostname` came from: `reverse` or `mdns`. Absent when the host has no name. |
@@ -87,10 +85,6 @@ the ports found open on it, so the host fields are one level down:
 netscli sweep 192.168.1.0/24 -p 22,80,443 --json | jq '.[].host.ip'
 ```
 
-This page used to list `open_ports` in the table above as a "sweep-only"
-field, which read as though it sat beside `ip`. It does not, on any surface —
-the CLI and the MCP `sweep_network` tool both serialize the nested form.
-
 ## DNS records
 
 DNS records expose type and value first, then additive metadata when the resolver provides it.
@@ -118,7 +112,7 @@ Inspect is a host profile. It combines host-level data with optional port scan d
 | `host` | Original target. |
 | `ip` | Resolved IP address. |
 | `hostname` | Reverse DNS name when available. |
-| `ping` | Reachability object with `alive`, `method`, `rtt_ms`, `seq`, and optional `error` and `ttl` (the reply's time-to-live, where the platform reports it; Windows does). |
+| `ping` | Reachability object with `alive`, `method`, `rtt_ms`, `seq`, and optional `error` and `ttl` (the reply's time-to-live, where the platform reports it, which Windows does). |
 | `ports` | Port scan rows using the same model as `scan`. |
 | `open_ports` | Convenience list containing only open port rows. |
 | `mac`, `vendor` | From the local ARP table, so only for a host on the same network segment. |
@@ -143,8 +137,7 @@ mDNS/DNS-SD returns service announcements rather than generic host rows. A singl
 
 Interface rows describe local network interfaces. ARP rows describe the local
 neighbor cache. These are two different shapes, and unlike everywhere else on
-this page, the desktop app does not show them under the field names the data
-carries — so both are given here.
+this page, the desktop app does not show them under the field names the data carries, so both are given here.
 
 ### Interfaces
 
@@ -156,11 +149,10 @@ carries — so both are given here.
 | `ips` | Addresses | Addresses, with prefix length. |
 | `mac` | MAC | MAC address when available. |
 | `is_up` | State | Whether the interface is up. |
-| `is_loopback` | — | Whether the interface is loopback. |
+| `is_loopback` | None | Whether the interface is loopback. |
 
 `is_up` and `is_loopback` are booleans in the data. The desktop app renders
-the first as `up` or `down`, and has no column for the second — it feeds the
-**Kind** column instead, which has no field of its own and shows `loopback`,
+the first as `up` or `down`, and has no column for the second. It feeds the **Kind** column instead, which has no field of its own and shows `loopback`,
 `virtual`, `vpn` or `physical`, derived from `is_loopback` and the name.
 
 ### ARP entries
@@ -172,17 +164,10 @@ the first as `up` or `down`, and has no column for the second — it feeds the
 | `ip` | IP | Neighbor address. |
 | `mac` | MAC | Neighbor MAC address. |
 | `interface` | Interface | Interface it was learned on. |
-| `vendor` | Vendor | OUI vendor lookup for the MAC. |
+| `vendor` | Vendor | Network card maker, looked up from the MAC address. |
 
 Take the first column when reading `--json`, `--yaml` or MCP output, and the
 second when reading the desktop table.
-
-This section previously merged the two shapes into one list and gave
-`addresses`, `state` and `loopback` as field names. None of the three is a
-field: `addresses` is a column *header* over `ips`, `state` is a desktop row
-key derived from `is_up`, and `loopback` is a desktop row key that is not even
-shown as a column. `vendor` was also listed as though it applied to
-interfaces, which it does not.
 
 ARP is not full discovery. It reports entries already known to the operating system.
 

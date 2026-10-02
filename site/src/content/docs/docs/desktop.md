@@ -51,7 +51,7 @@ Use the CLI instead when you need setup, doctor, shell completions, manpages, se
 
 ## Operation tabs
 
-Tabs show the operation name and a short identifier such as host, subnet, interface, or record name. They do not show the full command; the command preview lives in the command bar.
+Tabs show the operation name and a short identifier such as host, subnet, interface, or record name. They do not show the full command. The command preview lives in the command bar.
 
 Supported operations include:
 
@@ -98,7 +98,7 @@ The details pane changes when multiple rows are selected. Instead of duplicating
 The details pane is operation-specific:
 
 - Scan rows explain open, closed, filtered, and error states.
-- Inspect shows a host overview, checked ports, and raw data.
+- Inspect shows a host overview, the MAC address and maker, an OS hint with its clues, checked ports, and raw data.
 - Discover and Sweep summarize device inventory and exposed services.
 - DNS shows record values and metadata such as TTL or resolver source when available.
 - Interfaces shows state, addresses, MAC, selected/default hints, and loopback or virtual hints.
@@ -137,12 +137,9 @@ Settings control:
 ## Updates
 
 When the app opens, it checks GitHub for a newer release. If there is one, a
-notice appears in the corner. The check fetches one small file and nothing
-else; turn it off under **Settings → Release Notifications**.
+notice appears in the corner. The check fetches one small file and nothing else. You can turn it off under **Settings → Release Notifications**.
 
-Where the app can update itself, the notice opens a dialog with the new
-version's release notes and three choices: **Install and restart**, **Later**
-or **Skip this version**. Nothing downloads until you choose to install. The
+Where the app can update itself, the notice opens a dialog with the new version's release notes and three choices, **Install and restart**, **Later** or **Skip this version**. Nothing downloads until you choose to install. The
 update is checked against NetsCLI's signing key before it is installed. On
 Windows the installer shows a progress bar and may ask for administrator
 permission, then the app reopens.
@@ -156,9 +153,9 @@ These installs update themselves:
 These installs belong to a package manager, so the notice links to the
 release page instead and the package manager does the update:
 
-- Scoop: `scoop update netscli-gui`
-- The AUR package: your AUR helper
-- A `.deb`: install the newer `.deb`
+- Scoop updates with `scoop update netscli-gui`
+- The AUR package updates through your AUR helper
+- A `.deb` updates by installing the newer `.deb`
 
 ## Build and runtime availability
 
@@ -166,5 +163,5 @@ Most desktop tools are available in the standard desktop build. Packet capture i
 
 - Packet Capture stays in the tool list in every build. Running a capture needs a build that includes packet-capture support, plus Npcap on Windows or libpcap on Linux/macOS. Without those, the tab opens and shows setup guidance instead of running.
 - mDNS Discovery is included in the standard published desktop build.
-- A tool whose feature is genuinely absent from the build is hidden. That applies to mDNS Discovery; Packet Capture is the deliberate exception, because the published installers ship without it and a hidden tab explained nothing.
+- In a custom build without mDNS support, mDNS Discovery is hidden.
 - If a required runtime library is missing, only that feature is unavailable. The rest of the desktop app keeps working and shows setup guidance for the missing dependency.

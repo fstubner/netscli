@@ -21,7 +21,7 @@ Use the TUI when:
 - You want command history, autocomplete, and readable summaries in one screen.
 - You are iterating on targets and ports by hand.
 
-Use the CLI when a script needs JSON/YAML. Use the desktop app when you need richer tables, filtering, multi-tab review, or row details.
+Use the CLI when a script needs JSON, YAML, CSV or Markdown. Use the desktop app when you need richer tables, filtering, multi-tab review, or row details.
 
 ## Start the TUI
 
