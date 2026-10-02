@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { vi } from "vitest";
@@ -9,7 +9,9 @@ import { openDatabase } from "@xtctx/handoff/schema";
  * pointed at the first. Nothing here may touch the real ~/.xtctx.
  */
 export function sandbox() {
-  const root = mkdtempSync(join(tmpdir(), "xtctx-sync-"));
+  // Resolved, as the index stores project roots: on macOS the temp dir is
+  // behind /var -> /private/var, and a root seeded unresolved never matches.
+  const root = realpathSync(mkdtempSync(join(tmpdir(), "xtctx-sync-")));
   const home = join(root, "home");
   const project = join(root, "project");
   mkdirSync(home);
