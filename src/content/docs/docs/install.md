@@ -82,7 +82,7 @@ Run `npx -y xtctx status`. It lists the configured tools, the indexed sessions p
 
 Search matches keywords by default, and the default install is about 55 MB on disk. Semantic search also matches by meaning and uses a local embedding model.
 
-To enable it once per machine, run `npx -y xtctx embeddings enable` and answer the prompt. Add `--yes` to skip the prompt.
+Semantic search is set per machine, so it applies to plugin and setup installs alike. To enable it, run `npx -y xtctx embeddings enable` and answer the prompt. Add `--yes` to skip the prompt. To turn it off, run `npx -y xtctx embeddings disable`.
 
 The command installs the model and runtime into `~/.xtctx/embeddings`, about 540 MB on disk. The MCP server then builds vectors in the background. See [Semantic search](/docs/commands/#semantic-search).
 

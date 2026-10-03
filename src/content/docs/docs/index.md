@@ -49,7 +49,7 @@ Machine-wide files, in `~/.xtctx/`:
 :::caution
 The index holds raw conversation text. Do not commit it.
 
-The index is also the only copy of sessions whose transcripts an agent has deleted. Claude Code deletes transcripts after 30 days by default. Back up the index with `xtctx export`.
+The index is also the only copy of sessions whose transcripts are gone. Claude Code deletes transcripts older than 30 days by default (its `cleanupPeriodDays` setting). Back up the index with `xtctx export`.
 :::
 
 ## Next

@@ -46,9 +46,9 @@ export const faq: FaqItem[] = [
   {
     group: 'Data',
     q: 'Where does data live?',
-    a: 'Config is .xtctx/config.yaml and the index is .xtctx/state/xtctx.db, both in the project. Transcripts stay where each agent keeps them. Agents delete old transcripts (Claude Code after 30 days by default), and then the index is the only copy, so back it up with xtctx export.',
+    a: 'Config is .xtctx/config.yaml and the index is .xtctx/state/xtctx.db, both in the project. Transcripts stay where each agent keeps them. Claude Code deletes transcripts older than 30 days by default, and then the index is the only copy of those sessions, so back it up with xtctx export.',
     aHtml:
-      'Config is <code>.xtctx/config.yaml</code> and the index is <code>.xtctx/state/xtctx.db</code>, both in the project. Transcripts stay where each agent keeps them. Agents delete old transcripts (Claude Code after 30 days by default), and then the index is the only copy, so back it up with <code>xtctx export</code>.',
+      'Config is <code>.xtctx/config.yaml</code> and the index is <code>.xtctx/state/xtctx.db</code>, both in the project. Transcripts stay where each agent keeps them. Claude Code deletes transcripts older than 30 days by default, and then the index is the only copy of those sessions, so back it up with <code>xtctx export</code>.',
   },
   {
     group: 'Data',

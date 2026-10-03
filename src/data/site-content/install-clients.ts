@@ -9,8 +9,10 @@ import type { InstallSteps } from './install-types';
 // notConfigured). What it buys is that the tools exist in every repo, so the
 // agent can offer to run setup there. Setup is what makes a project work, and
 // it wires the agents in the repo whether or not they have the plugin (all
-// but Copilot CLI, which needs --global-mcp). No third "use it" step: the
-// hero already shows the switch.
+// but Copilot CLI, which needs --global-mcp). No "use it" step: the hero
+// already shows the switch. Step 3 is the optional semantic search add-on:
+// it is per machine, not per project, so it serves the plugin and setup alike
+// (the runtime lives in ~/.xtctx/embeddings, src/handoff/embedding-runtime.ts).
 export const installSteps: InstallSteps = {
   install: 'Once per agent: install the plugin',
   after: 'Once per project: set it up',
@@ -28,6 +30,23 @@ export const installSteps: InstallSteps = {
       name: 'Or run it yourself',
       commands: ['npx -y xtctx setup'],
       note: 'Works without the plugin.',
+    },
+  ],
+  moreSteps: [
+    {
+      label: 'Optional, once per machine: semantic search',
+      cards: [
+        {
+          name: 'Turn it on',
+          commands: ['npx -y xtctx embeddings enable'],
+          note: 'For plugin and setup installs alike. About 540 MB.',
+        },
+        {
+          name: 'Turn it off',
+          commands: ['npx -y xtctx embeddings disable'],
+          note: 'Search goes back to keywords. The index is kept.',
+        },
+      ],
     },
   ],
 };
