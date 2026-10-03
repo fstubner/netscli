@@ -68,7 +68,7 @@ describe('buildCommand', () => {
   it('builds command previews for every tool', () => {
     const scan = createTab('scan');
     scan.form.host = '1.1.1.1';
-    expect(buildCommand(scan)).toBe('netscli scan 1.1.1.1 -p 22,80,443,8080,8443 --json');
+    expect(buildCommand(scan)).toBe('netscli scan 1.1.1.1 -p 22,80,443 --json');
 
     const discover = createTab('discover');
     discover.form.subnet = '192.168.1.0/24';

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use netscli_core::{parse_ports_checked, Ops};
+use netscli_core::{parse_ports_checked, Ops, MAX_PING_COUNT};
 
 use super::{
     emit_operation_progress, ops_with_concurrency, run_json_operation, JsonResult,
@@ -17,7 +17,7 @@ pub(crate) async fn ping_host(
 ) -> JsonResult {
     run_json_operation(op_id, manager, None, move || async move {
         let ops = Ops::default();
-        let count = count.unwrap_or(4).clamp(1, 64);
+        let count = count.unwrap_or(4).clamp(1, MAX_PING_COUNT);
         let res = ops
             .ping_host_summary(host.trim(), count)
             .await
@@ -184,10 +184,11 @@ pub(crate) async fn inspect_host_cmd(
     op_id: Option<String>,
     host: String,
     ports: Option<String>,
+    max_concurrent: Option<usize>,
     manager: tauri::State<'_, OperationManager>,
 ) -> JsonResult {
     run_json_operation(op_id, manager, None, move || async move {
-        let ops = Ops::default();
+        let ops = ops_with_concurrency(max_concurrent);
         let ports = parse_ports_checked(ports.as_deref()).map_err(|e| e.to_string())?;
         let res = ops
             .inspect_host(host, ports)

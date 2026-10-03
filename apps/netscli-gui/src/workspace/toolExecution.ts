@@ -86,7 +86,7 @@ export async function executeTool(
     case 'inspect':
       return {
         kind: 'inspect',
-        data: await netscli.inspectHost(tab.form.host.trim(), emptyToUndefined(tab.form.ports), opId),
+        data: await netscli.inspectHost(tab.form.host.trim(), emptyToUndefined(tab.form.ports), opId, maxConcurrentProbes),
       };
     case 'sweep':
       return {

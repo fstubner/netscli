@@ -78,8 +78,9 @@ export async function inspectHost(
   host: string,
   ports?: string,
   op_id?: string,
+  max_concurrent?: number,
 ): Promise<InspectResult> {
-  return invoke<InspectResult>('inspect_host_cmd', { opId: op_id, host, ports });
+  return invoke<InspectResult>('inspect_host_cmd', { opId: op_id, host, ports, maxConcurrent: max_concurrent });
 }
 
 export async function sweepNetwork(
