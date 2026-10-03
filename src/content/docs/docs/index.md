@@ -38,13 +38,7 @@ Project files:
 
 xtctx owns only the text between `<!-- xtctx:begin -->` and `<!-- xtctx:end -->` in an instruction file. It does not change anything outside those fences.
 
-Machine-wide files, in `~/.xtctx/`:
-
-| File | Description |
-| --- | --- |
-| `embeddings/` | The local embedding model and runtime. Present only after `xtctx embeddings enable`. |
-| `device.json` | The embedding device that calibration selected. |
-| `credentials.json`, `cloud-projects.json`, `sync/` | Cloud sync login, the list of projects that upload, and upload state. |
+Machine-wide state lives in `~/.xtctx/`: `embeddings/` (the local model, present only after `xtctx embeddings enable`) and `device.json` (the calibrated embedding device). Cloud sync adds `credentials.json`, `cloud-projects.json` and `sync/`: login, the list of projects that upload, and upload state.
 
 :::caution
 The index holds raw conversation text. Do not commit it.
