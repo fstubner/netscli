@@ -14,7 +14,9 @@ import {
 } from './operationIcons';
 import type { DetailTab, ToolCapabilityMap, ToolConfig, ToolKind, WorkspaceTab } from './types';
 
-export const DEFAULT_PORTS = '22,80,443,8080,8443';
+// The core's default list (netscli_core::DEFAULT_PORTS), so a scan started
+// here checks the same ports as one from the CLI, TUI or MCP server.
+export const DEFAULT_PORTS = '22,80,443';
 
 export const TOOL_KINDS: ToolKind[] = [
   'scan',
@@ -71,7 +73,7 @@ export const TOOL_CONFIG: Record<ToolKind, ToolConfig> = {
     action: 'Ping',
     fields: [
       { key: 'host', label: 'Host', placeholder: '127.0.0.1', required: true },
-      { key: 'count', label: 'Count', type: 'number', compact: true, placeholder: '4', min: 1, max: 50, step: 1 },
+      { key: 'count', label: 'Count', type: 'number', compact: true, placeholder: '4', min: 1, max: 256, step: 1 },
     ],
   },
   trace: {
@@ -179,7 +181,7 @@ export const TOOL_CONFIG: Record<ToolKind, ToolConfig> = {
     fields: [
       { key: 'mode', label: 'Mode', type: 'select', compact: true, options: ['Capture', 'Open File'] },
       { key: 'interface', label: 'Interface', type: 'select', placeholder: 'Select interface', required: true },
-      { key: 'duration', label: 'Seconds', type: 'number', compact: true, placeholder: '5', min: 1, max: 3600, step: 1 },
+      { key: 'duration', label: 'Seconds', type: 'number', compact: true, placeholder: '10', min: 1, max: 3600, step: 1 },
       { key: 'filter', label: 'Filter', placeholder: 'tcp port 443' },
       { key: 'max_packets', label: 'Packets', type: 'number', compact: true, placeholder: '1000', min: 1, max: 100000, step: 1 },
     ],
@@ -194,11 +196,11 @@ export const DEFAULT_FORM: Record<ToolKind, Record<string, string>> = {
   dns: { host: 'netscli.com', record: 'ALL' },
   reverse: { ip: '127.0.0.1' },
   inspect: { host: '127.0.0.1', ports: DEFAULT_PORTS },
-  sweep: { subnet: '', ports: '22,80,443' },
+  sweep: { subnet: '', ports: DEFAULT_PORTS },
   mdns: { timeout_ms: '3000', service_types: '' },
   interfaces: {},
   arp: {},
-  pcap: { mode: 'Capture', interface: '', duration: '5', filter: '', max_packets: '1000' },
+  pcap: { mode: 'Capture', interface: '', duration: '10', filter: '', max_packets: '1000' },
 };
 
 export const DEFAULT_SORT: Record<ToolKind, string> = {

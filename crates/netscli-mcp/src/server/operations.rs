@@ -47,16 +47,32 @@ fn resolve_and_check(
     Ok(subnet)
 }
 
+/// The settings for one operation: the client's concurrency, and its
+/// `timeout` applied to every phase if it gave one.
+///
+/// Without a `timeout` each phase keeps the core default (ping 1,000 ms,
+/// scan 500 ms, DNS 1,500 ms), the same as the CLI, TUI and desktop app.
+/// Before, the tool's advertised default stood in for all of them, so an MCP
+/// inspect or sweep pinged with 500 ms where the others used 1,000, and a
+/// discover gave reverse DNS 1,000 ms where the others gave 1,500.
+fn ops_config(concurrency: usize, timeout: Option<u64>) -> netscli_core::OpsConfig {
+    let mut cfg = netscli_core::OpsConfig {
+        concurrency,
+        ..Default::default()
+    };
+    if timeout.is_some() {
+        let ms = clamp_timeout_ms(timeout, 0);
+        cfg.ping_timeout_ms = ms;
+        cfg.scan_timeout_ms = ms;
+        cfg.dns_timeout_ms = ms;
+    }
+    cfg
+}
+
 pub(super) async fn op_discover(p: DiscoverParams) -> Result<Vec<netscli_core::Host>, RpcError> {
     let subnet = resolved_subnet(p.subnet)?;
     let concurrency = clamp_concurrency(p.max_concurrent, netscli_core::DEFAULT_CONCURRENCY);
-    let timeout_ms = clamp_timeout_ms(p.timeout, netscli_core::DEFAULT_PING_TIMEOUT_MS);
-    let cfg = netscli_core::OpsConfig {
-        concurrency,
-        ping_timeout_ms: timeout_ms,
-        dns_timeout_ms: timeout_ms,
-        ..Default::default()
-    };
+    let cfg = ops_config(concurrency, p.timeout);
     let ops = netscli_core::Ops::new(cfg);
     let (_subnet, hosts) = ops
         .discover_ipv4(Some(subnet), p.resolve_hostnames.unwrap_or(false))
@@ -70,12 +86,7 @@ pub(super) async fn op_scan_ports(
 ) -> Result<Vec<netscli_core::PortResult>, RpcError> {
     let ports = normalize_ports(p.ports)?;
     let concurrency = clamp_concurrency(p.max_concurrent, netscli_core::DEFAULT_CONCURRENCY);
-    let timeout_ms = clamp_timeout_ms(p.timeout, netscli_core::DEFAULT_SCAN_TIMEOUT_MS);
-    let cfg = netscli_core::OpsConfig {
-        concurrency,
-        scan_timeout_ms: timeout_ms,
-        ..Default::default()
-    };
+    let cfg = ops_config(concurrency, p.timeout);
     // Scan the address that was checked, not the name that produced it --
     // see `ensure_host_allowed` for why the two can differ.
     let ip = ensure_host_allowed(&p.host, netscli_core::DEFAULT_DNS_TIMEOUT_MS).await?;
@@ -111,13 +122,7 @@ pub(super) async fn op_inspect_host(
 ) -> Result<netscli_core::InspectResult, RpcError> {
     let ports = normalize_ports(p.ports)?;
     let concurrency = clamp_concurrency(p.max_concurrent, netscli_core::DEFAULT_CONCURRENCY);
-    let timeout_ms = clamp_timeout_ms(p.timeout, netscli_core::DEFAULT_SCAN_TIMEOUT_MS);
-    let cfg = netscli_core::OpsConfig {
-        concurrency,
-        scan_timeout_ms: timeout_ms,
-        ping_timeout_ms: timeout_ms,
-        dns_timeout_ms: timeout_ms,
-    };
+    let cfg = ops_config(concurrency, p.timeout);
     let ops = netscli_core::Ops::new(cfg);
     let ip = ensure_host_allowed(&p.host, netscli_core::DEFAULT_DNS_TIMEOUT_MS).await?;
     let mut result = ops
@@ -137,13 +142,7 @@ pub(super) async fn op_sweep(p: SweepParams) -> Result<Vec<netscli_core::SweepEn
     let subnet = resolved_subnet(p.subnet)?;
     let ports = normalize_ports(p.ports)?;
     let concurrency = clamp_concurrency(p.max_concurrent, netscli_core::DEFAULT_CONCURRENCY);
-    let timeout_ms = clamp_timeout_ms(p.timeout, netscli_core::DEFAULT_SCAN_TIMEOUT_MS);
-    let cfg = netscli_core::OpsConfig {
-        concurrency,
-        scan_timeout_ms: timeout_ms,
-        ping_timeout_ms: timeout_ms,
-        dns_timeout_ms: timeout_ms,
-    };
+    let cfg = ops_config(concurrency, p.timeout);
     let ops = netscli_core::Ops::new(cfg);
     let (_subnet, res) = ops
         .sweep_ipv4(Some(subnet), ports, p.resolve_hostnames.unwrap_or(false))
@@ -160,17 +159,12 @@ pub(super) async fn op_ping_host(p: PingHostParams) -> Result<netscli_core::Ping
     // sequential. It is no longer advertised in the tool schema, which was
     // telling callers about a knob that did nothing.
     let _ = p.max_concurrent;
-    let count = p.count.unwrap_or(1).clamp(1, 256);
-    let timeout_ms = clamp_timeout_ms(p.timeout, netscli_core::DEFAULT_PING_TIMEOUT_MS);
+    let count = p.count.unwrap_or(1).clamp(1, netscli_core::MAX_PING_COUNT);
 
     // Use the Ops facade so the summary (loss %, min/avg/max RTT) matches
     // what `netscli ping` emits from the CLI.
-    let cfg = netscli_core::OpsConfig {
-        ping_timeout_ms: timeout_ms,
-        dns_timeout_ms: timeout_ms,
-        ..Default::default()
-    };
-    let ip = ensure_host_allowed(&p.host, timeout_ms).await?;
+    let cfg = ops_config(netscli_core::DEFAULT_CONCURRENCY, p.timeout);
+    let ip = ensure_host_allowed(&p.host, cfg.dns_timeout_ms).await?;
     let ops = netscli_core::Ops::new(cfg);
     let mut summary = ops
         .ping_host_summary(&ip.to_string(), count)
@@ -219,7 +213,10 @@ pub(super) async fn op_discover_mdns(
 ) -> Result<Vec<netscli_core::MdnsService>, RpcError> {
     // Clamp timeout: no point waiting more than 30s for an interactive-like
     // tool call, and 0/None means use the 3s default.
-    let timeout_ms = p.timeout_ms.unwrap_or(3000).clamp(100, 30_000);
+    let timeout_ms = p
+        .timeout_ms
+        .unwrap_or(3000)
+        .clamp(100, netscli_core::MAX_MDNS_TIMEOUT_MS);
     let service_types = p.service_types.unwrap_or_default();
     let ops = netscli_core::Ops::default();
     ops.discover_mdns(&service_types, std::time::Duration::from_millis(timeout_ms))
@@ -239,6 +236,25 @@ mod tests {
         assert!(worth_reporting(PortStatus::Error));
         assert!(!worth_reporting(PortStatus::Closed));
         assert!(!worth_reporting(PortStatus::Filtered));
+    }
+
+    #[test]
+    fn without_a_timeout_each_phase_keeps_the_core_default() {
+        let cfg = ops_config(64, None);
+        assert_eq!(cfg.concurrency, 64);
+        assert_eq!(cfg.ping_timeout_ms, netscli_core::DEFAULT_PING_TIMEOUT_MS);
+        assert_eq!(cfg.scan_timeout_ms, netscli_core::DEFAULT_SCAN_TIMEOUT_MS);
+        assert_eq!(cfg.dns_timeout_ms, netscli_core::DEFAULT_DNS_TIMEOUT_MS);
+    }
+
+    #[test]
+    fn a_timeout_from_the_client_applies_to_every_phase_within_bounds() {
+        let cfg = ops_config(64, Some(2_000));
+        assert_eq!(
+            (cfg.ping_timeout_ms, cfg.scan_timeout_ms, cfg.dns_timeout_ms),
+            (2_000, 2_000, 2_000)
+        );
+        assert_eq!(ops_config(64, Some(1)).scan_timeout_ms, 10);
     }
 
     #[test]
