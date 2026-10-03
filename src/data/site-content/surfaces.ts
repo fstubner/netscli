@@ -51,7 +51,7 @@ xtctx_handoff_manifest
   {
     title: 'Local by default',
     body:
-      'Transcripts stay where each agent wrote them, and the index is one SQLite file in the project that setup keeps out of git. A remote embedding endpoint and cloud sync are opt-in, per project.',
+      'Transcripts stay where each agent wrote them, and the index is one SQLite file in the project that setup keeps out of git. A remote embedding endpoint and self-hosted cloud sync are opt-in, per project.',
     codeHtml: `<span style="color:var(--ui-code-comment)"># transcripts: read, never moved</span>
 ~/.claude/projects/
 <span style="color:var(--ui-code-comment)">…and each other agent's own folder</span>

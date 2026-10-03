@@ -17,7 +17,7 @@ This page lists every xtctx command, option and MCP tool.
 | `xtctx embeddings enable` | Installs the local embedding model and runtime for semantic search. Prompts first. |
 | `xtctx embeddings disable` | Removes the model and runtime. Search returns to keyword only. |
 | `xtctx calibrate` | Saves the fastest embedding device in `~/.xtctx/device.json`. Runs on the first embedding. Requires semantic search. |
-| `xtctx login` | Signs in to cloud sync with GitHub. Uploads nothing. |
+| `xtctx login` | Signs in to your cloud sync server with GitHub. Uploads nothing. |
 | `xtctx sync [action]` | Controls cloud sync for the project: `enable`, `disable`, `status`, `device [name]`, `token`, or no action to upload once. See [Cloud sync](#cloud-sync). |
 | `xtctx logout` | Signs out of cloud sync and revokes the account's tokens. |
 | `xtctx disconnect [tool]` | Stops xtctx managing a tool in the project. Transcripts are untouched. See [Remove xtctx](/docs/install/#remove-xtctx). |
@@ -40,7 +40,7 @@ This page lists every xtctx command, option and MCP tool.
 | `-o, --out <file>` | `export` | Default: `xtctx-export-<time>.jsonl` here. `-` writes to stdout. |
 | `--force` | `calibrate` | Measures again, for example after a hardware change. |
 | `--device <name>` | `login` | Name that this device shows in the cloud. Default: a random label. |
-| `--sync-url <url>` | `login` | Sync server URL. Default: `https://sync.xtctx.com`. |
+| `--sync-url <url>` | `login` | URL of your sync server. Required, or set `XTCTX_SYNC_URL`. |
 | `-w, --watch` | `sync` | Uploads every 10 seconds until interrupted. |
 | `--delete-data` | `logout` | Also deletes everything uploaded to your cloud account. |
 
@@ -50,12 +50,12 @@ Search is keyword-only until you run `xtctx embeddings enable`. After that, the 
 
 ## Cloud sync
 
-Cloud sync is optional and off by default. A project uploads only after you complete both steps:
+Cloud sync is optional, off by default, and self-hosted: there is no hosted xtctx server. Deploy the Worker in [`cloud/`](https://github.com/fstubner/xtctx/tree/main/cloud) to your own Cloudflare account first. A project uploads only after you complete both steps:
 
-1. Run `xtctx login`.
+1. Run `xtctx login --sync-url <your server>`.
 2. In each project to upload, run `xtctx sync enable`.
 
-An enabled project uploads its transcript text to the xtctx cloud server, where agents on your other machines can read it over MCP. While an agent runs the MCP server in the project, the server uploads every 10 seconds.
+An enabled project uploads its transcript text to your server, where agents on your other machines can read it over MCP. While an agent runs the MCP server in the project, the server uploads every 10 seconds.
 
 :::caution
 Uploaded message text is sent as written. It can contain file paths, command output and secrets. Enable sync only for projects whose transcripts you are willing to upload.

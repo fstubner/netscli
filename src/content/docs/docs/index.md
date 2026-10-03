@@ -11,7 +11,7 @@ xtctx indexes the transcripts that your coding agents write and serves them over
 
 - **Summaries and memory.** xtctx generates no summaries and keeps no curated memory. The index holds the raw messages in order, and the transcripts remain the source of truth.
 - **Background service.** xtctx runs no daemon, API server, dashboard or watcher. Each MCP client starts the MCP server over stdio, and the server exits when the client disconnects.
-- **Upload.** Search runs on your machine. Two features send transcript text elsewhere, and both are opt-in per project: a remote embedding endpoint set in the project config, and [cloud sync](/docs/commands/#cloud-sync).
+- **Upload.** Search runs on your machine. Two features send transcript text elsewhere, and both are opt-in per project: a remote embedding endpoint set in the project config, and [cloud sync](/docs/commands/#cloud-sync) to a server you deploy yourself.
 
 ## Supported agents
 

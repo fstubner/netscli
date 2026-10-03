@@ -53,9 +53,9 @@ export const faq: FaqItem[] = [
   {
     group: 'Data',
     q: 'Does anything leave my machine?',
-    a: 'Not by default. Search runs on this machine. Two opt-ins send transcript text elsewhere: a remote OpenAI-compatible embedding endpoint set in a project’s config, and cloud sync, which uploads a project only after you run xtctx login and xtctx sync enable.',
+    a: 'Not by default. Search runs on this machine. Two opt-ins send transcript text elsewhere: a remote OpenAI-compatible embedding endpoint set in a project’s config, and self-hosted cloud sync, which uploads a project to your own server only after you run xtctx login and xtctx sync enable.',
     aHtml:
-      'Not by default. Search runs on this machine. Two opt-ins send transcript text elsewhere: a remote OpenAI-compatible embedding endpoint set in a project’s config, and <a href="https://github.com/fstubner/xtctx/blob/main/docs/cloud-sync.md">cloud sync</a>, which uploads a project only after you run <code>xtctx login</code> and <code>xtctx sync enable</code>.',
+      'Not by default. Search runs on this machine. Two opt-ins send transcript text elsewhere: a remote OpenAI-compatible embedding endpoint set in a project’s config, and <a href="https://github.com/fstubner/xtctx/blob/main/docs/cloud-sync.md">self-hosted cloud sync</a>, which uploads a project to your own server only after you run <code>xtctx login</code> and <code>xtctx sync enable</code>.',
   },
   {
     group: 'Data',
