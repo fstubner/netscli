@@ -23,7 +23,7 @@ export const surfaces: SurfaceCard[] = [
 xtctx_session_detail
 <span style="color:var(--ui-code-comment)">  one session's raw messages</span>
 xtctx_search_sessions
-<span style="color:var(--ui-code-comment)">  keyword and semantic search</span>
+<span style="color:var(--ui-code-comment)">  keyword search, semantic once enabled</span>
 xtctx_continuity_status
 <span style="color:var(--ui-code-comment)">  is the wiring in place, and fresh</span>
 xtctx_handoff_manifest
@@ -51,7 +51,7 @@ xtctx_handoff_manifest
   {
     title: 'Local by default',
     body:
-      'Transcripts stay where each agent wrote them. The index is one SQLite file in the project, which setup keeps out of git. Keep it: agents delete old transcripts (Claude Code after 30 days by default), and after that the index is the only copy. Search runs a small embedding model on this machine; a remote embedding endpoint is something a project has to configure by hand.',
+      'Transcripts stay where each agent wrote them. The index is one SQLite file in the project, which setup keeps out of git. Keep it: agents delete old transcripts (Claude Code after 30 days by default), after that the index is the only copy, and xtctx export backs it up. Search runs on this machine, by keyword out of the box and by meaning too once you add the optional local model. A remote embedding endpoint and cloud sync are both opt-in, per project.',
     codeHtml: `<span style="color:var(--ui-code-comment)"># transcripts: read, never moved</span>
 ~/.claude/projects/
 <span style="color:var(--ui-code-comment)">…and each other agent's own folder</span>
@@ -62,7 +62,7 @@ xtctx_handoff_manifest
   {
     title: 'No service to run',
     body:
-      'You never start xtctx. Each MCP client (Claude Code, Codex, Cursor and the rest) launches xtctx itself, in the background, and it exits when that client disconnects. It reads whatever your agents have written since last time, measures once which device on this machine embeds fastest, and leaves nothing running.',
+      'You never start xtctx. Each MCP client (Claude Code, Codex, Cursor and the rest) launches xtctx itself, in the background, and it exits when that client disconnects. It reads whatever your agents have written since last time, measures once which device on this machine embeds fastest if semantic search is on, and leaves nothing running.',
     flip: true,
     codeHtml: `<span style="color:var(--ui-code-comment)">you open Claude Code</span>
   → it starts its own xtctx

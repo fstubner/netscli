@@ -12,7 +12,7 @@ It is for a developer who switches between coding agents and wants the next one 
 - **No summaries.** Agents read the raw transcript messages, which stay the source of truth.
 - **No memory layer.** Nothing is curated or summarised: the index holds the raw messages, in order.
 - **No service.** There is no daemon, API server, dashboard or watcher. Each MCP client (Claude Code, Codex, Cursor and the rest) starts xtctx itself over stdio, and xtctx exits when that client disconnects.
-- **No upload by default.** Search runs a small embedding model on your machine. A project can opt into a remote embedding endpoint, but only by writing one into its config.
+- **No upload by default.** Search runs on your machine: by keyword out of the box, and by meaning too once you add the optional local model with `xtctx embeddings enable`. Two things send transcript text elsewhere, and both are opt-in per project: a remote embedding endpoint written into the project's config, and [cloud sync](https://github.com/fstubner/xtctx/blob/main/docs/cloud-sync.md), which uploads nothing until you have run both `xtctx login` and, in that project, `xtctx sync enable`.
 
 ## Where to start
 
@@ -31,5 +31,5 @@ Claude Code, Codex, Cursor, GitHub Copilot in VS Code, GitHub Copilot CLI, Googl
 | --- | --- |
 | `.xtctx/config.yaml` | The project's xtctx configuration. |
 | `.xtctx/skills/<id>/SKILL.md` | Project skills that setup syncs to each tool. |
-| `.xtctx/state/xtctx.db` | The index. Never commit it. Keep it: once an agent deletes old transcripts (Claude Code does after 30 days by default), the index is the only copy of those sessions. |
+| `.xtctx/state/xtctx.db` | The index. Never commit it. Keep it: once an agent deletes old transcripts (Claude Code does after 30 days by default), the index is the only copy of those sessions. `xtctx export` backs it up and `xtctx import` merges a backup back in. |
 | `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, and others | Managed handoff blocks. Everything outside the `xtctx:begin` / `xtctx:end` fences is left as you wrote it. |

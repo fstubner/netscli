@@ -41,7 +41,7 @@ In a project that has not been set up, every tool says so and names the setup co
 npx -y xtctx setup
 ```
 
-Setup writes managed blocks into the instruction files each agent already reads, so the next agent gets the handoff without deciding to ask for it. It also writes MCP config for each tool, the Claude Code SessionStart hook, and the handoff skill in each tool's own format.
+Setup writes managed blocks into the instruction files each agent already reads. They tell the agent that xtctx exists and which tools to call; the agent still has to call them. For Claude Code it also installs a SessionStart hook that injects a short pointer to recent sessions at the start of each session. It also writes MCP config for each tool, and the handoff skill in each tool's own format.
 
 Two tools keep a single MCP config for the whole machine. Setup always writes Antigravity's, because it has no per-project file. Copilot CLI's is written only when you add `--global-mcp`.
 
@@ -50,7 +50,8 @@ Two tools keep a single MCP config for the whole machine. Setup always writes An
 | MCP tools | yes | yes |
 | Handoff skill | yes | yes |
 | Reachable from every project | yes | no |
-| Context without the agent asking | no | yes |
+| Pointer to recent sessions injected at session start | no | Claude Code only |
+| Instruction text naming the tools | no | yes |
 | SessionStart hook (Claude Code) | no | yes |
 | Writes into your project | no | yes |
 
@@ -63,6 +64,16 @@ npx -y xtctx status
 Restart any agent that was already open: MCP clients read their config when they start. Until an agent has called a tool once, status reports `Scan never` and no sessions, which is expected.
 
 The first scan of a large history builds the index from scratch and can take minutes. Calls answer within a time budget with what has been indexed so far, and say which tools have not been read yet.
+
+## Semantic search, if you want it
+
+Search matches by keyword out of the box; the default install is about 55 MB on disk and has no model to download. Semantic search, which also matches by meaning, is an optional add-on that runs a local embedding model. Turn it on once per machine:
+
+```bash
+npx -y xtctx embeddings enable
+```
+
+It asks first (`--yes` skips the question), then installs the model and its runtime into `~/.xtctx/embeddings`, about 540 MB on disk. The MCP server then builds vectors in the background. `xtctx embeddings disable` removes them again and leaves the index alone, and `xtctx status` says which mode you are in. A project pointed at a remote embedding endpoint needs none of this.
 
 ## Removing it
 
