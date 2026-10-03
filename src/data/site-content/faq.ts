@@ -12,12 +12,12 @@ export const faq: FaqItem[] = [
   {
     group: 'What it is',
     q: 'What problem does xtctx solve?',
-    a: 'Switching coding agents mid-task usually means re-explaining the work. xtctx lets the agent you open next read the recent sessions of the one you used before, in the same repo, through MCP.',
+    a: 'Switching coding agents mid-task usually means re-explaining the work. xtctx lets the next agent read the last one’s recent sessions in the same repo, over MCP.',
   },
   {
     group: 'What it is',
     q: 'Does it summarise sessions or keep a memory?',
-    a: 'No. It points agents at the raw transcript messages, which stay the source of truth. There is no generated summary and no durable memory to curate.',
+    a: 'No. Agents read the raw transcript messages, which stay the source of truth. xtctx generates no summary and keeps no memory.',
   },
   {
     group: 'What it is',
@@ -27,14 +27,14 @@ export const faq: FaqItem[] = [
   {
     group: 'Setup',
     q: 'Do I need to run setup in every project?',
-    a: 'Once per project you want handoff in. The plugin makes the tools reachable everywhere, but a project that has not opted in has no index, so every tool says so and names npx -y xtctx setup. Setup also writes managed instruction blocks that tell each agent which tools to call, and for Claude Code a SessionStart hook that injects a short pointer to recent sessions.',
+    a: 'Yes, once per project: run npx -y xtctx setup. The plugin makes the tools reachable everywhere, but a project that has not been set up has no index, and every tool says so.',
     aHtml:
-      'Once per project you want handoff in. The plugin makes the tools reachable everywhere, but a project that has not opted in has no index, so every tool says so and names <code>npx -y xtctx setup</code>. Setup also writes managed instruction blocks that tell each agent which tools to call, and for Claude Code a SessionStart hook that injects a short pointer to recent sessions.',
+      'Yes, once per project: run <code>npx -y xtctx setup</code>. The plugin makes the tools reachable everywhere, but a project that has not been set up has no index, and every tool says so.',
   },
   {
     group: 'Setup',
     q: 'Does xtctx run a background service?',
-    a: 'No. There is no daemon, API server, dashboard or watcher. Each MCP client (Claude Code, Codex, Cursor and the rest) starts its own xtctx MCP server, which indexes when it starts and when it is called, and stops when the client exits.',
+    a: 'No. Each MCP client starts its own xtctx MCP server, which indexes when it starts and when it is called, and stops when the client exits. There is no daemon, API server, dashboard or watcher.',
   },
   {
     group: 'Setup',
@@ -46,21 +46,23 @@ export const faq: FaqItem[] = [
   {
     group: 'Data',
     q: 'Where does data live?',
-    a: 'Project config is .xtctx/config.yaml and the index is .xtctx/state/xtctx.db, both in the project. Transcripts stay wherever each agent keeps them. Keep it: once an agent deletes old transcripts (Claude Code does after 30 days by default), the index is the only copy of those sessions. xtctx export backs it up.',
+    a: 'Config is .xtctx/config.yaml and the index is .xtctx/state/xtctx.db, both in the project. Transcripts stay where each agent keeps them. Agents delete old transcripts (Claude Code after 30 days by default), and then the index is the only copy, so back it up with xtctx export.',
     aHtml:
-      'Project config is <code>.xtctx/config.yaml</code> and the index is <code>.xtctx/state/xtctx.db</code>, both in the project. Transcripts stay wherever each agent keeps them. Keep it: once an agent deletes old transcripts (Claude Code does after 30 days by default), the index is the only copy of those sessions. <code>xtctx export</code> backs it up.',
+      'Config is <code>.xtctx/config.yaml</code> and the index is <code>.xtctx/state/xtctx.db</code>, both in the project. Transcripts stay where each agent keeps them. Agents delete old transcripts (Claude Code after 30 days by default), and then the index is the only copy, so back it up with <code>xtctx export</code>.',
   },
   {
     group: 'Data',
     q: 'Does anything leave my machine?',
-    a: 'Not by default. Search runs on this machine, by keyword out of the box and by meaning too once you add the optional local model. Two opt-ins send transcript text elsewhere: a remote OpenAI-compatible embedding endpoint written into a project config by hand, and cloud sync, which uploads a project only after you run xtctx login and then xtctx sync enable in that project.',
+    a: 'Not by default. Search runs on this machine. Two opt-ins send transcript text elsewhere: a remote OpenAI-compatible embedding endpoint set in a project’s config, and cloud sync, which uploads a project only after you run xtctx login and xtctx sync enable.',
     aHtml:
-      'Not by default. Search runs on this machine, by keyword out of the box and by meaning too once you add the optional local model. Two opt-ins send transcript text elsewhere: a remote OpenAI-compatible embedding endpoint written into a project config by hand, and <a href="https://github.com/fstubner/xtctx/blob/main/docs/cloud-sync.md">cloud sync</a>, which uploads a project only after you run <code>xtctx login</code> and then <code>xtctx sync enable</code> in that project.',
+      'Not by default. Search runs on this machine. Two opt-ins send transcript text elsewhere: a remote OpenAI-compatible embedding endpoint set in a project’s config, and <a href="https://github.com/fstubner/xtctx/blob/main/docs/cloud-sync.md">cloud sync</a>, which uploads a project only after you run <code>xtctx login</code> and <code>xtctx sync enable</code>.',
   },
   {
     group: 'Data',
     q: 'What are the limits?',
-    a: 'Agents change their transcript formats without notice, so xtctx reports records it does not recognise rather than guessing. Semantic search is an optional add-on (xtctx embeddings enable, about 540 MB on disk; the default install is about 55 MB and searches by keyword straight away). Once it is on, vectors build in the background, and search falls back to keyword until they exist or when the local model is unavailable.',
+    a: 'Agents change their transcript formats without notice, so xtctx reports records it does not recognise instead of guessing. Search is keyword-only until you add semantic search (xtctx embeddings enable, about 540 MB), and it falls back to keyword while vectors are missing.',
+    aHtml:
+      'Agents change their transcript formats without notice, so xtctx reports records it does not recognise instead of guessing. Search is keyword-only until you add semantic search (<code>xtctx embeddings enable</code>, about 540 MB), and it falls back to keyword while vectors are missing.',
   },
   {
     group: 'Data',

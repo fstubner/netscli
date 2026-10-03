@@ -3,7 +3,7 @@ import type { Platform, PlatformInstall, SectionCopy, TryCommand } from './types
 export const installCopy: SectionCopy = {
   heading: 'Install, then opt a project in',
   leadHtml:
-    'The plugin makes xtctx available in every repo and writes nothing into any of them, so your agent can set a project up when you ask. Setup is what makes a project work: it wires the agents there and tells each one which tools to call, and gives Claude Code a pointer to recent sessions when a session starts.',
+    'The plugin puts the tools in every repo and writes nothing into any of them. Setup is what makes a project work.',
 };
 
 // Only used if install-clients.ts is emptied: the install section shows the
@@ -14,24 +14,24 @@ const cliEntries = [
     label: 'Install the plugin',
     command: 'claude plugin marketplace add fstubner/xtctx && claude plugin install xtctx@xtctx',
     hint:
-      'Registers the MCP server and the handoff skill for every project, and writes nothing into any of them. Codex, Copilot, Cursor and Antigravity install from this repository too; the README has their commands.',
+      'Registers the MCP server and the handoff skill for every project. Codex, Copilot, Cursor and Antigravity install from this repository too; the docs have their commands.',
   },
   {
     label: 'Opt a project in',
     command: 'npx -y xtctx setup',
     hint:
-      'Writes managed blocks into the instruction files each agent already reads, the Claude Code SessionStart hook, MCP config per tool, and the handoff skill. The only route for opencode.',
+      'Writes managed instruction blocks, MCP config, the handoff skill and, for Claude Code, a SessionStart hook. The only route for opencode.',
   },
   {
     label: 'Check what is wired',
     command: 'npx -y xtctx status',
-    hint: 'Configured tools, indexed sessions per tool, skill drift, and what to run next.',
+    hint: 'Configured tools, indexed sessions per tool, and what to run next.',
   },
   {
     label: 'Stop managing one tool',
     command: 'npx -y xtctx disconnect cursor',
     hint:
-      'Removes that tool’s xtctx wiring from this project and leaves your transcripts untouched. The machine-global Antigravity and Copilot CLI configs need --global-mcp as well.',
+      'Removes that tool’s xtctx wiring from this project. Transcripts are untouched. The machine-wide Antigravity and Copilot CLI configs also need --global-mcp.',
   },
 ];
 
@@ -55,6 +55,6 @@ export const installFromSource =
 
 export const installNotes: string[] = [
   'Requires Node.js 24 or later.',
-  'The plugin writes nothing into a project; run `npx -y xtctx setup` in each project you want handoff in.',
-  'Copilot CLI has only a global MCP config; add `--global-mcp` to setup to write it.',
+  'Run `npx -y xtctx setup` in each project you want handoff in.',
+  'Copilot CLI has only a machine-wide MCP config; add `--global-mcp` to setup to write it.',
 ];

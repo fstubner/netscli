@@ -5,7 +5,7 @@ import type { SectionCopy, SurfaceCard } from './types';
 export const surfacesCopy: SectionCopy = {
   heading: 'Each agent keeps its own history',
   leadHtml:
-    'Claude Code, Codex, Cursor and the rest each keep transcripts in their own place, and none of them reads the others’. Open a different agent and it starts from nothing, so you paste context in or explain the work again. xtctx indexes those transcripts and lets the next agent read them. It does not summarise them, keep a memory, or run a service.',
+    'Claude Code, Codex, Cursor and the others each write transcripts to their own folder, and none reads the others’. xtctx indexes them so the next agent you open can read what the last one did.',
 };
 
 // Lines in the code visuals stay under 40 characters where they are written
@@ -15,7 +15,7 @@ export const surfaces: SurfaceCard[] = [
   {
     title: 'Five MCP tools',
     body:
-      'The block setup writes into each agent’s instruction file tells it when to call them. They return what the transcripts say, not a summary of it.',
+      'Setup tells each agent when to call them. They return the transcript messages as written.',
     // One line of purpose per tool, from the tool descriptions in the
     // managed block setup writes (see the project CLAUDE.md).
     codeHtml: `xtctx_recent_sessions
@@ -32,7 +32,7 @@ xtctx_handoff_manifest
   {
     title: 'Setup writes files you can read',
     body:
-      'Managed blocks in the instruction files each agent already reads, MCP config per tool, and the handoff skill in each tool’s own format. Everything outside the managed blocks is left as you wrote it.',
+      'Setup adds managed blocks to the instruction files each agent already reads, plus MCP config and the handoff skill for each tool. Everything outside the blocks is left as you wrote it.',
     flip: true,
     // Excerpt of real `xtctx setup --yes` output in a fresh project,
     // 2026-09-26, from the build of fix/cli-ux (1363d53, 23f3fea). Run on
@@ -51,7 +51,7 @@ xtctx_handoff_manifest
   {
     title: 'Local by default',
     body:
-      'Transcripts stay where each agent wrote them. The index is one SQLite file in the project, which setup keeps out of git. Keep it: agents delete old transcripts (Claude Code after 30 days by default), after that the index is the only copy, and xtctx export backs it up. Search runs on this machine, by keyword out of the box and by meaning too once you add the optional local model. A remote embedding endpoint and cloud sync are both opt-in, per project.',
+      'Transcripts stay where each agent wrote them, and the index is one SQLite file in the project that setup keeps out of git. A remote embedding endpoint and cloud sync are opt-in, per project.',
     codeHtml: `<span style="color:var(--ui-code-comment)"># transcripts: read, never moved</span>
 ~/.claude/projects/
 <span style="color:var(--ui-code-comment)">…and each other agent's own folder</span>
@@ -62,7 +62,7 @@ xtctx_handoff_manifest
   {
     title: 'No service to run',
     body:
-      'You never start xtctx. Each MCP client (Claude Code, Codex, Cursor and the rest) launches xtctx itself, in the background, and it exits when that client disconnects. It reads whatever your agents have written since last time, measures once which device on this machine embeds fastest if semantic search is on, and leaves nothing running.',
+      'Each MCP client starts its own xtctx and it exits when the client disconnects. Nothing keeps running in between.',
     flip: true,
     codeHtml: `<span style="color:var(--ui-code-comment)">you open Claude Code</span>
   → it starts its own xtctx

@@ -9,7 +9,7 @@ export const hero: Hero = {
   // balanced heading broke it across the two lines.
   heading: 'Switch coding agents without re‑explaining the work.',
   subhead:
-    'xtctx indexes the transcripts your coding agents already write and serves them over MCP, so the next agent you open can read what the last one did. By default nothing leaves your machine.',
+    'xtctx indexes the transcripts your coding agents already write and serves them over MCP, so the next agent you open can read what the last one did. Nothing leaves your machine by default.',
   // One command. Setup wires six of the seven supported agents in this
   // project (Copilot CLI's MCP config is machine-wide, so it needs
   // --global-mcp), so it is the route that works whichever agent a visitor
