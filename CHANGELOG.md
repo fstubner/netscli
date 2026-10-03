@@ -6,26 +6,26 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Workspace crates (`netscli`, `netscli-core`, `netscli-mcp`) and the
 desktop app are released together under one version number. Note that
-they do not *inherit* it — each crate sets its own, and the GUI carries
+they do not *inherit* it. Each crate sets its own, and the GUI carries
 further copies in `package.json` and `tauri.conf.json`. See
 `docs/PUBLISHING.md` for the full list of files a bump has to touch.
 
 A version heading carries a date, and a link, only once its release is
 published. Both are claims about the outside world, and the website reads
-them: it printed "24 Aug 2026" for 0.3.1 for four days on the strength of a
+them. It printed "24 Aug 2026" for 0.3.1 for four days on the strength of a
 date written here when the notes were drafted. An in-flight version keeps
-its heading and collects entries; the date and the link go on with the tag.
+its heading and collects entries. The date and the link go on with the tag.
 
-## [0.3.4] — 2026-10-03
+## [0.3.4] - 2026-10-03
 
 ### Added
 
 - **The CLI can write CSV and Markdown tables.** `--csv` and `--md` work on
-  every command that returns a list: `discover`, `scan`, `sweep`, `dns`,
-  `ping`, `arp`, `interfaces`, `mdns` and `pcap`. The columns are the same
+  every command that returns a list (`discover`, `scan`, `sweep`, `dns`,
+  `ping`, `arp`, `interfaces`, `mdns` and `pcap`). The columns are the same
   field names `--json` uses, one row per host, port, record or packet, so a
   result opens straight in a spreadsheet or pastes into an issue without
-  going through `jq`. Text a scanned host chose is made safe for each: a
+  going through `jq`. Text a scanned host chose is made safe for each. A
   banner that starts like a spreadsheet formula is defused, the same way the
   desktop app's CSV export already does it, and one containing Markdown or
   HTML is escaped.
@@ -42,18 +42,18 @@ its heading and collects entries; the date and the link go on with the tag.
   announce itself, and isn't one of those three, gets no version.
 
 - **UDP scanning.** `netscli scan <host> --udp` checks the UDP services most
-  networks run: DNS, NTP, NetBIOS, SSDP and mDNS, each sent the request it
+  networks run (DNS, NTP, NetBIOS, SSDP and mDNS), each sent the request it
   expects, or the ports you give with `-p`. A reply reads as open, with what
   came back (`NTP v4, stratum 2`, a UPnP device's server string, a Windows
-  machine's NetBIOS name); a port-unreachable reads as closed; and silence
+  machine's NetBIOS name). A port-unreachable reads as closed, and silence
   reads as `open|filtered`, because UDP can't tell a quiet service from a
   firewall. It needs no administrator rights. The terminal UI takes
   `/scan <host> --udp`, the MCP server's `scan_ports` takes `udp: true`, and
   the desktop app's Port Scan has a TCP/UDP switch.
 
 - **Inspect gives an OS hint.** `netscli inspect` now says what the host
-  probably runs, with the clues behind it: a Windows machine's exact version
-  and build from the start of an SMB connection (no login), the
+  probably runs, with the clues behind it, such as a Windows machine's exact
+  version and build from the start of an SMB connection (no login), the
   distribution an SSH banner names, an `(Ubuntu)` or IIS web server header,
   Windows' RPC and file-sharing ports, an Apple or Raspberry Pi network card,
   and the ping reply's TTL. It also shows the host's MAC address and vendor
@@ -115,7 +115,7 @@ its heading and collects entries; the date and the link go on with the tag.
   listed by name.
 - **Installing the desktop app with Scoop now adds it to the Start menu.** The
   manifest's shortcut pointed at `NetsCLI.exe`, a file that is in no version of
-  the package: Scoop extracts the MSI rather than running it, which leaves the
+  the package. Scoop extracts the MSI rather than running it, which leaves the
   app at `PFiles\NetsCLI\netscli-gui.exe`. Scoop reported "Creating shortcut
   ... failed" and finished the install anyway, so the app was installed with no
   way to launch it but finding the folder. The manifest now flattens that
@@ -126,10 +126,10 @@ its heading and collects entries; the date and the link go on with the tag.
   did not, and that is the file SmartScreen and antivirus look at when the app
   runs. It is now signed during the build, before it is packed into the
   installer, and the release checks the finished MSI's contents before
-  shipping it. Measured on the published 0.3.3 installer: the MSI's signature
+  shipping it. Measured on the published 0.3.3 installer. The MSI's signature
   is valid, the app inside it is unsigned.
 
-## [0.3.3] — 2026-09-23
+## [0.3.3] - 2026-09-23
 
 ### Added
 
@@ -143,7 +143,7 @@ its heading and collects entries; the date and the link go on with the tag.
 
   Signing happens in one job, after the builds and before anything is
   uploaded, so a release carries all three signed or none of them. Half a
-  signed release would be worse than none: nothing on the page would say
+  signed release would be worse than none. Nothing on the page would say
   which artifacts were which.
 
 - **Two new ways to connect the MCP server, so it no longer has to be a
@@ -155,7 +155,7 @@ its heading and collects entries; the date and the link go on with the tag.
   your machine. This is the form every MCP client's documentation already uses.
 
   There are also `.mcpb` bundles on each release, one per platform. A client
-  that supports MCP bundles installs one in a single action — the binary is
+  that supports MCP bundles installs one in a single action. The binary is
   inside, so nothing else is needed. The install prompt carries a switch for
   the local-network default described below, which is the first time that
   choice has been visible to the person making it rather than buried in an
@@ -163,7 +163,7 @@ its heading and collects entries; the date and the link go on with the tag.
 
   Anyone who already has netscli installed should keep pointing their client
   at it. That copy is the version you chose, there is only one of it, and it
-  is the only one of the three that can capture packets — libpcap and Npcap
+  is the only one of the three that can capture packets. Libpcap and Npcap
   cannot be shipped inside an npm package or a bundle.
 
 ### Documentation
@@ -172,10 +172,10 @@ its heading and collects entries; the date and the link go on with the tag.
   server has refused targets outside your own networks since 0.3.1, and the
   only description of that lived in a source comment, so the first anyone
   heard of it was an error message naming a variable. It is now written down
-  next to the reason: this is the one surface where a scan can be requested by
+  next to the reason. This is the one surface where a scan can be requested by
   something a model read rather than by the person at the keyboard.
 
-## [0.3.2] — 2026-09-21
+## [0.3.2] - 2026-09-21
 
 ### Added
 
@@ -193,13 +193,13 @@ its heading and collects entries; the date and the link go on with the tag.
   the app had no way to learn that netscli ships an MCP server, let alone
   connect an agent to one. There is now a panel that looks for a netscli binary
   and gives you the client configuration to paste, including what to do when it
-  cannot find one — the desktop installers do not carry the CLI.
+  cannot find one. The desktop installers do not carry the CLI.
 
 ### Fixed
 
 - **`netscli` with no arguments no longer hangs when there is no terminal.**
   With no subcommand it opens the TUI, which needs a terminal to draw on and
-  read from. Without one it did not fail, it blocked forever: raw mode was
+  read from. Without one it did not fail, it blocked forever. Raw mode was
   entered and the runtime then waited on input that could never arrive. So
   `netscli | head`, or `netscli` from a script or a CI job, ran until
   something killed it. It now prints what `--help` prints and exits 0. The TUI
@@ -212,12 +212,12 @@ its heading and collects entries; the date and the link go on with the tag.
   day.
 - **The docs site lost its navigation and its theme switch between 800px and
   1152px wide, and the search button sat stranded beside the wordmark.** The
-  header links — Features, Install, FAQ, Docs, Changelog, GitHub — and the
+  header links (Features, Install, FAQ, Docs, Changelog, GitHub) and the
   light/dark control were both hidden across that range, on the understanding
   that the mobile menu carried them from there down. The button that opens
   that menu only appears below 800px, so for 352px of width there was nothing
   to press and no way to reach any of it. The docs sidebar is not a
-  substitute: it lists the pages of the docs and carries five of those six
+  substitute. It lists the pages of the docs and carries five of those six
   links nowhere.
 
   The search button had a second fault behind it. The width at which the links
@@ -233,8 +233,8 @@ its heading and collects entries; the date and the link go on with the tag.
 
 - **`netscli-gui-bin` on the AUR installed a desktop app that could not
   start.** The PKGBUILD did not set `options=('!strip')`, and `strip` is in
-  makepkg's default options. An AppImage is the AppImage runtime — an
-  ordinary static ELF — with a squashfs image appended after everything the
+  makepkg's default options. An AppImage is the AppImage runtime (an
+  ordinary static ELF) with a squashfs image appended after everything the
   ELF headers describe, so stripping it rewrote the file from its section
   table and threw the appended image away. What reached `/usr/bin` was the
   944,632-byte runtime out of a 79 MB download, and running it said only
@@ -244,15 +244,15 @@ its heading and collects entries; the date and the link go on with the tag.
 - **The Linux desktop AppImage no longer aborts on hosts with a newer Mesa.**
   It failed with `Could not create default EGL display: EGL_BAD_PARAMETER`
   before any window appeared. The AppImage carried its own copies of nine
-  display-stack libraries — the wayland client stack, `libxkbcommon`, and
-  part of the xcb/X11 stack — and put them ahead of the host's, so the host's
+  display-stack libraries (the wayland client stack, `libxkbcommon`, and
+  part of the xcb/X11 stack) and put them ahead of the host's, so the host's
   Mesa was made to talk to the wayland client library from the machine the
   release was built on. Those libraries are now removed from the image after
-  it is built. Reported in #378 against v0.2.6 on Mesa 26.2.2; v0.3.1 bundled
-  the same nine.
+  it is built. Reported in #378 against v0.2.6 on Mesa 26.2.2 (v0.3.1 bundled
+  the same nine).
 - **A desktop window that opens black or blank now recovers on the next
   launch.** WebKitGTK's hardware compositing can fail against a driver that
-  only partly supports it, and it fails silently: the window opens, nothing
+  only partly supports it, and it fails silently. The window opens, nothing
   paints, and there is nothing on stderr to go on. Seen on virtual machines
   using `vmwgfx`. The app now marks each launch and clears the mark once the
   UI has actually drawn a frame, so a launch that never drew one is noticed by
@@ -267,7 +267,7 @@ its heading and collects entries; the date and the link go on with the tag.
   setting. Also reported in #378.
 - **Text in the desktop app's result tables can be selected again.** Both the
   table and its wrapper set `user-select: none`, so a port, MAC address,
-  vendor string or banner could not be dragged over with the mouse — and those
+  vendor string or banner could not be dragged over with the mouse, and those
   values are on screen precisely so they can go somewhere else. The only route
   out was the detail pane. Selecting rows is a click, not a drag, so nothing
   was gained by it. Reported in #417.
@@ -278,9 +278,9 @@ its heading and collects entries; the date and the link go on with the tag.
 ### Changed
 
 - **The website and docs got another pass.** The install section's two
-  controls line up and its alternatives stopped shouting; the hero badge shows
-  the released version; the interfaces are shown rather than described; the
-  README says only what a README can and its TUI screenshots work again; the
+  controls line up and its alternatives stopped shouting. The hero badge shows
+  the released version. The interfaces are shown rather than described. The
+  README says only what a README can and its TUI screenshots work again. The
   comparison with nmap and the other scanners is fairer in both directions.
   Docs pages carry structured data, and the docs shell picked up a Lighthouse
   gate and two fixes it found.
@@ -294,13 +294,13 @@ its heading and collects entries; the date and the link go on with the tag.
   (GHSA-vwc7-r8mq-g2x9 and GHSA-7q85-xj36-vmfc, high) and `devalue` <5.9.1
   (GHSA-9rgm-9g3h-6x36, moderate).
 
-## [0.3.1] — 2026-09-11
+## [0.3.1] - 2026-09-11
 
-The first release since 0.2.6 in May, and a large one: four months of work on
-the desktop app, the shared core and the website.
+The first release since 0.2.6 in May, and a large one, with four months of
+work on the desktop app, the shared core and the website.
 
 The headline is the desktop app. Everything listed under it is new to anyone
-upgrading from 0.2.6 — the old dashboard-style GUI is gone, and what replaces
+upgrading from 0.2.6. The old dashboard-style GUI is gone, and what replaces
 it is a different application rather than a revision of that one. The rest is
 additive work in the core, CLI and MCP server, and a long tail of fixes. The
 recurring theme in that tail is code that reported success while doing nothing.
@@ -315,7 +315,7 @@ recurring theme in that tail is code that reported success while doing nothing.
     to either side, or all at once from a right-click menu.
   - Sortable and filterable result tables, row detail panes, and a preview of
     the CLI command each run is equivalent to.
-  - Save a whole workspace of results to a file and reopen it later; export CSV
+  - Save a whole workspace of results to a file and reopen it later. Export CSV
     or JSON, whole or selection-only. Exported cells are escaped against
     spreadsheet formula injection, since banners and hostnames are chosen by
     the scanned host.
@@ -324,9 +324,9 @@ recurring theme in that tail is code that reported success while doing nothing.
     save behaviour, and notification preferences.
   - Full keyboard operation, and a refreshed icon matching the site's brand.
 - **Clear the ARP table, then discover.** A chevron beside Run offers a
-  cache-flushing variant on discover, sweep and the ARP tab — the tools where a
+  cache-flushing variant on discover, sweep and the ARP tab, the tools where a
   stale neighbour entry changes the answer. Clearing needs administrator
-  rights; when it fails the run is suppressed rather than quietly returning the
+  rights. When it fails the run is suppressed rather than quietly returning the
   stale entries it was meant to drop.
 - **Richer port scan results across every interface.** Port scans now report
   additive status and detail fields (`open`, `closed`, `filtered`, `error`,
@@ -334,7 +334,7 @@ recurring theme in that tail is code that reported success while doing nothing.
   available) while keeping the older `open`, `port`, `service`, and `error`
   fields intact for compatibility.
 - **User-configurable probe concurrency.** The CLI and MCP server already
-  accepted concurrency limits; the desktop app and TUI settings now expose the
+  accepted concurrency limits. The desktop app and TUI settings now expose the
   same control, so probes can be reduced on fragile networks or raised within
   the core safety cap.
 
@@ -348,9 +348,9 @@ recurring theme in that tail is code that reported success while doing nothing.
 - **The MCP server now scans only local networks by default.** This is the one
   surface driven by a model rather than by the person at the keyboard, so the
   instruction to scan a third party can arrive from a web page or a file
-  someone else wrote — and the packets leave from your machine and your IP.
+  someone else wrote, and the packets leave from your machine and your IP.
   RFC1918, loopback, link-local and the carrier-grade NAT range overlay
-  networks use are allowed; set `NETSCLI_MCP_ALLOW_PUBLIC_TARGETS=1` to reach
+  networks use are allowed. Set `NETSCLI_MCP_ALLOW_PUBLIC_TARGETS=1` to reach
   past them.
 - **Scan results returned to a model are capped.** The full probe response
   (`raw`) is no longer included and banners are truncated, both being bytes
@@ -362,10 +362,10 @@ recurring theme in that tail is code that reported success while doing nothing.
   with latency where available, instead of only emphasising open ports.
 - **Windows install guidance prefers Winget for the desktop app.** Winget's
   manifest review and installer hash verification make it the recommended
-  Windows path; direct GitHub Windows installers remain unsigned and may show
+  Windows path. Direct GitHub Windows installers remain unsigned and may show
   warnings until code signing is added.
 - **Linux/macOS install docs clarified.** mDNS is the default pure-Rust
-  capability in published builds; packet capture remains the optional workflow
+  capability in published builds. Packet capture remains the optional workflow
   depending on libpcap/Npcap.
 - **The website and docs were rebuilt.** A consistent shell, unified code and
   table styling, clearer search, and a layout swept across six widths and both
@@ -375,10 +375,10 @@ recurring theme in that tail is code that reported success while doing nothing.
 ### Fixed
 
 - **Pinging your own machine no longer reports 100% loss.** On Windows,
-  `ping 127.0.0.1` — and the machine's own LAN address — timed out while the
+  `ping 127.0.0.1` (and the machine's own LAN address) timed out while the
   system `ping` answered immediately. Raw ICMP sockets need administrator
   rights, so an ordinary run fell back to TCP probes on ports 80/443/22 and
-  concluded a host was down when nothing answered; and a Windows raw socket
+  concluded a host was down when nothing answered. A Windows raw socket
   does not observe traffic to an address the host owns. Windows now sends
   echoes through the IP Helper API, which needs no privileges and reaches local
   addresses. Discover and sweep both start from a ping sweep, so both returned
@@ -389,7 +389,7 @@ recurring theme in that tail is code that reported success while doing nothing.
 - **`netscli arp --clear`, `--add` and `--delete` no longer claim to have
   changed the table when they have not.** On Windows these print "The requested
   operation requires elevation" and then exit 0, so checking the exit status
-  alone reported success while nothing was touched — an ordinary run printed
+  alone reported success while nothing was touched. An ordinary run printed
   "ARP entry added for 192.0.2.77", and `"ok": true` in JSON, having done
   nothing. All three now share one check and exit non-zero with the reason.
   `--clear` also errors on platforms where it was never implemented, instead of
@@ -400,13 +400,13 @@ recurring theme in that tail is code that reported success while doing nothing.
   neighbour, since a stale neighbour entry can outlive the device.
 - **Safety limits were enforced in `Ops` but not in the engines.** The scan,
   sweep, discover and inspect engines are public API re-exported at the crate
-  root, and called directly they applied no subnet, port or concurrency cap —
-  `0.0.0.0/0` collected 4,294,967,294 addresses into a `Vec` before sending a
-  packet. Every engine now enforces its own limits.
+  root, and called directly they applied no subnet, port or concurrency cap,
+  and `0.0.0.0/0` collected 4,294,967,294 addresses into a `Vec` before
+  sending a packet. Every engine now enforces its own limits.
   ([#198](https://github.com/fstubner/netscli/pull/198))
 - **Safety limits that only one caller was applying.** `SweepEngine::sweep`
   validates its port list instead of trusting the caller and silently returning
-  "no open ports"; mDNS browse duration, `ping -c` and packet captures given a
+  "no open ports". mDNS browse duration, `ping -c` and packet captures given a
   packet count but no duration all gained the core-side ceiling they were
   documented to have.
 - **Port 0 was rejected only by the MCP surface.** Now rejected everywhere.
@@ -417,9 +417,9 @@ recurring theme in that tail is code that reported success while doing nothing.
   concurrently under a semaphore.
   ([#169](https://github.com/fstubner/netscli/pull/169))
 - **Reading the ARP table blocked a runtime worker.** On Windows and macOS it
-  shells out to `arp` and waits on the child process; three callers invoked it
+  shells out to `arp` and waits on the child process. Three callers invoked it
   straight from async code. With MCP handlers capped at 16 concurrent, sixteen
-  of these could stall every worker — including the one reading stdin, so no
+  of these could stall every worker, including the one reading stdin, so no
   further request could even be parsed. Moved to a blocking thread.
   ([#196](https://github.com/fstubner/netscli/pull/196))
 - **Four ways an MCP client could wedge or kill the server**: no overall
@@ -454,18 +454,18 @@ recurring theme in that tail is code that reported success while doing nothing.
   were passed the tag including its `v`, which the action only strips when the
   input is left empty. `v0.2.2` through `v0.2.6` are already in the public
   catalog that way, so `winget show netscli` reports a version this project
-  never issued. Upgrades still work — winget normalises a leading `v` when
-  comparing — and this release fixes what is displayed. The publish job now
+  never issued. Upgrades still work (winget normalises a leading `v` when
+  comparing) and this release fixes what is displayed. The publish job now
   asserts `MAJOR.MINOR.PATCH` rather than trusting the strip, because
   winget-pkgs accepted all five without complaint and a merged manifest is
   permanent.
 - **AUR packages are published against a re-hashed asset.** Both AUR jobs took
   the published `.sha256` sidecar on trust rather than downloading the asset and
-  hashing it, which is the circular check the release scripts exist to prevent;
-  the other registries already did this correctly.
+  hashing it, which is the circular check the release scripts exist to prevent.
+  The other registries already did this correctly.
 - **The Windows installer verifies Npcap before running it.** `install.ps1`
   downloaded the Npcap installer from an overridable URL and launched it
-  elevated with nothing checked; it now verifies the Authenticode signature and
+  elevated with nothing checked. It now verifies the Authenticode signature and
   signer, and refuses to run an unsigned or unexpected binary.
 - **`install.sh` no longer claims success before installing libpcap.** A user
   who asked for capture support could read "Installed successfully" and get a
@@ -480,7 +480,7 @@ recurring theme in that tail is code that reported success while doing nothing.
   at 4.44:1.
 - **Muted text, and several status colours, were below the readability bar.**
   Eight colour tokens failed WCAG AA (4.5:1) against surfaces they are actually
-  painted on — the mint accent failed as text on every light surface, down to
+  painted on. The mint accent failed as text on every light surface, down to
   3.85:1. All 84 foreground/surface combinations now clear 4.5:1, and a check
   keeps them there.
 - **The install guide has the verification steps the landing page promises.**
@@ -493,15 +493,15 @@ recurring theme in that tail is code that reported success while doing nothing.
 - **The interface coverage table no longer conflates separate things.** Rows
   that merged setup with doctor, or reading the ARP table with changing it, are
   split, and dashes that meant "not applicable" say which.
-- **The FAQ answers two questions people actually search for**, from Search
-  Console data rather than guesswork: whether there is a `netscan` command, and
-  whether this replaces nmap and has a terminal UI.
+- **The FAQ answers two questions people actually search for**, picked from
+  Search Console data rather than guesswork. Is there a `netscan` command,
+  and does this replace nmap and have a terminal UI?
 
-## [0.2.6] — 2026-05-06
+## [0.2.6] - 2026-05-06
 
 ### Fixed
 
-- **GUI: in-app version display was stuck at `0.1.0`.** A stale
+- **The GUI's in-app version display was stuck at `0.1.0`.** A stale
   `APP_VERSION` constant in `App.tsx` powered both the bottom-bar
   version readout and the About dialog, but it never got bumped
   alongside `package.json`, `tauri.conf.json`, or the workspace
@@ -512,13 +512,13 @@ recurring theme in that tail is code that reported success while doing nothing.
   saw `0.1.0` in the GUI itself. Wired `APP_VERSION` to read
   `package.json` at build time via Vite's `define` so the in-app
   display auto-syncs every release going forward.
-- **GUI: title-bar buttons (close, minimize, maximize) didn't work
+- **GUI title-bar buttons (close, minimize, maximize) didn't work
   on Windows.** Tauri 2's deny-by-default permission system requires
   explicit `core:window:allow-close/minimize/maximize/unmaximize/start-dragging`
-  grants; the app was missing its capabilities config entirely.
+  grants. The app was missing its capabilities config entirely.
   Added `src-tauri/capabilities/main.json`. (#62)
 
-## [0.2.5] — 2026-05-05
+## [0.2.5] - 2026-05-05
 
 ### Security
 
@@ -528,14 +528,14 @@ recurring theme in that tail is code that reported success while doing nothing.
   in `hickory-proto`. The DNS lookup tab and any inspect/discover that
   resolves hostnames are no longer reachable through the vulnerable
   encoding path. The 0.26 builder pattern (`TokioResolver::builder_tokio()`)
-  replaces the deprecated `TokioAsyncResolver::tokio` constructor; see
+  replaces the deprecated `TokioAsyncResolver::tokio` constructor. See
   PR #55 for the source migration. The `.cargo/audit.toml` ignore added
   in #52 was removed once the bump landed.
 
 ### Fixed
 
-- **GUI: discover/sweep returned only a single host on Windows.**
-  Root cause: `detect_default_ipv4_subnet` iterated
+- **GUI discover/sweep returned only a single host on Windows.**
+  Root cause. `detect_default_ipv4_subnet` iterated
   `ipconfig::Adapter::prefixes()` and grabbed the first IPv4 entry, but
   that list contains the host's own /32, broadcast /32, multicast /4,
   link-local /16, and the network /24. Windows reports the host /32
@@ -544,7 +544,7 @@ recurring theme in that tail is code that reported success while doing nothing.
   (length 1..=30, not multicast, not link-local) and truncates host
   bits, matching the Linux path. 5 unit tests added that run on every
   CI platform via `cfg(any(windows, test))`. (#59)
-- **GUI: dashboard "Recent Scans" rendered with wrong colors / not as
+- **The GUI dashboard's "Recent Scans" rendered with wrong colors / not as
   list rows.** `.history-item` is a `<button>` (for keyboard
   accessibility) but the CSS didn't reset user-agent button styles.
   WebView2 on Windows applied Win32 chrome (`color: ButtonText`,
@@ -555,8 +555,8 @@ recurring theme in that tail is code that reported success while doing nothing.
 
 - **Dependencies (all transitive, no API surface impact):**
   - `crossterm 0.27 → 0.28` + `tui-textarea 0.4 → 0.7` had to land
-    together — tui-textarea 0.7 hardcodes `crossterm = "0.28"`. (#58)
-  - `mdns-sd 0.13 → 0.19` — adapt to the new `ScopedIp::to_ip_addr()`
+    together, as tui-textarea 0.7 hardcodes `crossterm = "0.28"`. (#58)
+  - `mdns-sd 0.13 → 0.19`, adapting to the new `ScopedIp::to_ip_addr()`
     accessor in `netscli-core/src/mdns.rs`. (#58)
   - `clap 4.5.60 → 4.6.1` (#43), `pcap 1.3 → 2.4` (#45),
     `clap_mangen 0.2.33 → 0.3.0` (#46),
@@ -573,7 +573,7 @@ recurring theme in that tail is code that reported success while doing nothing.
   extras (`netscli-gui.json`), Winget (`fstubner.netscli.gui`), and
   AUR (`netscli-gui-bin`) on every tagged release. (#54, #53, #56)
 
-## [0.2.4] — 2026-05-03
+## [0.2.4] - 2026-05-03
 
 ### Fixed
 - **GUI bundle path** in release.yml's GUI matrix was rooted at
@@ -582,7 +582,7 @@ recurring theme in that tail is code that reported success while doing nothing.
   regardless of which subcrate's directory cargo was invoked from, so
   Tauri's bundle output lives at `target/${TARGET}/release/bundle/`.
   v0.2.3 built the `.deb` / `.dmg` / `.msi` correctly but the collect
-  step found an empty bundle dir and skipped everything; sigstore-sign
+  step found an empty bundle dir and skipped everything, and sigstore-sign
   then failed trying to sign nothing.
 - **AUR deploy action** (`KSXGitHub/github-actions-deploy-aur`) was
   pinned to `@v2.7.0` (April 2024), which has a `bash: --command:
@@ -590,13 +590,13 @@ recurring theme in that tail is code that reported success while doing nothing.
   `@v4.1.3` (current stable, same input shape).
 
 ### Notes
-- CLI release shipped: 44 assets, sigstore-signed, on the v0.2.3
+- CLI release shipped with 44 assets, sigstore-signed, on the v0.2.3
   release page.
 - Homebrew, Scoop, Winget, and crates.io all updated to 0.2.3.
 - AUR is still on the previous version (failed to push).
 - 0 GUI installers attached to v0.2.3 release.
 
-## [0.2.3] — 2026-05-03
+## [0.2.3] - 2026-05-03
 
 ### Fixed
 - **Tauri version skew** broke all 4 GUI installer builds in v0.2.2's
@@ -609,27 +609,27 @@ recurring theme in that tail is code that reported success while doing nothing.
   `NetsCLI_0.2.3_x64_en-US.msi` cleanly.
 - **AUR publish job in publish.yml** failed on v0.2.2 with a confusing
   `bash: --command: invalid option` error from the deploy action's
-  internals. Root cause: rendered PKGBUILD was written to `/tmp/
+  internals. Root cause. Rendered PKGBUILD was written to `/tmp/
   PKGBUILD`, but the `KSXGitHub/github-actions-deploy-aur` action runs
-  in a Docker container that only mounts `$GITHUB_WORKSPACE` — files
+  in a Docker container that only mounts `$GITHUB_WORKSPACE`, so files
   in `/tmp` are invisible inside the container. Render now writes to
   `packaging/aur/PKGBUILD` (workspace-relative) before handoff.
 
 ### Notes
-- CLI binaries shipped successfully on v0.2.2 — `cargo install`,
+- CLI binaries shipped successfully on v0.2.2, and `cargo install`,
   `brew install netscli`, and `scoop install netscli` all give v0.2.2.
 - v0.2.2 GitHub release has CLI assets but no GUI installers.
-- AUR `netscli-bin` was last bumped to v0.2.0; it'll catch up to
+- AUR `netscli-bin` was last bumped to v0.2.0, and it'll catch up to
   v0.2.3 directly.
 
-## [0.2.2] — 2026-05-03
+## [0.2.2] - 2026-05-03
 
 ### Fixed
-- Cargo.lock was out of sync with Cargo.toml at the v0.2.1 tag —
+- Cargo.lock was out of sync with Cargo.toml at the v0.2.1 tag, because
   `tokio 1.52.1` (bumped in #17) requires `socket2 >= 0.6.3`
   transitively, but Dependabot only regenerated the direct-dep entries
   in the lock. CI's lint paths use `cargo build` (no `--locked`) so
-  this slipped through; release.yml uses `--locked` to guarantee
+  this slipped through, but release.yml uses `--locked` to guarantee
   reproducible builds, and all 17 release builds for v0.2.1 failed at
   the lockfile check.
 - 0.2.2 regenerates the lockfile so `socket2 0.6.3` is recorded
@@ -638,21 +638,21 @@ recurring theme in that tail is code that reported success while doing nothing.
 ### Notes
 - Released to crates.io but the GitHub release page has no attached
   binaries (release.yml never produced any). `cargo install netscli`
-  works because cargo regenerates the lockfile per-user; downloads
+  works because cargo regenerates the lockfile per-user, but downloads
   from the GitHub release / package managers should use 0.2.2.
 - 0.2.1 is left in place as crates.io history rather than yanked.
 
-## [0.2.1] — 2026-04-30
+## [0.2.1] - 2026-04-30
 
 ### Added
 - Prebuilt desktop GUI installers attached to every release: `.msi`
   (Windows x86_64), `.dmg` (macOS aarch64 + x86_64), `.deb` and
   `.AppImage` (Linux x86_64). Each is sigstore-signed alongside the
-  CLI binaries. macOS `.dmg` ships unsigned for now; right-click →
+  CLI binaries. macOS `.dmg` ships unsigned for now, so right-click →
   Open to bypass Gatekeeper, or run
   `xattr -dr com.apple.quarantine /Applications/NetsCLI.app`.
 - `--concurrency <N>` (alias `-j <N>`) global CLI flag for tuning
-  in-flight network operations. Default stays at 256; clamped to
+  in-flight network operations. Default stays at 256 and is clamped to
   [1, 1024]. Useful on fragile home gateways that can't keep up with
   hundreds of simultaneous probes.
 
@@ -665,10 +665,10 @@ recurring theme in that tail is code that reported success while doing nothing.
 
 ### Notes
 - `ipnetwork` stayed at 0.20 because `pnet_datalink 0.35` still pins
-  it transitively; will revisit when upstream pnet relaxes the
+  it transitively, and will revisit when upstream pnet relaxes the
   constraint.
 
-## [0.2.0] — 2026-04-18
+## [0.2.0] - 2026-04-18
 
 ### Added
 - `netscli completions <bash|zsh|fish|powershell|elvish>` subcommand that
@@ -680,7 +680,7 @@ recurring theme in that tail is code that reported success while doing nothing.
 - Sigstore keyless signing in `.github/workflows/release.yml`. Every
   release asset now ships with a `.sig` + `.pem` alongside the `.sha256`,
   verifiable by anyone with `cosign verify-blob`. No paid cert, no
-  long-lived secrets; uses the GitHub Actions OIDC token exchanged via
+  long-lived secrets. It uses the GitHub Actions OIDC token exchanged via
   Fulcio for a short-lived signing cert bound to the workflow + commit +
   tag.
 - `packaging/` directory with submission templates for Homebrew (tap),
@@ -715,7 +715,7 @@ recurring theme in that tail is code that reported success while doing nothing.
   can land without being breaking changes.
 - `netscli-core` feature `db` gating the SQLite `Database` type (and
   its sqlx + chrono deps). Default build is ~35% smaller transitive
-  crate graph (256 → 167). The `netscli` binary opts in to `db`;
+  crate graph (256 → 167). The `netscli` binary opts in to `db`, while
   library consumers can stay lean with `default-features = false`.
 - `cargo-audit` CI workflow (`.github/workflows/audit.yml`) running on
   push / PR / weekly schedule, with a documented `.cargo/audit.toml`
@@ -725,26 +725,26 @@ recurring theme in that tail is code that reported success while doing nothing.
 ### Changed
 - **All public functions** in `netscli-core` now return
   `netscli_core::Result<T>` with structured error variants instead of
-  `anyhow::Result<T>`. Covers: `common::parse_ports*`, the full `dns`
+  `anyhow::Result<T>`. Covers `common::parse_ports*`, the full `dns`
   module, the `Ops` surface, `InspectEngine`, `SweepEngine`,
   `NetworkManager::{get_arp_table, add_entry, delete_entry, clear_table}`,
   `PcapEngine`, and `Database`.
 - `Error` variant mapping by module:
   - `common`, `ops` subnet/record parsing → `InvalidInput`
-  - `dns` resolver failures → `Dns`; timeouts → `Timeout(ms)`
+  - `dns` resolver failures → `Dns`, timeouts → `Timeout(ms)`
   - `ops::resolve_host_ip_with_timeout` unresolved host → `Dns`
   - `pcap` unsupported (build-time or no interfaces) → `Unsupported`
   - `arp` process-exec failures and permissioned ops → `Other` (with
-    the permission hint in the message; a dedicated `PermissionDenied`
+    the permission hint in the message, and a dedicated `PermissionDenied`
     variant may land later)
   - `Database` (sqlx) errors → `Database` variant via `#[from]`
   - `pcap` runtime errors → `Pcap` variant via `#[from]`
 - A few private helpers in `ping.rs` (ICMP round-trip internals) keep
   `anyhow::Error` because they never reach the public surface.
 - Extracted section headings + leads into `site.copy` so the landing
-  page is 100% data-driven; no per-project strings in components.
+  page is 100% data-driven, with no per-project strings in components.
 
-## [0.1.1] — 2026-04-17
+## [0.1.1] - 2026-04-17
 
 ### Added
 - Per-crate `README.md` for `netscli-core`, `netscli-mcp`, and
@@ -758,7 +758,7 @@ recurring theme in that tail is code that reported success while doing nothing.
 
 ### Changed
 - Bumped `sqlx` dep in `netscli-core` from 0.7 to 0.8. No source
-  changes needed; our usage is entirely `query()` / `query_as::<_, T>()`
+  changes needed. Our usage is entirely `query()` / `query_as::<_, T>()`
   / `FromRow`, and the 0.8 breaking changes affected other paths. This
   drops GHSA-xmrp-424f-vfpx from the advisory noise even though it was
   never reachable with our `sqlite`-only feature set.
@@ -779,8 +779,8 @@ recurring theme in that tail is code that reported success while doing nothing.
 - Npcap SDK install step in the release workflow was pointing `LIB` at
   the wrong path (the 1.13 zip has `Lib/` at its root, no wrapping
   `npcap-sdk/` folder). Windows pcap variant now builds.
-- `ubuntu-24.04-arm64` runner label corrected to `ubuntu-24.04-arm`;
-  the ARM64 Linux matrix jobs no longer queue forever.
+- `ubuntu-24.04-arm64` runner label corrected to `ubuntu-24.04-arm`,
+  so the ARM64 Linux matrix jobs no longer queue forever.
 
 ### Security
 - Dropped CVE-flagged dep versions from the tree through transitive
@@ -788,22 +788,22 @@ recurring theme in that tail is code that reported success while doing nothing.
   None of the CVEs were reachable under our feature flags, but
   keeping flagged versions around cluttered the alert feed.
 
-## [0.1.0] — 2026-04-17
+## [0.1.0] - 2026-04-17
 
 First public release. CLI, TUI, desktop GUI, and MCP server all
 backed by the same core library.
 
 ### Added
-- `netscli-core` — host discovery, port scan, DNS lookup (all record
+- `netscli-core` covers host discovery, port scan, DNS lookup (all record
   types), reverse DNS, ARP with vendor resolution, network sweep,
   ping, traceroute, interface listing, optional libpcap packet
   capture. OUI vendor DB ships embedded in the crate.
-- `netscli-mcp` — JSON-RPC MCP server exposing nine tools over stdio
+- `netscli-mcp` is a JSON-RPC MCP server exposing nine tools over stdio
   for Claude Code / Cursor / any MCP client.
-- `netscli` — CLI + ratatui TUI. `netscli <cmd>` for scripts,
+- `netscli` is the CLI + ratatui TUI. `netscli <cmd>` for scripts,
   `netscli` alone for the interactive TUI, `netscli serve` for the
   MCP server.
-- `netscli-gui` — Tauri 2 + React 19 desktop app with dashboard,
+- `netscli-gui` is a Tauri 2 + React 19 desktop app with dashboard,
   scan, DNS, interfaces, and settings views.
 - `--json` / `--yaml` structured output on every non-interactive
   subcommand.
