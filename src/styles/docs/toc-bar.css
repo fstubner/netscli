@@ -86,7 +86,7 @@
   }
 
   mobile-starlight-toc summary:focus-visible {
-    outline: 1px solid rgba(159, 248, 222, 0.58);
+    outline: 1px solid rgba(var(--ui-accent-rgb), 0.58);
     outline-offset: -3px;
   }
 

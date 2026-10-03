@@ -76,7 +76,7 @@ html[data-theme='light'] #starlight__search .pagefind-ui__form::before {
 
 #starlight__search .pagefind-ui__search-input:focus {
   outline: 0;
-  border-color: rgba(159, 248, 222, 0.72);
+  border-color: rgba(var(--ui-accent-rgb), 0.72);
   box-shadow:
     0 0 0 2px rgba(var(--ui-accent-rgb), 0.16),
     inset 0 1px 0 rgba(var(--ui-lift-rgb), 0.04);

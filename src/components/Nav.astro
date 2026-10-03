@@ -206,7 +206,7 @@ html[data-theme='light'] .mark.has-light img.mark-light{display:block}
   flex-direction:column;
   gap:4px;
   border:1px solid rgba(var(--ui-lift-rgb),.1);
-  border-radius:7px;
+  border-radius:6px;
   color:var(--ui-text);
   background:rgba(var(--ui-lift-rgb),.035);
   cursor:pointer;
@@ -217,12 +217,16 @@ html[data-theme='light'] .mark.has-light img.mark-light{display:block}
   border-radius:999px;
   background:currentColor;
 }
+/* Same hover and focus as the docs header's search and menu buttons
+   (docs/header-controls.css). */
 .nav-menu-toggle:hover,
 .nav-menu-toggle:focus-visible{
   color:var(--ui-text-strong);
-  border-color:rgba(var(--ui-accent-rgb),.35);
+  background:rgba(var(--ui-accent-rgb),.1);
+  border-color:rgba(var(--ui-accent-rgb),.45);
   outline:none;
 }
+.nav-menu-toggle:focus-visible{box-shadow:0 0 0 2px rgba(var(--ui-accent-rgb),.35)}
 .nlinks{display:flex;gap:20px;font-size:.8125rem;flex-wrap:wrap;justify-content:flex-end}
 .nlinks a{
   color:var(--ui-text-muted);text-decoration:none;
