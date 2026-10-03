@@ -22,9 +22,12 @@ const markdownHref = `/docs/${slug}.md`;
   aria-label="Copy this page as markdown"
   title="Copy this page as markdown"
 >
-  <svg aria-hidden="true" viewBox="0 0 16 16" focusable="false">
+  <svg class="copy-page-icon" aria-hidden="true" viewBox="0 0 16 16" focusable="false">
     <path d="M5.5 2.5h7v9h-7z"></path>
     <path d="M3.5 4.5h-1v9h7v-1"></path>
+  </svg>
+  <svg class="copy-page-done" aria-hidden="true" viewBox="0 0 16 16" focusable="false">
+    <path d="M3 8.2 6.1 11 13 4"></path>
   </svg>
   <span class="copy-page-label">Copy page</span>
 </button>
@@ -100,6 +103,18 @@ const markdownHref = `/docs/${slug}.md`;
     .copy-page[data-state='copied'] {
       color: var(--ui-accent-bright);
       border-color: rgba(var(--ui-accent-rgb), 0.48);
+    }
+
+    /* A tick while it says "Copied", as the landing page's copy buttons do.
+       In the "On this page" bar the label is hidden, so the icon is the only
+       sign the copy worked. */
+    .copy-page-done,
+    .copy-page[data-state='copied'] .copy-page-icon {
+      display: none;
+    }
+
+    .copy-page[data-state='copied'] .copy-page-done {
+      display: block;
     }
 
     .copy-page[data-state='failed'] {
