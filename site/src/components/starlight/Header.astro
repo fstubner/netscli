@@ -48,10 +48,6 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
     />
   </a>
 
-  <div class="docs-header-search print:hidden">
-    {shouldRenderSearch && <Search />}
-  </div>
-
   <nav class="docs-nav-links" aria-label="Site navigation">
     {
       navLinks.map((link, i) => (
@@ -66,6 +62,10 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
       ))
     }
   </nav>
+
+  <div class="docs-header-search print:hidden">
+    {shouldRenderSearch && <Search />}
+  </div>
 
   <div class="docs-header-theme sl-hidden md:sl-flex print:hidden">
     <ThemeSelect />
@@ -87,7 +87,7 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
       display: flex;
       align-items: center;
       justify-content: flex-start;
-      gap: 1rem;
+      gap: var(--ui-nav-link-gap);
       height: var(--sl-nav-height);
       min-height: var(--sl-nav-height);
       width: min(
@@ -125,22 +125,22 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
       filter: var(--ui-mark-filter);
     }
 
-    /* The bar is two groups: identity on the left, then search, navigation
-       and the theme control together on the right. The auto margin is the
-       seam, and it sits on the search box because search is the first
-       element of the right-hand group.
+    /* The bar is two groups: identity on the left, then navigation and the
+       controls on the right -- links, then search and the theme control
+       together at the end. The auto margin is the seam, on the links because
+       they begin the right-hand group.
      *
-     * Two earlier placements are worth not repeating. On the wordmark, the
-     * whole gap landed immediately after it, and since search was the next
-     * element search came to rest near the middle of the bar, reading as a
-     * stray control belonging to neither side -- measured at a 1367px bar,
-     * search at x=704, the centre to within a few pixels. On .docs-nav-links,
-     * search stayed pinned beside the wordmark at the far left, a long way
-     * from the navigation it belongs with.
+     * Search used to lead that group, before the links, so that the keyboard
+     * reached it first. It read as a stray box at one end of the links with
+     * the theme control at the other; grouped with the theme control it is
+     * one cluster of controls, as on most docs sites. The cost is keyboard
+     * order: search now comes after the nav links. Starlight's Ctrl+K / `/`
+     * shortcut still opens it from anywhere.
      *
-     * DOM order is unchanged: search still precedes the nav links, so it is
-     * reachable by keyboard before six nav items rather than after them. */
-    .docs-header-search {
+     * An earlier placement worth not repeating: the seam on the wordmark put
+     * the whole gap straight after it, and whatever came next floated near the
+     * middle of the bar -- measured at a 1367px bar, search at x=704. */
+    .docs-nav-links {
       margin-inline-start: auto;
     }
 
@@ -149,9 +149,9 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 1.15rem;
+      gap: var(--ui-nav-link-gap);
       min-width: 0;
-      font-size: 0.8125rem;
+      font-size: var(--ui-nav-font-size);
       height: var(--sl-nav-height);
       line-height: 1;
     }
@@ -185,13 +185,13 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
      * sits in that margin, negatively inset. */
     .docs-nav-links a.nav-group-start {
       position: relative;
-      margin-inline-start: 1.3rem;
+      margin-inline-start: var(--ui-nav-group-gap);
     }
 
     .docs-nav-links a.nav-group-start::before {
       content: "";
       position: absolute;
-      inset-inline-start: -0.65rem;
+      inset-inline-start: calc((var(--ui-nav-group-gap) + var(--ui-nav-link-gap) + 1px) / -2);
       top: 50%;
       width: 1px;
       height: 18px;
@@ -203,14 +203,12 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
       border-bottom-color: var(--ui-accent);
     }
 
+    /* Sized to its button. It was a fixed 168px box with a 135px button
+       centred in it, which added 16px either side on top of the row gap. */
     .docs-header-search {
-      flex: 0 1 10.5rem;
-      width: 10.5rem;
-      max-width: 10.5rem;
-      min-width: 8.5rem;
+      flex: 0 0 auto;
       display: flex;
       align-items: center;
-      justify-content: center;
       height: var(--sl-nav-height);
     }
 
@@ -251,15 +249,9 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
 
     @media (max-width: 72rem) {
       .docs-topbar {
-        gap: 0.85rem;
         width: min(100%, calc(100vw - 2rem));
         max-width: calc(100vw - 2rem);
         padding-inline: 1rem;
-      }
-
-      .docs-nav-links {
-        gap: 0.75rem;
-        font-size: 0.78rem;
       }
 
       .docs-header-search {
@@ -294,7 +286,6 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
 
     @media (max-width: 72rem) {
       .docs-topbar {
-        gap: 0.75rem;
         width: min(100%, calc(100vw - 5.25rem));
         max-width: calc(100vw - 5.25rem);
         justify-content: flex-start;
@@ -310,11 +301,6 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
          second auto margin on the same flex row splits the free space between
          the two rather than adding to it -- measured at 1142px, 206px of it
          landed between the search icon and the first link. */
-      .docs-nav-links {
-        gap: 0.7rem;
-        font-size: 0.76rem;
-      }
-
       .docs-header-search {
         flex: 0 0 auto;
         width: 2.5rem;

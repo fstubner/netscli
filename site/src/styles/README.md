@@ -8,6 +8,7 @@ else.
 tokens.css           shared: brand palette, base ramp, nav height, wordmark
 code-surface.css     shared: the dark surface code sits on, in both themes
 theme-control.css    shared: the light/dark/system control both bars draw
+nav-spacing.css      shared: gaps and link size inside both top bars
 docs/                the Starlight docs shell, one file per region
 landing/tokens.css   the landing page's character: chips, bands, on-dark ink,
                      elevation, and the subtree remaps that use them
@@ -16,9 +17,9 @@ landing/base.css     the landing page's page-level rules: box model, body,
 landing/lightbox.css the image lightbox the surfaces section opens
 ```
 
-The docs load `tokens.css`, `docs/*`, `theme-control.css` and
+The docs load `tokens.css`, `nav-spacing.css`, `docs/*`, `theme-control.css` and
 `code-surface.css` through `customCss` in `astro.config.mjs`. The landing
-page loads `tokens.css`, `code-surface.css`, `landing/*` and
+page loads `tokens.css`, `nav-spacing.css`, `code-surface.css`, `landing/*` and
 `theme-control.css` through `layouts/Page.astro`. Neither loads the other's
 tier, and `scripts/css-equivalence.mjs --stack landing|docs` checks each
 against its own pages.

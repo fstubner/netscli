@@ -3,6 +3,7 @@ import Page from '../layouts/Page.astro';
 import Nav from '../components/Nav.astro';
 import Hero from '../components/Hero.astro';
 import Surfaces from '../components/Surfaces.astro';
+import Compare from '../components/Compare.astro';
 import Install from '../components/Install.astro';
 import Faq from '../components/Faq.astro';
 import Footer from '../components/Footer.astro';
@@ -14,7 +15,7 @@ const githubRepo = site.social.repo;
 // One component per section name. The list in site-content/sections.ts is
 // the order; this is only the lookup, and a name with no entry here is a
 // type error rather than a silently missing section.
-const COMPONENTS = { hero: Hero, surfaces: Surfaces, install: Install, faq: Faq };
+const COMPONENTS = { hero: Hero, surfaces: Surfaces, compare: Compare, install: Install, faq: Faq };
 ---
 <Page>
   <Nav />

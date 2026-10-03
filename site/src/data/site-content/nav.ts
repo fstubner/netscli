@@ -30,6 +30,7 @@ export interface NavLink {
 
 const allLinks: NavLink[] = [
   { label: 'Features', section: 'surfaces', mobileGroup: 'site' },
+  { label: 'Compare', section: 'compare', mobileGroup: 'site' },
   { label: 'Install', section: 'install', mobileGroup: 'site' },
   { label: 'FAQ', section: 'faq', mobileGroup: 'site' },
   { label: 'Docs', href: '/docs/', mobileGroup: 'site' },

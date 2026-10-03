@@ -206,7 +206,7 @@ html[data-theme='light'] nav[data-site-nav]::after{
   border-color:rgba(var(--ui-accent-rgb),.35);
   outline:none;
 }
-.nlinks{display:flex;gap:20px;font-size:.8125rem;flex-wrap:wrap;justify-content:flex-end}
+.nlinks{display:flex;gap:var(--ui-nav-link-gap);font-size:var(--ui-nav-font-size);flex-wrap:wrap;justify-content:flex-end}
 .nlinks a{
   color:var(--ui-text-muted);text-decoration:none;
   display:inline-flex;align-items:center;
@@ -235,12 +235,12 @@ html[data-theme='light'] nav[data-site-nav]::after{
    starlight/Header.astro, where the docs page shows it. */
 .nlinks a.nav-group-start{
   position:relative;
-  margin-inline-start:32px;
+  margin-inline-start:var(--ui-nav-group-gap);
 }
 .nlinks a.nav-group-start::before{
   content:"";
   position:absolute;
-  inset-inline-start:-16px;
+  inset-inline-start:calc((var(--ui-nav-group-gap) + var(--ui-nav-link-gap) + 1px) / -2);
   top:50%;
   width:1px;
   height:18px;
