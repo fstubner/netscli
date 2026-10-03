@@ -21,4 +21,8 @@ export interface InstallSteps {
   /** Step 2 as cards in the same style as step 1's, e.g. "ask your agent"
    *  and "run it yourself". When set they replace the command and note. */
   afterCards?: import('./types').InstallClient[];
+  /** Further steps after step 2, each a heading over cards in the same
+   *  style, numbered on from 3. For what some users do once, such as an
+   *  optional add-on; say so in the label. */
+  moreSteps?: { label: string; cards: import('./types').InstallClient[] }[];
 }
