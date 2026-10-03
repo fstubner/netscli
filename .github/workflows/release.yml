@@ -112,6 +112,7 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             landing/package-lock.json
+            cloud/package-lock.json
 
       # Before the ten minutes of install and verify, and before anything is
       # written: the push at the end is refused unless this token belongs to
@@ -142,6 +143,12 @@ jobs:
 
       - name: Install landing dependencies
         run: npm --prefix landing ci
+
+      # verify:release runs test:cloud, which typechecks the Worker against
+      # its own dependencies. Without this the release run failed at
+      # "Cannot find type definition file for '@cloudflare/workers-types'".
+      - name: Install cloud dependencies
+        run: npm --prefix cloud ci
 
       # Before anything is written. A release that fails its own gates should
       # leave no tag, no commit and no version bump behind to unpick.

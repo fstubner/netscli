@@ -158,7 +158,7 @@ jobs:
       - name: Landing dependency audit
         # The landing site has only devDependencies (Astro is a build-time
         # dependency of a static site), so --omit=dev would audit nothing.
-        run: npm --prefix landing audit
+        run: npm run audit:landing
 
       # Ranking quality gate. Single platform on purpose: the baseline is
       # derived from float embeddings, so its portability across runners is

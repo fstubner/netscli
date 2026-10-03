@@ -28,7 +28,32 @@ import { spawnSync } from "node:child_process";
  */
 
 /** @type {Exception[]} */
-const EXCEPTIONS = [];
+const PRODUCTION_EXCEPTIONS = [];
+
+/**
+ * The landing site (`landing/`, run with `--landing`). It has only
+ * devDependencies, all of them build tooling for a static site served as
+ * files, so its whole tree is audited, under the same rules.
+ *
+ * @type {Exception[]}
+ */
+const LANDING_EXCEPTIONS = [
+  {
+    advisory: "GHSA-ch52-4w7c-c8xp",
+    package: "http-cache-semantics",
+    why:
+      "Only astro's build-time remote-image fetcher imports it (astro 7.3.3 dist/assets/build/remote.js, " +
+      "the sole import in its dist), and the landing site uses no remote images: no astro:assets imports, " +
+      "no <Image>/<Picture>, no image config in astro.config.mjs. The advisory concerns a shared cache " +
+      "serving one user's response to another; the site is static files with no server and no cache of its own.",
+    removedBy: "A fixed http-cache-semantics (every version is affected as of 2026-10-03), or astro dropping it.",
+  },
+];
+
+const LANDING = process.argv.includes("--landing");
+const EXCEPTIONS = LANDING ? LANDING_EXCEPTIONS : PRODUCTION_EXCEPTIONS;
+const AUDIT_COMMAND = LANDING ? "npm --prefix landing audit --json" : "npm audit --omit=dev --json";
+const SCOPE = LANDING ? "Landing site dependency" : "Production dependency";
 
 /**
  * npm reports one entry per package along the chain, so a single advisory
@@ -66,7 +91,7 @@ function runAudit() {
   // cannot be spawned without a shell — but passing an array *through* a shell
   // concatenates rather than escapes, which Node deprecates in DEP0190. Every
   // argument here is a literal in this file, so there is nothing to escape.
-  const result = spawnSync("npm audit --omit=dev --json", {
+  const result = spawnSync(AUDIT_COMMAND, {
     encoding: "utf-8",
     shell: true,
     maxBuffer: 32 * 1024 * 1024,
@@ -144,13 +169,13 @@ function main() {
   }
 
   if (unexpected.length > 0) {
-    process.stderr.write("\nProduction dependency advisories with no exception:\n");
+    process.stderr.write(`\n${SCOPE} advisories with no exception:\n`);
     for (const advisory of unexpected) {
       process.stderr.write(`  ${advisory.severity.padEnd(8)} ${advisory.id}  ${advisory.title}\n    ${advisory.url}\n`);
     }
     process.stderr.write(
       "\nFix it, or add an exception to scripts/audit-production.mjs stating why\n" +
-        "the vulnerable path is unreachable from xtctx and what would remove the\n" +
+        `the vulnerable path is unreachable from ${LANDING ? "the landing build" : "xtctx"} and what would remove the\n` +
         "exception. An advisory nobody can write that argument for is not eligible.\n",
     );
   }
@@ -160,7 +185,7 @@ function main() {
   }
 
   process.stdout.write(
-    `Production dependency audit clean (${found.size} advisory/advisories, all accounted for).\n`,
+    `${SCOPE} audit clean (${found.size} advisory/advisories, all accounted for).\n`,
   );
 }
 
