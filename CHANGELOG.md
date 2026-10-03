@@ -96,11 +96,11 @@ its heading and collects entries; the date and the link go on with the tag.
     MCP inspect or sweep pinged with 500 ms where the others use 1,000, and
     gave name lookups 500 or 1,000 ms where the others give 1,500. Without a
     `timeout` each step now keeps its usual default.
-  - The MCP tool list advertised defaults the server did not use: an `A`
-    record for DNS lookups (it looks up every type), `192.168.1.0/24` for
-    discover and sweep (it uses your own network) and `capture.pcap` for
-    background captures (it names the file after the job). They now say
-    what happens.
+  - The MCP tool list advertised defaults the server did not use. DNS
+    lookups claimed an `A` record and look up every type, discover and
+    sweep claimed `192.168.1.0/24` and use your own network, and background
+    captures claimed `capture.pcap` and name the file after the job. The
+    tool list now says what happens.
   - Ping count tops out at 256 everywhere. The desktop app stopped at 50 or
     64, and the TUI had no limit at all.
   - Desktop inspect ignored the concurrency setting in Preferences. It now
