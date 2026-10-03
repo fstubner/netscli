@@ -19,7 +19,7 @@ site-search button[data-open-modal] {
 }
 
 site-search button[data-open-modal] svg {
-  color: #8792a4;
+  color: var(--sl-color-gray-3);
 }
 
 site-search button[data-open-modal] > kbd {
@@ -29,24 +29,20 @@ site-search button[data-open-modal] > kbd {
   color: var(--sl-color-gray-3);
 }
 
+/* Hover and focus match the menu button beside it (below) and the landing
+   nav's menu toggle (Nav.astro): accent border, accent tint, white ink;
+   keyboard focus adds a 2px accent ring. */
 site-search button[data-open-modal]:hover,
 site-search button[data-open-modal]:focus-visible {
-  background: rgba(17, 22, 29, 0.9);
-  border-color: rgba(106, 240, 208, 0.65);
-}
-
-site-search button[data-open-modal]:hover {
+  background: rgba(var(--ui-accent-rgb), 0.1);
+  border-color: rgba(var(--ui-accent-rgb), 0.45);
   color: var(--sl-color-white);
-  box-shadow:
-    0 0 0 1px rgba(var(--ui-accent-rgb), 0.16),
-    inset 0 1px 0 rgba(var(--ui-lift-rgb), 0.035);
+  box-shadow: none;
 }
 
 site-search button[data-open-modal]:focus-visible {
   outline: 0;
-  box-shadow:
-    0 0 0 2px rgba(var(--ui-accent-rgb), 0.18),
-    inset 0 1px 0 rgba(var(--ui-lift-rgb), 0.04);
+  box-shadow: 0 0 0 2px rgba(var(--ui-accent-rgb), 0.35);
 }
 
 site-search button[data-open-modal]:hover svg,
@@ -64,17 +60,15 @@ html[data-theme='light'] site-search button[data-open-modal] {
 
 html[data-theme='light'] site-search button[data-open-modal]:hover,
 html[data-theme='light'] site-search button[data-open-modal]:focus-visible {
-  background: var(--sl-color-black);
+  background: rgba(var(--ui-accent-rgb), 0.1);
   border-color: rgba(var(--ui-accent-rgb), 0.45);
 }
 
-/* The hover ring restated here because the light resting rule above outranks
-   the theme-neutral hover rule by the `html` in its selector. */
+/* Restated for light: the light resting rule above outranks the theme-neutral
+   hover rule by the `html` in its selector. No ring on hover, as in dark. */
 html[data-theme='light'] site-search button[data-open-modal]:hover {
-  color: #172033;
-  box-shadow:
-    0 0 0 1px rgba(var(--ui-accent-rgb), 0.16),
-    inset 0 1px 0 rgba(var(--ui-lift-rgb), 0.035);
+  color: var(--sl-color-white);
+  box-shadow: none;
 }
 
 /* The dialog's close button also sits inside .docs-header-search. These
@@ -107,9 +101,14 @@ nav.sidebar .sl-menu-button {
 nav.sidebar .sl-menu-button:hover,
 nav.sidebar .sl-menu-button:focus-visible,
 nav.sidebar:has(#starlight__sidebar:popover-open) .sl-menu-button {
-  background: rgba(var(--ui-accent-rgb), 0.12);
-  border-color: rgba(var(--ui-accent-rgb), 0.28);
+  background: rgba(var(--ui-accent-rgb), 0.1);
+  border-color: rgba(var(--ui-accent-rgb), 0.45);
   color: var(--sl-color-white);
+}
+
+nav.sidebar .sl-menu-button:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 2px rgba(var(--ui-accent-rgb), 0.35);
 }
 
 html[data-theme='light'] nav.sidebar .sl-menu-button {
@@ -121,6 +120,7 @@ html[data-theme='light'] nav.sidebar .sl-menu-button {
 html[data-theme='light'] nav.sidebar .sl-menu-button:hover,
 html[data-theme='light'] nav.sidebar .sl-menu-button:focus-visible,
 html[data-theme='light'] nav.sidebar:has(#starlight__sidebar:popover-open) .sl-menu-button {
-  background: rgba(var(--ui-accent-rgb), 0.12);
+  background: rgba(var(--ui-accent-rgb), 0.1);
+  border-color: rgba(var(--ui-accent-rgb), 0.45);
   color: var(--sl-color-white);
 }
