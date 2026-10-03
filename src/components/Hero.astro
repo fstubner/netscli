@@ -672,6 +672,17 @@ const hasSecondCommand = hero.quickInstall.trim() !== '';
  * arrangement on a phone, and it is the stacked one both layouts produce. */
 .hero-frame{display:contents}
 
+/* The narrow end of the split hero. The column is 46% of the frame, so
+   between 900 and 1100px it is too narrow for the install command and the
+   "more install options" link side by side: measured on nvx's site at
+   1000px, a 433px column left `irm https://nvx.run/install.ps1 | iex` 289px
+   and clipped 39px of it. The link goes under
+   the command instead, where it still reads as the next step. */
+@media (min-width:900px) and (max-width:1099px){
+  .landing-split .hero-cta-sub{grid-template-columns:minmax(0,1fr);gap:10px}
+  .landing-split .hero-install-link{justify-self:start}
+}
+
 @media (min-width:900px){
   .landing-split .hero-frame{
     display:grid;
