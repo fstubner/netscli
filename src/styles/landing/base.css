@@ -266,8 +266,6 @@ section .lead a:hover{color:var(--ui-accent-bright)}
      ink the rest of the page uses for secondary marks, and it is contrast
      checked. */
   color:var(--ui-text-muted);
-  /* 24px holding a 13px icon. At 27px and 15px it filled a one-line command
-     row (about 29px tall) edge to edge and the icon crowded its own border. */
   width:24px;height:24px;padding:0;
   display:inline-flex;align-items:center;justify-content:center;
   cursor:pointer;opacity:0;
