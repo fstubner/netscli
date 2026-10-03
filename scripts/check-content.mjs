@@ -160,11 +160,24 @@ for (const [file, digest, what, hint] of PLACEHOLDERS) {
 
 // ---- 6. The changelog ------------------------------------------------------
 
-if (exists('CHANGELOG.md')) {
-  const body = read('CHANGELOG.md');
-  if (SAMPLE_STRINGS.some((sample) => body.includes(sample))) {
+// This repo's own root when the site stands alone; a product's actual root
+// when this is a subtree at product/site/ (see AGENTS.md, "If this site is a
+// subtree"). Checking only 'CHANGELOG.md' missed the subtree layout entirely
+// -- the file the changelog page actually reads sits one level up, and this
+// check never looked there.
+const CHANGELOG_STUB_STRINGS = [
+  'The first release: one binary',
+  'First cut of the site from product-site-template',
+];
+const CHANGELOG_CANDIDATES = ['CHANGELOG.md', '../CHANGELOG.md'].filter(exists);
+for (const file of CHANGELOG_CANDIDATES) {
+  const body = read(file);
+  // The stub's own lines only. SAMPLE_STRINGS also holds generic words a
+  // real changelog uses, such as `some-tool` in a usage example, and
+  // matching the whole list called a real product's changelog the stub.
+  if (CHANGELOG_STUB_STRINGS.some((sample) => body.includes(sample))) {
     note(
-      'CHANGELOG.md',
+      file,
       'is still the stub',
       'The changelog page reads GitHub Releases at runtime and falls back to this file.'
     );
@@ -178,7 +191,11 @@ if (exists('CHANGELOG.md')) {
 // the value lived in src/layouts/Page.astro, which no list named, so no gate
 // ever looked at it. A product fact can live anywhere in the source, so the
 // scan goes everywhere in the source.
-const SCAN_ROOTS = ['src', 'astro.config.mjs'];
+// 'public' added so an untouched favicon.svg or mark.svg -- text files that
+// can carry the sample name in a <title> or a comment -- gets the same scan
+// as the source. Binary assets under public/ are still skipped: SCAN_EXTS
+// below is what filters them out, not this list.
+const SCAN_ROOTS = ['src', 'astro.config.mjs', 'public'];
 // Code only, and comments stripped before matching. The first run of this
 // scan flagged three files and all three were wrong: `example.com` in a
 // policy sample (the reserved documentation domain, correct there), and
@@ -186,7 +203,10 @@ const SCAN_ROOTS = ['src', 'astro.config.mjs'];
 // strings. The bug this exists to catch -- `programmingLanguage: 'Rust'`
 // -- was a VALUE. Prose that mentions a sample string is not the same as
 // code that still uses one, and a gate that cries wolf gets switched off.
-const SCAN_EXTS = ['.ts', '.tsx', '.astro', '.mjs', '.js'];
+// '.css' and '.svg' joined the list after this same gate shipped with no
+// coverage for either: a leftover template comment in CSS, or a sample name
+// left in an SVG's <title>, passed every check here before.
+const SCAN_EXTS = ['.ts', '.tsx', '.astro', '.mjs', '.js', '.css', '.svg'];
 const stripComments = (text) =>
   text.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:])\/\/.*/g, '$1 ');
 const SKIP_DIRS = new Set(['node_modules', 'dist', '.astro']);

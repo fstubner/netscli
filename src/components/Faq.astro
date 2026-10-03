@@ -3,9 +3,9 @@ import { site } from '../data/site';
 const { faq, copy } = site;
 
 // Groups render in the order they first appear in faq.ts. This used to sort
-// by a list of netscli's group names hard-coded here, which put every other
-// product's groups in an order nobody chose: a name missing from the list
-// sorts as -1, ahead of the ones on it.
+// by a list of one product's group names hard-coded here, which put every
+// other product's groups in an order nobody chose: a name missing from the
+// list sorts as -1, ahead of the ones on it.
 const faqGroups = faq.reduce<Array<{ title: string; items: typeof faq }>>((groups, item) => {
   const existing = groups.find((group) => group.title === item.group);
   if (existing) {

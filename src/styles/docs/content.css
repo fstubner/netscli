@@ -117,7 +117,12 @@ html[data-theme='light'] .sl-markdown-content a[href^='http']:hover::after {
   font-size: 0.9em;
   line-height: 1.45;
   padding: 0.08em 0.34em;
-  white-space: nowrap;
+  /* `nowrap` here fought the page's `overflow-x: clip` (docs/base.css): a long
+     inline token in prose had nowhere to go and was cut off rather than
+     wrapping, on phones where the line is narrowest. `overflow-wrap: anywhere`
+     matches the surrounding paragraph rule just above in this file. */
+  white-space: normal;
+  overflow-wrap: anywhere;
   background: var(--ui-code-bg);
   color: var(--ui-code-inline-fg);
 }

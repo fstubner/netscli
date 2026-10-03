@@ -9,9 +9,6 @@ export function initChangelogPage(
   fallbackReleases: ChangelogRelease[],
   releaseSummaries: Record<string, string>
 ): void {
-  const year = document.getElementById('y');
-  if (year) year.textContent = String(new Date().getFullYear());
-
   const fallbackByTag = new Map(
     fallbackReleases.map((release) => [normalizeTag(release.tag_name || release.name), release])
   );
@@ -32,7 +29,17 @@ export function initChangelogPage(
       return response.json();
     })
     .then((releases: ChangelogRelease[]) => {
-      const remoteTags = new Set(releases.map((release) => normalizeTag(release.tag_name || release.name)));
+      const remoteByTag = new Map(
+        releases.map((release) => [normalizeTag(release.tag_name || release.name), release])
+      );
+      // The order comes from the local changelog, not from grouping remote
+      // and local-only entries into two blocks. Putting every unreleased
+      // entry ahead of every released one put a version that was never
+      // tagged above the actual latest release, even when the changelog
+      // listed it lower down. Walking `fallbackReleases` in its own order
+      // and swapping in the remote data where GitHub has confirmed it keeps
+      // each entry where the changelog puts it.
+      //
       // A changelog entry with no release behind it stays unlinked, and
       // loses its date. `published_at` is built from the date on the
       // CHANGELOG.md heading, which is written when the entry is drafted --
@@ -40,15 +47,22 @@ export function initChangelogPage(
       // a publication date, and the card read "v0.3.1 · Not yet released ·
       // 24 Aug 2026". The label and the date contradicted each other, and
       // the date was the half that looked like a fact.
-      const localOnlyReleases = fallbackReleases
-        .filter((release) => !remoteTags.has(normalizeTag(release.tag_name || release.name)))
-        .map((release) => ({
-          ...release,
-          published_at: undefined,
-          unreleased: true,
-          confirmedUnreleased: true,
-        }));
-      renderReleaseList([...localOnlyReleases, ...releases], repo, fallbackByTag, releaseSummaries);
+      const orderedReleases = fallbackReleases.map((release) => {
+        const tag = normalizeTag(release.tag_name || release.name);
+        const remote = remoteByTag.get(tag);
+        if (remote) return remote;
+        return { ...release, published_at: undefined, unreleased: true, confirmedUnreleased: true };
+      });
+      // A release GitHub knows about that never made it into the local
+      // changelog (a hotfix tag, say) has nowhere to sit in that order, so it
+      // stays in the fetch's own order at the end.
+      const fallbackTags = new Set(
+        fallbackReleases.map((release) => normalizeTag(release.tag_name || release.name))
+      );
+      const extraRemoteReleases = releases.filter(
+        (release) => !fallbackTags.has(normalizeTag(release.tag_name || release.name))
+      );
+      renderReleaseList([...orderedReleases, ...extraRemoteReleases], repo, fallbackByTag, releaseSummaries);
     })
     .catch(() => {
       // Deliberately nothing. The build-time render is already on screen and

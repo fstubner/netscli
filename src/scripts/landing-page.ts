@@ -15,9 +15,6 @@ interface GitHubRelease {
 }
 
 export function initLandingPage(repo: string, cratesIoCrate?: string): void {
-    const year = document.getElementById("y");
-    if (year) year.textContent = String(new Date().getFullYear());
-
     // Live social proof: GitHub stars + cumulative release asset downloads.
     // Unauthenticated GitHub API is rate-limited to 60/hour per IP; on failure
     // hide optional metrics so visitors don't see stale placeholders.

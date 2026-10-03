@@ -2,10 +2,14 @@
 import { site } from '../data/site';
 const { meta, hero, builtWith, modules, feedback, social } = site;
 const feedbackRepo = feedback.repo ?? social.repo;
+// Built at build time, the way the docs footer does it. A <span id="y">
+// filled in by page script left the year blank wherever no script called
+// initLandingPage or initChangelogPage -- the 404 page has neither.
+const year = new Date().getFullYear();
 ---
 <footer>
   <div class="footer-inner">
-    <div>© <span id="y"></span> {meta.author.name} · MIT</div>
+    <div>© {year} {meta.author.name} · MIT</div>
     <div class="flinks">
       <a class="external-link" href={hero.sourceUrl}>GitHub</a>
       <a class="external-link" href={`${hero.sourceUrl}/releases`}>Releases</a>

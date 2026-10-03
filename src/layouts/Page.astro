@@ -33,8 +33,12 @@ const {
   noindex = false,
 } = Astro.props;
 const { meta, analytics, faq, version } = site;
+// The trailing slash on the homepage matches what @astrojs/sitemap emits for
+// it (astro.config.mjs sets `site: meta.domain`, and the sitemap always lists
+// the root as `${site}/`). Without it the canonical and the sitemap named two
+// different URLs for the same page.
 const canonicalUrl =
-  canonicalPath === '/' ? meta.domain : `${meta.domain}${canonicalPath}`;
+  canonicalPath === '/' ? `${meta.domain}/` : `${meta.domain}${canonicalPath}`;
 
 // Build the JSON-LD from the same `site` data source that the visible
 // FAQ section reads from. Keeps them in lockstep — if the visible FAQ
