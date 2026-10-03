@@ -167,6 +167,12 @@ export interface PlatformInstall {
 export interface InstallClient {
   /** The client as its users call it: "Claude Code", "VS Code". */
   name: string;
+  /** Under the name, so a visitor can tell what the client is without its
+   *  logo -- most vendors do not allow a third party to show theirs. Who
+   *  makes it and what kind of tool it is: "Anthropic · terminal agent". */
+  maker?: string;
+  /** Drawn as a glyph beside the name; see install-types.ts. */
+  kind?: import('./install-types').InstallClientKind;
   /** Commands, in order, each with its own copy button. Empty for a client
    *  whose route has no command -- say what to do in `note` instead. */
   commands: string[];
@@ -269,6 +275,8 @@ export interface SiteData {
     /** Install routes per client. When non-empty the install section shows
      *  these as a grid of cards instead of the per-OS tabs. */
     clients: InstallClient[];
+    /** Numbers the by-client layout's two steps; see install-types.ts. */
+    steps?: import('./install-types').InstallSteps;
     tryCommands: TryCommand[];
     binariesNote: string;
     /** Build-from-source command, listed in /llms.txt after the quickstart. */

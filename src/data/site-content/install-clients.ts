@@ -1,4 +1,5 @@
 import type { InstallClient } from './types';
+import type { InstallSteps } from './install-types';
 
 // Install routes grouped by the client they install into -- an editor, a
 // coding agent, a plugin marketplace -- rather than by operating system.
@@ -14,3 +15,22 @@ import type { InstallClient } from './types';
 // command: a card that says "install from the Chat view" tells a reader the
 // client is supported; a missing card tells them it is not.
 export const installClients: InstallClient[] = [];
+
+// Optional numbering for the layout above; has no effect while `installClients`
+// is empty. When set, the grid is headed "1", the first of `tryCommands` in
+// install.ts becomes step 2, and the section can take further steps. Leave it
+// undefined for the unnumbered "Then" panel. Only `install` and `after` are
+// required; install-types.ts says what each field does.
+//
+//   export const installSteps: InstallSteps = {
+//     install: 'Once per editor: install the extension',
+//     after: 'Once per project: set it up',
+//     afterNote: 'Or ask your editor to do it.',   // plain text under step 2
+//     use: { title: 'Use it', text: 'Open the command palette and run Example: Start.' },
+//     // afterCards replaces step 2's single command with cards in step 1's style;
+//     // moreSteps adds headed card groups numbered on from 3 (an optional add-on).
+//   };
+//
+// Cards may also say who makes a client (`maker`) and what kind of tool it is
+// (`kind`: 'terminal' or 'editor', drawn as a small glyph beside the name).
+export const installSteps: InstallSteps | undefined = undefined;
