@@ -52,7 +52,6 @@ Two tools keep a single MCP config for the whole machine. Setup always writes An
 | Reachable from every project | yes | no |
 | Pointer to recent sessions injected at session start | no | Claude Code only |
 | Instruction text naming the tools | no | yes |
-| SessionStart hook (Claude Code) | no | yes |
 | Writes into your project | no | yes |
 
 ## Check it worked
