@@ -114,6 +114,9 @@ pub(super) struct ScanParams {
     /// `scan_ports` only: probe UDP instead of TCP. `inspect_host` shares
     /// this struct and ignores it.
     pub(super) udp: Option<bool>,
+    /// Return closed and filtered ports too. Off by default: see
+    /// `drop_unanswered_ports`.
+    pub(super) include_closed: Option<bool>,
 }
 
 #[derive(Deserialize)]

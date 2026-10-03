@@ -26,7 +26,7 @@ pub fn tools_list() -> serde_json::Value {
         }),
         json!({
             "name": "scan_ports",
-            "description": "Scan TCP ports on a host, or UDP ports with udp: true. UDP without ports probes DNS, NTP, NetBIOS, SSDP and mDNS; a UDP port that neither replies nor refuses is open|filtered.",
+            "description": "Scan TCP ports on a host, or UDP ports with udp: true. UDP without ports probes DNS, NTP, NetBIOS, SSDP and mDNS; a UDP port that neither replies nor refuses is open|filtered. Returns only open, open|filtered and errored ports unless include_closed is true, so an empty list means every port scanned was closed or filtered.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -37,6 +37,7 @@ pub fn tools_list() -> serde_json::Value {
                         "maxItems": 4096
                     },
                     "udp": { "type": "boolean", "default": false },
+                    "include_closed": { "type": "boolean", "default": false, "description": "Also return closed and filtered ports, one entry each." },
                     "timeout": { "type": "number", "default": 500, "minimum": 10, "maximum": 600000 },
                     "maxConcurrent": { "type": "number", "default": 256, "minimum": 1, "maximum": 1024 }
                 },
@@ -102,7 +103,7 @@ pub fn tools_list() -> serde_json::Value {
         }),
         json!({
             "name": "inspect_host",
-            "description": "Inspect a host: ping, port scan, reverse DNS, MAC vendor on the local segment, and an OS hint (family, detail and the evidence behind it, from SMB, SSH/HTTP banners, open ports, MAC vendor and ping TTL). The hint is a guess, not a fingerprint.",
+            "description": "Inspect a host: ping, port scan, reverse DNS, MAC vendor on the local segment, and an OS hint (family, detail and the evidence behind it, from SMB, SSH/HTTP banners, open ports, MAC vendor and ping TTL). The hint is a guess, not a fingerprint. ports lists only open, open|filtered and errored ports unless include_closed is true.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -113,6 +114,7 @@ pub fn tools_list() -> serde_json::Value {
                         "maxItems": 4096
                     },
                     "timeout": { "type": "number", "default": 500, "minimum": 10, "maximum": 600000 },
+                    "include_closed": { "type": "boolean", "default": false, "description": "Also list closed and filtered ports in ports, one entry each." },
                     "maxConcurrent": { "type": "number", "default": 256, "minimum": 1, "maximum": 1024 }
                 },
                 "required": ["host"]
@@ -273,7 +275,7 @@ pub(super) fn mcp_tool_result_text(val: serde_json::Value) -> serde_json::Value 
         "content": [
             {
                 "type": "text",
-                "text": serde_json::to_string_pretty(&val).unwrap_or_else(|_| "<serialization error>".to_string())
+                "text": serde_json::to_string(&val).unwrap_or_else(|_| "<serialization error>".to_string())
             }
         ]
     })
