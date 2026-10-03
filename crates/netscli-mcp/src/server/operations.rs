@@ -85,8 +85,25 @@ pub(super) async fn op_scan_ports(
     } else {
         ops.scan_ports(&ip.to_string(), ports).await
     };
-    let (_ip, res) = scan.map_err(|e| RpcError::ToolError(e.to_string()))?;
+    let (_ip, mut res) = scan.map_err(|e| RpcError::ToolError(e.to_string()))?;
+    if !p.include_closed.unwrap_or(false) {
+        drop_unanswered_ports(&mut res);
+    }
     Ok(res)
+}
+
+/// Keep the ports worth a model's attention: open, `open|filtered`, and any
+/// that errored. Closed and filtered ports are what most of a scan is, and
+/// they arrived one object each. A 1,024-port scan of a LAN machine with two
+/// open ports was 136,834 bytes (measured 2026-10-03), nearly all of it
+/// saying "closed". `include_closed: true` returns every port.
+fn drop_unanswered_ports(ports: &mut Vec<netscli_core::PortResult>) {
+    ports.retain(|p| worth_reporting(p.status));
+}
+
+fn worth_reporting(status: netscli_core::PortStatus) -> bool {
+    use netscli_core::PortStatus;
+    !matches!(status, PortStatus::Closed | PortStatus::Filtered)
 }
 
 pub(super) async fn op_inspect_host(
@@ -110,6 +127,9 @@ pub(super) async fn op_inspect_host(
     // `host` is documented as the original target, so give the caller back
     // what it asked for. The address above is what was probed.
     result.host = p.host.trim().to_string();
+    if !p.include_closed.unwrap_or(false) {
+        drop_unanswered_ports(&mut result.ports);
+    }
     Ok(result)
 }
 
@@ -210,6 +230,16 @@ pub(super) async fn op_discover_mdns(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn closed_and_filtered_ports_are_dropped_and_the_rest_kept() {
+        use netscli_core::PortStatus;
+        assert!(worth_reporting(PortStatus::Open));
+        assert!(worth_reporting(PortStatus::OpenFiltered));
+        assert!(worth_reporting(PortStatus::Error));
+        assert!(!worth_reporting(PortStatus::Closed));
+        assert!(!worth_reporting(PortStatus::Filtered));
+    }
 
     #[test]
     fn a_publicly_addressed_interface_is_refused_rather_than_scanned() {

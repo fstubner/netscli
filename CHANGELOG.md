@@ -80,6 +80,14 @@ its heading and collects entries; the date and the link go on with the tag.
 
 ### Changed
 
+- **MCP scan replies leave out closed and filtered ports.** `scan_ports` and
+  `inspect_host` returned one entry for every port scanned, so a 1,024-port
+  scan of a machine with two open ports came to 136,834 bytes of mostly
+  "closed". They now return open, `open|filtered` and errored ports only,
+  which made the same scan 178 bytes. Pass `include_closed: true` for every
+  port. Replies are also sent as compact JSON instead of indented, which
+  took a sweep of the local network from 15,399 bytes to 8,746.
+
 - **Discovery reads the Windows device table directly** instead of running
   `arp -a` and parsing its text. On an idle machine that makes no measurable
   difference (`arp -a` took 65 ms), but it removes a program start from every
