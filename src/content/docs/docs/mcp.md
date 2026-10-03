@@ -79,7 +79,7 @@ there is nothing to look at until a client connects.
 | Tool | Purpose |
 | --- | --- |
 | `discover_network` | Discover reachable hosts on a subnet. |
-| `scan_ports` | Scan TCP ports on a host, or UDP services with `udp: true`. |
+| `scan_ports` | Scan TCP ports on a host, or UDP services with `udp: true`. Returns open ports only unless `include_closed` is true. |
 | `ping_host` | Check reachability and latency. |
 | `dns_lookup` | Query DNS records. |
 | `get_arp_table` | Read the local ARP neighbor cache. |
@@ -98,20 +98,24 @@ Tool inputs stay stable. Structured output may gain additive fields as the share
 
 Captured from a real session against loopback. The client writes one JSON object per line to stdin, and the server answers on stdout. Most clients do this for you, and this is what they are exchanging.
 
-Opening the connection:
+Opening the connection, then telling the server the client is ready:
 
 ```json
 {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"docs","version":"1"}}}
 ```
 
 ```json
-{"jsonrpc":"2.0","result":{"capabilities":{"tools":{}},"protocolVersion":"2024-11-05","serverInfo":{"name":"netscli","version":"0.3.1"}},"error":null,"id":1}
+{"jsonrpc":"2.0","result":{"capabilities":{"tools":{}},"protocolVersion":"2024-11-05","serverInfo":{"name":"netscli","version":"0.3.4"}},"error":null,"id":1}
+```
+
+```json
+{"jsonrpc":"2.0","method":"notifications/initialized"}
 ```
 
 Calling a tool:
 
 ```json
-{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"scan_ports","arguments":{"host":"127.0.0.1","ports":[22,80,443]}}}
+{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"scan_ports","arguments":{"host":"127.0.0.1","ports":[22,135,445]}}}
 ```
 
 The result arrives as MCP text content whose body is the same JSON the CLI
@@ -123,8 +127,8 @@ would print, so a model reads one shape wherever it came from:
   "result": {
     "content": [
       {
-        "type": "text",
-        "text": "[\n  {\n    \"open\": false,\n    \"port\": 22,\n    \"service\": \"ssh\",\n    \"status\": \"filtered\"\n  },\n  {\n    \"open\": false,\n    \"port\": 80,\n    \"service\": \"http\",\n    \"status\": \"filtered\"\n  },\n  {\n    \"open\": false,\n    \"port\": 443,\n    \"service\": \"https\",\n    \"status\": \"filtered\"\n  }\n]"
+        "text": "[{\"latency_ms\":0,\"open\":true,\"port\":135,\"protocol\":\"tcp\",\"service\":\"msrpc\",\"status\":\"open\"},{\"latency_ms\":0,\"open\":true,\"port\":445,\"protocol\":\"tcp\",\"service\":\"smb\",\"status\":\"open\"}]",
+        "type": "text"
       }
     ]
   },
@@ -133,8 +137,14 @@ would print, so a model reads one shape wherever it came from:
 }
 ```
 
-Every port reads `filtered` because nothing is listening on loopback for
-those ports. Closing stdin cancels any operation still running and shuts the
+Port 22 is missing because it is closed. `scan_ports` and `inspect_host`
+leave out closed and filtered ports unless you pass `include_closed: true`,
+since on a typical scan they are almost the whole reply. A scan of 1,024
+ports on a machine with two open came to 178 bytes this way, and to 93,799
+with `include_closed`. An empty list means every port scanned was closed or
+filtered.
+
+Closing stdin cancels any operation still running and shuts the
 server down, which is why a client that exits mid-scan leaves nothing behind.
 
 ## Packet capture jobs
