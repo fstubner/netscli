@@ -1,35 +1,60 @@
 ---
 title: Overview
-description: What xtctx is, what it deliberately does not do, and where to go next.
+description: What xtctx does and does not do, which agents it supports, and where its files live.
 ---
 
-xtctx is local cross-tool handoff for AI coding agents. Your agents already write transcripts of every session. xtctx indexes those files and serves them over MCP, so the next agent you open in a repo can list the recent sessions there, from any supported tool, and read the raw messages.
+This page describes what xtctx does, what it does not do, which agents it supports, and which files it creates.
 
-It is for a developer who switches between coding agents and wants the next one to pick up the work without a pasted recap.
+xtctx indexes the transcripts that your coding agents write and serves them over MCP. An agent in a project can list recent sessions from every supported tool and read the raw messages of any of them.
 
-## What it does not do
+## What xtctx does not do
 
-- **No summaries.** Agents read the raw transcript messages, which stay the source of truth.
-- **No memory layer.** Nothing is curated or summarised: the index holds the raw messages, in order.
-- **No service.** There is no daemon, API server, dashboard or watcher. Each MCP client (Claude Code, Codex, Cursor and the rest) starts xtctx itself over stdio, and xtctx exits when that client disconnects.
-- **No upload by default.** Search runs on your machine: by keyword out of the box, and by meaning too once you add the optional local model with `xtctx embeddings enable`. Two things send transcript text elsewhere, and both are opt-in per project: a remote embedding endpoint written into the project's config, and [cloud sync](https://github.com/fstubner/xtctx/blob/main/docs/cloud-sync.md), which uploads nothing until you have run both `xtctx login` and, in that project, `xtctx sync enable`.
-
-## Where to start
-
-| If you want to | Go to |
-| --- | --- |
-| Install it and opt a project in | [Installation](/docs/install/) |
-| Look up a command, a flag, or an MCP tool | [Commands](/docs/commands/) |
+- **Summaries and memory.** xtctx generates no summaries and keeps no curated memory. The index holds the raw messages in order, and the transcripts remain the source of truth.
+- **Background service.** xtctx runs no daemon, API server, dashboard or watcher. Each MCP client starts the MCP server over stdio, and the server exits when the client disconnects.
+- **Upload.** Search runs on your machine. Two features send transcript text elsewhere, and both are opt-in per project: a remote embedding endpoint set in the project config, and [cloud sync](/docs/commands/#cloud-sync).
 
 ## Supported agents
 
-Claude Code, Codex, Cursor, GitHub Copilot in VS Code, GitHub Copilot CLI, Google Antigravity, and opencode. Some get native MCP config or a startup hook; others get MCP config plus managed instructions. `xtctx status` shows which mode each one is in.
+- Claude Code
+- Codex
+- Cursor
+- GitHub Copilot in VS Code
+- GitHub Copilot CLI
+- Google Antigravity
+- opencode
 
-## Where data lives
+Run `xtctx status` to see how each tool is connected. The hook mode is `executable` (Claude Code), `instruction-only`, or `mcp-only`.
 
-| File | What it is |
+## Files
+
+Project files:
+
+| File | Description |
 | --- | --- |
-| `.xtctx/config.yaml` | The project's xtctx configuration. |
+| `.xtctx/config.yaml` | Project configuration. |
 | `.xtctx/skills/<id>/SKILL.md` | Project skills that setup syncs to each tool. |
-| `.xtctx/state/xtctx.db` | The index. Never commit it. Keep it: once an agent deletes old transcripts (Claude Code does after 30 days by default), the index is the only copy of those sessions. `xtctx export` backs it up and `xtctx import` merges a backup back in. |
-| `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, and others | Managed handoff blocks. Everything outside the `xtctx:begin` / `xtctx:end` fences is left as you wrote it. |
+| `.xtctx/state/xtctx.db` | The index. Setup adds `state/` to `.xtctx/.gitignore`. |
+| `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.cursor/rules/xtctx.mdc`, `.github/copilot-instructions.md` | Instruction files that contain a managed xtctx block. |
+
+xtctx owns only the text between `<!-- xtctx:begin -->` and `<!-- xtctx:end -->` in an instruction file. It does not change anything outside those fences.
+
+Machine-wide files, in `~/.xtctx/`:
+
+| File | Description |
+| --- | --- |
+| `embeddings/` | The local embedding model and runtime. Present only after `xtctx embeddings enable`. |
+| `device.json` | The embedding device that calibration selected. |
+| `credentials.json`, `cloud-projects.json`, `sync/` | Cloud sync login, the list of projects that upload, and upload state. |
+
+:::caution
+The index holds raw conversation text. Do not commit it.
+
+The index is also the only copy of sessions whose transcripts an agent has deleted. Claude Code deletes transcripts after 30 days by default. Back up the index with `xtctx export`.
+:::
+
+## Next
+
+| To | See |
+| --- | --- |
+| Install xtctx and set up a project | [Installation](/docs/install/) |
+| Look up a command, option or MCP tool | [Commands](/docs/commands/) |

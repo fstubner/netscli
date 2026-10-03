@@ -1,68 +1,89 @@
 ---
 title: Commands
-description: Every xtctx command and flag, and the five MCP tools agents call.
+description: Reference for every xtctx command and option, and for the five MCP tools.
 ---
+
+This page is the reference for every xtctx command, its options, and the MCP tools that agents call.
 
 ## Commands
 
-| Command | What it does |
+| Command | Description |
 | --- | --- |
-| `xtctx setup` | Opts this project in: managed instruction blocks, MCP config per tool, the Claude Code hook, and skill sync. |
-| `xtctx status` | Reports what is wired and indexed here, and what to run next if something is not. |
-| `xtctx scan` | Indexes this project's transcripts now, instead of waiting for an agent to ask. |
-| `xtctx export` | Backs up this project's indexed sessions and messages to a JSON Lines file, including sessions whose transcripts are gone. Never overwrites a file. |
-| `xtctx import <file>` | Merges an export into this project's index. Sessions keep their ids, so importing twice adds nothing new. |
-| `xtctx embeddings enable` | Installs the optional local embedding model and its runtime (about 540 MB) so search can match by meaning as well as keyword. Asks first. |
-| `xtctx embeddings disable` | Removes the model and its runtime. Search goes back to keyword only; the index is kept. |
-| `xtctx calibrate` | Measures which device on this machine embeds fastest, and uses it. Needs semantic search enabled. |
-| `xtctx login` | Signs in to the optional cloud sync with GitHub. Uploads nothing by itself. |
-| `xtctx sync` | Cloud sync for this project: `enable` or `disable` uploading, `status`, `device [name]`, `token`, or no argument to upload once. |
-| `xtctx logout` | Signs out of cloud sync and revokes your account's tokens. |
-| `xtctx disconnect <tool>` | Stops managing one tool in this project. Transcripts are left untouched. |
-| `xtctx` | With no command, over non-interactive stdio, starts the MCP server. In a terminal it prints help. |
+| `xtctx setup` | Sets up the current project: managed instruction blocks, MCP config per tool, the Claude Code hook, and skill sync. |
+| `xtctx status` | Reports what is configured and indexed in the project, and the next step if something is missing. |
+| `xtctx scan` | Indexes the project's transcripts now, instead of waiting for an agent to call a tool. |
+| `xtctx export` | Writes the project's indexed sessions and messages to a JSON Lines file, including sessions whose transcripts are deleted. Never overwrites a file. The file contains raw conversation text, so do not commit it. |
+| `xtctx import <file>` | Merges an export into the project's index. Sessions keep their ids, so importing the same file twice adds nothing. |
+| `xtctx embeddings enable` | Installs the local embedding model and runtime (about 540 MB) for semantic search. Prompts first. |
+| `xtctx embeddings disable` | Removes the model and runtime. Search returns to keyword only. The index is kept. |
+| `xtctx calibrate` | Measures the embedding device on this machine and selects the fastest. Requires semantic search. |
+| `xtctx login` | Signs in to cloud sync with GitHub. Uploads nothing. |
+| `xtctx sync [action]` | Controls cloud sync for the project: `enable`, `disable`, `status`, `device [name]`, `token`, or no action to upload once. See [Cloud sync](#cloud-sync). |
+| `xtctx logout` | Signs out of cloud sync and revokes the account's tokens. |
+| `xtctx disconnect [tool]` | Stops xtctx managing a tool in the project. Transcripts are untouched. |
+| `xtctx` | Starts the MCP server over non-interactive stdio. Prints help in a terminal, or when `XTCTX_NO_AUTO_MCP=1` is set. |
 
-`setup`, `status`, `scan`, `export`, `import`, `sync` and `disconnect` take `-p, --project <path>` to act on a project other than the current directory. The others are about the machine or your account rather than a project.
+## Options
 
-## Flags
+`setup`, `status`, `scan`, `export`, `import`, `sync` and `disconnect` accept `-p, --project <path>` to act on a project other than the current directory.
 
-| Flag | Command | Effect |
+| Option | Command | Description |
 | --- | --- | --- |
-| `-y, --yes` | setup, disconnect | Apply without prompting. Non-interactive setup syncs the built-in skill plus any already selected. |
-| `-y, --yes` | embeddings enable | Install without asking, for scripts and agents. |
-| `--repair` | setup | Also remove files left by older xtctx versions (`.xtctx/.store`, `.xtctx/tool-config`). The index is kept. |
-| `--global-mcp` | setup | Also write Copilot CLI's machine-wide MCP config. |
-| `--global-mcp` | disconnect | Also remove xtctx from the machine-wide Antigravity and Copilot CLI configs. |
-| `--all` | disconnect | Every supported tool. Also deletes `.xtctx/skills`. |
-| `-v, --verbose` | status | Include every format surprise, skill hashes and full paths. |
-| `--embed` | scan | Vectorize every window still missing one, however long it takes. Needs semantic search enabled. |
-| `--no-calibrate` | scan | With `--embed`, skip the automatic device measurement. |
-| `-o, --out <file>` | export | Where to write. Defaults to `xtctx-export-<time>.jsonl` in the current directory; `-` writes to stdout. |
-| `--force` | calibrate | Measure again even if this machine already has a result. |
-| `--device <name>` | login | The name this device shows as in the cloud. Defaults to a random label. |
-| `--sync-url <url>` | login | A sync server other than the default. |
-| `-w, --watch` | sync | Keep uploading every few seconds until interrupted. |
-| `--delete-data` | logout | Also delete everything uploaded to your cloud account. |
+| `-y, --yes` | `setup`, `disconnect` | Applies the changes without prompting. Non-interactive `setup` syncs the built-in skill and any skills already selected in the config. |
+| `-y, --yes` | `embeddings enable` | Installs without prompting. |
+| `--repair` | `setup` | Removes files left by older xtctx versions (`.xtctx/.store`, `.xtctx/tool-config`). The index is kept. |
+| `--global-mcp` | `setup` | Also writes Copilot CLI's machine-wide MCP config. |
+| `--global-mcp` | `disconnect` | Also removes xtctx from the machine-wide Antigravity and Copilot CLI configs. |
+| `--all` | `disconnect` | Disconnects every supported tool and deletes `.xtctx/skills`. |
+| `-v, --verbose` | `status` | Includes every format surprise, skill hashes and full paths. |
+| `--embed` | `scan` | Embeds every transcript window that has no vector, however long it takes. Requires semantic search. |
+| `--no-calibrate` | `scan` | With `--embed`, skips the automatic device measurement. |
+| `-o, --out <file>` | `export` | Output file. Default: `xtctx-export-<time>.jsonl` in the current directory. `-` writes to stdout. |
+| `--force` | `calibrate` | Measures again even if this machine already has a result. |
+| `--device <name>` | `login` | Name that this device shows in the cloud. Default: a random label. |
+| `--sync-url <url>` | `login` | Sync server URL. Default: `https://sync.xtctx.com`. |
+| `-w, --watch` | `sync` | Uploads every 10 seconds until interrupted. |
+| `--delete-data` | `logout` | Also deletes everything uploaded to your cloud account. |
 
-## Indexing and devices
+## Indexing
 
-The MCP server indexes when it starts and on each call, reading only what each tool has appended since the last pass.
+The MCP server indexes when it starts and on each tool call. It reads only what each transcript store has appended since the previous pass.
 
-Semantic search is off until you run `xtctx embeddings enable`, and every search is keyword-only until then. Once it is on, the server also vectorizes the backlog in the background when this machine's measured rate says the rest fits in fifteen minutes. Above that, `xtctx status` says so and names `xtctx scan --embed`.
+The first scan of a large history can take minutes. Until it finishes, tool calls answer with what is indexed so far and name the tools that are not read yet.
 
-The first time a machine embeds anything, xtctx times the model on each device available and remembers the fastest in `~/.xtctx/device.json`. You do not need to run `calibrate` for that; it is there to re-measure after a hardware change, or to see the numbers. The vectors are the same whichever device wins.
+## Semantic search
+
+Search is keyword-only until you run `xtctx embeddings enable`. After that, the MCP server builds vectors in the background if this machine's measured rate shows that the remaining backlog fits in 15 minutes. For a larger backlog, `xtctx status` reports it and names `xtctx scan --embed`.
+
+Search falls back to keyword while vectors are missing or the embedding model is unavailable. `xtctx status` reports the reason.
+
+The first time a machine embeds anything, xtctx times the model on each available device and saves the fastest in `~/.xtctx/device.json`. Vectors are identical on every device. Run `xtctx calibrate --force` to measure again after a hardware change.
 
 ## Cloud sync
 
-Optional, and off unless you opt in. Nothing is uploaded until you have signed in with `xtctx login` and, in each project you want uploaded, run `xtctx sync enable`. An opted-in project's transcript text goes to the xtctx cloud server, where your agents on other machines can read it over MCP. `xtctx sync disable` stops further uploads; `xtctx logout --delete-data` deletes what was sent. What is and is not uploaded is listed in [docs/cloud-sync.md](https://github.com/fstubner/xtctx/blob/main/docs/cloud-sync.md).
+Cloud sync is optional and off by default. A project uploads only after you complete both steps:
+
+1. Run `xtctx login`.
+2. In each project to upload, run `xtctx sync enable`.
+
+An enabled project uploads its transcript text to the xtctx cloud server, where agents on your other machines can read it over MCP. While an agent runs the MCP server in the project, the server uploads every 10 seconds.
+
+:::caution
+Uploaded message text is sent as written. It can contain file paths, command output and secrets. Enable sync only for projects whose transcripts you are willing to upload.
+:::
+
+`xtctx sync disable` stops further uploads and keeps what was uploaded. `xtctx logout --delete-data` deletes it. `xtctx sync token` prints a read-only token for an MCP client that cannot sign in itself.
+
+[Cloud sync](https://github.com/fstubner/xtctx/blob/main/docs/cloud-sync.md) lists what is and is not uploaded.
 
 ## MCP tools
 
-| Tool | What it returns |
+| Tool | Description |
 | --- | --- |
-| `xtctx_recent_sessions` | Recent sessions in this project, from every indexed tool. |
-| `xtctx_session_detail` | The raw messages of one session, by `session_ref`. |
-| `xtctx_search_sessions` | Transcript windows matching a query, by keyword, and by meaning too once semantic search is enabled. `mode: "literal"` matches exact text straight in the transcript files, before indexing has finished. |
-| `xtctx_continuity_status` | Wiring and index diagnostics. |
-| `xtctx_handoff_manifest` | Stable session references and pointers to their detail, for an orchestrator. Stores no task state. |
+| `xtctx_recent_sessions` | Lists recent sessions in the project, from every indexed tool. |
+| `xtctx_session_detail` | Returns the raw messages of one session, by `session_ref`. Returns the newest messages by default. |
+| `xtctx_search_sessions` | Searches transcript windows and returns the matching sessions. |
+| `xtctx_continuity_status` | Returns wiring and index diagnostics. |
+| `xtctx_handoff_manifest` | Returns stable session references and pointers to their detail, for an orchestrator. Stores no task state. |
 
-Search falls back to keyword whenever vectors are missing or the embedding model is unavailable, and says so in its answer.
+`xtctx_search_sessions` takes a `mode`: `hybrid` (default: keyword, plus semantic when enabled), `keyword`, `vector` or `literal`. `vector` returns an error when semantic search is off. `literal` matches text directly in the transcript stores without the index, so it answers before indexing finishes.
