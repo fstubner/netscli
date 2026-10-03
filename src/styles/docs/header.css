@@ -75,42 +75,11 @@ html[data-theme='light'][data-docs-scrolled='true'] header.header::after {
   }
 }
 
-@media (min-width: 72.01rem) {
-  starlight-menu-button {
-    display: none;
-  }
-}
-
-@media (min-width: 50rem) and (max-width: 72rem) {
-  .header .docs-topbar {
-    padding-inline-end: 2.25rem;
-  }
-}
-
-/* Tablet: the search control collapses to its icon and the menu button
-   pins to the bar's right edge. */
+/* Tablet: the search control collapses to its icon. There is no menu
+   button at this width: Starlight 0.42 shows its popover button only below
+   50rem, so the header links stay (Header.astro) and nothing needs room
+   kept for it at the bar's right edge. */
 @media (max-width: 72rem) {
-  starlight-menu-button {
-    display: block;
-  }
-
-  starlight-menu-button button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    position: fixed;
-    width: 2.5rem;
-    height: 2.5rem;
-    inset-block-start: calc((var(--sl-nav-height) - 2.5rem) / 2);
-    inset-inline-end: max(0.5rem, env(safe-area-inset-right));
-    z-index: 102;
-  }
-
-  starlight-menu-button button svg {
-    width: 1.15rem;
-    height: 1.15rem;
-  }
-
   .docs-topbar {
     gap: 0.45rem;
     width: 100vw;
@@ -223,22 +192,25 @@ html[data-theme='light'][data-docs-scrolled='true'] header.header::after {
     margin-inline-end: 0.15rem;
   }
 
-  starlight-menu-button {
-    display: block;
+  /* Starlight 0.42's menu button: a plain <button popovertarget> inside the
+     sidebar's <nav>. It was a <starlight-menu-button> host before, and rules
+     written for that element matched nothing after the upgrade, so the button
+     fell back to Starlight's own round white one beside a square search box. */
+  .sl-menu-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     position: fixed;
     inset-block-start: 0.625rem;
     inset-inline-end: 0.75rem;
     z-index: calc(var(--sl-z-index-navbar) + 2);
-    margin-left: 0;
-  }
-
-  /* The host is what is pinned now, so the button itself goes back into
-     flow. `inset: auto` is the shorthand and must stay after the tablet
-     rule's inset-inline-end, which it resets. */
-  starlight-menu-button button {
-    position: static;
-    inset: auto;
     width: 2.5rem;
     height: 2.5rem;
+    padding: 0;
+  }
+
+  .sl-menu-button svg {
+    width: 1.15rem;
+    height: 1.15rem;
   }
 }

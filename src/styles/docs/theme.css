@@ -113,8 +113,10 @@ html[data-theme='light'] ::backdrop {
      Was clamp(2.2rem, 3vw, 3.15rem), which put the section labels 50px in
      from the viewport at a wide window -- more air than the rail needed and
      less room for the link text. The rails' widths are fixed, so the text
-     column simply takes back what the padding gives up. */
-  --ui-sidebar-rail-inset: clamp(1.5rem, 2vw, 2.25rem);
+     column simply takes back what the padding gives up. Then
+     clamp(1.5rem, 2vw, 2.25rem), which still read as a gap before the labels
+     at laptop widths, where the rail sits against the window edge. */
+  --ui-sidebar-rail-inset: clamp(1rem, 1.25vw, 1.5rem);
   /* Height of the title band at the top of every docs page. The band's own
      min-height and the offset that starts the contents rail below it both
      read this, so they move together -- change it here and the rail follows.
