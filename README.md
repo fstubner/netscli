@@ -29,7 +29,7 @@ that what you delete is obvious. Everything else is the shell.
   terminal panel, or an agent session (a project, an open file, and a chat
   in which an agent calls your tool). The sample surfaces show each. Set
   `wide: true` on a card to put its visual across the row, under the text.
-- `src/data/site-content/install-clients.ts` -- install routes per client
+- `src/data/site-content/install-clients.ts` -- install routes per client, and optional numbered install steps
   (an agent, an editor, a marketplace) for a product that installs into
   other tools. Non-empty, it replaces the per-OS tabs with a grid of cards.
 - `feedback.ts` -> `placement` -- which pages show the feedback block:

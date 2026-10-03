@@ -1,0 +1,155 @@
+---
+// One agent's session stopping and another agent picking it up: two chat
+// windows and an arrow between them. Content comes from a HandoffVisual in
+// data/site-content/ -- see visual-types.ts.
+//
+// Deliberately less than an agent-session: no file tree, no open file, and a
+// tool call is one line. The point is who said what, in which agent, and that
+// the second one did not have to be told again. Side by side where there is
+// room; stacked, with the arrow pointing down, where there is not.
+//
+// Everything is rendered as text, never as HTML.
+import type { HandoffPane, HandoffVisual } from '../../data/site-content/visual-types';
+
+interface Props {
+  visual: HandoffVisual;
+}
+
+const { visual } = Astro.props;
+const panes: Array<{ pane: HandoffPane; side: 'from' | 'to' }> = [
+  { pane: visual.from, side: 'from' },
+  { pane: visual.to, side: 'to' },
+];
+---
+<figure class="handoff">
+  <div class="ho-grid">
+  {panes.map(({ pane, side }, index) => (
+    <Fragment>
+      {index === 1 && (
+        <div class="ho-bridge" aria-hidden="true">
+          <span class="ho-arrow"></span>
+          <span class="ho-bridge-label">{visual.bridge}</span>
+        </div>
+      )}
+      {/* Divs, not section/header: the page styles those elements globally
+          (section padding and banding, the site header), which reached in
+          here. */}
+      <div
+        role="group"
+        class:list={['ho-window', `ho-${side}`]}
+        aria-label={pane.when ? `${pane.agent}, ${pane.when}` : pane.agent}
+      >
+        <div class="ho-titlebar">
+          <span class="ho-dots" aria-hidden="true"><span></span><span></span><span></span></span>
+          <span class="ho-title">
+            {pane.agent}
+            {pane.when && <span class="ho-when"> · {pane.when}</span>}
+          </span>
+        </div>
+        <ol class="ho-turns">
+          {pane.turns.map((turn) =>
+            turn.role === 'tool' ? (
+              <li class="ho-tool">
+                <span class="ho-tool-name">{turn.name}</span>
+                {turn.summary && <span class="ho-tool-summary">{turn.summary}</span>}
+              </li>
+            ) : (
+              <li class:list={['ho-message', `ho-${turn.role}`]}>
+                <p class="ho-who">{turn.role === 'user' ? (pane.userLabel ?? 'You') : pane.agent}</p>
+                <p class="ho-text">{turn.text}</p>
+              </li>
+            ),
+          )}
+        </ol>
+      </div>
+    </Fragment>
+  ))}
+  </div>
+</figure>
+
+<style>
+/* Dark in both themes, like every code surface; the ink is the on-dark ramp
+   from landing/tokens.css. */
+/* The container is the figure and the grid is inside it: a container query
+   cannot restyle the element it measures. */
+.handoff{container-type:inline-size;margin:0}
+.ho-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  align-items:center;
+  gap:0;
+  text-align:left;
+}
+.ho-window{
+  background:var(--ui-code-bg);
+  border:1px solid var(--ui-code-border);
+  border-radius:10px;
+  box-shadow:var(--ui-lift-md);
+  overflow:hidden;
+  color:var(--ui-ondark-text);
+  font-size:.8125rem;
+  line-height:1.55;
+  align-self:start;
+}
+.ho-titlebar{
+  display:flex;align-items:center;gap:12px;
+  padding:9px 14px;
+  border-bottom:1px solid var(--ui-code-border);
+  background:rgba(255,255,255,.03);
+}
+.ho-dots{display:flex;gap:6px}
+.ho-dots span{width:9px;height:9px;border-radius:50%;background:var(--ui-code-divider)}
+.ho-title{flex:1;text-align:center;margin-right:39px;font-size:.75rem;font-weight:600;color:var(--ui-ondark-text-strong)}
+.ho-when{font-weight:400;color:var(--ui-ondark-text-muted)}
+.ho-turns{list-style:none;margin:0;padding:14px;display:grid;gap:12px}
+.ho-who{margin:0 0 3px;font-size:.625rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ui-ondark-text-muted)}
+.ho-text{margin:0}
+.ho-user .ho-text{
+  padding:7px 10px;border-radius:8px;
+  background:rgba(var(--ui-ondark-accent-rgb),.12);
+  color:var(--ui-ondark-text-strong);
+}
+/* A tool call as one line: what was called, and what came back. */
+.ho-tool{
+  display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;
+  padding:6px 10px;border-radius:6px;
+  border:1px solid var(--ui-code-border);
+  background:rgba(255,255,255,.03);
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.6875rem;
+}
+.ho-tool-name{color:var(--ui-ondark-accent)}
+.ho-tool-summary{color:var(--ui-ondark-text-muted);font-family:inherit}
+.ho-tool-summary::before{content:"→ "}
+
+.ho-bridge{
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  padding:0 14px;
+  color:var(--ui-text-muted);
+}
+.ho-arrow{
+  position:relative;width:44px;height:2px;
+  background:rgba(var(--ui-accent-rgb),.7);
+}
+.ho-arrow::after{
+  content:"";position:absolute;right:-1px;top:-4px;
+  border-left:8px solid rgba(var(--ui-accent-rgb),.7);
+  border-top:5px solid transparent;border-bottom:5px solid transparent;
+}
+.ho-bridge-label{
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.75rem;font-weight:600;
+  color:var(--ui-text-strong);
+}
+
+/* Stacked where two windows would squeeze each other's text: the arrow turns
+   to point down, between them. */
+@container (max-width:640px){
+  .ho-grid{grid-template-columns:minmax(0,1fr)}
+  .ho-bridge{flex-direction:row;padding:12px 0;justify-content:center}
+  .ho-arrow{width:2px;height:28px}
+  .ho-arrow::after{
+    right:-4px;top:auto;bottom:-1px;
+    border-left:5px solid transparent;border-right:5px solid transparent;
+    border-top:8px solid rgba(var(--ui-accent-rgb),.7);border-bottom:0;
+  }
+}
+</style>
