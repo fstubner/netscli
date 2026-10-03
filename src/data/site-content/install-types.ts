@@ -23,6 +23,8 @@ export interface InstallSteps {
   afterCards?: import('./types').InstallClient[];
   /** Further steps after step 2, each a heading over cards in the same
    *  style, numbered on from 3. For what some users do once, such as an
-   *  optional add-on; say so in the label. */
+   *  optional add-on; say so in the label. Only shown together with
+   *  `afterCards`: without them step 2 is a single command drawn below the
+   *  grids, and these would number and sit ahead of it. */
   moreSteps?: { label: string; cards: import('./types').InstallClient[] }[];
 }

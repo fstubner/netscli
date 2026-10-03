@@ -10,7 +10,7 @@ const [afterCommand, ...afterExtras] = tryCommands;
 const cardGroups = [
   { n: 1, label: steps?.install, cards: clients },
   ...(steps?.afterCards ? [{ n: 2, label: steps.after, cards: steps.afterCards }] : []),
-  ...(steps?.moreSteps ?? []).map((step, i) => ({ n: 3 + i, label: step.label, cards: step.cards })),
+  ...(steps?.afterCards ? steps.moreSteps ?? [] : []).map((step, i) => ({ n: 3 + i, label: step.label, cards: step.cards })),
 ];
 const oses = ['windows', 'macos', 'linux'] as const;
 const labels = { windows: 'Windows', macos: 'macOS', linux: 'Linux' };
