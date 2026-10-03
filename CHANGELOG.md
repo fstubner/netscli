@@ -7,55 +7,103 @@ Entries are written by the `release` workflow when a release is cut by hand.
 
 ## [Unreleased]
 
-Work on `main` since 0.21.8 that has not been released. The release workflow
-leaves this heading in place and empties it when a version is cut.
+## [0.22.0](https://github.com/fstubner/xtctx/releases/tag/xtctx-v0.22.0) (2026-10-03)
 
-### Features
+## What's Changed
+* fix(scope): close three project-boundary leaks by @fstubner in https://github.com/fstubner/xtctx/pull/293
+* fix(index): repair unit coverage, vectorise in-process, make the security gate assert by @fstubner in https://github.com/fstubner/xtctx/pull/295
+* ci: replace the automatic release pipeline with one manual workflow by @fstubner in https://github.com/fstubner/xtctx/pull/296
+* fix: close the correctness findings from the acceptance audit by @fstubner in https://github.com/fstubner/xtctx/pull/297
+* perf: bound search memory, skip unchanged copilot files, batch FTS deletes by @fstubner in https://github.com/fstubner/xtctx/pull/298
+* fix: close the remaining audit findings by @fstubner in https://github.com/fstubner/xtctx/pull/299
+* feat(hook): take the transcript location from the tool instead of deriving it by @fstubner in https://github.com/fstubner/xtctx/pull/300
+* fix(codex): stop reporting compacted records as drift by @fstubner in https://github.com/fstubner/xtctx/pull/301
+* perf(codex): resume transcripts from a byte offset instead of re-reading them by @fstubner in https://github.com/fstubner/xtctx/pull/302
+* perf(scrapers): resume claude-code and copilot-cli from byte offsets too by @fstubner in https://github.com/fstubner/xtctx/pull/303
+* fix(drift-log): never break a lock whose holder is alive by @fstubner in https://github.com/fstubner/xtctx/pull/304
+* refactor: one home for the untrusted-text rule, and evidence in the checklist by @fstubner in https://github.com/fstubner/xtctx/pull/305
+* fix(tests): stop concurrent model loads exhausting memory by @fstubner in https://github.com/fstubner/xtctx/pull/306
+* fix(setup): authenticate the self-hosted branch, and stop mangling flags by @fstubner in https://github.com/fstubner/xtctx/pull/307
+* fix: close the three remaining acceptance findings by @fstubner in https://github.com/fstubner/xtctx/pull/308
+* fix(codex): stop a resumed scan serving another project's turns by @fstubner in https://github.com/fstubner/xtctx/pull/309
+* fix: close the three remaining attribution findings by @fstubner in https://github.com/fstubner/xtctx/pull/310
+* fix(index): scope search and status to the project too by @fstubner in https://github.com/fstubner/xtctx/pull/311
+* fix: fail closed on an undecided resume, and scrub every unfenced field by @fstubner in https://github.com/fstubner/xtctx/pull/312
+* fix: recover a renamed project's history, stop the payload picking the project by @fstubner in https://github.com/fstubner/xtctx/pull/313
+* fix: close the ancestor hole, scrub the rest, stop overstating the rest by @fstubner in https://github.com/fstubner/xtctx/pull/314
+* feat(mcp): name an unconfigured project instead of answering with silence by @fstubner in https://github.com/fstubner/xtctx/pull/315
+* fix(setup): grant the xtctx tools, and say what setup cannot grant by @fstubner in https://github.com/fstubner/xtctx/pull/316
+* fix(mcp): name the tools a partial answer has not read yet by @fstubner in https://github.com/fstubner/xtctx/pull/317
+* test(eval): make the ranking eval use realistic session lengths by @fstubner in https://github.com/fstubner/xtctx/pull/318
+* feat(hook): background scan on session start; disconnect leaves global configs alone by @fstubner in https://github.com/fstubner/xtctx/pull/322
+* chore(deps): npm audit fix for fast-uri and qs by @fstubner in https://github.com/fstubner/xtctx/pull/324
+* fix(mcp): warm the index when the server starts, not from the hook by @fstubner in https://github.com/fstubner/xtctx/pull/323
+* docs(readme): the plugin route does not answer in an unconfigured project by @fstubner in https://github.com/fstubner/xtctx/pull/325
+* fix(setup): grant tools under the plugin's server name; README matches the plugin route by @fstubner in https://github.com/fstubner/xtctx/pull/326
+* docs: fix two comments that drifted from the code by @fstubner in https://github.com/fstubner/xtctx/pull/327
+* refactor(handoff): move the pure ranking functions into ranking.ts by @fstubner in https://github.com/fstubner/xtctx/pull/328
+* refactor(disconnect): derive planned MCP paths from the tool table by @fstubner in https://github.com/fstubner/xtctx/pull/329
+* refactor(scrapers): share the helpers every scraper copied by @fstubner in https://github.com/fstubner/xtctx/pull/330
+* refactor(antigravity): split the scraper into parse, runtime client and scraper by @fstubner in https://github.com/fstubner/xtctx/pull/331
+* refactor(handoff): split sqlite-index.ts into schema, retrieval-units, vectors and scan modules by @fstubner in https://github.com/fstubner/xtctx/pull/332
+* test(handoff): pin the vector backlog an agent is told about by @fstubner in https://github.com/fstubner/xtctx/pull/333
+* refactor(handoff): finish the ranking seam, and fix what the split left behind by @fstubner in https://github.com/fstubner/xtctx/pull/334
+* refactor(handoff): last two seams out of sqlite-index, and scanTool stops mutating caller state by @fstubner in https://github.com/fstubner/xtctx/pull/335
+* refactor(config): split mcp-config, setup and disconnect along their real seams by @fstubner in https://github.com/fstubner/xtctx/pull/336
+* test(handoff): close the gaps a mutation sweep found, and write down the strategy by @fstubner in https://github.com/fstubner/xtctx/pull/337
+* refactor(codex): name the two payload decisions, and pin the one nothing tested by @fstubner in https://github.com/fstubner/xtctx/pull/338
+* refactor(antigravity): one listing shape, and parse.ts split along its three sources by @fstubner in https://github.com/fstubner/xtctx/pull/339
+* fix(antigravity): drop a guard that could not fire, reach the one that can by @fstubner in https://github.com/fstubner/xtctx/pull/340
+* test(drift-log): record what is known about an unreproduced failure by @fstubner in https://github.com/fstubner/xtctx/pull/341
+* refactor(src): prune dead and over-broad exports by @fstubner in https://github.com/fstubner/xtctx/pull/342
+* feat(search): a literal mode that answers without the index by @fstubner in https://github.com/fstubner/xtctx/pull/343
+* fix(drift-log): stop a waiter breaking a live lock and losing surprises by @fstubner in https://github.com/fstubner/xtctx/pull/345
+* test(handoff): pin the ranking behaviours only the eval defended by @fstubner in https://github.com/fstubner/xtctx/pull/346
+* test(handoff): pin the candidate breadth the eval alone defended by @fstubner in https://github.com/fstubner/xtctx/pull/347
+* refactor(scrapers): split the copilot journal out; leave cursor and codex whole by @fstubner in https://github.com/fstubner/xtctx/pull/348
+* fix(scrapers): one name per scraper, one copy of the workspace filter by @fstubner in https://github.com/fstubner/xtctx/pull/349
+* docs(retrieval): sweep the window size, and close the static-model question by @fstubner in https://github.com/fstubner/xtctx/pull/350
+* test(config,mcp): sweep the config and MCP layers by mutation, and close the five gaps it found by @fstubner in https://github.com/fstubner/xtctx/pull/351
+* test(status): sweep cli, runtime, utils and tools, and close the one real gap by @fstubner in https://github.com/fstubner/xtctx/pull/352
+* test(scrapers): sweep cursor, copilot, antigravity and the shared workspace filter, and close the five gaps it found by @fstubner in https://github.com/fstubner/xtctx/pull/353
+* test(scrapers): sweep the four append scrapers by mutation, and close the thirteen gaps it found by @fstubner in https://github.com/fstubner/xtctx/pull/354
+* fix(codex): report an oversized record instead of dropping it in silence by @fstubner in https://github.com/fstubner/xtctx/pull/355
+* test(antigravity): make the degradation counters testable by @fstubner in https://github.com/fstubner/xtctx/pull/356
+* fix(claude-code): collapse the dots and underscores its store directories collapse by @fstubner in https://github.com/fstubner/xtctx/pull/357
+* fix(status): report the MCP command the configs name, and stop calling a commandless entry wired by @fstubner in https://github.com/fstubner/xtctx/pull/358
+* feat(scan): add --embed, so semantic search can actually cover a real history by @fstubner in https://github.com/fstubner/xtctx/pull/359
+* fix: close four gaps a multi-persona audit pass found by @fstubner in https://github.com/fstubner/xtctx/pull/360
+* fix(status): make the embedding estimate describe the run that is happening by @fstubner in https://github.com/fstubner/xtctx/pull/361
+* test(index): assert the scan-budget ordering with a gate instead of a stopwatch by @fstubner in https://github.com/fstubner/xtctx/pull/362
+* ci: let a fix land while an unfixable advisory sits in the tree by @fstubner in https://github.com/fstubner/xtctx/pull/373
+* fix(config): stop disconnect destroying files the user wrote by @fstubner in https://github.com/fstubner/xtctx/pull/367
+* fix(search): point a match at where it actually is by @fstubner in https://github.com/fstubner/xtctx/pull/368
+* docs: stop the changelog claiming 112 releases that never happened by @fstubner in https://github.com/fstubner/xtctx/pull/369
+* fix(hook): stop stdin choosing which directory is a project's transcript store by @fstubner in https://github.com/fstubner/xtctx/pull/370
+* fix(codex): read the human turns Codex writes now, not only the ones it used to by @fstubner in https://github.com/fstubner/xtctx/pull/371
+* fix(index): stop a re-read leaving behind the rows it replaced by @fstubner in https://github.com/fstubner/xtctx/pull/374
+* fix(scrapers): see a project opened through WSL by @fstubner in https://github.com/fstubner/xtctx/pull/375
+* ci(release): push the release commit as the token that is allowed to by @fstubner in https://github.com/fstubner/xtctx/pull/376
+* deps: bump adm-zip from 0.6.0 to 0.6.1 by @dependabot[bot] in https://github.com/fstubner/xtctx/pull/379
+* fix(config): stop setup and disconnect destroying files the user wrote by @fstubner in https://github.com/fstubner/xtctx/pull/380
+* docs: write down what indexing throughput actually costs by @fstubner in https://github.com/fstubner/xtctx/pull/382
+* docs: design a configurable embedding provider before building one by @fstubner in https://github.com/fstubner/xtctx/pull/381
+* deps: bump astro from 7.3.1 to 7.3.3 in /landing by @dependabot[bot] in https://github.com/fstubner/xtctx/pull/378
+* deps: bump yaml from 2.9.0 to 2.9.1 by @dependabot[bot] in https://github.com/fstubner/xtctx/pull/377
+* deps: bump actions/deploy-pages from 5.0.0 to 5.0.1 by @dependabot[bot] in https://github.com/fstubner/xtctx/pull/364
+* fix: close the five findings left open by the audit by @fstubner in https://github.com/fstubner/xtctx/pull/383
+* fix: stop deleting the index; status and setup say what is true by @fstubner in https://github.com/fstubner/xtctx/pull/388
+* fix: audit release blockers — index set-aside, embedding trust, setup respects config by @fstubner in https://github.com/fstubner/xtctx/pull/389
+* fix(release): publish as its own run so npm trusted publishing accepts it; check the release token first by @fstubner in https://github.com/fstubner/xtctx/pull/390
+* deps: clear the advisories blocking the release gate by @fstubner in https://github.com/fstubner/xtctx/pull/398
+* deps(landing): devalue 5.9.4, clearing six new advisories by @fstubner in https://github.com/fstubner/xtctx/pull/405
+* fix(mcp): name setup with --yes, so an agent's first run of it works by @fstubner in https://github.com/fstubner/xtctx/pull/399
+* fix: audit findings — scrapers, concurrent scans, index durability, optional embeddings by @fstubner in https://github.com/fstubner/xtctx/pull/403
+* feat(cloud): opt-in cloud sync with OAuth sign-in, hardened Worker, no daemon by @fstubner in https://github.com/fstubner/xtctx/pull/404
+* fix(release): install the Worker's dependencies before verify:release; landing audit exceptions by @fstubner in https://github.com/fstubner/xtctx/pull/409
 
-* **scan:** add `--embed`, so semantic search can cover a real history ([#359](https://github.com/fstubner/xtctx/issues/359))
-* **search:** a literal mode that answers without the index ([#343](https://github.com/fstubner/xtctx/issues/343))
-* **hook:** background scan on session start; take the transcript location from the tool instead of deriving it ([#322](https://github.com/fstubner/xtctx/issues/322), [#300](https://github.com/fstubner/xtctx/issues/300))
-* **mcp:** name an unconfigured project instead of answering with silence ([#315](https://github.com/fstubner/xtctx/issues/315))
-* **index:** `xtctx export` and `xtctx import`; migrate an older index in place and carry sessions forward from one set aside; `xtctx status` counts sessions that exist only in the index
-* **embeddings:** semantic search is an optional add-on, off until `xtctx embeddings enable` installs the local model; keyword-only is a working state that status reports
-* **cloud:** optional cloud sync, off by default and opt-in per project: `xtctx login` then `xtctx sync enable`, after which the MCP server uploads that project's sessions every 10 seconds and once on shutdown, and agents on your other machines read them from the cloud's MCP endpoint (OAuth sign-in for MCP clients, `xtctx sync token` for those without it). `xtctx status` and `xtctx sync status` say whether it is on and when it last uploaded or failed; `xtctx logout --delete-data` removes what was sent. What is and is not uploaded is listed in `docs/cloud-sync.md`
-* **cloud:** each session's cloud copy is kept equal to the index, including after a scraper upgrade re-reads sessions under new message ids; metadata is cut to an allowlist with absolute paths dropped
 
-### Bug Fixes
-
-* **index:** stop deleting the index; status and setup say what is true ([#388](https://github.com/fstubner/xtctx/issues/388), [#389](https://github.com/fstubner/xtctx/issues/389))
-* **index:** stop a re-read leaving behind the rows it replaced ([#374](https://github.com/fstubner/xtctx/issues/374))
-* **config:** stop setup and disconnect destroying files the user wrote ([#367](https://github.com/fstubner/xtctx/issues/367), [#380](https://github.com/fstubner/xtctx/issues/380))
-* **setup:** grant the xtctx tools (including under the plugin's server name) and say what setup cannot grant ([#316](https://github.com/fstubner/xtctx/issues/316), [#326](https://github.com/fstubner/xtctx/issues/326))
-* **setup:** authenticate the self-hosted branch, and stop mangling flags ([#307](https://github.com/fstubner/xtctx/issues/307))
-* **status:** report the MCP command the configs name, and make the embedding estimate describe the run that is happening ([#358](https://github.com/fstubner/xtctx/issues/358), [#361](https://github.com/fstubner/xtctx/issues/361))
-* **search:** point a match at where it actually is ([#368](https://github.com/fstubner/xtctx/issues/368))
-* **hook:** stop stdin choosing which directory is a project's transcript store ([#370](https://github.com/fstubner/xtctx/issues/370))
-* **scope:** close project-boundary leaks, and scope search and status to the project ([#293](https://github.com/fstubner/xtctx/issues/293), [#311](https://github.com/fstubner/xtctx/issues/311), [#313](https://github.com/fstubner/xtctx/issues/313))
-* **codex:** read the human turns Codex writes now; stop a resumed scan serving another project's turns; report an oversized record instead of dropping it ([#371](https://github.com/fstubner/xtctx/issues/371), [#309](https://github.com/fstubner/xtctx/issues/309), [#355](https://github.com/fstubner/xtctx/issues/355))
-* **claude-code:** collapse the dots and underscores its store directories collapse ([#357](https://github.com/fstubner/xtctx/issues/357))
-* **scrapers:** see a project opened through WSL ([#375](https://github.com/fstubner/xtctx/issues/375))
-* **security:** scrub every unfenced field and fail closed on an undecided resume ([#312](https://github.com/fstubner/xtctx/issues/312), [#314](https://github.com/fstubner/xtctx/issues/314))
-* **release:** publish as its own run so npm trusted publishing accepts it ([#390](https://github.com/fstubner/xtctx/issues/390))
-* **index:** one scanner per project across servers, a prune that never deletes rows its scan did not see, cursors refused when the index lost their rows, and rewritten or late-stamped history read again
-* **claude-code:** index tool results as tool output rather than the user, keep a one-line trace of each tool call, strip terminal colour codes, and correct already-indexed rows once on upgrade; session detail returns the end of a session first
-* **copilot:** replay chat journals as truncate-then-push, stamp each request with its own time and render response items by kind; file Copilot CLI subagent output as tool output; correct already-indexed rows once on upgrade
-* **cursor, opencode:** attribute Cursor conversations by composer headers, mark subagents, find the store on macOS and Linux, trace tool calls, and re-read an opencode session whenever it changes
-* **setup:** pin the hook and MCP configs to the version that ran setup, shrink the managed instruction block, and label session previews as untrusted transcript text
-
-### Performance
-
-* **scrapers:** resume Codex, Claude Code and Copilot CLI transcripts from a byte offset instead of re-reading them ([#302](https://github.com/fstubner/xtctx/issues/302), [#303](https://github.com/fstubner/xtctx/issues/303))
-* bound search memory, skip unchanged Copilot files, batch FTS deletes ([#298](https://github.com/fstubner/xtctx/issues/298))
-
-### Documentation
-
-* the plugin route does not answer in an unconfigured project; design a configurable embedding provider; write down what indexing throughput costs ([#325](https://github.com/fstubner/xtctx/issues/325), [#381](https://github.com/fstubner/xtctx/issues/381), [#382](https://github.com/fstubner/xtctx/issues/382))
-
-### Internal
-
-* Releases are manual: one workflow, run on request, replaces the automatic pipeline ([#296](https://github.com/fstubner/xtctx/issues/296))
-* Large module splits (index, scrapers, config) and mutation-sweep test additions ([#328](https://github.com/fstubner/xtctx/issues/328) to [#356](https://github.com/fstubner/xtctx/issues/356))
+**Full Changelog**: https://github.com/fstubner/xtctx/compare/xtctx-v0.21.8...xtctx-v0.22.0
 
 ## [0.21.8](https://github.com/fstubner/xtctx/compare/xtctx-v0.21.7...xtctx-v0.21.8) (2026-08-31)
 
