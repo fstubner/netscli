@@ -14,7 +14,7 @@ pub(super) async fn handle_ping(
             .get(2)
             .and_then(|s| s.parse::<u32>().ok())
             .unwrap_or(4)
-            .max(1);
+            .clamp(1, netscli_core::MAX_PING_COUNT);
 
         let ip = match ops.resolve_host_ip(host).await {
             Ok(ip) => ip,

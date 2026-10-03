@@ -10,11 +10,10 @@ pub fn tools_list() -> serde_json::Value {
                 "properties": {
                     "subnet": {
                         "type": "string",
-                        "default": "192.168.1.0/24",
                         "description": "IPv4 CIDR, at most a /16. Defaults to the local subnet."
                     },
                     "resolveHostnames": { "type": "boolean", "default": false },
-                    "timeout": { "type": "number", "default": 1000, "minimum": 10, "maximum": 600000 },
+                    "timeout": { "type": "number", "minimum": 10, "maximum": 600000, "description": "Milliseconds, applied to every step. Omit for the defaults: ping 1000, scan 500, DNS 1500." },
                     "maxConcurrent": { "type": "number", "default": 256, "minimum": 1, "maximum": 1024 }
                 }
             },
@@ -76,7 +75,7 @@ pub fn tools_list() -> serde_json::Value {
                     "host": { "type": "string" },
                     "type": {
                         "type": "string",
-                        "default": "A",
+                        "description": "Record type. Omit, or pass ALL, for every type.",
                         "enum": ["A", "AAAA", "CNAME", "MX", "NS", "TXT", "SRV", "PTR", "SOA", "CAA", "ALL", "ANY"]
                     }
                 },
@@ -113,7 +112,7 @@ pub fn tools_list() -> serde_json::Value {
                         "items": { "type": "number", "minimum": 1, "maximum": 65535 },
                         "maxItems": 4096
                     },
-                    "timeout": { "type": "number", "default": 500, "minimum": 10, "maximum": 600000 },
+                    "timeout": { "type": "number", "minimum": 10, "maximum": 600000, "description": "Milliseconds, applied to every step. Omit for the defaults: ping 1000, scan 500, DNS 1500." },
                     "include_closed": { "type": "boolean", "default": false, "description": "Also list closed and filtered ports in ports, one entry each." },
                     "maxConcurrent": { "type": "number", "default": 256, "minimum": 1, "maximum": 1024 }
                 },
@@ -131,10 +130,10 @@ pub fn tools_list() -> serde_json::Value {
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "subnet": { "type": "string", "default": "192.168.1.0/24" },
+                    "subnet": { "type": "string", "description": "IPv4 CIDR, at most a /16. Defaults to the local subnet." },
                     "ports": { "type": "array", "items": { "type": "number" } },
                     "resolveHostnames": { "type": "boolean", "default": false },
-                    "timeout": { "type": "number", "default": 500 },
+                    "timeout": { "type": "number", "minimum": 10, "maximum": 600000, "description": "Milliseconds, applied to every step. Omit for the defaults: ping 1000, scan 500, DNS 1500." },
                     "maxConcurrent": { "type": "number", "default": 256 }
                 }
             },
@@ -191,7 +190,7 @@ pub fn tools_list() -> serde_json::Value {
                     "interface": { "type": "string" },
                     "filter": { "type": "string" },
                     "duration": { "type": "number", "default": 10 },
-                    "outputFile": { "type": "string", "default": "capture.pcap" },
+                    "outputFile": { "type": "string", "description": "Where to write the capture. Omit for a file named after the job." },
                     "maxPackets": { "type": "number" }
                 },
                 "required": ["interface"]

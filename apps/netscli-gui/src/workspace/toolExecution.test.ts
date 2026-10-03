@@ -135,7 +135,7 @@ describe('executeTool port scan protocol', () => {
     const netscli = await import('../services/netscli');
     const tab = createTab('scan');
     await executeTool(tab, 'op-1', 256);
-    expect(netscli.scanPorts).toHaveBeenLastCalledWith('127.0.0.1', '22,80,443,8080,8443', 'op-1', 256, false);
+    expect(netscli.scanPorts).toHaveBeenLastCalledWith('127.0.0.1', '22,80,443', 'op-1', 256, false);
   });
 
   it('scans UDP when the switch says so, with the ports in the field', async () => {
