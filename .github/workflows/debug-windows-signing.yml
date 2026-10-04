@@ -3,7 +3,7 @@
 name: Debug Windows signing
 on:
   pull_request:
-    paths: ['.github/workflows/debug-windows-signing.yml']
+    paths: ['.github/workflows/debug-windows-signing.yml', '.github/debug/**']
 permissions:
   contents: read
 jobs:
@@ -30,25 +30,21 @@ jobs:
           'fn main() { println!("hi"); }' | Set-Content hello.rs
           rustc -O hello.rs -o hello.exe
           Get-Item hello.exe
-      - name: ssign directly
+      - name: Old and new wrapper, with the exe held open the way the bundler holds it
         shell: pwsh
         env:
           CERTUM_EMAIL: ${{ secrets.CERTUM_EMAIL }}
           CERTUM_OTP: ${{ secrets.CERTUM_OTP }}
         run: |
-          Copy-Item hello.exe direct.exe
-          & $env:NETSCLI_SSIGN --help 2>&1 | Select-Object -First 30
-          & $env:NETSCLI_SSIGN direct.exe 2>&1
-          "ssign exit: $LASTEXITCODE"
-          Get-AuthenticodeSignature direct.exe | Format-List Status, StatusMessage, SignerCertificate
-      - name: The wrapper, called the way tauri calls it
-        shell: pwsh
-        env:
-          CERTUM_EMAIL: ${{ secrets.CERTUM_EMAIL }}
-          CERTUM_OTP: ${{ secrets.CERTUM_OTP }}
-        run: |
-          Copy-Item hello.exe wrapped.exe
-          $p = Start-Process -FilePath pwsh -ArgumentList @('-NoProfile','-NonInteractive','-File',(Join-Path $env:NETSCLI_SIGN_TOOLS 'sign-windows-pe.ps1'),(Resolve-Path wrapped.exe).Path) -NoNewWindow -Wait -PassThru -RedirectStandardOutput out.txt -RedirectStandardError err.txt
-          "wrapper exit: $($p.ExitCode)"
-          '--- stdout'; Get-Content out.txt
-          '--- stderr'; Get-Content err.txt
+          foreach ($which in 'old', 'new') {
+            $exe = (Join-Path $PWD "$which-locked.exe")
+            Copy-Item hello.exe $exe
+            # Open without FileShare.Delete: a rename over it is refused,
+            # an in-place write is allowed.
+            $hold = [IO.File]::Open($exe, 'Open', 'Read', 'ReadWrite')
+            $p = Start-Process -FilePath pwsh -ArgumentList @('-NoProfile','-NonInteractive','-File',(Resolve-Path ".github/debug/$which-sign.ps1").Path,$exe) -NoNewWindow -Wait -PassThru -RedirectStandardOutput "$which-out.txt" -RedirectStandardError "$which-err.txt"
+            $hold.Dispose()
+            "=== $which wrapper exit: $($p.ExitCode)"
+            Get-Content "$which-out.txt"; Get-Content "$which-err.txt"
+            Get-AuthenticodeSignature $exe | Format-List Status, StatusMessage
+          }
