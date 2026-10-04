@@ -4,7 +4,7 @@ import { createTab, defaultDetailTab } from '../tools/registry';
 import { buildCommand, buildRows, columnsFor, filterAndSortRows } from '../tools/presentation';
 import type { HistoryEntry, ResultColumn, WorkspaceTab } from '../tools/types';
 import { applyContextDefaults } from './networkDefaults';
-import { createDemoScreenshotTabs, isDemoScreenshotMode } from './demoMode';
+import { createDemoScreenshotTabs, demoScreenshotTabKind, isDemoScreenshotMode } from './demoMode';
 import { cancelWorkspaceTab, runWorkspaceTab } from './operations';
 import { clampIndex, normalizeSelection } from './selection';
 import { loadHistory, saveHistory } from './historyStorage';
@@ -26,7 +26,10 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
     // yet. Scan remains one click away in the tab strip.
     demoScreenshotMode ? createDemoScreenshotTabs() : [createTab('discover')],
   );
-  const [activeTabId, setActiveTabId] = useState(() => tabs[0]?.id ?? '');
+  const [activeTabId, setActiveTabId] = useState(() => {
+    const wanted = demoScreenshotMode ? demoScreenshotTabKind() : null;
+    return (tabs.find((tab) => tab.kind === wanted) ?? tabs[0])?.id ?? '';
+  });
   const [filterText, setFilterText] = useState('');
   const [history, setHistory] = useState<HistoryEntry[]>(() => (options.persistentHistory ? loadHistory() : []));
   const { dismissToast, showToast, showUpdateToast, toast } = useWorkspaceToast(options);

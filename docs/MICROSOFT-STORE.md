@@ -112,28 +112,45 @@ network scanner, port scanner, IP scanner, LAN, DNS lookup, network discovery, n
 
 ### Screenshots
 
-PNG, 1366 x 768 or larger, up to 10, with a caption of up to 200 characters
-each. The four on the website (`site/public/assets/gui-*.png`, 2000 x 1125)
-are big enough but should not be used as they are. They predate 0.3.4, so
-there is no Version column or OS hint, and the port scan shows a single test
-server answering "netscli-e2e". Retake them from 0.3.4 against a realistic
-network, one per row below.
+Upload these five from `packaging/msstore/`, in order, with the captions
+below. Each is 2732 x 1536 PNG, the app's 1366 x 768 layout drawn at twice the
+pixels, inside the Store's 1366 x 768 minimum and 3840 x 2160 maximum.
 
-| Screen | Caption |
+| File | Caption |
 | --- | --- |
-| Discover, a full list of devices | Every device on your network, with names and makers |
-| Port Scan with versions showing | Open ports, and the software and version behind them |
-| Inspect with the OS hint open | A best guess at the operating system, with the clues behind it |
-| DNS lookup | DNS records for any domain |
-| mDNS | Printers, speakers and hubs that announce themselves |
+| `screenshot-1-discover.png` | Every device on your network, with names and makers |
+| `screenshot-2-scan.png` | Open ports, and the software and version behind them |
+| `screenshot-3-inspect.png` | A best guess at the operating system, with the clues behind it |
+| `screenshot-4-dns.png` | DNS records for any domain |
+| `screenshot-5-mdns.png` | Printers, speakers and hubs that announce themselves |
+
+They show the app's screenshot mode, which fills each tool with a fixed home
+network in the documentation address range (192.0.2.0/24), so no real
+address or device appears. To retake them after a UI change, run the desktop
+app's frontend (`npm run dev` in `apps/netscli-gui`) and capture each tool
+with headless Chrome:
+
+```powershell
+foreach ($t in 'discover','scan','inspect','dns','mdns') {
+  & 'C:\Program Files\Google\Chrome\Application\chrome.exe' --headless=new --hide-scrollbars `
+    --force-device-scale-factor=2 --window-size=1366,768 --virtual-time-budget=4000 `
+    --screenshot="$PWD\$t.png" "http://localhost:1420/?demo=screenshot&tab=$t"
+}
+```
 
 ### Store logos
 
-- **1:1 box art, 1080 x 1080 (required).** Render it from the app icon's
-  generator, which draws the same mark as the installed app:
-  ```bash
-  cd apps/netscli-gui/src-tauri/icons
-  uv run --with pillow python -c "import create_icon as c; open('box-art-1080.png','wb').write(c.render_png(1080))"
-  ```
-- **1:1 app tile icon, 300 x 300 (recommended).** The same command with `300`.
-- **2:3 poster art (optional for apps).** Skip it for the first submission.
+Both are in `packaging/msstore/`, rendered by the app icon's own generator
+(`apps/netscli-gui/src-tauri/icons/create_icon.py`), so they match the
+installed app.
+
+- **1:1 box art (required)**: `box-art-1080.png`, 1080 x 1080.
+- **1:1 app tile icon (recommended)**: `tile-300.png`, 300 x 300.
+- **2:3 poster art**: optional for apps, skipped.
+
+To render them again:
+
+```bash
+cd apps/netscli-gui/src-tauri/icons
+uv run --with pillow python -c "import create_icon as c; open('box-art-1080.png','wb').write(c.render_png(1080)); open('tile-300.png','wb').write(c.render_png(300))"
+```
