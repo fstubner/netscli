@@ -176,7 +176,7 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
       display: flex;
       align-items: center;
       justify-content: center;
-      /* 20px and a 32px group gap, the same as the landing bar (Nav.astro). */
+      /* 20px between links, and the separator centred in a 40px gap: the same as the landing bar (Nav.astro). */
       gap: 20px;
       min-width: 0;
       font-size: 0.8125rem;
@@ -213,13 +213,14 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
      * sits in that margin, negatively inset. */
     .docs-nav-links a.nav-group-start {
       position: relative;
-      margin-inline-start: 32px;
+      margin-inline-start: 20px;
     }
 
     .docs-nav-links a.nav-group-start::before {
       content: "";
       position: absolute;
-      inset-inline-start: -16px;
+      inset-inline-start: -20px;
+      transform: translateX(-50%);
       top: 50%;
       width: 1px;
       height: 18px;
@@ -293,11 +294,11 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
       }
 
       .docs-nav-links a.nav-group-start {
-        margin-inline-start: 20px;
+        margin-inline-start: 12px;
       }
 
       .docs-nav-links a.nav-group-start::before {
-        inset-inline-start: -10px;
+        inset-inline-start: -12px;
       }
 
       .docs-header-search {
