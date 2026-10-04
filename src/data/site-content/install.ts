@@ -4,33 +4,27 @@ import { INSTALL_PS1_COMMAND, INSTALL_SH_COMMAND } from './install-urls';
 export const installCopy: SectionCopy = {
   heading: 'Get started',
   leadHtml:
-    'Install the desktop app or the command line — both drive the same Rust core. <a href="/docs/install/">Full install guide →</a>',
+    'Install the desktop app or the command line. Both drive the same Rust core. <a href="/docs/install/">Full install guide →</a>',
 };
 
 const RELEASE_DOWNLOAD = 'https://github.com/fstubner/netscli/releases/latest/download';
 
-/** Shown on every direct .dmg / .msi row.
+/** Shown on the direct .dmg rows and on the Homebrew cask.
  *
- *  The desktop installers are not code-signed yet (tracked separately —
- *  notarization needs a paid Apple Developer cert, Authenticode needs a
- *  Windows cert). Warning up front is better than someone hitting a
- *  Gatekeeper or SmartScreen dialog with no context and assuming the
- *  download is malware. */
-const MACOS_UNSIGNED_HINT = 'Unsigned — right-click → Open on first launch';
-/* Describes the row it is attached to, which is the direct .msi download.
- * It used to end "winget verifies the hash" -- true of winget, and winget is
- * not what this row does. Someone clicking Download gets the installer
- * straight from GitHub Releases with nothing checking it, and was being told
- * otherwise at the moment they did it. The checksums are real and published;
- * this now points at them.
+ *  The cask too: Homebrew quarantines what a cask downloads, and 5.0
+ *  deprecated `--no-quarantine`, the flag that skipped it. A cask install
+ *  meets the same Gatekeeper block as a browser download.
  *
- * Stated as the exception rather than labelling its opposite. Every package
- * manager row used to carry a "Hash-verified" tag so this row would read as
- * different -- four copies of it in one Windows panel, saying the unremarkable
- * thing four times to make the remarkable thing stand out once. The
- * verification is the norm; not having it is the news, so only the news is
- * written down. */
-const WINDOWS_UNSIGNED_HINT = 'Unsigned — SmartScreen may warn. Checksums are published.';
+ *  The macOS app is not notarized (that needs a paid Apple Developer
+ *  account). Warning up front is better than someone hitting a Gatekeeper
+ *  dialog with no context and assuming the download is malware.
+ *
+ *  It said "right-click → Open on first launch" until 2026-09. macOS 15
+ *  Sequoia removed that override: Control-click → Open now shows the same
+ *  refusal with no Open button. Apple's support page for opening an app from
+ *  an unknown developer gives only the System Settings route, which is what
+ *  this names now. */
+const MACOS_UNSIGNED_HINT = 'Unsigned. Open it once, then System Settings → Privacy & Security → Open Anyway';
 
 export const installByPlatform: Record<Platform, PlatformInstall> = {
   windows: {
@@ -63,7 +57,6 @@ export const installByPlatform: Record<Platform, PlatformInstall> = {
       {
         label: 'Installer',
         href: `${RELEASE_DOWNLOAD}/netscli-gui-windows-x86_64.msi`,
-        hint: WINDOWS_UNSIGNED_HINT,
       },
     ],
   },
@@ -87,6 +80,7 @@ export const installByPlatform: Record<Platform, PlatformInstall> = {
         // scoop, AUR and winget already name the two artifacts.
         label: 'Homebrew',
         command: 'brew install --cask fstubner/tap/netscli-gui',
+        hint: MACOS_UNSIGNED_HINT,
       },
       {
         label: 'Apple Silicon',
@@ -128,13 +122,13 @@ export const installByPlatform: Record<Platform, PlatformInstall> = {
      * readers actually wanted buried two rows below it. */
     desktop: [
       {
-        label: 'Debian / Ubuntu',
+        label: 'Debian / Ubuntu (.deb)',
         href: `${RELEASE_DOWNLOAD}/netscli-gui-linux-x86_64.deb`,
       },
       {
         label: 'AppImage',
         href: `${RELEASE_DOWNLOAD}/netscli-gui-linux-x86_64.AppImage`,
-        hint: 'Any distro — chmod +x and run',
+        hint: 'Any distro. chmod +x and run',
       },
       {
         label: 'AUR (Arch)',
@@ -177,7 +171,7 @@ export const tryCommands: TryCommand[] = [
  * alternative route for every platform, which is what made it read as a wall
  * rather than a choice. */
 export const installBinariesNote =
-  'Rust users can <code>cargo install netscli</code>. Every asset is checksummed and signed with <a href="https://docs.sigstore.dev/cosign/overview/">Sigstore cosign</a> — see <a href="/docs/install/#verifying-a-download">how to verify a download</a>, plus standalone binaries and packet-capture builds.';
+  'Rust users can <code>cargo install netscli</code>. Every binary and installer is checksummed and signed with <a href="https://docs.sigstore.dev/cosign/overview/">Sigstore cosign</a>. The install guide shows <a href="/docs/install/#verifying-a-download">how to verify a download</a> and lists the standalone binaries and packet-capture builds.';
 
 // Two things /llms.txt says that no page does: a build-from-source route,
 // listed after the per-platform quickstart, and any caveat a reader acting
@@ -188,6 +182,6 @@ export const installFromSource = 'cargo install netscli';
 
 export const installNotes = [
   'Packet capture is a compile-time feature. No published desktop installer',
-  'includes it; capture-enabled CLI assets are published separately and also',
+  'includes it. Capture-enabled CLI assets are published separately and also',
   'need a system capture library (libpcap or Npcap).',
 ];
