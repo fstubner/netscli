@@ -92,13 +92,51 @@ if (-not $ssign -or -not (Test-Path -LiteralPath $ssign -PathType Leaf)) {
     Fail "NETSCLI_SSIGN does not point at ssign.exe ('$ssign')"
 }
 
+# Sign a copy, then write it back over the original in place.
+#
+# ssign signs in place by writing a new file and renaming it over the old
+# one, and inside the bundler that rename is refused: "atomically replacing
+# ...netscli-gui.exe: Access is denied (os error 5)", which is what lost
+# v0.3.4 its Windows build. Something still holds the freshly patched exe
+# open without delete sharing, so it cannot be replaced, but it can be
+# written. `-o` puts the signed file elsewhere; copying its bytes over the
+# original needs only write access, and is retried in case the holder is a
+# scanner that lets go after a moment.
+$signedDir = Join-Path ([IO.Path]::GetTempPath()) ("sign-windows-pe-" + [guid]::NewGuid())
+New-Item -ItemType Directory -Path $signedDir | Out-Null
 Log "signing $name"
-$output = & $ssign $Path 2>&1 | Out-String
+$output = & $ssign -o $signedDir $Path 2>&1 | Out-String
 $code = $LASTEXITCODE
 Log "ssign exited $code. Output:`n$($output.Trim())"
 if ($code -ne 0) {
     Fail "ssign exited $code for $name" $code
 }
+$signed = Join-Path $signedDir $name
+if (-not (Test-Path -LiteralPath $signed -PathType Leaf)) {
+    Fail "ssign reported success but wrote no $signed"
+}
+
+$bytes = [IO.File]::ReadAllBytes($signed)
+for ($attempt = 1; ; $attempt++) {
+    try {
+        $stream = [IO.File]::Open($Path, 'Open', 'Write', 'ReadWrite')
+        try {
+            $stream.SetLength(0)
+            $stream.Write($bytes, 0, $bytes.Length)
+        } finally {
+            $stream.Dispose()
+        }
+        break
+    } catch {
+        if ($attempt -ge 10) {
+            Fail "could not write the signed bytes back to $name after $attempt tries: $($_.Exception.Message)"
+        }
+        Log "write-back attempt $attempt failed ($($_.Exception.Message)); retrying"
+        Start-Sleep -Seconds 1
+    }
+}
+Remove-Item -LiteralPath $signedDir -Recurse -Force
+Log "wrote the signed $name back in place"
 
 # Read the signature back through Windows' own verifier rather than trusting
 # the exit code. `Valid` means signed, unmodified since, and chaining to a
