@@ -1,0 +1,54 @@
+# TEMPORARY: reproduces the v0.3.4 Windows in-build signing failure with
+# visible output. Not to be merged.
+name: Debug Windows signing
+on:
+  pull_request:
+    paths: ['.github/workflows/debug-windows-signing.yml']
+permissions:
+  contents: read
+jobs:
+  sign:
+    runs-on: windows-latest
+    environment: release-signing
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare exactly as release.yml does
+        shell: pwsh
+        run: |
+          $tools = Join-Path $env:RUNNER_TEMP 'sign-tools'
+          New-Item -ItemType Directory -Force $tools | Out-Null
+          Copy-Item scripts/release/sign-windows-pe.ps1 $tools
+          $zip = Join-Path $env:RUNNER_TEMP 'ssign.zip'
+          Invoke-WebRequest -Uri 'https://github.com/Le-Syl21/ssign/releases/download/v0.1.6/ssign-windows-x86_64.zip' -OutFile $zip
+          $want = '8a2a16738f0e1f368b4640cc6cb53fac8072a38df9334a72a96e071169b730f0'
+          $got = (Get-FileHash -Algorithm SHA256 $zip).Hash.ToLowerInvariant()
+          if ($got -ne $want) { Write-Error "digest $got"; exit 1 }
+          Expand-Archive $zip -DestinationPath $tools -Force
+          Get-ChildItem $tools | Format-Table Name, Length
+          "NETSCLI_SSIGN=$(Join-Path $tools 'ssign.exe')" >> $env:GITHUB_ENV
+          "NETSCLI_SIGN_TOOLS=$tools" >> $env:GITHUB_ENV
+          'fn main() { println!("hi"); }' | Set-Content hello.rs
+          rustc -O hello.rs -o hello.exe
+          Get-Item hello.exe
+      - name: ssign directly
+        shell: pwsh
+        env:
+          CERTUM_EMAIL: ${{ secrets.CERTUM_EMAIL }}
+          CERTUM_OTP: ${{ secrets.CERTUM_OTP }}
+        run: |
+          Copy-Item hello.exe direct.exe
+          & $env:NETSCLI_SSIGN --help 2>&1 | Select-Object -First 30
+          & $env:NETSCLI_SSIGN direct.exe 2>&1
+          "ssign exit: $LASTEXITCODE"
+          Get-AuthenticodeSignature direct.exe | Format-List Status, StatusMessage, SignerCertificate
+      - name: The wrapper, called the way tauri calls it
+        shell: pwsh
+        env:
+          CERTUM_EMAIL: ${{ secrets.CERTUM_EMAIL }}
+          CERTUM_OTP: ${{ secrets.CERTUM_OTP }}
+        run: |
+          Copy-Item hello.exe wrapped.exe
+          $p = Start-Process -FilePath pwsh -ArgumentList @('-NoProfile','-NonInteractive','-File',(Join-Path $env:NETSCLI_SIGN_TOOLS 'sign-windows-pe.ps1'),(Resolve-Path wrapped.exe).Path) -NoNewWindow -Wait -PassThru -RedirectStandardOutput out.txt -RedirectStandardError err.txt
+          "wrapper exit: $($p.ExitCode)"
+          '--- stdout'; Get-Content out.txt
+          '--- stderr'; Get-Content err.txt
