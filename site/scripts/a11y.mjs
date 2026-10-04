@@ -17,6 +17,7 @@ const fallbackRoutes = [
   '/docs/interface-coverage/',
   '/docs/desktop/',
   '/changelog/',
+  '/privacy/',
   '/404.html',
 ];
 const defaultRoutes = discoverRoutes() ?? fallbackRoutes;

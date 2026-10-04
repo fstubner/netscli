@@ -21,7 +21,7 @@ Checked on 2026-10-04 against the published v0.3.4 installer.
   machine, so Windows shows a UAC prompt, which the Store allows.
 - **Updates.** The Store does not update MSI apps. The in-app updater does,
   and 0.3.4 is the first version that has it.
-- **Privacy policy.** https://netscli.com/docs/privacy/
+- **Privacy policy.** https://netscli.com/privacy/
 
 ## Known risk
 
