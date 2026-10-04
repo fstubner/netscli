@@ -98,20 +98,29 @@ passed.
 
 ### Features (up to 20)
 
-1. Find the devices on your network, with names, makers and addresses
-2. Scan TCP ports and common UDP services
-3. See the software and version a service reports
-4. OS hint for a host, with the evidence behind it
-5. DNS lookups for every common record type
-6. Discover devices that announce themselves on the local network
-7. Trace the route to a host
-8. Export results to CSV
-9. Updates itself from inside the app
-10. No accounts, no telemetry
+1. Find every device on your network, with its name, maker and MAC address
+2. Scan TCP ports, or check common UDP services such as DNS, NTP and mDNS
+3. See the software and version a service reports, such as OpenSSH or nginx
+4. Inspect a host for open ports, reverse DNS, maker and an OS guess with the evidence behind it
+5. Sweep a subnet to find hosts and their open ports in one run
+6. Ping a host and see packet loss and response times
+7. Trace the route to a host, hop by hop
+8. Look up DNS records of every common type, and reverse lookups for an IP address
+9. Discover printers, speakers and other devices that announce themselves on the local network
+10. See your network interfaces, addresses and live upload and download traffic
+11. Read your computer's neighbour (ARP) table, with the maker of each device
+12. Work in tabs, with several scans side by side
+13. Filter results as you type, by status, port, address or maker
+14. Export results as CSV or JSON, or save a whole run to open later
+15. Copy the matching command line for any run
+16. Reopen recent runs from history
+17. Light and dark themes
+18. Updates itself from inside the app
+19. No accounts and no telemetry. Nothing you scan leaves your computer
 
 ### Keywords (up to 7)
 
-network scanner, port scanner, IP scanner, LAN, DNS lookup, network discovery, nmap alternative
+network scanner, port scanner, IP scanner, LAN, DNS lookup, network discovery, subnet scan
 
 ### Certification notes
 
