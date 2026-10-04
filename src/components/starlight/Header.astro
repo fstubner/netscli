@@ -176,7 +176,8 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 1.15rem;
+      /* 20px and a 32px group gap, the same as the landing bar (Nav.astro). */
+      gap: 20px;
       min-width: 0;
       font-size: 0.8125rem;
       height: var(--sl-nav-height);
@@ -212,13 +213,13 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
      * sits in that margin, negatively inset. */
     .docs-nav-links a.nav-group-start {
       position: relative;
-      margin-inline-start: 1.3rem;
+      margin-inline-start: 32px;
     }
 
     .docs-nav-links a.nav-group-start::before {
       content: "";
       position: absolute;
-      inset-inline-start: -0.65rem;
+      inset-inline-start: -16px;
       top: 50%;
       width: 1px;
       height: 18px;
@@ -284,9 +285,19 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
         padding-inline: 1rem;
       }
 
+      /* Tighter here, to fit beside search and the theme control; the group
+         gap keeps the same proportion to the link gap as at full width. */
       .docs-nav-links {
-        gap: 0.75rem;
+        gap: 12px;
         font-size: 0.78rem;
+      }
+
+      .docs-nav-links a.nav-group-start {
+        margin-inline-start: 20px;
+      }
+
+      .docs-nav-links a.nav-group-start::before {
+        inset-inline-start: -10px;
       }
 
       .docs-header-search {

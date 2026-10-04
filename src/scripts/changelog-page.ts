@@ -47,10 +47,19 @@ export function initChangelogPage(
       // a publication date, and the card read "v0.3.1 · Not yet released ·
       // 24 Aug 2026". The label and the date contradicted each other, and
       // the date was the half that looked like a fact.
-      const orderedReleases = fallbackReleases.map((release) => {
+      //
+      // Only an entry ABOVE the newest one GitHub confirmed can be unreleased.
+      // The request returns one page of releases, so an older entry missing
+      // from it is just off that page: labelling it "Not yet released" put
+      // that on 0.19.0 and every grouped run of versions below it.
+      const firstConfirmed = fallbackReleases.findIndex((release) =>
+        remoteByTag.has(normalizeTag(release.tag_name || release.name))
+      );
+      const orderedReleases = fallbackReleases.map((release, index) => {
         const tag = normalizeTag(release.tag_name || release.name);
         const remote = remoteByTag.get(tag);
         if (remote) return remote;
+        if (firstConfirmed !== -1 && index > firstConfirmed) return release;
         return { ...release, published_at: undefined, unreleased: true, confirmedUnreleased: true };
       });
       // A release GitHub knows about that never made it into the local
@@ -59,8 +68,17 @@ export function initChangelogPage(
       const fallbackTags = new Set(
         fallbackReleases.map((release) => normalizeTag(release.tag_name || release.name))
       );
+      // Only releases newer than the changelog's newest confirmed entry: an
+      // older tag missing from the changelog is one a grouped entry already
+      // covers (a run of versions under one heading), and appending it put
+      // stale per-version notes under the summary that replaced them.
+      const newestConfirmedAt = firstConfirmed === -1
+        ? undefined
+        : remoteByTag.get(normalizeTag(fallbackReleases[firstConfirmed].tag_name || fallbackReleases[firstConfirmed].name))?.published_at;
       const extraRemoteReleases = releases.filter(
-        (release) => !fallbackTags.has(normalizeTag(release.tag_name || release.name))
+        (release) =>
+          !fallbackTags.has(normalizeTag(release.tag_name || release.name)) &&
+          (!newestConfirmedAt || !release.published_at || release.published_at > newestConfirmedAt)
       );
       renderReleaseList([...orderedReleases, ...extraRemoteReleases], repo, fallbackByTag, releaseSummaries);
     })

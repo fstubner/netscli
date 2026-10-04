@@ -62,7 +62,9 @@ const groups = [
                     .join(' · ')}
                 </p>
               )}
-              {client.commands.map((command) => (
+              {client.oneBox && client.commands.length > 1 ? (
+                <div class="client-cmd has-copy" data-copy={client.commands.join('\n')}><code>{client.commands.map((command) => <span class="cmd-line">{command}</span>)}</code></div>
+              ) : client.commands.map((command) => (
                 <div class="client-cmd has-copy" data-copy={command}><code>{command}</code></div>
               ))}
               {client.note && <p class="client-note">{client.note}</p>}
@@ -243,6 +245,9 @@ const groups = [
   color:var(--ui-ondark-text);
 }
 .client-cmd code{all:unset;font:inherit;color:inherit;white-space:pre-wrap;overflow-wrap:anywhere}
+/* One box, several commands: each on its own line, a wrapped line indented under it. */
+.client-cmd .cmd-line{display:block;padding-left:1.5em;text-indent:-1.5em}
+.client-cmd .cmd-line+.cmd-line{margin-top:6px}
 .client-note{font-size:.75rem;line-height:1.5;color:var(--ui-ondark-text-muted);margin:0}
 /* Full width, with its commands side by side. At 560px it filled half the
    row under a full-width grid and left the other half empty. */

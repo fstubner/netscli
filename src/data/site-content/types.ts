@@ -176,6 +176,8 @@ export interface InstallClient {
   /** Commands, in order, each with its own copy button. Empty for a client
    *  whose route has no command -- say what to do in `note` instead. */
   commands: string[];
+  /** Show `commands` in one copyable box, one per line, instead of a box each. */
+  oneBox?: boolean;
   /** One line under the commands: a caveat, or the route when there is no
    *  command. Plain text. */
   note?: string;
