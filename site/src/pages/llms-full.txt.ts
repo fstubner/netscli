@@ -1,5 +1,6 @@
 import { getCollection } from 'astro:content';
 import { site } from '../data/site';
+import { docsSidebar } from '../data/site-content/docs';
 
 /**
  * /llms-full.txt — every documentation page's full text, in one file.
@@ -22,9 +23,23 @@ export async function GET() {
   const { meta, hero } = site;
   const base = meta.domain.replace(/\/$/, '');
 
+  // The comment above promises sidebar order; `localeCompare` on the id was
+  // an alphabetical order that only matched the sidebar by coincidence.
+  // `docsSidebar` (the same list astro.config.mjs hands to Starlight) is the
+  // real order, so build the rank from it instead of guessing at one here.
+  const sidebarRank = new Map(
+    docsSidebar
+      .flatMap((section) => section.items)
+      .map((item, index) => [item.link.replace(/^\//, '').replace(/\/$/, ''), index] as const)
+  );
+
   const docs = (await getCollection('docs'))
     .filter((entry) => entry.id !== 'index')
-    .sort((a, b) => a.id.localeCompare(b.id));
+    .sort((a, b) => {
+      const rankA = sidebarRank.get(a.id) ?? Number.MAX_SAFE_INTEGER;
+      const rankB = sidebarRank.get(b.id) ?? Number.MAX_SAFE_INTEGER;
+      return rankA !== rankB ? rankA - rankB : a.id.localeCompare(b.id);
+    });
 
   const sections = docs.flatMap((entry) => {
     const url = `${base}/${entry.id.replace(/\/?index$/, '')}/`.replace(/\/+$/, '/');
