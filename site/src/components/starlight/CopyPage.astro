@@ -29,6 +29,9 @@ const markdownHref = `/docs/${slug}.md`;
   <svg class="copy-page-done" aria-hidden="true" viewBox="0 0 16 16" focusable="false">
     <path d="M3 8.2 6.1 11 13 4"></path>
   </svg>
+  <svg class="copy-page-failed" aria-hidden="true" viewBox="0 0 16 16" focusable="false">
+    <path d="M4 4l8 8M12 4l-8 8"></path>
+  </svg>
   <span class="copy-page-label">Copy page</span>
 </button>
 
@@ -105,15 +108,17 @@ const markdownHref = `/docs/${slug}.md`;
       border-color: rgba(var(--ui-accent-rgb), 0.48);
     }
 
-    /* A tick while it says "Copied", as the landing page's copy buttons do.
-       In the "On this page" bar the label is hidden, so the icon is the only
-       sign the copy worked. */
+    /* A tick while it says "Copied" and a cross while it says "Failed", as
+       the landing page's copy buttons do. In the "On this page" bar the label
+       is hidden, so the icon is the only sign of what happened. */
     .copy-page-done,
-    .copy-page[data-state='copied'] .copy-page-icon {
+    .copy-page-failed,
+    .copy-page[data-state] .copy-page-icon {
       display: none;
     }
 
-    .copy-page[data-state='copied'] .copy-page-done {
+    .copy-page[data-state='copied'] .copy-page-done,
+    .copy-page[data-state='failed'] .copy-page-failed {
       display: block;
     }
 
