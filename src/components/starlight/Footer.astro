@@ -5,7 +5,7 @@ import Pagination from 'virtual:starlight/components/Pagination';
 import { site } from '../../data/site';
 import Feedback from '../Feedback.astro';
 
-const { meta, hero, builtWith } = site;
+const { meta } = site;
 const year = new Date().getFullYear();
 ---
 
@@ -20,37 +20,21 @@ const year = new Date().getFullYear();
   */}
   <Pagination />
 
-  {/* Below the Previous/Next cards, not above them. These are a footnote
-      about the page you just read; the pagination is where you go next, and
-      it should not be pushed down the screen by metadata. */}
-  <div class="docs-page-meta">
-    <LastUpdated />
-    <EditLink />
-  </div>
-
+  {/* One row under the Previous/Next cards: this page's metadata on the
+      left, the copyright on the right. It used to be three blocks -- the
+      metadata, then the landing footer's copyright, links and built-with
+      line -- and in the docs' content column, far narrower than the landing
+      page, that wrapped into four lines of small grey text. The links are
+      all in the header on every docs page, so the footer dropped them and
+      the built-with line; the landing footer keeps both. */}
   <Feedback on="docs" />
 
-  <div class="docs-footer-inner">
-    <div>&copy; {year} {meta.author.name} · MIT</div>
-    <div class="docs-footer-links">
-      <a class="external-link" href={hero.sourceUrl}>GitHub</a>
-      <a class="external-link" href={`${hero.sourceUrl}/releases`}>Releases</a>
-      <a href="/docs/">Docs</a>
-      <a href="/changelog/">Changelog</a>
+  <div class="docs-footer-row">
+    <div class="docs-page-meta">
+      <LastUpdated />
+      <EditLink />
     </div>
-    {builtWith.length > 0 && (
-      <div class="docs-built-with">
-        Built with{' '}
-        <span class="docs-built-with-items">
-        {builtWith.map((b, i) => (
-          <>
-            {i > 0 && <span>{i === builtWith.length - 1 ? ', and ' : ', '}</span>}
-            <a class="external-link" href={b.url}>{b.name}</a>
-          </>
-        ))}
-        </span>.
-      </div>
-    )}
+    <div class="docs-copyright">&copy; {year} {meta.author.name} · MIT</div>
   </div>
 </footer>
 
@@ -65,26 +49,7 @@ const year = new Date().getFullYear();
       border-top: 1px solid var(--sl-color-hairline);
     }
 
-    .docs-footer-inner {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 0.9rem 1.25rem;
-      width: 100%;
-      max-width: 1060px;
-      margin-inline: auto;
-      padding-inline: 1.5rem;
-      color: var(--sl-color-gray-3);
-      font-size: 0.75rem;
-    }
-
-    /* Sits above the pagination, on the same measure as the rest of the
-       footer. Row rather than column so the date and the edit link read as
-       one line of page metadata; it wraps on narrow screens instead of
-       squashing. Empty on a page where neither renders, and `:empty` keeps
-       it from adding a gap in that case. */
-    .docs-page-meta {
+    .docs-footer-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -98,6 +63,13 @@ const year = new Date().getFullYear();
       font-size: 0.75rem;
     }
 
+    .docs-page-meta {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem 1.25rem;
+    }
+
     .docs-page-meta:empty {
       display: none;
     }
@@ -109,12 +81,6 @@ const year = new Date().getFullYear();
       padding-inline: 1.5rem;
     }
 
-    .docs-footer-links {
-      display: flex;
-      gap: 1rem;
-      flex-wrap: wrap;
-    }
-
     .docs-footer a {
       color: var(--sl-color-gray-3);
       text-decoration: none;
@@ -124,13 +90,5 @@ const year = new Date().getFullYear();
       color: var(--sl-color-gray-1);
     }
 
-    /* Matches the landing page's footer: a third item in the same row rather
-       than a centred band of its own behind another rule. components/Footer
-       .astro is the reference -- the two footers carry the same links and the
-       same built-with line, and reading as two different components on two
-       pages of one site was the whole complaint. */
-    .docs-built-with {
-      color: var(--sl-color-gray-3);
-    }
   }
 </style>

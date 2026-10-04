@@ -28,12 +28,11 @@
   letter-spacing: 0;
 }
 
-/* Anchors land under the sticky header without this; the smooth scroll
-   it pairs with is in docs/base.css. */
-.sl-markdown-content :is(h1, h2, h3, h4, h5, h6)[id],
-.sl-markdown-content :target {
-  scroll-margin-top: calc(var(--sl-nav-height) + 1.25rem);
-}
+/* No scroll-margin on headings. Starlight already sets `scroll-padding-top`
+   on <html> (the nav height plus 1.5rem), and the two add: with a heading
+   rule of nav height + 1.25rem as well, a jump to an anchor left it 104px
+   below the header instead of 24px (measured on /docs/tui/#session-behavior).
+   The smooth scroll is in docs/base.css. */
 
 /* Markers the table script reads (src/scripts/docs-tables.ts); never shown. */
 .sl-markdown-content [data-ui-table] {

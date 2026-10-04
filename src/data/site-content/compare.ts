@@ -24,7 +24,7 @@ export const compareCopy: SectionCopy = {
 };
 
 // Column order is the cell order in every row below. The highlighted column is
-// this product, and it gets the tint and the left rule.
+// this product, and it gets the accent outline.
 export const compareColumns: ComparisonColumn[] = [
   { name: 'REPLACE_ME', highlight: true },
   { name: 'Alternative one' },

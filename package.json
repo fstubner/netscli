@@ -20,6 +20,7 @@
     "check:wordmark": "node ./scripts/wordmark-inset.mjs",
     "test:a11y": "npm run build && node ./scripts/a11y.mjs",
     "check:contrast": "node ./scripts/contrast-sweep.mjs",
+    "check:header": "node ./scripts/header-controls.mjs",
     "check:lighthouse": "node ./scripts/lighthouse.mjs",
     "visual:record": "node ./scripts/visual-snapshot.mjs record",
     "visual:check": "node ./scripts/visual-snapshot.mjs check",
@@ -29,17 +30,20 @@
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",
-    "@astrojs/starlight": "^0.42.1",
-    "astro": "^7.2.9"
+    "@astrojs/starlight": "^0.42.4",
+    "astro": "^7.3.5"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
     "@axe-core/cli": "^4.13.0",
-    "chromedriver": "^153.0.1",
-    "lighthouse": "^13.4.1",
+    "chromedriver": "^154.0.0",
+    "lighthouse": "^13.5.0",
     "linkedom": "^0.18.13",
     "selenium-webdriver": "^4.49.0",
     "sharp": "^0.35.4",
     "typescript": "^5.5.0"
+  },
+  "overrides": {
+    "basic-ftp": "^6.2.1"
   }
 }
