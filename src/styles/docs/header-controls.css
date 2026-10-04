@@ -19,7 +19,7 @@ site-search button[data-open-modal] {
 }
 
 site-search button[data-open-modal] svg {
-  color: #8792a4;
+  color: var(--sl-color-gray-3);
 }
 
 site-search button[data-open-modal] > kbd {
@@ -29,24 +29,20 @@ site-search button[data-open-modal] > kbd {
   color: var(--sl-color-gray-3);
 }
 
+/* Hover and focus match the menu button beside it (below) and the landing
+   nav's menu toggle (Nav.astro): accent border, accent tint, white ink;
+   keyboard focus adds a 2px accent ring. */
 site-search button[data-open-modal]:hover,
 site-search button[data-open-modal]:focus-visible {
-  background: rgba(17, 22, 29, 0.9);
-  border-color: rgba(106, 240, 208, 0.65);
-}
-
-site-search button[data-open-modal]:hover {
+  background: rgba(var(--ui-accent-rgb), 0.1);
+  border-color: rgba(var(--ui-accent-rgb), 0.45);
   color: var(--sl-color-white);
-  box-shadow:
-    0 0 0 1px rgba(var(--ui-accent-rgb), 0.16),
-    inset 0 1px 0 rgba(var(--ui-lift-rgb), 0.035);
+  box-shadow: none;
 }
 
 site-search button[data-open-modal]:focus-visible {
   outline: 0;
-  box-shadow:
-    0 0 0 2px rgba(var(--ui-accent-rgb), 0.18),
-    inset 0 1px 0 rgba(var(--ui-lift-rgb), 0.04);
+  box-shadow: 0 0 0 2px rgba(var(--ui-accent-rgb), 0.35);
 }
 
 site-search button[data-open-modal]:hover svg,
@@ -64,17 +60,15 @@ html[data-theme='light'] site-search button[data-open-modal] {
 
 html[data-theme='light'] site-search button[data-open-modal]:hover,
 html[data-theme='light'] site-search button[data-open-modal]:focus-visible {
-  background: var(--sl-color-black);
+  background: rgba(var(--ui-accent-rgb), 0.1);
   border-color: rgba(var(--ui-accent-rgb), 0.45);
 }
 
-/* The hover ring restated here because the light resting rule above outranks
-   the theme-neutral hover rule by the `html` in its selector. */
+/* Restated for light: the light resting rule above outranks the theme-neutral
+   hover rule by the `html` in its selector. No ring on hover, as in dark. */
 html[data-theme='light'] site-search button[data-open-modal]:hover {
-  color: #172033;
-  box-shadow:
-    0 0 0 1px rgba(var(--ui-accent-rgb), 0.16),
-    inset 0 1px 0 rgba(var(--ui-lift-rgb), 0.035);
+  color: var(--sl-color-white);
+  box-shadow: none;
 }
 
 /* The dialog's close button also sits inside .docs-header-search. These
@@ -93,10 +87,10 @@ site-search button {
   border-color: var(--ui-hover-border);
 }
 
-/* ---- Mobile menu button --------------------------------------------
-   Starlight 0.42's `button.sl-menu-button`; open is the sidebar popover
-   being open, which is how Starlight itself styles the open state. */
-.sl-menu-button {
+/* ---- Mobile menu button -------------------------------------------- */
+/* Open state: Starlight 0.42 opens the menu as a popover and sets no
+   aria-expanded, so the state is read from the popover itself. */
+nav.sidebar .sl-menu-button {
   border: 1px solid var(--sl-color-hairline-light);
   border-radius: 6px;
   background: rgba(var(--ui-lift-rgb), 0.035);
@@ -104,23 +98,29 @@ site-search button {
   box-shadow: none;
 }
 
-.sl-menu-button:hover,
-.sl-menu-button:focus-visible,
-.sl-menu-button:has(~ :popover-open) {
-  background: rgba(var(--ui-accent-rgb), 0.12);
-  border-color: rgba(var(--ui-accent-rgb), 0.28);
+nav.sidebar .sl-menu-button:hover,
+nav.sidebar .sl-menu-button:focus-visible,
+nav.sidebar:has(#starlight__sidebar:popover-open) .sl-menu-button {
+  background: rgba(var(--ui-accent-rgb), 0.1);
+  border-color: rgba(var(--ui-accent-rgb), 0.45);
   color: var(--sl-color-white);
 }
 
-html[data-theme='light'] .sl-menu-button {
+nav.sidebar .sl-menu-button:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 2px rgba(var(--ui-accent-rgb), 0.35);
+}
+
+html[data-theme='light'] nav.sidebar .sl-menu-button {
   background: rgba(var(--ui-hairline-rgb), 0.035);
 }
 
 /* Restated for the light theme: the light resting rule above outranks the
    theme-neutral state rule, so without this the light button never lit. */
-html[data-theme='light'] .sl-menu-button:hover,
-html[data-theme='light'] .sl-menu-button:focus-visible,
-html[data-theme='light'] .sl-menu-button:has(~ :popover-open) {
-  background: rgba(var(--ui-accent-rgb), 0.12);
+html[data-theme='light'] nav.sidebar .sl-menu-button:hover,
+html[data-theme='light'] nav.sidebar .sl-menu-button:focus-visible,
+html[data-theme='light'] nav.sidebar:has(#starlight__sidebar:popover-open) .sl-menu-button {
+  background: rgba(var(--ui-accent-rgb), 0.1);
+  border-color: rgba(var(--ui-accent-rgb), 0.45);
   color: var(--sl-color-white);
 }
