@@ -16,6 +16,16 @@ them. It printed "24 Aug 2026" for 0.3.1 for four days on the strength of a
 date written here when the notes were drafted. An in-flight version keeps
 its heading and collects entries. The date and the link go on with the tag.
 
+## [Unreleased]
+
+### Changed
+
+- **Windows lists the desktop app's publisher as Felix Stubner.** Installed
+  apps showed "netscli", a default taken from the app's internal identifier,
+  while the code signature, winget and the Microsoft Store listing all say
+  Felix Stubner. Upgrading from an earlier version leaves one entry, under the
+  new name.
+
 ## [0.3.4] - 2026-10-04
 
 ### Added
