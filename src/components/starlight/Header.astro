@@ -57,10 +57,6 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
     )}
   </a>
 
-  <div class="docs-header-search print:hidden">
-    {shouldRenderSearch && <Search />}
-  </div>
-
   <nav class="docs-nav-links" aria-label="Site navigation">
     {
       navLinks.map((link, i) => (
@@ -75,6 +71,10 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
       ))
     }
   </nav>
+
+  <div class="docs-header-search print:hidden">
+    {shouldRenderSearch && <Search />}
+  </div>
 
   <div class="docs-header-theme sl-hidden md:sl-flex print:hidden">
     <ThemeSelect />
@@ -96,7 +96,7 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
       display: flex;
       align-items: center;
       justify-content: flex-start;
-      gap: 1rem;
+      gap: var(--ui-nav-link-gap);
       height: var(--sl-nav-height);
       min-height: var(--sl-nav-height);
       width: min(
@@ -152,22 +152,22 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
       filter: var(--ui-mark-filter);
     }
 
-    /* The bar is two groups: identity on the left, then search, navigation
-       and the theme control together on the right. The auto margin is the
-       seam, and it sits on the search box because search is the first
-       element of the right-hand group.
+    /* The bar is two groups: identity on the left, then navigation and the
+       controls on the right -- links, then search and the theme control
+       together at the end. The auto margin is the seam, on the links because
+       they begin the right-hand group.
      *
-     * Two earlier placements are worth not repeating. On the wordmark, the
-     * whole gap landed immediately after it, and since search was the next
-     * element search came to rest near the middle of the bar, reading as a
-     * stray control belonging to neither side -- measured at a 1367px bar,
-     * search at x=704, the centre to within a few pixels. On .docs-nav-links,
-     * search stayed pinned beside the wordmark at the far left, a long way
-     * from the navigation it belongs with.
+     * Search used to lead that group, before the links, so that the keyboard
+     * reached it first. It read as a stray box at one end of the links with
+     * the theme control at the other; grouped with the theme control it is
+     * one cluster of controls, as on most docs sites. The cost is keyboard
+     * order: search now comes after the nav links. Starlight's Ctrl+K / `/`
+     * shortcut still opens it from anywhere.
      *
-     * DOM order is unchanged: search still precedes the nav links, so it is
-     * reachable by keyboard before six nav items rather than after them. */
-    .docs-header-search {
+     * An earlier placement worth not repeating: the seam on the wordmark put
+     * the whole gap straight after it, and whatever came next floated near the
+     * middle of the bar -- measured at a 1367px bar, search at x=704. */
+    .docs-nav-links {
       margin-inline-start: auto;
     }
 
@@ -176,10 +176,9 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
       display: flex;
       align-items: center;
       justify-content: center;
-      /* 20px and a 32px group gap, the same as the landing bar (Nav.astro). */
-      gap: 20px;
+      gap: var(--ui-nav-link-gap);
       min-width: 0;
-      font-size: 0.8125rem;
+      font-size: var(--ui-nav-font-size);
       height: var(--sl-nav-height);
       line-height: 1;
     }
@@ -213,13 +212,13 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
      * sits in that margin, negatively inset. */
     .docs-nav-links a.nav-group-start {
       position: relative;
-      margin-inline-start: 32px;
+      margin-inline-start: var(--ui-nav-group-gap);
     }
 
     .docs-nav-links a.nav-group-start::before {
       content: "";
       position: absolute;
-      inset-inline-start: -16px;
+      inset-inline-start: calc((var(--ui-nav-group-gap) + var(--ui-nav-link-gap) + 1px) / -2);
       top: 50%;
       width: 1px;
       height: 18px;
@@ -231,14 +230,12 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
       border-bottom-color: var(--ui-accent);
     }
 
+    /* Sized to its button. It was a fixed 168px box with a 135px button
+       centred in it, which added 16px either side on top of the row gap. */
     .docs-header-search {
-      flex: 0 1 10.5rem;
-      width: 10.5rem;
-      max-width: 10.5rem;
-      min-width: 8.5rem;
+      flex: 0 0 auto;
       display: flex;
       align-items: center;
-      justify-content: center;
       height: var(--sl-nav-height);
     }
 
@@ -279,25 +276,9 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
 
     @media (max-width: 72rem) {
       .docs-topbar {
-        gap: 0.85rem;
         width: min(100%, calc(100vw - 2rem));
         max-width: calc(100vw - 2rem);
         padding-inline: 1rem;
-      }
-
-      /* Tighter here, to fit beside search and the theme control; the group
-         gap keeps the same proportion to the link gap as at full width. */
-      .docs-nav-links {
-        gap: 12px;
-        font-size: 0.78rem;
-      }
-
-      .docs-nav-links a.nav-group-start {
-        margin-inline-start: 20px;
-      }
-
-      .docs-nav-links a.nav-group-start::before {
-        inset-inline-start: -10px;
       }
 
       .docs-header-search {
@@ -309,18 +290,31 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
 
     }
 
-    /* Where the hamburger appears -- see the note on .docs-nav-links below.
-       The theme control moves into the mobile menu's footer at this point
-       (MobileMenuFooter.astro), so it is relocated rather than lost. */
-    @media (max-width: 49.99rem) {
-      .docs-header-theme {
-        display: none !important;
-      }
-    }
+    /* No rule hiding .docs-header-theme above 50rem, deliberately.
+     *
+     * There was one at 72rem, matching the links below, with a note saying the
+     * control "moves into the mobile menu's footer at this point
+     * (MobileMenuFooter.astro), so it is relocated rather than lost". It was
+     * lost. That footer sits inside the sidebar popover, and the button that
+     * opens it is Starlight's `.sl-menu-button`, which is `md:sl-hidden` and
+     * so only appears below 50rem. Between 800px and 1152px there was no
+     * button to open the menu and no control in the header, so the site had no
+     * theme switch at all. Measured on the built site before this change: two
+     * controls in the DOM at 1082, 982, 882 and 832px, neither visible at any
+     * of them.
+     *
+     * Below 50rem the `sl-hidden md:sl-flex` classes on the element already
+     * hide it, which is the width where the menu button appears and genuinely
+     * does carry it.
+     *
+     * The links are a different case and stay at 72rem below: the sidebar is
+     * still on screen down to 800px and lists the same pages, so hiding them
+     * loses nothing. Nothing else carries the theme control. */
 
     @media (max-width: 72rem) {
       .docs-topbar {
-        gap: 0.75rem;
+        width: min(100%, calc(100vw - 5.25rem));
+        max-width: calc(100vw - 5.25rem);
         justify-content: flex-start;
         margin-inline: 0 auto;
         padding-inline-start: 1.5rem;
@@ -330,12 +324,10 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
         margin-right: 0;
       }
 
-      .docs-nav-links {
-        margin-left: auto;
-        gap: 0.7rem;
-        font-size: 0.76rem;
-      }
-
+      /* No auto margin here. Search carries the seam (docs/header.css), and a
+         second auto margin on the same flex row splits the free space between
+         the two rather than adding to it -- measured at 1142px, 206px of it
+         landed between the search icon and the first link. */
       .docs-header-search {
         flex: 0 0 auto;
         width: 2.5rem;
@@ -346,23 +338,27 @@ function linkClass(link: (typeof navLinks)[number], index: number): string | und
 
     }
 
-    /* Where the hamburger appears, which since Starlight 0.42 is 50rem.
+    /* The links go when the mobile menu arrives, and not before.
      *
-     * Two earlier numbers are worth not repeating. 72rem matched the
-     * hamburger while this site styled Starlight's <starlight-menu-button>
-     * to show up to that width. 0.42 replaced that element with a plain
-     * popover button that Starlight hides from 50rem up, so the styling
-     * stopped reaching anything, and between 50rem and 72rem the bar showed
-     * neither these links nor a menu holding them: the only way to Features,
-     * Install, FAQ or the changelog was the wordmark. 900px was the older
-     * choice, to match the landing bar, and it put these links on screen
-     * beside a hamburger listing the same links.
+     * This was 72rem, on the reasoning that the hamburger appears at 72rem and
+     * its menu -- MobileMenuFooter.astro -- lists these same links, so showing
+     * both would be two navigations on one screen. The hamburger does not
+     * appear at 72rem. It is Starlight's `.sl-menu-button`, which is
+     * `md:sl-hidden`, so it arrives at 50rem. Between 800px and 1152px the
+     * links were hidden and nothing replaced them.
      *
-     * The rule is the one both mistakes point at: exactly one navigation at
-     * every width. The links go when the menu that lists them arrives.
+     * The sidebar does not cover this. It lists the pages of the docs;
+     * these are Features, Install, FAQ, Docs, Changelog and GitHub, and five
+     * of the six appear nowhere else on the page. Losing them is losing the
+     * only route to the rest of the site.
      *
-     * Nav.astro keeps its own 900px: the landing page has no sidebar and no
-     * hamburger, so nothing there duplicates its links. */
+     * Room is not the constraint the old note thought it might be: measured
+     * at 802px, the narrowest width this band covers, the four elements come
+     * to 612px (wordmark 160, search 40, links 311, theme 101) of the 744px
+     * the bar has.
+     *
+     * Nav.astro keeps its own 900px. The landing page has no sidebar and no
+     * hamburger, so the two numbers are not a pair to keep in step. */
     @media (max-width: 49.99rem) {
       .docs-nav-links {
         display: none;

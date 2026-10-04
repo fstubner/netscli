@@ -128,8 +128,11 @@ export function initDocsSearchResilience(): void {
     if (timer) clearTimeout(timer);
     // Native <dialog> restores focus to whatever was focused when it opened,
     // which here is nothing -- Starlight opens it from a keyboard shortcut as
-    // well as a click. Put focus back on the trigger explicitly.
-    if (opener?.isConnected) opener.focus();
+    // well as a click. Put focus back on the trigger explicitly -- without
+    // scrolling: the trigger is in the sticky header, which sits inside the
+    // docs' `scroll-padding-top`, so a plain focus() jumps the page up (the
+    // same fault as the theme menu; see scripts/theme-select.ts).
+    if (opener?.isConnected) opener.focus({ preventScroll: true });
   };
 
   document.addEventListener('input', onInput, true);

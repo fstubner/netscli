@@ -34,6 +34,7 @@ import { modules } from './modules';
    ones a product has no destination for removed. */
 const allLinks: NavLink[] = [
   { label: 'Features', section: 'surfaces', mobileGroup: 'site' },
+  { label: 'Compare', section: 'compare', mobileGroup: 'site' },
   { label: 'Install', section: 'install', mobileGroup: 'site' },
   { label: 'FAQ', section: 'faq', mobileGroup: 'site' },
   { label: 'Docs', href: '/docs/', mobileGroup: 'site' },

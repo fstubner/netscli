@@ -75,11 +75,35 @@ html[data-theme='light'][data-docs-scrolled='true'] header.header::after {
   }
 }
 
-/* Tablet: the search control collapses to its icon. There is no menu
-   button at this width: Starlight 0.42 shows its popover button only below
-   50rem, so the header links stay (Header.astro) and nothing needs room
-   kept for it at the bar's right edge. */
+@media (min-width: 50rem) and (max-width: 72rem) {
+  .header .docs-topbar {
+    padding-inline-end: 2.25rem;
+  }
+}
+
+/* Tablet: the search control collapses to its icon and the menu button
+   pins to the bar's right edge. */
 @media (max-width: 72rem) {
+  /* Starlight's menu button. It was a <starlight-menu-button> element with
+     a <button> inside until Starlight 0.42, which made it a bare
+     `button.sl-menu-button` opening the sidebar as a popover. Every rule here
+     and in header-controls.css still named the old element, matched nothing,
+     and the button fell back to Starlight's own white circle. No `display`
+     here: Starlight's `md:sl-hidden` decides where it shows (below 50rem),
+     and an unlayered display would outrank that. */
+  .sl-menu-button {
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+  }
+
+  .sl-menu-button svg {
+    width: 1.15rem;
+    height: 1.15rem;
+  }
+
   .docs-topbar {
     gap: 0.45rem;
     width: 100vw;
@@ -87,40 +111,44 @@ html[data-theme='light'][data-docs-scrolled='true'] header.header::after {
     padding-inline: 1rem;
   }
 
-  /* Collapsed, the search joins the controls on the right.
+  /* The row gap stays tight here, because logo, links, search and theme
+     control all have to fit, but the steps after the links -- to the search
+     button, and from it to the theme control -- match the gap between the
+     links (--ui-nav-link-gap). At the row gap alone they were 7px, with 12px
+     between every link. */
+  .docs-header-search,
+  .docs-header-theme {
+    margin-inline-start: calc(var(--ui-nav-link-gap) - 0.45rem);
+  }
+
+  /* Collapsed, search shrinks to an icon.
    *
-   * Full width it is a labelled box beside the wordmark, which reads as part
-   * of the identity group. Collapsed to a 2.5rem icon it does not: measured
-   * at 1150px it sat at x=207 with the wordmark ending at 188 and the next
-   * element 454px further along, a lone square in the middle of nothing. It
-   * belongs with the theme control and the menu button, which are the other
-   * two icons that size.
+   * Two things used to happen here and neither does now. `order: 2` on search
+   * and `order: 3` on the theme control moved both into a right-hand cluster,
+   * because the links were hidden in this band and search would otherwise
+   * have been left stranded beside the wordmark. And the seam -- the auto
+   * margin that holds the two halves of the bar apart -- sat on
+   * .docs-nav-links, with a separate rule handing it to search only below
+   * 900px, where the links were also hidden.
    *
-   * `order` rather than a second markup slot, so one component still renders
-   * one search. No auto margin here either -- two auto margins on one flex
-   * row split the free space between them.
+   * Both were built around the links being gone, and the links are back (see
+   * Header.astro). So DOM order applies again and the bar reads the same at
+   * every width above 50rem: wordmark, seam, links, search, theme control.
+   * The seam is the auto margin on .docs-nav-links (Header.astro).
    *
-   * The seam moves for this band. Full width it sits on .docs-header-search,
-   * which is the first element of the right-hand group; here search is an
-   * icon that has already moved into the right cluster by `order`, so the
-   * links carry it instead. Without that the bar has no seam at all between
-   * 900px and 72rem and every element bunches to the left. */
+   * What the old arrangement cost, measured on the built site before this
+   * change: the links hid at 72rem and the seam rule was left at 900px, so
+   * from 901px to 1152px the seam sat on an element with `display: none`,
+   * which takes no part in flex layout and cannot carry a margin. Search came
+   * to rest at x=207 with 861px of empty bar to its right at 1142px, and
+   * 621px at 902px. */
   .docs-header-search {
-    order: 2;
     display: flex;
     flex: 0 0 2.5rem;
     width: 2.5rem;
     max-width: 2.5rem;
     min-width: 2.5rem;
-    margin-inline: 0;
-  }
-
-  .docs-nav-links {
-    margin-inline-start: auto;
-  }
-
-  .docs-header-theme {
-    order: 3;
+    margin-inline-end: 0;
   }
 
   .docs-header-search site-search,
@@ -140,16 +168,6 @@ html[data-theme='light'][data-docs-scrolled='true'] header.header::after {
   .docs-header-search site-search button[data-open-modal] span,
   .docs-header-search site-search button[data-open-modal] kbd {
     display: none;
-  }
-}
-
-/* Between 800 and 900px the links and the theme control are both hidden
-   (Header.astro), so the seam that pushed search rightward goes with them and
-   it would fall back beside the wordmark. Search carries the auto margin
-   itself in that band -- there is nothing left for it to collide with. */
-@media (min-width: 50rem) and (max-width: 900px) {
-  .docs-header-search {
-    margin-inline-start: auto;
   }
 }
 
@@ -192,25 +210,10 @@ html[data-theme='light'][data-docs-scrolled='true'] header.header::after {
     margin-inline-end: 0.15rem;
   }
 
-  /* Starlight 0.42's menu button: a plain <button popovertarget> inside the
-     sidebar's <nav>. It was a <starlight-menu-button> host before, and rules
-     written for that element matched nothing after the upgrade, so the button
-     fell back to Starlight's own round white one beside a square search box. */
   .sl-menu-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
     position: fixed;
     inset-block-start: 0.625rem;
     inset-inline-end: 0.75rem;
     z-index: calc(var(--sl-z-index-navbar) + 2);
-    width: 2.5rem;
-    height: 2.5rem;
-    padding: 0;
-  }
-
-  .sl-menu-button svg {
-    width: 1.15rem;
-    height: 1.15rem;
   }
 }

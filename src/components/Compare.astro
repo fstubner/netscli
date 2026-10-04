@@ -12,6 +12,8 @@ const highlightIndex = compareColumns.findIndex((c) => c.highlight);
 <section id="compare">
   <div class="w">
     <h2>{compareCopy.heading}</h2>
+    {/* Optional: a table can stand on its heading, and a lead that only
+        lists what was compared is filler. */}
     {compareCopy.leadHtml && <p class="lead" set:html={compareCopy.leadHtml} />}
 
     <!-- Focusable because it scrolls: six columns do not fit a phone, and axe
@@ -33,7 +35,14 @@ const highlightIndex = compareColumns.findIndex((c) => c.highlight);
               <th scope="row">{row.feature}</th>
               {row.cells.map((cell, i) => (
                 <td class={`col${i === highlightIndex ? ' mine' : ''}${cell === '—' ? ' none' : ''}`}>
-                  {cell}
+                  {cell === '—' ? (
+                    <>
+                      <span aria-hidden="true">—</span>
+                      <span class="sr-only">Not offered</span>
+                    </>
+                  ) : (
+                    cell
+                  )}
                 </td>
               ))}
             </tr>
@@ -42,16 +51,18 @@ const highlightIndex = compareColumns.findIndex((c) => c.highlight);
       </table>
     </div>
 
-    <div class="compare-note" set:html={compareNoteHtml} />
+    {/* A div, not a p: the notes may be several paragraphs of their own. */}
+    {compareNoteHtml && <div class="compare-note" set:html={compareNoteHtml} />}
   </div>
 </section>
 
 <style is:global>
 /* ─── COMPARISON MATRIX ─── */
 
-/* Drawn the way Supabase and Linear draw one: hairlines, no boxes, no capsules,
-   and the compared column marked by a tint and a single left rule rather than
-   ruled on four sides. */
+/* Drawn the way Supabase and Linear draw one: hairlines, no boxes, no capsules.
+   The compared column is outlined in the accent rather than tinted. A tint
+   was tried and read as a highlighted run of cells, not as the product the
+   table is about. */
 .compare-scroll{overflow-x:auto;margin-bottom:14px}
 .compare-table{
   width:100%;
@@ -65,9 +76,12 @@ const highlightIndex = compareColumns.findIndex((c) => c.highlight);
   text-align:left;
   padding:12px 18px 12px 0;
   border-bottom:1px solid rgba(var(--ui-hairline-rgb),.14);
-  vertical-align:middle;
-  white-space:nowrap;
+  vertical-align:top;
 }
+/* Headers stay on one line; answer cells wrap. Answers are often short
+   phrases rather than ticks, and unwrapped they push the table past a
+   1024px window. */
+.compare-table thead th{white-space:nowrap}
 .compare-table thead th{
   padding-bottom:10px;
   border-bottom:1px solid rgba(var(--ui-hairline-rgb),.26);
@@ -84,7 +98,7 @@ const highlightIndex = compareColumns.findIndex((c) => c.highlight);
   color:var(--ui-text);
   white-space:normal;
   padding-right:28px;
-  min-width:15rem;
+  min-width:11rem;
 }
 
 .compare-table th.col,
@@ -94,29 +108,40 @@ const highlightIndex = compareColumns.findIndex((c) => c.highlight);
   color:var(--ui-text);
 }
 
-/* A dash is an absence, so it recedes rather than competing with the answers. */
+/* A dash only marks an empty cell, so it sits well back: the ticks and the
+   words are what a reader scans for. It is aria-hidden and screen readers get
+   "Not offered" instead, so the faint glyph carries no information on its
+   own -- which is also why it can go below the text contrast floor. */
 .compare-table td.none{color:var(--ui-text-muted)}
+.compare-table td.none [aria-hidden]{opacity:.4}
 
-/* The tint composites to rgb(41,40,55) in the dark theme, where --ui-accent
-   measures 4.30:1 and fails the contrast floor. Text in this column uses
-   --ui-accent-bright instead: 8.83:1 dark, 8.23:1 light. */
+/* The column's cells read in the body colour; only its header is green, in
+   --ui-accent-bright rather than --ui-accent, which is too dim for text on
+   the page ground in the dark theme. The outline is
+   four borders on the column's cells: border-collapse lets the left cell's
+   border win a tie, so its right edge is not lost to the next column's
+   hairline. */
 .compare-table th.mine,
 .compare-table td.mine{
-  background:rgba(var(--ui-accent-rgb),.055);
-  color:var(--ui-accent-bright);
+  --compare-outline:1px solid rgba(var(--ui-accent-rgb),.7);
+  border-left:var(--compare-outline);
+  border-right:var(--compare-outline);
+  padding-right:18px;
+  color:var(--ui-text);
   font-weight:600;
 }
+.compare-table thead th.mine{border-top:var(--compare-outline);padding-top:10px}
+.compare-table tbody tr:last-child td.mine{border-bottom:var(--compare-outline)}
 .compare-table thead th.mine{color:var(--ui-accent-bright)}
 .compare-table td.mine.none{color:var(--ui-text-muted);font-weight:400}
 
-/* The table's footnotes: as wide as the table they annotate. At 62ch they
-   ran down the page under the first two columns, a narrow block of small
-   print beside a wide table. Each <p> in the HTML is one note. */
 .compare-note{
   font-size:.75rem;
   line-height:1.6;
   color:var(--ui-text-muted);
   margin:0;
+  /* No max-width: as wide as the table it annotates. At 62ch a longer note
+     wrapped into a narrow column under a full-width table. */
 }
 .compare-note p{margin:0 0 4px}
 
@@ -125,6 +150,6 @@ const highlightIndex = compareColumns.findIndex((c) => c.highlight);
   .compare-table td{padding:10px 12px 10px 0}
   .compare-table th.col,
   .compare-table td.col{padding-left:12px}
-  .compare-table tbody th{min-width:12rem}
+  .compare-table tbody th{min-width:9rem}
 }
 </style>

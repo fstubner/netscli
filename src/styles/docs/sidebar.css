@@ -25,11 +25,12 @@
   border-inline-start-color: var(--sl-color-hairline);
 }
 
+/* Group labels in the case they are written in ("Start", "Interfaces"),
+   not small caps. Uppercase with tracking was the only all-caps text on the
+   site, and read as a louder heading than the page links under it. */
 .sidebar-content summary {
-  color: var(--sl-color-gray-3);
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  color: var(--sl-color-gray-2);
+  font-size: 0.8125rem;
   font-weight: 650;
   padding-inline-end: 0;
 }

@@ -50,7 +50,7 @@ export interface Meta {
   themeColor: string;
 }
 
-/** A comparison column. `highlight` marks this product's, which is tinted. */
+/** A comparison column. `highlight` marks this product's, which is outlined in the accent. */
 export interface ComparisonColumn {
   name: string;
   highlight?: boolean;

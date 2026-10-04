@@ -54,7 +54,45 @@
     z-index: calc(var(--sl-z-index-navbar) - 2);
     width: 100%;
     background: var(--sl-color-bg-nav);
+    backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--sl-color-hairline);
+  }
+
+  /* Once scrolled, the header's shadow and gradient (docs/header.css) fell
+     on this bar and darkened it. With the bar present both move to its
+     bottom edge, so header and bar are one surface, shaded once. */
+  html[data-docs-scrolled='true']:has(.ui-mobile-toc-wrapper) header.header {
+    box-shadow: none;
+  }
+
+  html[data-docs-scrolled='true']:has(.ui-mobile-toc-wrapper) header.header::after {
+    opacity: 0;
+  }
+
+  html[data-docs-scrolled='true'] .ui-mobile-toc-wrapper {
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+  }
+
+  html[data-theme='light'][data-docs-scrolled='true'] .ui-mobile-toc-wrapper {
+    box-shadow: 0 14px 30px rgba(var(--ui-hairline-rgb), 0.11);
+  }
+
+  /* The gradient is what shows in dark (the shadow is black on near-black).
+     Dark only, as on the header. */
+  .ui-mobile-toc-wrapper::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    bottom: -28px;
+    height: 28px;
+    pointer-events: none;
+    opacity: 0;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.34), rgba(0, 0, 0, 0));
+    transition: opacity 160ms ease;
+  }
+
+  html[data-docs-scrolled='true']:not([data-theme='light']) .ui-mobile-toc-wrapper::after {
+    opacity: 1;
   }
 
   mobile-starlight-toc {
@@ -72,17 +110,37 @@
     width: 100%;
     border: 0;
     background: transparent;
-    backdrop-filter: blur(16px);
     box-shadow: none;
   }
 
+  /* End padding clears the Copy page button (.ui-mobile-toc-actions). */
   mobile-starlight-toc summary {
     display: flex;
     align-items: center;
     gap: 0.65rem;
     height: var(--ui-mobile-toc-bar-height);
-    padding: 0 clamp(1rem, 3.4vw, 1.75rem);
+    padding: 0 calc(clamp(1rem, 3.4vw, 1.75rem) + 7.5rem) 0 clamp(1rem, 3.4vw, 1.75rem);
     border: 0;
+  }
+
+  /* Copy page at the bar's end: outside <details>, above the summary. */
+  .ui-mobile-toc-actions {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-end: clamp(1rem, 3.4vw, 1.75rem);
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    height: var(--ui-mobile-toc-bar-height);
+  }
+
+  /* Phones: icon only. The button keeps its accessible name. */
+  @media (max-width: 36rem) {
+    mobile-starlight-toc summary {
+      padding-inline-end: calc(clamp(1rem, 3.4vw, 1.75rem) + 2.75rem);
+    }
+
+    .ui-mobile-toc-actions .copy-page-label { display: none; }
   }
 
   mobile-starlight-toc summary:focus-visible {
@@ -137,8 +195,10 @@
     box-shadow: none;
   }
 
+  /* Below and to the sides only: offset + |spread| = blur, so nothing is
+     drawn above the top edge. It was 0 18px 42px, a dark band over the bar. */
   mobile-starlight-toc details[open] .dropdown {
-    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.34);
+    box-shadow: 0 16px 32px -16px rgba(0, 0, 0, 0.45);
   }
 
   mobile-starlight-toc .dropdown ul {
@@ -175,10 +235,9 @@
     display: none;
   }
 
-  /* ---- Bar, light theme ---- */
+  /* ---- Bar, light theme ----
+     Colour only: a 72%-white background here drew a box behind the label. */
   html[data-theme='light'] mobile-starlight-toc .toggle {
-    border-color: rgba(var(--ui-hairline-rgb), 0.14);
-    background: rgba(255, 255, 255, 0.72);
     color: var(--sl-color-gray-1);
   }
 

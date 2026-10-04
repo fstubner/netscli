@@ -91,6 +91,7 @@ export default defineConfig({
       // scripts/css-regions.mjs and css-shadowing.mjs hold this shape.
       customCss: [
         './src/styles/tokens.css',
+        './src/styles/nav-spacing.css',
         './src/styles/docs/theme.css',
         './src/styles/docs/base.css',
         './src/styles/docs/shell.css',
