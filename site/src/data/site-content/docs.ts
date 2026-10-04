@@ -47,6 +47,7 @@ export const docsSidebar: DocsSection[] = [
     items: [
       { label: 'Core library and crates', link: '/docs/core-library/' },
       { label: 'Result model', link: '/docs/result-model/' },
+      { label: 'Privacy', link: '/docs/privacy/' },
     ],
   },
 ];
