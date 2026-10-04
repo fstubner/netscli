@@ -1,0 +1,33 @@
+/* Spacing inside both top bars: the landing nav (components/Nav.astro) and
+ * the docs header (components/starlight/Header.astro).
+ *
+ * One set of values, because the two bars had drifted apart: 20px between
+ * links on the landing page against 18.4px in the docs, and 52px around the
+ * group separator against 39px, which was obvious flipping between the two.
+ *
+ * `link-gap` is between neighbouring items (links, and the theme control after
+ * them); `group-gap` is the extra margin before the first page link. The
+ * separator is centred in the whole space between the two groups, which is
+ * both added together (plus its own 1px): centring it in the margin alone put
+ * it 20px nearer Docs than FAQ.
+ *
+ * Its own file rather than tokens.css, like theme-control.css, because it
+ * describes one component and tokens.css is at the 300-line guard. Both
+ * stacks load it: Page.astro for the landing page, astro.config.mjs's
+ * customCss for the docs.
+ */
+:root {
+  --ui-nav-link-gap: 1.25rem;
+  --ui-nav-group-gap: 2rem;
+  --ui-nav-font-size: 0.8125rem;
+}
+
+/* Between the width where the bars collapse into a menu (900px) and 72rem,
+   the docs bar has search, six links and the theme control to fit, so both
+   bars tighten together here rather than the docs bar alone. */
+@media (max-width: 72rem) {
+  :root {
+    --ui-nav-link-gap: 0.75rem;
+    --ui-nav-font-size: 0.76rem;
+  }
+}

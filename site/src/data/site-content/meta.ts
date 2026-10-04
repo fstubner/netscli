@@ -6,7 +6,7 @@ export const meta: Meta = {
   // a search result shows on words nobody searches for. The interfaces are the
   // differentiator, and MCP is the one term here with real intent behind it
   // and almost no competition.
-  title: 'NetsCLI — Network Scanner for Desktop, CLI, and MCP',
+  title: 'NetsCLI | Network Scanner for Desktop, CLI, and MCP',
   // 153 characters. The previous one ran to 172 and was cut around 158, which
   // truncated the MCP mention off the end -- the most valuable word in it. It
   // also ran operations and interfaces through a single "for" series
@@ -15,22 +15,22 @@ export const meta: Meta = {
   // "inspect hosts", not "trace routes": the sentence attributes what it
   // lists to all four interfaces, and the MCP server has no traceroute tool.
   // `inspect_host` is a real MCP tool, so the swap keeps the claim true.
-  // Measured at 154 characters in the built page, one more than the 153 this
-  // replaced -- still inside the ~160 a search result shows, and the MCP
-  // mention this description was rewritten to protect is nowhere near the cut.
+  // "TCP and UDP" took it to 162, past the ~160 a search result shows, so
+  // the closer became the hero's "All on one Rust core." Check the length in
+  // the built page after any edit; the MCP mention must stay clear of the cut.
   description:
-    'Discover LAN devices, scan TCP ports, query DNS, and inspect hosts from a desktop app, terminal UI, CLI, or MCP server. One Rust core, consistent results.',
+    'Discover LAN devices, scan TCP and UDP ports, query DNS, and inspect hosts from a desktop app, terminal UI, CLI, or MCP server. All on one Rust core.',
   // Same scoping as the hero subhead: capture is not in any published desktop
   // installer, so this must not imply it ships with the app. It is what search
   // results and link previews show, which is where an inaccurate claim travels
   // furthest.
   ogDescription:
-    'Discover LAN devices, scan TCP ports, query DNS, and inspect hosts from the desktop app, terminal UI, CLI, or MCP server backed by one Rust core. Packet capture in capture-enabled CLI builds.',
+    'Discover LAN devices, scan TCP and UDP ports, query DNS, and inspect hosts from the desktop app, terminal UI, CLI, or MCP server backed by one Rust core. Packet capture in capture-enabled CLI builds.',
   siteName: 'NetsCLI',
   author: { name: 'Felix Stubner', url: 'https://github.com/fstubner' },
   ogImage: 'https://netscli.com/assets/tui-discover.png',
   ogImageAlt:
-    'netscli terminal UI running /discover with sanitized lab hostnames, vendors, and response times',
+    'netscli terminal UI running /discover with demo hostnames, vendors, and response times',
   faviconPath: '/favicon.svg',
   themeColor: '#111',
 };

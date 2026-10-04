@@ -21,9 +21,9 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
 }
 
-/* Anchors land under the sticky header without this. The docs never loaded
-   the landing page's base.css, so `scroll-behavior` was `auto` here; the matching
-   scroll-margin on headings is in docs/content.css. */
+/* The docs never loaded the landing page's base.css, so `scroll-behavior`
+   was `auto` here. The offset below the sticky header is Starlight's own
+   `scroll-padding-top`; see the note in docs/content.css. */
 html {
   scroll-behavior: smooth;
 }

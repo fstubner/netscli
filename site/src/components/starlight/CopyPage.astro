@@ -1,0 +1,140 @@
+---
+/**
+ * The "Copy page" button: copies this page's markdown source to the
+ * clipboard. Rendered twice on a docs page -- above the content on wide
+ * screens (MarkdownContent.astro), and at the end of the collapsed "On this
+ * page" bar on narrow ones (PageSidebar.astro), where it stays in reach as the
+ * page scrolls. CSS shows one or the other; the script wires every copy.
+ */
+const { entry } = Astro.locals.starlightRoute;
+// 'docs/cli' -> 'cli'. The section index arrives as the bare id 'docs',
+// which the strip does not match -- see the same mapping in
+// src/pages/docs/[...slug].md.ts, which serves these files.
+const slug = entry.id === 'docs' ? 'index' : entry.id.replace(/^docs\//, '');
+const markdownHref = `/docs/${slug}.md`;
+---
+
+<button
+  type="button"
+  class="copy-page"
+  hidden
+  data-markdown-href={markdownHref}
+  aria-label="Copy this page as markdown"
+  title="Copy this page as markdown"
+>
+  <svg class="copy-page-icon" aria-hidden="true" viewBox="0 0 16 16" focusable="false">
+    <path d="M5.5 2.5h7v9h-7z"></path>
+    <path d="M3.5 4.5h-1v9h7v-1"></path>
+  </svg>
+  <svg class="copy-page-done" aria-hidden="true" viewBox="0 0 16 16" focusable="false">
+    <path d="M3 8.2 6.1 11 13 4"></path>
+  </svg>
+  <svg class="copy-page-failed" aria-hidden="true" viewBox="0 0 16 16" focusable="false">
+    <path d="M4 4l8 8M12 4l-8 8"></path>
+  </svg>
+  <span class="copy-page-label">Copy page</span>
+</button>
+
+<script>
+  // Progressive enhancement: the button ships `hidden` and is revealed only
+  // once this has wired it. A visible control that does nothing is worse
+  // than no control.
+  document.querySelectorAll<HTMLButtonElement>('.copy-page').forEach((button) => {
+    const href = button.dataset.markdownHref;
+    if (!href || !navigator.clipboard) return;
+    button.hidden = false;
+
+    const label = button.querySelector('.copy-page-label');
+    const original = label?.textContent ?? 'Copy page';
+    let resetAt: ReturnType<typeof setTimeout> | undefined;
+
+    button.addEventListener('click', async () => {
+      const say = (text: string, state: string) => {
+        if (label) label.textContent = text;
+        button.dataset.state = state;
+        clearTimeout(resetAt);
+        resetAt = setTimeout(() => {
+          if (label) label.textContent = original;
+          delete button.dataset.state;
+        }, 2000);
+      };
+
+      try {
+        const response = await fetch(href);
+        if (!response.ok) throw new Error(String(response.status));
+        await navigator.clipboard.writeText(await response.text());
+        say('Copied', 'copied');
+      } catch {
+        // Say so rather than looking like it worked. A silent failure leaves
+        // the reader pasting whatever was on the clipboard before.
+        say('Failed', 'failed');
+      }
+    });
+  });
+</script>
+
+<style>
+  @layer starlight.core {
+    .copy-page {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4em;
+      padding: 0.35rem 0.7rem;
+      border: 1px solid var(--sl-color-gray-5);
+      border-radius: 7px;
+      background: transparent;
+      color: var(--sl-color-gray-2);
+      font: inherit;
+      font-size: 0.8125rem;
+      line-height: 1;
+      cursor: pointer;
+      transition:
+        color 140ms ease,
+        border-color 140ms ease,
+        background 140ms ease;
+    }
+
+    .copy-page:hover,
+    .copy-page:focus-visible {
+      color: var(--sl-color-white);
+      border-color: var(--sl-color-gray-4);
+      background: var(--sl-color-gray-6);
+    }
+
+    /* The site's accent, not Starlight's green -- they are different hues and
+       everything else here that means "good" uses --ui-accent. */
+    .copy-page[data-state='copied'] {
+      color: var(--ui-accent-bright);
+      border-color: rgba(var(--ui-accent-rgb), 0.48);
+    }
+
+    /* A tick while it says "Copied" and a cross while it says "Failed", as
+       the landing page's copy buttons do. In the "On this page" bar the label
+       is hidden, so the icon is the only sign of what happened. */
+    .copy-page-done,
+    .copy-page-failed,
+    .copy-page[data-state] .copy-page-icon {
+      display: none;
+    }
+
+    .copy-page[data-state='copied'] .copy-page-done,
+    .copy-page[data-state='failed'] .copy-page-failed {
+      display: block;
+    }
+
+    .copy-page[data-state='failed'] {
+      color: var(--sl-color-red-high);
+      border-color: var(--sl-color-red);
+    }
+
+    .copy-page svg {
+      width: 14px;
+      height: 14px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+  }
+</style>
