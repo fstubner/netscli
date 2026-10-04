@@ -29,14 +29,34 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# Everything this prints also goes to the job summary. The bundler captures
+# the command's stdout and stderr and, when it fails, reports only "failed to
+# run pwsh": the v0.3.4 release lost its Windows build that way with no
+# reason anywhere in the log. The summary file is the one place a child of
+# the bundler can still reach. Credentials are blanked first, because ssign's
+# own messages may repeat them.
+function Log([string]$Message) {
+    Write-Host "sign-windows-pe: $Message"
+    if ($env:GITHUB_STEP_SUMMARY) {
+        $text = $Message
+        foreach ($secret in @($env:CERTUM_EMAIL, $env:CERTUM_OTP)) {
+            if ($secret) { $text = $text.Replace($secret, '***') }
+        }
+        Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value "sign-windows-pe: $text"
+    }
+}
+
 # Plain stderr and an explicit exit code. Write-Error under 'Stop' would end
 # the script with exit 1 before any `exit $code` ran, so a signer that failed
 # with its own code would be reported as 1, wrapped in PowerShell's
 # formatting noise.
 function Fail([string]$Message, [int]$Code = 1) {
+    Log "FAILED: $Message"
     [Console]::Error.WriteLine("sign-windows-pe: $Message")
     exit $Code
 }
+
+Log "called for '$Path' (pwsh $($PSVersionTable.PSVersion))"
 
 if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
     Fail "no such file: $Path"
@@ -46,7 +66,7 @@ $name = Split-Path -Leaf $Path
 $extension = [IO.Path]::GetExtension($Path).ToLowerInvariant()
 
 if ($extension -eq '.msi') {
-    Write-Host "sign-windows-pe: leaving $name for the sign-windows job"
+    Log "leaving $name for the sign-windows job"
     exit 0
 }
 
@@ -63,7 +83,7 @@ if ($extension -eq '.msi') {
 # WiX DLLs, then the finished .msi.
 $segments = ($Path -replace '/', '\').ToLowerInvariant().Split('\')
 if ($segments -contains 'wix') {
-    Write-Host "sign-windows-pe: leaving $name alone (WiX toolset, not part of the app)"
+    Log "leaving $name alone (WiX toolset, not part of the app)"
     exit 0
 }
 
@@ -72,10 +92,12 @@ if (-not $ssign -or -not (Test-Path -LiteralPath $ssign -PathType Leaf)) {
     Fail "NETSCLI_SSIGN does not point at ssign.exe ('$ssign')"
 }
 
-Write-Host "sign-windows-pe: signing $name"
-& $ssign $Path
-if ($LASTEXITCODE -ne 0) {
-    Fail "ssign exited $LASTEXITCODE for $name" $LASTEXITCODE
+Log "signing $name"
+$output = & $ssign $Path 2>&1 | Out-String
+$code = $LASTEXITCODE
+Log "ssign exited $code. Output:`n$($output.Trim())"
+if ($code -ne 0) {
+    Fail "ssign exited $code for $name" $code
 }
 
 # Read the signature back through Windows' own verifier rather than trusting
@@ -85,5 +107,5 @@ $signature = Get-AuthenticodeSignature -LiteralPath $Path
 if ($signature.Status -ne 'Valid') {
     Fail "$name signature status is '$($signature.Status)': $($signature.StatusMessage)"
 }
-Write-Host "sign-windows-pe: $name signed by $($signature.SignerCertificate.Subject)"
+Log "$name signed by $($signature.SignerCertificate.Subject)"
 exit 0
