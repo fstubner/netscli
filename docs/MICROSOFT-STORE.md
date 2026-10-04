@@ -14,8 +14,12 @@ Checked on 2026-10-04 against the published v0.3.4 installer.
   and `Get-AuthenticodeSignature` reports **Valid** for it and for the MSI,
   signed by the Certum certificate. The Store requires this for the installer
   and every program inside it, and v0.3.3 failed it.
-- **The installer URL is versioned and never changes.** GitHub Release asset
-  URLs include the tag.
+- **The installer URL is versioned, never changes, and does not redirect.**
+  The Store refuses a URL that redirects, and every GitHub release download
+  does (302 to a signed, expiring address). So the site serves the last three
+  releases' MSIs itself, at `https://netscli.com/download/<tag>/netscli-gui-windows-x86_64.msi`,
+  each checked against its release's published SHA-256 when the site is built
+  (`scripts/release/stage-store-downloads.sh`, run by `pages.yml`).
 - **Silent install.** For MSI packages the Store runs the installer with `/qn`
   itself, so there are no installer parameters to enter. The MSI installs per
   machine, so Windows shows a UAC prompt, which the Store allows.
@@ -62,7 +66,7 @@ reserve **NetsCLI**.
 | Pricing and availability | Free, all markets |
 | Properties | Category **Developer tools**. Privacy policy URL from above. Website https://netscli.com. Support contact https://github.com/fstubner/netscli/issues |
 | Age ratings | Complete the IARC questionnaire. No violence, no user content, no communication between users, no purchases. It reads local network information, which the privacy policy covers. |
-| Packages | Package URL `https://github.com/fstubner/netscli/releases/download/v0.3.4/netscli-gui-windows-x86_64.msi`. Architecture **x64**. Language **English (en-us)**. App type **MSI**. |
+| Packages | Package URL `https://netscli.com/download/v0.3.4/netscli-gui-windows-x86_64.msi`. Architecture **x64**. Language **English (en-us)**. App type **MSI**. |
 | Store listing | The text and images below |
 | Submission options | Paste the certification notes below |
 
@@ -70,6 +74,9 @@ reserve **NetsCLI**.
 
 Accept the agreements and submit. Certification usually takes a few business
 days. Each later release needs a new submission with that release's MSI URL.
+The site only picks up a new release's MSI when it is next deployed, so after
+publishing a release run the Deploy GitHub Pages workflow (or merge any site
+change) before giving the Store the new URL.
 That can be automated with the Store submission API once the first one has
 passed.
 

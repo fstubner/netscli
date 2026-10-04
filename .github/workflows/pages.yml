@@ -35,6 +35,8 @@ on:
       - 'scripts/install.ps1'
       - 'scripts/install.sh'
       - 'apps/netscli-gui/package.json'
+      - 'scripts/release/stage-store-downloads.sh'
+      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
 permissions:
@@ -65,6 +67,14 @@ jobs:
       - name: astro build
         run: npm run build
         working-directory: site
+      # The Microsoft Store takes the desktop MSI by URL and refuses one that
+      # redirects, which every GitHub release download does. So the last
+      # few releases' MSIs are served from this site, checked against their
+      # published checksums. See scripts/release/stage-store-downloads.sh.
+      - name: Stage the Windows installers for the Microsoft Store
+        run: bash scripts/release/stage-store-downloads.sh site/dist 3
+        env:
+          GH_TOKEN: ${{ github.token }}
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
       - name: Upload site/dist/
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
