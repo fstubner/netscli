@@ -1,0 +1,57 @@
+---
+import Page from '../layouts/Page.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import { site } from '../data/site';
+import { privacyCopy } from '../data/site-content/privacy';
+
+const { meta } = site;
+
+/* Its own page rather than a docs page. It is a policy, not documentation;
+   app stores link to it, so the address has to outlive any reshuffle of the
+   docs; and it has to exist on a site with the docs switched off. The words
+   are content (src/data/site-content/privacy.ts); this file is only the
+   page around them. */
+---
+
+<Page
+  title={`${privacyCopy.heading} | ${meta.siteName}`}
+  description={`What ${meta.siteName} collects, what stays on your computer, and what reaches the internet.`}
+  canonicalPath="/privacy/"
+  includeFaqSchema={false}
+>
+  <Nav />
+  <main id="main" class="policy-shell">
+    <header class="policy-hero">
+      <h1>{privacyCopy.heading}</h1>
+      <p set:html={privacyCopy.leadHtml} />
+    </header>
+    <div class="policy-body" set:html={privacyCopy.bodyHtml} />
+  </main>
+  <Footer />
+</Page>
+
+<style is:global>
+/* ─── PRIVACY ─── */
+.policy-shell{
+  max-width:var(--ui-shell-width);margin:0 auto;padding:64px var(--ui-shell-gutter) 86px;
+}
+.policy-hero{
+  border-bottom:1px solid rgba(var(--ui-lift-rgb),.08);
+  padding-bottom:28px;margin-bottom:12px;
+}
+.policy-hero h1{
+  margin:0;color:var(--ui-text-strong);font-size:clamp(2rem,4vw,3rem);
+  line-height:1.1;letter-spacing:-.02em;
+}
+.policy-hero p{margin:12px 0 0;color:var(--ui-text-muted);font-size:.95rem;max-width:680px}
+.policy-body{max-width:680px;color:var(--ui-text);font-size:.95rem;line-height:1.65}
+.policy-body h2{
+  margin:32px 0 8px;color:var(--ui-text-strong);font-size:1.15rem;letter-spacing:-.01em;
+}
+.policy-body p{margin:0 0 12px}
+.policy-body ul{margin:0 0 12px;padding-left:1.25rem}
+.policy-body li{margin:0 0 8px}
+.policy-body strong{color:var(--ui-text-strong)}
+.policy-body a{color:var(--ui-accent-bright);text-decoration:underline;text-underline-offset:3px}
+</style>

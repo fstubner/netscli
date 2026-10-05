@@ -28,3 +28,4 @@ public/assets/**                    merge=ours
 public/favicon.svg                  merge=ours
 CHANGELOG.md                        merge=ours
 src/data/site-content/compare.ts    merge=ours
+src/data/site-content/privacy.ts    merge=ours
