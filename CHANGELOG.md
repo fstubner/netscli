@@ -26,6 +26,16 @@ its heading and collects entries. The date and the link go on with the tag.
   Felix Stubner. Upgrading from an earlier version leaves one entry, under the
   new name.
 
+### Fixed
+
+- **Discovery on Windows listed devices that had left the network.** The
+  Windows device table keeps an entry for a while after its device goes,
+  and discovery reported those entries as devices. On one network that was
+  4 of 26, none of which answered anything afterwards. Devices found only in
+  the table are now asked again directly, which can add about 2 seconds
+  and only when the table holds such entries, and are listed only if they
+  answer. Devices that ignore ping still answer, so they are still found.
+
 ## [0.3.4] - 2026-10-04
 
 ### Added
