@@ -44,6 +44,7 @@
   },
   "bundle": {
     "active": true,
+    "publisher": "Felix Stubner",
     "targets": "all",
     "icon": [
       "icons/32x32.png",
