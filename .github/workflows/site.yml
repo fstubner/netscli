@@ -147,6 +147,10 @@ jobs:
       # `astro check` or the a11y pass -- see the header of the script.
       - name: Changelog dates
         run: npm run check:changelog
+      # JSON-LD renders as nothing, so a malformed breadcrumb shipped on every
+      # docs page until Search Console flagged it. See the script's header.
+      - name: Structured data
+        run: npm run check:structured-data
       # Runs axe against both themes; see site/scripts/a11y.mjs for why
       # both are needed, and why it prefers the runner's matched
       # chromedriver over the one the npm package downloads.

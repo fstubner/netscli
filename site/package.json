@@ -12,6 +12,7 @@
     "preview": "astro preview",
     "check": "astro check",
     "check:changelog": "node ./scripts/changelog-dates.mjs",
+    "check:structured-data": "node ./scripts/structured-data.mjs",
     "check:css": "node ./scripts/css-shadowing.mjs --max 0",
     "check:regions": "node ./scripts/css-regions.mjs",
     "css:equivalence": "node ./scripts/css-equivalence.mjs",
