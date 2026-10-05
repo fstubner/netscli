@@ -190,8 +190,8 @@ console.log('Identical: the same declaration wins everywhere the model can see.'
 async function captureSearch() {
   const { Builder } = await import('selenium-webdriver');
   const chrome = await import('selenium-webdriver/chrome.js');
-  const { startPreview, resolveChromedriverPath } = await import('./lib/preview-server.mjs');
-  const port = 4329, host = '127.0.0.1', baseUrl = `http://${host}:${port}`;
+  const { choosePort, startPreview, resolveChromedriverPath } = await import('./lib/preview-server.mjs');
+  const host = '127.0.0.1', port = await choosePort(host, 4329), baseUrl = `http://${host}:${port}`;
   const { cleanup } = await startPreview({ baseUrl, host, port, astroCli: join(root, 'node_modules/astro/bin/astro.mjs'), allowReuse: false, reuseHint: 'CSS_EQUIVALENCE_REUSE' });
   try {
     const options = new chrome.Options();

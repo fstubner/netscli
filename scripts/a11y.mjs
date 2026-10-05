@@ -2,10 +2,15 @@ import { spawn } from 'node:child_process';
 import { join } from 'node:path';
 import process from 'node:process';
 
-import { discoverRoutes, startPreview, resolveChromedriverPath } from './lib/preview-server.mjs';
+import { choosePort, discoverRoutes, startPreview, resolveChromedriverPath } from './lib/preview-server.mjs';
 
 const host = process.env.A11Y_HOST || '127.0.0.1';
-const port = process.env.A11Y_PORT || '4322';
+// An explicit A11Y_BASE_URL names a server we do not start, so its port is not ours to change.
+const port = process.env.A11Y_BASE_URL
+  ? process.env.A11Y_PORT || '4322'
+  : await choosePort(host, process.env.A11Y_PORT || '4322', {
+      allowReuse: process.env.A11Y_REUSE_SERVER === '1',
+    });
 const baseUrl = process.env.A11Y_BASE_URL || `http://${host}:${port}`;
 // Falls back to the previous list only if dist/ is missing, so a caller who
 // forgot to build still gets a meaningful run instead of scanning nothing --
@@ -139,15 +144,17 @@ const { cleanup } = await startPreview({
 });
 
 let failed = false;
-for (const theme of THEMES) {
-  const code = await runAxe(theme);
-  if (code !== 0) {
-    failed = true;
-    console.error(`\n✗ Accessibility violations in the ${theme.name} theme.`);
+try {
+  for (const theme of THEMES) {
+    const code = await runAxe(theme);
+    if (code !== 0) {
+      failed = true;
+      console.error(`\n✗ Accessibility violations in the ${theme.name} theme.`);
+    }
   }
+} finally {
+  cleanup();
 }
-
-cleanup();
 if (failed) {
   process.exit(1);
 }

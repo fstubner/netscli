@@ -63,10 +63,12 @@ import lighthouse from 'lighthouse';
 // this file.
 import desktopConfig from 'lighthouse/core/config/desktop-config.js';
 
-import { discoverRoutes, startPreview } from './lib/preview-server.mjs';
+import { choosePort, discoverRoutes, startPreview } from './lib/preview-server.mjs';
 
 const host = process.env.LH_HOST || '127.0.0.1';
-const port = process.env.LH_PORT || '4327';
+const port = await choosePort(host, process.env.LH_PORT || '4327', {
+  allowReuse: process.env.LH_REUSE_SERVER === '1',
+});
 const baseUrl = `http://${host}:${port}`;
 const root = process.cwd();
 

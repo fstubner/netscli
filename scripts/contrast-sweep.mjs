@@ -41,10 +41,12 @@ import { join } from 'node:path';
 import { Builder } from 'selenium-webdriver';
 import chrome from 'selenium-webdriver/chrome.js';
 
-import { discoverRoutes, startPreview, resolveChromedriverPath } from './lib/preview-server.mjs';
+import { choosePort, discoverRoutes, startPreview, resolveChromedriverPath } from './lib/preview-server.mjs';
 
 const host = process.env.SWEEP_HOST || '127.0.0.1';
-const port = process.env.SWEEP_PORT || '4325';
+const port = await choosePort(host, process.env.SWEEP_PORT || '4325', {
+  allowReuse: process.env.SWEEP_REUSE_SERVER === '1',
+});
 const baseUrl = `http://${host}:${port}`;
 const root = process.cwd();
 
