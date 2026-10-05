@@ -33,7 +33,7 @@
     "chromedriver": "^154.0.0",
     "lighthouse": "^13.5.0",
     "linkedom": "^0.18.13",
-    "selenium-webdriver": "^4.49.0",
+    "selenium-webdriver": "^4.50.0",
     "typescript": "^5.5.0"
   },
   "overrides": {
