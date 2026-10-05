@@ -1,4 +1,5 @@
 use super::errors::RpcError;
+use super::progress;
 use super::schemas::{
     clamp_concurrency, clamp_timeout_ms, normalize_ports, validate_subnet, DiscoverParams,
     DnsParams, PingHostParams, ScanParams, SweepParams,
@@ -75,7 +76,21 @@ pub(super) async fn op_discover(p: DiscoverParams) -> Result<Vec<netscli_core::H
     let cfg = ops_config(concurrency, p.timeout);
     let ops = netscli_core::Ops::new(cfg);
     let (_subnet, hosts) = ops
-        .discover_ipv4(Some(subnet), p.resolve_hostnames.unwrap_or(false))
+        .discover_ipv4_with_progress(
+            Some(subnet),
+            p.resolve_hostnames.unwrap_or(false),
+            progress::callback(|e: &netscli_core::DiscoverProgress| {
+                use netscli_core::DiscoverPhase;
+                let (start, span, what) = match e.phase {
+                    DiscoverPhase::Ping => (0.0, 0.8, "pinging"),
+                    DiscoverPhase::Resolve => (0.8, 0.2, "naming hosts"),
+                };
+                (
+                    progress::phase_fraction(start, span, e.completed, e.total),
+                    format!("{what}: {} of {}, {} found", e.completed, e.total, e.found),
+                )
+            }),
+        )
         .await
         .map_err(|e| RpcError::ToolError(e.to_string()))?;
     Ok(hosts)
@@ -91,10 +106,21 @@ pub(super) async fn op_scan_ports(
     // see `ensure_host_allowed` for why the two can differ.
     let ip = ensure_host_allowed(&p.host, netscli_core::DEFAULT_DNS_TIMEOUT_MS).await?;
     let ops = netscli_core::Ops::new(cfg);
+    let progress = progress::callback(|e: &netscli_core::PortScanProgress| {
+        (
+            progress::phase_fraction(0.0, 1.0, e.completed, e.total),
+            format!(
+                "{} of {} ports, {} open",
+                e.completed, e.total, e.open_found
+            ),
+        )
+    });
     let scan = if p.udp.unwrap_or(false) {
-        ops.scan_udp_ports(&ip.to_string(), ports).await
+        ops.scan_udp_ports_with_progress(&ip.to_string(), ports, progress)
+            .await
     } else {
-        ops.scan_ports(&ip.to_string(), ports).await
+        ops.scan_ports_with_progress(&ip.to_string(), ports, progress)
+            .await
     };
     let (_ip, mut res) = scan.map_err(|e| RpcError::ToolError(e.to_string()))?;
     if !p.include_closed.unwrap_or(false) {
@@ -144,8 +170,27 @@ pub(super) async fn op_sweep(p: SweepParams) -> Result<Vec<netscli_core::SweepEn
     let concurrency = clamp_concurrency(p.max_concurrent, netscli_core::DEFAULT_CONCURRENCY);
     let cfg = ops_config(concurrency, p.timeout);
     let ops = netscli_core::Ops::new(cfg);
+    // Pinging is most of a sweep's wait on a quiet network, scanning most
+    // of it on a busy one; the split only has to keep the count rising.
+    let progress = progress::callback(|e: &netscli_core::SweepProgress| {
+        use netscli_core::SweepPhase;
+        let (start, span, what) = match e.phase {
+            SweepPhase::DiscoverPing => (0.0, 0.4, "pinging"),
+            SweepPhase::DiscoverResolve => (0.4, 0.1, "naming hosts"),
+            SweepPhase::Scan => (0.5, 0.5, "scanning hosts"),
+        };
+        (
+            progress::phase_fraction(start, span, e.completed, e.total),
+            format!("{what}: {} of {}, {} found", e.completed, e.total, e.found),
+        )
+    });
     let (_subnet, res) = ops
-        .sweep_ipv4(Some(subnet), ports, p.resolve_hostnames.unwrap_or(false))
+        .sweep_ipv4_with_progress(
+            Some(subnet),
+            ports,
+            p.resolve_hostnames.unwrap_or(false),
+            progress,
+        )
         .await
         .map_err(|e| RpcError::ToolError(e.to_string()))?;
     Ok(res)

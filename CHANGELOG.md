@@ -18,6 +18,14 @@ its heading and collects entries. The date and the link go on with the tag.
 
 ## [Unreleased]
 
+### Added
+
+- **The MCP server reports progress and can be cancelled.** Discover, port
+  scans and sweeps send progress notifications to clients that ask for them,
+  so a long sweep no longer looks stuck. A client that cancels a call now
+  stops the scan, instead of it running to the end and holding one of the
+  server's sixteen request slots.
+
 ### Changed
 
 - **Windows lists the desktop app's publisher as Felix Stubner.** Installed

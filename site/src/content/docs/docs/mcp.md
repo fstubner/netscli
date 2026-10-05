@@ -147,6 +147,18 @@ filtered.
 Closing stdin cancels any operation still running and shuts the
 server down, which is why a client that exits mid-scan leaves nothing behind.
 
+## Progress and cancelling
+
+`discover_network`, `scan_ports` and `sweep_network` report progress while
+they run, for clients that ask for it by sending a `progressToken` in the
+request's `_meta`. The server sends at most four `notifications/progress` a
+second, each with how far through the call it is (out of 1000) and a short
+message such as `scanning hosts: 16 of 23, 10 found`.
+
+A client can stop any call by sending `notifications/cancelled` with the
+call's `requestId`. The scan stops, frees its slot for the next request, and,
+as the protocol asks, sends no response for the cancelled call.
+
 ## Packet capture jobs
 
 Packet-capture tools appear only in MCP builds that include packet-capture support. Captures also need Npcap on Windows or libpcap on Linux/macOS. Supported builds expose two packet-capture styles.
