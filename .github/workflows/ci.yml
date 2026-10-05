@@ -71,6 +71,19 @@ jobs:
           echo "Change runs-on to ubuntu-latest -- public repos get hosted minutes free." >&2
           exit 1
 
+      # `shell: bash` takes whichever bash.exe comes first on the runner's PATH.
+      # That was Git Bash for the runs of 2026-10-04 and WSL's
+      # C:\Windows\System32\bash.exe by those of 2026-10-05, and WSL's bash
+      # cannot open the Windows path of the script the runner writes, so every
+      # later step failed at once
+      # ("C:UsersFelixactions-runner_work_temp....sh: No such file or
+      # directory"). Putting Git's bin first for the rest of the job pins it
+      # without depending on the machine's PATH order. PowerShell, because
+      # this step cannot rely on the bash it is fixing.
+      - name: Use Git Bash for bash steps
+        shell: powershell
+        run: Add-Content -Path $env:GITHUB_PATH -Value "$env:ProgramFiles\Git\bin"
+
       - uses: actions/checkout@v4
         with:
           # check:changelog compares dated headings against tags; with the
