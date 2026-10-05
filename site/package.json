@@ -25,16 +25,16 @@
     "visual:check": "node ./scripts/visual-snapshot.mjs check"
   },
   "dependencies": {
-    "@astrojs/starlight": "^0.42.4",
+    "@astrojs/starlight": "^0.42.5",
     "astro": "^7.3.5"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
     "@axe-core/cli": "^4.13.0",
-    "chromedriver": "^154.0.0",
+    "chromedriver": "^154.0.1",
     "lighthouse": "^13.5.0",
     "linkedom": "^0.18.13",
-    "selenium-webdriver": "^4.49.0",
+    "selenium-webdriver": "^4.50.0",
     "typescript": "^5.5.0"
   },
   "overrides": {
