@@ -40,8 +40,8 @@ part of the site nobody rewrites later.
 3. **`install.ts`**, **`surfaces.ts`**, **`faq.ts`**, **`footer.ts`** — the
    sections down the page. Position 0 in each install list is the recommended
    route and renders as the card.
-4. **`modules.ts`** — turn `docs` or `changelog` off if the product has
-   neither. `docs: false` takes Starlight out of the build too, so the site
+4. **`modules.ts`** — turn `docs`, `changelog` or `privacy` off if the
+   product has no use for it. `docs: false` takes Starlight out of the build too, so the site
    drops to three routes with no config edit; delete the docs sources
    afterwards if they will never come back.
 5. **`sections.ts`** — which landing sections render, in what order, and

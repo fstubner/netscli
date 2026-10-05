@@ -220,8 +220,14 @@ const walk = (rel) => {
   );
 };
 
+// The privacy text is never shown with the page switched off, so its sample
+// is not left to do. Read from the file rather than imported: this script
+// runs under plain node, which cannot load the TypeScript.
+const privacyOff = /\bprivacy:\s*false\b/.test(stripComments(read('src/data/site-content/modules.ts')));
+
 for (const file of SCAN_ROOTS.flatMap(walk)) {
   if (!SCAN_EXTS.includes(path.extname(file))) continue;
+  if (privacyOff && file.replace(/\\/g, '/') === 'src/data/site-content/privacy.ts') continue;
   const body = stripComments(read(file));
   for (const sample of SAMPLE_STRINGS) {
     if (!body.includes(sample)) continue;

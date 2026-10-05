@@ -5,7 +5,7 @@ import Pagination from 'virtual:starlight/components/Pagination';
 import { site } from '../../data/site';
 import Feedback from '../Feedback.astro';
 
-const { meta } = site;
+const { meta, modules } = site;
 const year = new Date().getFullYear();
 ---
 
@@ -34,7 +34,7 @@ const year = new Date().getFullYear();
       <LastUpdated />
       <EditLink />
     </div>
-    <div class="docs-copyright">&copy; {year} {meta.author.name} · MIT · <a href="/privacy/">Privacy</a></div>
+    <div class="docs-copyright">&copy; {year} {meta.author.name} · MIT{modules.privacy && <> · <a href="/privacy/">Privacy</a></>}</div>
   </div>
 </footer>
 

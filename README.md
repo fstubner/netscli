@@ -72,7 +72,7 @@ that way.
 `src/data/site-content/modules.ts`:
 
 ```ts
-export const modules: Modules = { docs: true, changelog: true };
+export const modules: Modules = { docs: true, changelog: true, privacy: true };
 ```
 
 `docs: false` removes the Starlight integration from the build and every
@@ -82,6 +82,9 @@ docs link from the nav, footer, 404 page and surfaces copy. Delete
 `changelog: false` removes the changelog links; delete
 `src/pages/changelog.astro`, `src/scripts/changelog-page.ts` and
 `src/scripts/changelog/` with it; `astro check` fails on the page script otherwise.
+`privacy: false` leaves `/privacy/` out of the build and drops its footer
+links; nothing needs deleting, and `check:content` stops asking for the
+privacy text.
 
 ## Local development
 

@@ -241,6 +241,9 @@ export interface Modules {
   /** Whether the /changelog/ page exists for this product. When false,
    *  nav/footer stop linking to /changelog/. */
   changelog: boolean;
+  /** Whether /privacy/ exists. When false the page is not built
+   *  (src/pages/[policy].astro returns no paths) and the footers drop it. */
+  privacy: boolean;
 }
 
 /** How the landing page arranges its hero and the rhythm below it. */
