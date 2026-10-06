@@ -1,5 +1,5 @@
 import { Terminal } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 
 import { renderValue } from '../../tools/presentation';
 import type { ResultCellContext, ResultColumn, ResultRow, RowSelectionMode, WorkspaceTab } from '../../tools/types';
@@ -13,6 +13,7 @@ import {
   startColumnResize,
   updateOverflowState,
 } from './resultTableInteractions';
+import { DEFAULT_ROW_HEIGHT, rowWindow, scrollTopToShow } from './rowWindow';
 import { StatusPill } from './StatusPill';
 
 interface ResultTableProps {
@@ -59,23 +60,58 @@ export function ResultTable({
     [activeTab.selectedIndex, activeTab.selectedIndices],
   );
 
+  // Only rows in view are rendered once a result is large; see rowWindow.ts.
+  const [viewport, setViewport] = useState({ scrollTop: 0, height: 600 });
+  const [rowHeight, setRowHeight] = useState(DEFAULT_ROW_HEIGHT);
+  const visible = rowWindow(rows.length, viewport.scrollTop, viewport.height, rowHeight);
+
+  // A scroll used to re-render the whole table through this state even when
+  // nothing about the overflow edges had changed.
+  const setOverflowIfChanged = useCallback((next: typeof overflow) => {
+    setOverflow((prev) =>
+      (Object.keys(next) as (keyof typeof overflow)[]).every((key) => prev[key] === next[key]) ? prev : next,
+    );
+  }, []);
+
+  const onShellScroll = () => {
+    const shell = tableShellRef.current;
+    updateOverflowState(shell, setOverflowIfChanged);
+    if (shell) setViewport({ scrollTop: shell.scrollTop, height: shell.clientHeight });
+  };
+
   useEffect(() => {
-    tableShellRef.current
-      ?.querySelector('tr.focused')
-      ?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    const shell = tableShellRef.current;
+    if (!shell) return;
+    const header = shell.querySelector('thead');
+    const row = shell.querySelector<HTMLTableRowElement>('tbody tr[data-row]');
+    const measured = row?.getBoundingClientRect().height;
+    if (measured && Math.abs(measured - rowHeight) > 0.5) setRowHeight(measured);
+    const target = scrollTopToShow(
+      activeTab.selectedIndex,
+      shell.scrollTop,
+      shell.clientHeight,
+      measured ?? rowHeight,
+      header?.getBoundingClientRect().height ?? 0,
+    );
+    if (target !== null) shell.scrollTop = target;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- rowHeight is an output here, not an input
   }, [activeTab.selectedIndex, rows.length]);
 
   useEffect(() => {
     const shell = tableShellRef.current;
-    updateOverflowState(shell, setOverflow);
-    const frame = window.requestAnimationFrame(() => updateOverflowState(shell, setOverflow));
-    const resizeObserver = shell ? new ResizeObserver(() => updateOverflowState(shell, setOverflow)) : null;
+    const measure = () => {
+      updateOverflowState(shell, setOverflowIfChanged);
+      if (shell) setViewport({ scrollTop: shell.scrollTop, height: shell.clientHeight });
+    };
+    measure();
+    const frame = window.requestAnimationFrame(measure);
+    const resizeObserver = shell ? new ResizeObserver(measure) : null;
     if (shell) resizeObserver?.observe(shell);
     return () => {
       window.cancelAnimationFrame(frame);
       resizeObserver?.disconnect();
     };
-  }, [rows.length, activeTab.result]);
+  }, [rows.length, activeTab.result, setOverflowIfChanged]);
 
   if (!activeTab.result) {
     if (activeTab.kind === 'pcap' && !activeTab.result && pcapCapability && !pcapCapability.available) {
@@ -104,7 +140,7 @@ export function ResultTable({
       ].filter(Boolean).join(' ')}
       data-testid="result-table"
       ref={tableShellRef}
-      onScroll={() => updateOverflowState(tableShellRef.current, setOverflow)}
+      onScroll={onShellScroll}
       onContextMenu={onContentContextMenu}
     >
       {/*
@@ -118,6 +154,7 @@ export function ResultTable({
         className="result-table"
         role="grid"
         aria-multiselectable="true"
+        aria-rowcount={rows.length + 1}
         aria-activedescendant={rows.length > 0 ? `result-row-${activeTab.selectedIndex}` : undefined}
         tabIndex={0}
         onKeyDown={(event) =>
@@ -171,12 +208,20 @@ export function ResultTable({
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, index) => {
+          {visible.before > 0 && (
+            <tr aria-hidden="true" className="row-spacer" style={{ height: visible.before }}>
+              <td colSpan={effectiveColumns.length} />
+            </tr>
+          )}
+          {rows.slice(visible.start, visible.end).map((row, offset) => {
+            const index = visible.start + offset;
             const selected = selectedIndices.has(index);
             const focused = index === activeTab.selectedIndex;
             return (
               <tr
                 aria-selected={selected}
+                aria-rowindex={index + 2}
+                data-row
                 className={[selected ? 'selected' : '', focused ? 'focused' : ''].filter(Boolean).join(' ')}
                 data-testid={`result-row-${row.data.port ?? row.id}`}
                 // Referenced by the grid's aria-activedescendant so arrow-key
@@ -210,6 +255,11 @@ export function ResultTable({
               </tr>
             );
           })}
+          {visible.after > 0 && (
+            <tr aria-hidden="true" className="row-spacer" style={{ height: visible.after }}>
+              <td colSpan={effectiveColumns.length} />
+            </tr>
+          )}
         </tbody>
       </table>
       {rows.length === 0 && (
