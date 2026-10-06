@@ -10,6 +10,7 @@ use std::sync::{
 };
 
 #[derive(Debug, Clone, Serialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 pub struct SweepEntry {
     pub host: Host,
     pub open_ports: Vec<PortResult>,

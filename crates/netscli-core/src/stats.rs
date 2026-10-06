@@ -4,6 +4,7 @@ use std::time::{Duration, Instant};
 use sysinfo::Networks;
 
 #[derive(Debug, Clone, Serialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 pub struct NetworkStats {
     pub upload_mbps: f64,
     pub download_mbps: f64,

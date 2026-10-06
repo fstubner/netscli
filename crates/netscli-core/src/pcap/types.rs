@@ -16,8 +16,10 @@ pub struct PcapConfig {
 }
 
 #[derive(Debug, Clone, Serialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 pub struct PcapResult {
     pub packets_captured: usize,
+    #[cfg_attr(feature = "ts", ts(type = "{ secs: number, nanos: number }"))]
     pub duration: Duration,
     pub file_path: PathBuf,
     pub packets: Vec<PcapPacketSummary>,
@@ -25,6 +27,7 @@ pub struct PcapResult {
 }
 
 #[derive(Debug, Clone, Serialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 pub struct PcapPacketSummary {
     pub index: usize,
     pub timestamp: String,
@@ -35,26 +38,36 @@ pub struct PcapPacketSummary {
     pub captured_length: u32,
     pub info: String,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub source_port: Option<u16>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub destination_port: Option<u16>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub tcp_flags: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub icmp_type: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub icmp_code: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub arp_operation: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub ethernet_source: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub ethernet_destination: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub hex_preview: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 pub struct PcapParseResult {
     pub file_path: PathBuf,
     pub link_type: i32,

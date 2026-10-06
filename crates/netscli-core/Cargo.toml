@@ -41,6 +41,7 @@ chrono = { workspace = true, optional = true }
 sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "sqlite", "chrono", "macros", "migrate"], optional = true }
 pcap = { version = "2.4", optional = true }
 mdns-sd = { version = "0.21", optional = true }
+ts-rs = { version = "12.0.1", optional = true }
 
 [target.'cfg(unix)'.dependencies]
 pnet_sys = "0.35"
@@ -51,6 +52,9 @@ ipconfig = "0.3"
 windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_NetworkManagement_IpHelper", "Win32_NetworkManagement_Ndis", "Win32_Networking_WinSock", "Win32_System_IO"] }
 
 [features]
+# Generates the desktop app's TypeScript types from these structs (see
+# apps/netscli-gui/src/types/generated). Build and test tooling only.
+ts = ["dep:ts-rs"]
 # Lean by default: scan, discover, DNS, ARP, OUI lookup, stats.
 # Consumers who want the SQLite persistence or packet capture opt in.
 default = []

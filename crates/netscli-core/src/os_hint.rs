@@ -29,6 +29,7 @@ use smb::SmbInfo;
 
 /// A best guess at a host's operating system, and the clues behind it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 pub struct OsHint {
     /// `Windows`, `Linux`, `macOS or iOS`, `FreeBSD`, `Unix-like` or
     /// `Network device`.
@@ -36,6 +37,7 @@ pub struct OsHint {
     /// More precise, when a clue said: `Windows 11 or Server 2025 (build
     /// 26100)`, `Ubuntu`.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub detail: Option<String>,
     /// Every clue that pointed somewhere, strongest first, each naming its
     /// source: `SMB: Windows 10.0 build 26100`, `TTL 128`.

@@ -220,6 +220,16 @@ jobs:
         run: cargo clippy --all-targets -- -D warnings
       - name: cargo clippy (pcap feature)
         run: cargo clippy --all-targets --features pcap -- -D warnings
+      # The desktop app's hand-written TypeScript types are checked against
+      # these generated ones at compile time
+      # (apps/netscli-gui/src/types/netscli.contract.ts). That check is only
+      # as good as the generated files, so they must match the Rust structs.
+      - name: TypeScript bindings match the Rust types
+        run: |
+          rm -rf apps/netscli-gui/src/types/generated
+          TS_RS_EXPORT_DIR="$PWD/apps/netscli-gui/src/types/generated" TS_RS_LARGE_INT=number             cargo test -p netscli-core --features ts,mdns --lib export_bindings
+          git add --intent-to-add apps/netscli-gui/src/types/generated
+          git diff --exit-code -- apps/netscli-gui/src/types/generated             || { echo "::error::Regenerate with the command in apps/netscli-gui/src/types/netscli.contract.ts"; exit 1; }
 
   test:
     name: Test (${{ matrix.os }})
