@@ -43,7 +43,10 @@ token=$(curl -sf "https://login.microsoftonline.com/${MSSTORE_TENANT_ID}/oauth2/
   --data-urlencode "client_id=${MSSTORE_CLIENT_ID}" \
   --data-urlencode "client_secret=${MSSTORE_CLIENT_SECRET}" \
   --data-urlencode "scope=https://api.store.microsoft.com/.default" | jq -r '.access_token')
-[ -n "${token}" ] && [ "${token}" != "null" ] || { echo "No token from Entra. Check the MSSTORE_* secrets." >&2; exit 1; }
+if [ -z "${token}" ] || [ "${token}" = "null" ]; then
+  echo "No token from Entra. Check the MSSTORE_* secrets, and whether the client secret has expired." >&2
+  exit 1
+fi
 
 # Every API answer carries isSuccess and errors. Print the errors and stop on
 # a failure, otherwise print the body for the caller.
