@@ -153,6 +153,10 @@ jobs:
       # rejects the shell metacharacters that reach sed.
       - name: test release script helpers
         run: bash scripts/release/lib_test.sh
+      # msstore-submit.sh runs once per release against an API CI cannot
+      # reach, so its test answers in the API's place.
+      - name: test Store submission script
+        run: bash scripts/release/msstore-submit_test.sh
       - name: PSScriptAnalyzer install.ps1
         shell: pwsh
         # Write-Host is intentional here (colored installer UX output, which

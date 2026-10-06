@@ -1,0 +1,41 @@
+# Submit a release's desktop installer to the Microsoft Store.
+#
+# Run by hand, after the release is published AND the site has been deployed
+# since, because the Store fetches the MSI from netscli.com/download/<tag>/,
+# which only exists once pages.yml has staged it. The script checks that URL
+# first and stops if it is not there yet.
+#
+# Needs the MSSTORE_* secrets from an Entra app linked to Partner Center. See
+# docs/MICROSOFT-STORE.md, "Automating later releases".
+name: Microsoft Store
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to submit, for example v0.3.5
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: msstore
+  cancel-in-progress: false
+
+jobs:
+  submit:
+    name: Submit ${{ inputs.tag }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Submit to the Store
+        env:
+          MSSTORE_TENANT_ID: ${{ secrets.MSSTORE_TENANT_ID }}
+          MSSTORE_CLIENT_ID: ${{ secrets.MSSTORE_CLIENT_ID }}
+          MSSTORE_CLIENT_SECRET: ${{ secrets.MSSTORE_CLIENT_SECRET }}
+          MSSTORE_SELLER_ID: ${{ secrets.MSSTORE_SELLER_ID }}
+          MSSTORE_PRODUCT_ID: ${{ secrets.MSSTORE_PRODUCT_ID }}
+          TAG: ${{ inputs.tag }}
+        run: scripts/release/msstore-submit.sh "$TAG"
