@@ -6,7 +6,6 @@ import Surfaces from '../components/Surfaces.astro';
 import Compare from '../components/Compare.astro';
 import Install from '../components/Install.astro';
 import Faq from '../components/Faq.astro';
-import Feedback from '../components/Feedback.astro';
 import Footer from '../components/Footer.astro';
 import { site } from '../data/site';
 import { landingLayout, sections } from '../data/site-content/sections';
@@ -26,12 +25,6 @@ const COMPONENTS = { hero: Hero, surfaces: Surfaces, compare: Compare, install: 
       return <Section />;
     })}
   </main>
-  {/* Below the sections and above the footer: the page has made its case by
-      here, so this is the first point where "was that any good?" is a fair
-      question rather than an interruption. Deliberately not a section in
-      `sections.ts` -- it is not part of the product's pitch and reordering it
-      is not a content decision. */}
-  <Feedback on="landing" />
   <Footer />
 
   <script>
