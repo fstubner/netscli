@@ -12,6 +12,7 @@ export type { Hero, HeroCommands, HeroDownload } from './hero-types';
 
 // The hero's live metrics, in ./social-types for the same reason.
 export type { SocialProof } from './social-types';
+import type { SocialProof } from './social-types';
 import type { Hero, HeroCommands, HeroDownload } from './hero-types';
 
 // The shared picture-slot type; see ./visual-types.
