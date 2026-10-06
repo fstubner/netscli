@@ -121,10 +121,18 @@ fn candidate_paths() -> Vec<PathBuf> {
 /// Run `--version` and return the version if the binary identifies itself as
 /// netscli. `None` for anything else, including a timeout or a non-zero exit.
 async fn probe_version(path: &Path) -> Option<String> {
-    let output = timeout(PROBE_TIMEOUT, Command::new(path).arg("--version").output())
-        .await
-        .ok()?
-        .ok()?;
+    // A program still running when the timeout fires is killed, not left
+    // behind. Without that it outlived the probe, and on Windows tokio reads
+    // its output on blocking threads that end only when it does, so a test
+    // calling this ran until the program exited (20 s for one that sleeps
+    // 20 s, though the probe itself gave up at 3 s). Stdin is closed so
+    // nothing the probe starts can sit waiting for input.
+    let mut command = Command::new(path);
+    command
+        .arg("--version")
+        .stdin(std::process::Stdio::null())
+        .kill_on_drop(true);
+    let output = timeout(PROBE_TIMEOUT, command.output()).await.ok()?.ok()?;
 
     if !output.status.success() {
         return None;
