@@ -59,6 +59,11 @@ its heading and collects entries. The date and the link go on with the tag.
   stops a spreadsheet reading it as a formula. Both exports are now tested
   against the same list of cases.
 
+- **The desktop app no longer leaves a program running after looking for
+  the CLI.** To offer MCP setup it runs each `netscli` it finds with
+  `--version` and gives up after 3 seconds. A program still running at that
+  point was left behind. It is now stopped.
+
 ## [0.3.4] - 2026-10-04
 
 ### Added
