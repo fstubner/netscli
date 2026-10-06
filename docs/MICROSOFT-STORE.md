@@ -77,8 +77,57 @@ days. Each later release needs a new submission with that release's MSI URL.
 The site only picks up a new release's MSI when it is next deployed, so after
 publishing a release run the Deploy GitHub Pages workflow (or merge any site
 change) before giving the Store the new URL.
-That can be automated with the Store submission API once the first one has
-passed.
+Once the first submission has passed, the Microsoft Store workflow does
+this, as below.
+
+### 5. Automating later releases
+
+The Microsoft Store workflow (`.github/workflows/msstore.yml`) points the
+listing at a release's MSI and submits it, through the Store submission API
+(`scripts/release/msstore-submit.sh`). It is run by hand, with the release
+tag, after the site has redeployed. It stops without changing anything if the
+MSI URL is not live yet or a submission is still in certification, and it
+does not wait for certification itself.
+
+It needs an Entra app that Partner Center trusts. One-time setup:
+
+1. In Partner Center, open **Account settings**, then **Tenants**, and
+   associate a Microsoft Entra tenant. An individual account can create a new
+   one there if it has none.
+2. Under **Account settings**, open **User management**, then **Microsoft
+   Entra applications**, and create a new application named `netscli-store`
+   with the **Manager** role. Partner Center creates it in the tenant.
+3. Open that application in Partner Center and copy the tenant ID and client
+   ID. In the Azure portal, under **App registrations**, open it, then
+   **Certificates & secrets**, and create a client secret. Microsoft allows
+   up to 24 months and recommends under 12, so note the expiry date. The
+   workflow fails with "No token from Entra" once it passes.
+4. Set the five repository secrets. Each command asks for the value, so it
+   stays out of shell history.
+
+| Secret | Where it is |
+| --- | --- |
+| `MSSTORE_TENANT_ID` | Step 3 |
+| `MSSTORE_CLIENT_ID` | Step 3 |
+| `MSSTORE_CLIENT_SECRET` | The client secret value from step 3 |
+| `MSSTORE_SELLER_ID` | Partner Center, Account settings, Legal info, Seller ID |
+| `MSSTORE_PRODUCT_ID` | The app's Partner Center product ID |
+
+Microsoft's API documentation calls the last one "the Partner Center ID of
+the product" without saying where it is shown. Not yet checked against the
+live API: try the number in the app's Partner Center address first, and the
+Store ID (9N...) from **Product identity** if the API answers that the
+product does not exist.
+
+```bash
+for s in TENANT_ID CLIENT_ID CLIENT_SECRET SELLER_ID PRODUCT_ID; do gh secret set "MSSTORE_$s"; done
+```
+
+Then, for each release, once the Deploy GitHub Pages workflow has run:
+
+```bash
+gh workflow run msstore.yml -f tag=v0.3.5
+```
 
 ## Listing text
 
