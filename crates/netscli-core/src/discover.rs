@@ -11,11 +11,17 @@ use std::sync::{
     Arc,
 };
 
+mod host_address;
 #[cfg(feature = "mdns")]
 mod mdns_fusion;
 mod types;
 
+use host_address::is_host_address;
 pub use types::{DiscoverPhase, DiscoverProgress, FoundBy, Host, NameSource};
+
+/// How long a table-only neighbour gets to answer ARP before discovery drops
+/// it. The slowest real reply measured was 2.2 s (2026-10-06).
+const NEIGHBOR_CONFIRM_WAIT: std::time::Duration = std::time::Duration::from_millis(2500);
 
 pub struct DiscoverEngine {
     ping_scanner: PingScanner,
@@ -138,6 +144,44 @@ impl DiscoverEngine {
                 .map(|e| (e.ip, e))
                 .collect();
 
+        // Anything the OS has an ARP entry for is on this link, whether or
+        // not it answered us. Plenty of devices do not: consumer IoT
+        // routinely ignores ICMP, and Windows drops echo requests by
+        // default. Discarding them meant discovery reported a fraction of
+        // the network -- measured at 13 of 25 known devices on one ordinary
+        // LAN -- while the table needed to find them was already loaded, and
+        // used only to decorate the hosts that had replied.
+        let answered: std::collections::HashSet<IpAddr> = alive.iter().map(|r| r.ip).collect();
+        let mut neighbors: Vec<IpAddr> = arp_map
+            .keys()
+            .copied()
+            .filter(|ip| !answered.contains(ip))
+            .filter(|ip| match ip {
+                // Only within the range that was asked for. The neighbour
+                // table spans every interface, so it holds addresses from
+                // other subnets entirely.
+                IpAddr::V4(v4) => is_host_address(&subnet, *v4),
+                IpAddr::V6(_) => false,
+            })
+            .filter(|ip| arp_map.get(ip).is_none_or(|e| e.mac.bytes()[0] & 1 == 0))
+            .collect();
+        neighbors.sort_unstable();
+
+        // Ask the table-only candidates again, in the background, while names
+        // are looked up below. See crate::arp::still_present for why; the
+        // wait covers the slowest real answer measured, 2.2 s, from a device
+        // that replied to Windows' third ARP retry.
+        let neighbor_v4: Vec<std::net::Ipv4Addr> = neighbors
+            .iter()
+            .filter_map(|ip| match ip {
+                IpAddr::V4(v4) => Some(*v4),
+                IpAddr::V6(_) => None,
+            })
+            .collect();
+        let confirm = tokio::spawn(async move {
+            crate::arp::still_present(&neighbor_v4, NEIGHBOR_CONFIRM_WAIT).await
+        });
+
         // 3) Optionally reverse-DNS alive hosts using a single resolver.
         let hostname_map: HashMap<IpAddr, Option<String>> = if resolve {
             let ips = alive.iter().map(|r| r.ip).collect::<Vec<_>>();
@@ -226,67 +270,14 @@ impl DiscoverEngine {
             .map(|r| build(r.ip, r.rtt_ms, FoundBy::Probe))
             .collect();
 
-        // Anything the OS has an ARP entry for is on this link, whether or
-        // not it answered us. Plenty of devices do not: consumer IoT
-        // routinely ignores ICMP, and Windows drops echo requests by
-        // default. Discarding them meant discovery reported a fraction of
-        // the network -- measured at 13 of 25 known devices on one ordinary
-        // LAN -- while the table needed to find them was already loaded, and
-        // used only to decorate the hosts that had replied.
-        let answered: std::collections::HashSet<IpAddr> = alive.iter().map(|r| r.ip).collect();
-        let mut neighbors: Vec<IpAddr> = arp_map
-            .keys()
-            .copied()
-            .filter(|ip| !answered.contains(ip))
-            .filter(|ip| match ip {
-                // Only within the range that was asked for. The neighbour
-                // table spans every interface, so it holds addresses from
-                // other subnets entirely.
-                IpAddr::V4(v4) => is_host_address(&subnet, *v4),
-                IpAddr::V6(_) => false,
-            })
-            .filter(|ip| arp_map.get(ip).is_none_or(|e| e.mac.bytes()[0] & 1 == 0))
-            .collect();
-        neighbors.sort_unstable();
+        let present = confirm.await.unwrap_or_default();
         hosts.extend(
             neighbors
                 .into_iter()
+                .filter(|ip| matches!(ip, IpAddr::V4(v4) if present.contains(v4)))
                 .map(|ip| build(ip, None, FoundBy::Neighbor)),
         );
 
         Ok(hosts)
-    }
-}
-
-/// An address in `subnet` that a device can hold: not the network address
-/// and not the broadcast address, except on /31 and /32 where every address
-/// is usable. The Windows neighbour table lists x.x.x.255
-/// (ff:ff:ff:ff:ff:ff), and discovery reported it as a host.
-fn is_host_address(subnet: &Ipv4Net, ip: std::net::Ipv4Addr) -> bool {
-    subnet.contains(&ip)
-        && (subnet.prefix_len() >= 31 || (ip != subnet.network() && ip != subnet.broadcast()))
-}
-
-#[cfg(test)]
-mod host_address_tests {
-    use super::is_host_address;
-
-    #[test]
-    fn network_and_broadcast_are_not_hosts() {
-        let net = "192.168.1.0/24".parse().unwrap();
-        assert!(!is_host_address(&net, "192.168.1.0".parse().unwrap()));
-        assert!(!is_host_address(&net, "192.168.1.255".parse().unwrap()));
-        assert!(is_host_address(&net, "192.168.1.1".parse().unwrap()));
-        assert!(is_host_address(&net, "192.168.1.254".parse().unwrap()));
-        assert!(!is_host_address(&net, "192.168.2.1".parse().unwrap()));
-    }
-
-    #[test]
-    fn every_address_counts_on_a_31_or_32() {
-        let p2p = "10.0.0.0/31".parse().unwrap();
-        assert!(is_host_address(&p2p, "10.0.0.0".parse().unwrap()));
-        assert!(is_host_address(&p2p, "10.0.0.1".parse().unwrap()));
-        let single = "10.0.0.5/32".parse().unwrap();
-        assert!(is_host_address(&single, "10.0.0.5".parse().unwrap()));
     }
 }

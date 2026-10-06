@@ -3,6 +3,8 @@ mod interfaces;
 mod mutate;
 mod table;
 #[cfg(target_os = "windows")]
+mod windows_resolve;
+#[cfg(target_os = "windows")]
 mod windows_table;
 
 use std::net::IpAddr;
@@ -30,4 +32,10 @@ pub(super) fn delete_entry(ip: IpAddr) -> Result<()> {
 
 pub(super) fn clear_table() -> Result<()> {
     mutate::clear_table()
+}
+
+/// Whether `ip` answers ARP right now. Blocking; see windows_resolve.rs.
+#[cfg(target_os = "windows")]
+pub(super) fn answers_arp(ip: std::net::Ipv4Addr) -> bool {
+    windows_resolve::resolve(ip).is_some()
 }
