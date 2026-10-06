@@ -20,6 +20,15 @@ its heading and collects entries. The date and the link go on with the tag.
 
 ### Changed
 
+- **The desktop app stays responsive with large results.** It drew every
+  row of a result and redrew all of them on every keypress or scroll, so a
+  full 4,096-port scan took about a tenth of a second per arrow key, and a
+  20,000-row result such as a long packet capture over half a second. It now
+  draws only the rows on screen, so 4,096 rows respond as fast as 100, and
+  20,000 in about a twentieth of a second. Progress updates
+  from a running scan are also sent ten times a second instead of once per
+  port.
+
 - **Windows lists the desktop app's publisher as Felix Stubner.** Installed
   apps showed "netscli", a default taken from the app's internal identifier,
   while the code signature, winget and the Microsoft Store listing all say
