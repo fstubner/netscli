@@ -48,12 +48,19 @@ export function initLandingPage(repo: string, cratesIoCrate?: string, npmPackage
       fetch(`https://api.github.com/repos/${repo}`)
         .then((r) => (r.ok ? r.json() : null))
         .then((d) => {
-          // Zero is hidden, not shown. A new repo's "0★" says nothing a
-          // visitor can use and reads as a verdict on the product.
-          if (!d || typeof d.stargazers_count !== "number" || d.stargazers_count === 0) return;
+          if (!d || typeof d.stargazers_count !== "number") return;
           const stars = document.getElementById("stars");
           const count = document.getElementById("stars-count");
-          if (count) count.textContent = fmt(d.stargazers_count);
+          // Zero is not shown as a number. A new repo's "0★" says nothing a
+          // visitor can use and reads as a verdict on the product, so the
+          // item asks instead, and points at the repo page, where the star
+          // button is: GitHub has no link that stars a repo by itself.
+          if (d.stargazers_count === 0) {
+            if (count) count.textContent = "Star on GitHub";
+            if (stars instanceof HTMLAnchorElement) stars.href = `https://github.com/${repo}`;
+          } else if (count) {
+            count.textContent = fmt(d.stargazers_count);
+          }
           if (stars) stars.hidden = false;
           refreshMetricSeparators();
         })

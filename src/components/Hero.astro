@@ -12,6 +12,11 @@ const hasInstall = (sections as readonly string[]).includes('install');
 // content file does not list.
 const defaultDownload = heroDownloads[0];
 const showSource = hero.showSourceLink !== false;
+// Where the download count points: the npm page for a product counted from
+// npm, since its releases on GitHub carry no files to download.
+const downloadsHref = social.npmPackage
+  ? `https://www.npmjs.com/package/${social.npmPackage}`
+  : `https://github.com/${social.repo}/releases`;
 // A product with one command leaves `quickInstall` empty. The second row then
 // holds only the install link, rather than an empty command chip beside it.
 const hasSecondCommand = hero.quickInstall.trim() !== '';
@@ -36,7 +41,7 @@ const hasSecondCommand = hero.quickInstall.trim() !== '';
       <span aria-hidden="true">★</span>
     </a>
     <span class="sep" aria-hidden="true" id="metrics-sep" hidden>·</span>
-    <a href={`https://github.com/${social.repo}/releases`} id="downloads" hidden></a>
+    <a href={downloadsHref} id="downloads" hidden></a>
     {/* The version used to sit here, between the download count and the
         source link. It has moved into the badge above the headline, where it
         can carry the release notes link with it; this line is metrics only
@@ -214,6 +219,12 @@ const hasSecondCommand = hero.quickInstall.trim() !== '';
   font-variant-numeric:tabular-nums;min-height:1em;
 }
 .hero .social-proof .plain{
+  display:inline-flex;align-items:center;gap:3px;
+}
+/* The star glyph gets the same gap as the source link's icon. Not by sharing
+   `.plain`: its display would override `hidden`, and this item stays hidden
+   until the GitHub API answers. */
+.hero .social-proof #stars:not([hidden]){
   display:inline-flex;align-items:center;gap:3px;
 }
 .hero .social-proof a{color:inherit;text-decoration:none}
