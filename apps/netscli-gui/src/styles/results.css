@@ -200,15 +200,6 @@
   text-align: left;
 }
 
-/* Stand-ins for the rows not rendered in a large result (rowWindow.ts).
-   Their height comes from an inline style; the cell rules above would
-   otherwise give them a fixed height and a border. */
-.result-table tr.row-spacer td {
-  height: auto;
-  padding: 0;
-  border: 0;
-}
-
 .result-table th {
   position: relative;
   color: var(--text-secondary);
