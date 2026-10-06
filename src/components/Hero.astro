@@ -36,7 +36,7 @@ const hasSecondCommand = hero.quickInstall.trim() !== '';
   <p class="sub">{hero.subhead}</p>
 
   <div class="social-proof" id="social-proof" aria-live="polite">
-    <a class="plain" href={`https://github.com/${social.repo}/stargazers`} id="stars" hidden>
+    <a href={`https://github.com/${social.repo}/stargazers`} id="stars" hidden>
       <span id="stars-count"></span>
       <span aria-hidden="true">★</span>
     </a>
@@ -219,6 +219,12 @@ const hasSecondCommand = hero.quickInstall.trim() !== '';
   font-variant-numeric:tabular-nums;min-height:1em;
 }
 .hero .social-proof .plain{
+  display:inline-flex;align-items:center;gap:3px;
+}
+/* The star glyph gets the same gap as the source link's icon. Not by sharing
+   `.plain`: its display would override `hidden`, and this item stays hidden
+   until the GitHub API answers. */
+.hero .social-proof #stars:not([hidden]){
   display:inline-flex;align-items:center;gap:3px;
 }
 .hero .social-proof a{color:inherit;text-decoration:none}
