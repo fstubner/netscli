@@ -1,0 +1,9 @@
+/* Stand-ins for the rows not rendered in a large result (rowWindow.ts).
+   Their height comes from an inline style; the cell rules in results.css
+   would otherwise give them a fixed height and a border. Its own file
+   because results.css is at its size cap. */
+.result-table tr.row-spacer td {
+  height: auto;
+  padding: 0;
+  border: 0;
+}

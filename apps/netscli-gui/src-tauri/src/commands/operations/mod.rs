@@ -38,7 +38,109 @@ pub(super) struct OperationProgressPayload {
 }
 
 pub(super) fn emit_operation_progress(app: &tauri::AppHandle, payload: OperationProgressPayload) {
-    let _ = app.emit(OPERATION_PROGRESS_EVENT, payload);
+    if PROGRESS_THROTTLE.should_send(&payload, std::time::Instant::now()) {
+        let _ = app.emit(OPERATION_PROGRESS_EVENT, payload);
+    }
+}
+
+/// At most one progress event per operation every this often, plus the
+/// first, the last, and every change of phase.
+///
+/// The core reports every port and every host, and each report was one IPC
+/// event and one React state update: 4,096 of them for a full port scan, most
+/// arriving inside a second. Ten a second is as fast as a progress bar can be
+/// read.
+const PROGRESS_INTERVAL: std::time::Duration = std::time::Duration::from_millis(100);
+
+static PROGRESS_THROTTLE: ProgressThrottle = ProgressThrottle::new();
+
+/// When each operation last sent an event, and in which phase.
+type LastSent = HashMap<String, (std::time::Instant, Option<&'static str>)>;
+
+struct ProgressThrottle(std::sync::Mutex<Option<LastSent>>);
+
+impl ProgressThrottle {
+    const fn new() -> Self {
+        Self(std::sync::Mutex::new(None))
+    }
+
+    fn should_send(&self, payload: &OperationProgressPayload, now: std::time::Instant) -> bool {
+        let mut guard = self
+            .0
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let last = guard.get_or_insert_with(HashMap::new);
+        let finished = payload.total > 0 && payload.completed >= payload.total;
+        let send = match last.get(&payload.op_id) {
+            None => true,
+            Some((at, phase)) => {
+                finished || *phase != payload.phase || now.duration_since(*at) >= PROGRESS_INTERVAL
+            }
+        };
+        if finished {
+            // The operation is done, or this phase of it is; a later phase
+            // starts a new entry with its own first event.
+            last.remove(&payload.op_id);
+        } else if send {
+            last.insert(payload.op_id.clone(), (now, payload.phase));
+        }
+        send
+    }
+}
+
+#[cfg(test)]
+mod progress_throttle_tests {
+    use super::*;
+    use std::time::{Duration, Instant};
+
+    fn event(
+        op: &str,
+        phase: &'static str,
+        completed: usize,
+        total: usize,
+    ) -> OperationProgressPayload {
+        OperationProgressPayload {
+            op_id: op.into(),
+            kind: "scan",
+            phase: Some(phase),
+            completed,
+            total,
+            found: 0,
+            target: None,
+            detail: None,
+        }
+    }
+
+    #[test]
+    fn a_full_port_scan_inside_one_interval_sends_the_first_and_last_event_only() {
+        let throttle = ProgressThrottle::new();
+        let start = Instant::now();
+        let sent = (1..=4096)
+            .filter(|&n| throttle.should_send(&event("op", "scanning", n, 4096), start))
+            .count();
+        assert_eq!(sent, 2);
+    }
+
+    #[test]
+    fn events_resume_after_the_interval_and_on_a_phase_change() {
+        let throttle = ProgressThrottle::new();
+        let t = Instant::now();
+        assert!(throttle.should_send(&event("op", "ping", 1, 254), t));
+        assert!(!throttle.should_send(&event("op", "ping", 2, 254), t + Duration::from_millis(50)));
+        assert!(throttle.should_send(&event("op", "ping", 3, 254), t + Duration::from_millis(120)));
+        assert!(throttle.should_send(
+            &event("op", "resolve", 1, 10),
+            t + Duration::from_millis(121)
+        ));
+    }
+
+    #[test]
+    fn operations_are_throttled_separately() {
+        let throttle = ProgressThrottle::new();
+        let t = Instant::now();
+        assert!(throttle.should_send(&event("a", "scanning", 1, 10), t));
+        assert!(throttle.should_send(&event("b", "scanning", 1, 10), t));
+    }
 }
 
 pub(super) fn ops_with_concurrency(max_concurrent: Option<usize>) -> Ops {

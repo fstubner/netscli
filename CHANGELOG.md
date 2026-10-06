@@ -18,7 +18,24 @@ its heading and collects entries. The date and the link go on with the tag.
 
 ## [Unreleased]
 
+### Added
+
+- **The MCP server reports progress and can be cancelled.** Discover, port
+  scans and sweeps send progress notifications to clients that ask for them,
+  so a long sweep no longer looks stuck. A client that cancels a call now
+  stops the scan, instead of it running to the end and holding one of the
+  server's sixteen request slots.
+
 ### Changed
+
+- **The desktop app stays responsive with large results.** It drew every
+  row of a result and redrew all of them on every keypress or scroll, so a
+  full 4,096-port scan took about a tenth of a second per arrow key, and a
+  20,000-row result such as a long packet capture over half a second. It now
+  draws only the rows on screen, so 4,096 rows respond as fast as 100, and
+  20,000 in about a twentieth of a second. Progress updates
+  from a running scan are also sent ten times a second instead of once per
+  port.
 
 - **Windows lists the desktop app's publisher as Felix Stubner.** Installed
   apps showed "netscli", a default taken from the app's internal identifier,
@@ -27,6 +44,14 @@ its heading and collects entries. The date and the link go on with the tag.
   new name.
 
 ### Fixed
+
+- **Discovery on Windows listed devices that had left the network.** The
+  Windows device table keeps an entry for a while after its device goes,
+  and discovery reported those entries as devices. On one network that was
+  4 of 26, none of which answered anything afterwards. Devices found only in
+  the table are now asked again directly, which can add about 2 seconds
+  and only when the table holds such entries, and are listed only if they
+  answer. Devices that ignore ping still answer, so they are still found.
 
 - **The desktop app's CSV export defuses control characters, as the CLI's
   does.** A banner containing an escape sequence went into the file as it

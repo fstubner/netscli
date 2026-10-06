@@ -1,9 +1,11 @@
 mod dispatch;
 mod errors;
+mod inflight;
 #[cfg(feature = "pcap")]
 mod jobs;
 mod limits;
 mod operations;
+mod progress;
 mod protocol;
 mod schemas;
 mod targets;
@@ -81,6 +83,7 @@ pub async fn run_server() -> anyhow::Result<()> {
     let mut reader = BufReader::new(stdin);
     let state = Arc::new(Mutex::new(ServerState::default()));
     let limiter = Arc::new(Semaphore::new(MAX_CONCURRENT_REQUESTS));
+    let inflight = Arc::new(inflight::InFlight::default());
 
     // Responses are funnelled through one channel to a single writer task.
     // Two concurrent handlers must never interleave bytes on stdout, and a
@@ -164,6 +167,11 @@ pub async fn run_server() -> anyhow::Result<()> {
                     guard.initialized = true;
                 }
             }
+            if request.method == "notifications/cancelled"
+                && inflight.cancel(request.params.as_ref())
+            {
+                tracing::info!("request cancelled by the client");
+            }
             continue;
         }
 
@@ -184,31 +192,42 @@ pub async fn run_server() -> anyhow::Result<()> {
         // `Option<Option<_>>` distinguishes absent from explicit null; a
         // notification never reaches here, so the outer layer is always Some.
         let id = request.id.clone().flatten();
-        handlers.spawn(async move {
+        let key = id.as_ref().map(inflight::key);
+        let progress = progress::Progress::for_request(request.params.as_ref(), &tx);
+        let inflight_for_task = Arc::clone(&inflight);
+        let key_for_task = key.clone();
+        let task = async move {
             let _permit = permit;
             // A hard ceiling on the whole call. Per-probe timeouts are
             // bounded but their product was not, and a request that never
             // returns holds its permit forever.
-            let response =
-                match tokio::time::timeout(MAX_REQUEST_DURATION, handle_request(state, request))
-                    .await
-                {
-                    Ok(response) => response,
-                    Err(_) => {
-                        tracing::warn!(
-                            timeout_s = MAX_REQUEST_DURATION.as_secs(),
-                            "request exceeded the maximum duration"
-                        );
-                        JsonRpcResponse::request_timeout(id, MAX_REQUEST_DURATION.as_secs())
-                    }
-                };
+            let call = progress::scope(progress, handle_request(state, request));
+            let response = match tokio::time::timeout(MAX_REQUEST_DURATION, call).await {
+                Ok(response) => response,
+                Err(_) => {
+                    tracing::warn!(
+                        timeout_s = MAX_REQUEST_DURATION.as_secs(),
+                        "request exceeded the maximum duration"
+                    );
+                    JsonRpcResponse::request_timeout(id, MAX_REQUEST_DURATION.as_secs())
+                }
+            };
             match serde_json::to_string(&response) {
                 Ok(s) => {
                     let _ = tx.send(s);
                 }
                 Err(e) => tracing::error!(error = %e, "failed to serialize response"),
             }
-        });
+            if let Some(key) = key_for_task {
+                inflight_for_task.finish(&key);
+            }
+        };
+        match key {
+            Some(key) => inflight.track(key, || handlers.spawn(task)),
+            None => {
+                handlers.spawn(task);
+            }
+        }
     }
 
     // EOF: the client is gone, so nothing is waiting for these answers.
