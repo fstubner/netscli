@@ -1,6 +1,6 @@
 ---
 import { site } from '../data/site';
-const { meta, hero, builtWith } = site;
+const { meta, hero, builtWith, modules } = site;
 ---
 <footer>
   <div class="footer-inner">
@@ -8,9 +8,9 @@ const { meta, hero, builtWith } = site;
     <div class="flinks">
       <a class="external-link" href={hero.sourceUrl}>GitHub</a>
       <a class="external-link" href={`${hero.sourceUrl}/releases`}>Releases</a>
-      <a href="/docs/">Docs</a>
-      <a href="/changelog/">Changelog</a>
-      <a href="/privacy/">Privacy</a>
+      {modules.docs && <a href="/docs/">Docs</a>}
+      {modules.changelog && <a href="/changelog/">Changelog</a>}
+      {modules.privacy && <a href="/privacy/">Privacy</a>}
     </div>
     {builtWith.length > 0 && (
       <div class="built-with">

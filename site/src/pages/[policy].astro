@@ -4,6 +4,14 @@ import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 import { site } from '../data/site';
 import { privacyCopy } from '../data/site-content/privacy';
+import { modules } from '../data/site-content/modules';
+
+/* A dynamic route with one path, so that `modules.privacy = false` can leave
+   the page out of the build entirely: no file in dist/, nothing in the
+   sitemap. A plain privacy.astro always builds. */
+export function getStaticPaths() {
+  return modules.privacy ? [{ params: { policy: 'privacy' } }] : [];
+}
 
 const { meta } = site;
 

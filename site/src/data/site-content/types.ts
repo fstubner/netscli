@@ -1,3 +1,7 @@
+// The hero's live metrics, in ./social-types.
+export type { SocialProof } from './social-types';
+import type { SocialProof } from './social-types';
+
 // Shared type definitions for the site content modules under
 // site/src/data/site-content/. Assembled into the public `SiteData` shape
 // by site/src/data/site.ts — that's the only module other files should
@@ -202,11 +206,6 @@ export interface BuiltWithEntry {
   url: string;
 }
 
-export interface SocialProof {
-  /** GitHub repo in "owner/name" format. Used to fetch stars + download counts. */
-  repo: string;
-}
-
 export interface Analytics {
   /** Cloudflare Web Analytics beacon token. Omit to disable. */
   cloudflareToken?: string;
@@ -228,6 +227,20 @@ export interface SectionCopy {
   heading: string;
   /** HTML allowed — typically short tagline with an anchor link. */
   leadHtml: string;
+}
+
+export interface Modules {
+  /** Whether the /docs/ Starlight section exists for this product. When
+   *  false, nav/footer/404 stop linking to /docs/ and in-copy "Full docs →"
+   *  references are omitted — but the Starlight integration itself must
+   *  also be removed from astro.config.mjs (see the comment there). */
+  docs: boolean;
+  /** Whether the /changelog/ page exists for this product. When false,
+   *  nav/footer stop linking to /changelog/. */
+  changelog: boolean;
+  /** Whether /privacy/ exists. When false the page is not built
+   *  (src/pages/[policy].astro returns no paths) and the footers drop it. */
+  privacy: boolean;
 }
 
 /** How the landing page arranges its hero and the rhythm below it. */
@@ -270,6 +283,7 @@ export interface SiteData {
   faq: FaqItem[];
   builtWith: BuiltWithEntry[];
   social: SocialProof;
+  modules: Modules;
   analytics: Analytics;
   /** Version string published on crates.io / used in structured data. */
   version: string;

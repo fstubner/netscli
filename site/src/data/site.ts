@@ -15,6 +15,7 @@ import {
 } from './site-content/install';
 import { faq, faqCopy } from './site-content/faq';
 import { analytics, builtWith, social } from './site-content/footer';
+import { modules } from './site-content/modules';
 import { readProductVersion } from './site-content/version';
 import type { SiteData } from './site-content/types';
 
@@ -57,6 +58,7 @@ export const site: SiteData = {
   faq,
   builtWith,
   social,
+  modules,
   analytics,
   version: readProductVersion(),
 };

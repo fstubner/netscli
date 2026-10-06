@@ -19,7 +19,7 @@ const COMPONENTS = { hero: Hero, surfaces: Surfaces, compare: Compare, install: 
 ---
 <Page>
   <Nav />
-  <main id="main" class={landingLayout === 'split' ? 'landing-split' : undefined} data-github-repo={githubRepo}>
+  <main id="main" class={landingLayout === 'split' ? 'landing-split' : undefined} data-github-repo={githubRepo} data-crates-io-crate={site.social.cratesIoCrate} data-npm-package={site.social.npmPackage}>
     {sections.map((name) => {
       const Section = COMPONENTS[name];
       return <Section />;
@@ -29,7 +29,11 @@ const COMPONENTS = { hero: Hero, surfaces: Surfaces, compare: Compare, install: 
 
   <script>
     import { initLandingPage } from '../scripts/landing-page';
-    const repo = document.querySelector<HTMLElement>('[data-github-repo]')?.dataset.githubRepo;
-    if (repo) initLandingPage(repo);
+    const el = document.querySelector<HTMLElement>('[data-github-repo]');
+    const repo = el?.dataset.githubRepo;
+    // Absent rather than empty when the product is not on crates.io or npm:
+    // Astro omits the attribute for an undefined value, so `dataset` has no
+    // key and that source is skipped rather than fetched as "undefined".
+    if (repo) initLandingPage(repo, el?.dataset.cratesIoCrate, el?.dataset.npmPackage);
   </script>
 </Page>

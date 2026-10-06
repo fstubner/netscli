@@ -8,7 +8,7 @@ export const builtWith: BuiltWithEntry[] = [
   { name: 'sqlx', url: 'https://github.com/launchbadge/sqlx' },
 ];
 
-export const social: SocialProof = { repo: 'fstubner/netscli' };
+export const social: SocialProof = { repo: 'fstubner/netscli', cratesIoCrate: 'netscli' };
 
 export const analytics: Analytics = {
   cloudflareToken: 'c03201f65f6d41aa843c81f259a1ac06',
