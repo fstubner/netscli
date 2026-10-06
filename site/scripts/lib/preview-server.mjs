@@ -8,6 +8,7 @@
 
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, readdirSync } from 'node:fs';
+import { createServer } from 'node:net';
 import { join } from 'node:path';
 import process from 'node:process';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -63,6 +64,49 @@ function listenersOnPort(port) {
   const r = spawnSync('lsof', ['-ti', 'tcp:' + port], { encoding: 'utf8' });
   if (r.status !== 0 || !r.stdout) return [];
   return [...new Set(r.stdout.split(/\s+/).filter(Boolean))];
+}
+
+/**
+ * Pick the port the preview server will use: `preferred` if it is free,
+ * otherwise one the OS hands out.
+ *
+ * The self-hosted runner is one Windows machine shared by every job and by
+ * whatever was left running by a cancelled run, and a fixed port made the
+ * check depend on that machine being idle: CI failed with "Something is
+ * already listening on http://127.0.0.1:4322" while nothing about the site
+ * had changed. A port that is taken is not a reason to fail, so move on.
+ *
+ * Free means nobody is listening (the netstat/lsof probe also sees a stray
+ * `astro preview` bound to ::1) AND a bind on `host` succeeds. The fallback
+ * binds port 0 and reads back the number, so it cannot collide with anything
+ * that is listening right now.
+ *
+ * Skipped when `allowReuse` is set: reuse means "use the server on the port
+ * I named", so the named port must be kept.
+ *
+ * Returns the port as a string, like the env vars it replaces.
+ */
+export async function choosePort(host, preferred, { allowReuse = false } = {}) {
+  if (allowReuse) return String(preferred);
+  const listen = (port) =>
+    new Promise((resolve, reject) => {
+      const server = createServer();
+      server.once('error', reject);
+      server.listen(port, host, () => {
+        const { port: bound } = server.address();
+        server.close(() => resolve(bound));
+      });
+    });
+  if (!listenersOnPort(preferred).length) {
+    try {
+      return String(await listen(Number(preferred)));
+    } catch {
+      // Fall through to an OS-assigned port.
+    }
+  }
+  const port = String(await listen(0));
+  console.log(`Port ${preferred} is in use; using ${port} for the preview server instead.`);
+  return port;
 }
 
 /**

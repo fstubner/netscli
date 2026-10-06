@@ -31,11 +31,13 @@ import { join } from 'node:path';
 import process from 'node:process';
 import { Builder } from 'selenium-webdriver';
 import chrome from 'selenium-webdriver/chrome.js';
-import { startPreview, resolveChromedriverPath } from './lib/preview-server.mjs';
+import { choosePort, startPreview, resolveChromedriverPath } from './lib/preview-server.mjs';
 
 const root = process.cwd();
 const host = '127.0.0.1';
-const port = Number(process.env.HEADER_CHECK_PORT || 4326);
+const port = await choosePort(host, process.env.HEADER_CHECK_PORT || 4326, {
+  allowReuse: process.env.HEADER_CHECK_REUSE_SERVER === '1',
+});
 const baseUrl = `http://${host}:${port}`;
 const ROUTE = '/docs/';
 

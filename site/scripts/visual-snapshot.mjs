@@ -37,10 +37,12 @@ import process from 'node:process';
 import { Builder } from 'selenium-webdriver';
 import chrome from 'selenium-webdriver/chrome.js';
 
-import { discoverRoutes, startPreview, resolveChromedriverPath } from './lib/preview-server.mjs';
+import { choosePort, discoverRoutes, startPreview, resolveChromedriverPath } from './lib/preview-server.mjs';
 
 const host = process.env.VISUAL_HOST || '127.0.0.1';
-const port = process.env.VISUAL_PORT || '4323';
+const port = await choosePort(host, process.env.VISUAL_PORT || '4323', {
+  allowReuse: process.env.VISUAL_REUSE_SERVER === '1',
+});
 const baseUrl = `http://${host}:${port}`;
 const root = process.cwd();
 const baselineDir = join(root, '.visual-baseline');

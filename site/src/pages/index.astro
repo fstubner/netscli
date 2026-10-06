@@ -6,6 +6,7 @@ import Surfaces from '../components/Surfaces.astro';
 import Compare from '../components/Compare.astro';
 import Install from '../components/Install.astro';
 import Faq from '../components/Faq.astro';
+import Feedback from '../components/Feedback.astro';
 import Footer from '../components/Footer.astro';
 import { site } from '../data/site';
 import { landingLayout, sections } from '../data/site-content/sections';
@@ -19,17 +20,27 @@ const COMPONENTS = { hero: Hero, surfaces: Surfaces, compare: Compare, install: 
 ---
 <Page>
   <Nav />
-  <main id="main" class={landingLayout === 'split' ? 'landing-split' : undefined} data-github-repo={githubRepo}>
+  <main id="main" class={landingLayout === 'split' ? 'landing-split' : undefined} data-github-repo={githubRepo} data-crates-io-crate={site.social.cratesIoCrate} data-npm-package={site.social.npmPackage}>
     {sections.map((name) => {
       const Section = COMPONENTS[name];
       return <Section />;
     })}
   </main>
+  {/* Below the sections and above the footer: the page has made its case by
+      here, so this is the first point where "was that any good?" is a fair
+      question rather than an interruption. Deliberately not a section in
+      `sections.ts` -- it is not part of the product's pitch and reordering it
+      is not a content decision. */}
+  <Feedback on="landing" />
   <Footer />
 
   <script>
     import { initLandingPage } from '../scripts/landing-page';
-    const repo = document.querySelector<HTMLElement>('[data-github-repo]')?.dataset.githubRepo;
-    if (repo) initLandingPage(repo);
+    const el = document.querySelector<HTMLElement>('[data-github-repo]');
+    const repo = el?.dataset.githubRepo;
+    // Absent rather than empty when the product is not on crates.io or npm:
+    // Astro omits the attribute for an undefined value, so `dataset` has no
+    // key and that source is skipped rather than fetched as "undefined".
+    if (repo) initLandingPage(repo, el?.dataset.cratesIoCrate, el?.dataset.npmPackage);
   </script>
 </Page>

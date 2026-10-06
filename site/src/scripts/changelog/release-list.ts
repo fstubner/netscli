@@ -15,7 +15,11 @@ function mergeRelease(
     ...(fallback || {}),
     ...release,
     tag_name: release.tag_name || fallback?.tag_name || tag,
-    name: release.name || fallback?.name || tag,
+    // The changelog's own heading first. GitHub's release name is what the
+    // release tool chose ("xtctx: v0.22.1"), and for a grouped entry
+    // ("v0.20.0 – 0.21.8") it names only the one release that matched, so
+    // the card read "xtctx: v0.21.8" over notes covering a dozen versions.
+    name: fallback?.name || release.name || tag,
     html_url: release.html_url || fallback?.html_url,
     // A *confirmed* unreleased entry has no publication date, and must not
     // borrow the fallback's. `published_at` there comes from the date on the
