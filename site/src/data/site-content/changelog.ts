@@ -27,6 +27,8 @@ export const changelogOgDescription = `Versioned ${meta.siteName} release notes 
  * published from it. Its entries are under 0.3.1 and there is no 0.3.0 for
  * this map to describe. */
 export const releaseSummaries: Record<string, string> = {
+  'v0.3.5':
+    'Discovery on Windows no longer lists devices that have left the network. The desktop app stays responsive with results of 20,000 rows, and its CSV export now makes control characters safe the way the CLI does. MCP clients see progress on long scans and can cancel them, and Windows names Felix Stubner as the desktop app publisher.',
   'v0.3.4':
     'Port scans now name the software and version a service reports, can check common UDP services, and report closed ports as closed on Windows instead of filtered. The CLI writes CSV and Markdown tables, inspect gives an OS hint, and the desktop app can update itself. Discovery no longer lists the network broadcast address as a device.',
   'v0.3.3':
