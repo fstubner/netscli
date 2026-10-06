@@ -15,6 +15,7 @@ use std::net::IpAddr;
 /// known only from the neighbour table is one the OS has spoken to
 /// recently, which is usually but not always still true.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 #[serde(rename_all = "lowercase")]
 pub enum FoundBy {
     /// Answered an ICMP or TCP probe during this scan.
@@ -32,6 +33,7 @@ pub enum FoundBy {
 /// the device calls itself -- neither authoritative, and a reader judging one
 /// needs to know which it is.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 #[serde(rename_all = "lowercase")]
 pub enum NameSource {
     /// Reverse DNS, or LLMNR/NetBIOS via `ping -a` on Windows.
@@ -41,6 +43,7 @@ pub enum NameSource {
 }
 
 #[derive(Debug, Clone, Serialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 pub struct Host {
     pub ip: IpAddr,
     pub hostname: Option<String>,

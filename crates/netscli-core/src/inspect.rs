@@ -6,6 +6,7 @@ use std::net::IpAddr;
 use std::time::Duration;
 
 #[derive(Debug, Clone, Serialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 pub struct InspectResult {
     pub host: String,
     pub ip: Option<IpAddr>,
@@ -16,11 +17,14 @@ pub struct InspectResult {
     /// From the local ARP/neighbour table, so only for a host on the same
     /// network segment.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub mac: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub vendor: Option<String>,
     /// A best guess at the OS, with the clues behind it. See `os_hint`.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub os_hint: Option<crate::os_hint::OsHint>,
 }
 

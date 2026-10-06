@@ -37,6 +37,7 @@ fn next_seq() -> u16 {
 static RAW_ICMP_OK: OnceLock<bool> = OnceLock::new();
 
 #[derive(Debug, Clone, Serialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 pub struct PingResult {
     pub ip: IpAddr,
     pub rtt_ms: Option<u64>,
@@ -46,15 +47,18 @@ pub struct PingResult {
     /// A starting TTL of 64, 128 or 255 hints at the OS family; see
     /// `os_hint`.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub ttl: Option<u8>,
     pub alive: bool,
     /// Sequence number actually used for this ping (monotonic per process).
     /// Useful for debugging concurrent scans against logging-enabled targets.
     pub seq: u16,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub error: Option<String>,
     /// Indicates which mechanism was used (e.g., `icmpv4`, `tcp-connect`).
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts", ts(optional))]
     pub method: Option<String>,
 }
 

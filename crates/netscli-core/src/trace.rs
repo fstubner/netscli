@@ -7,6 +7,7 @@ use tokio::sync::watch;
 use crate::error::{Error, Result};
 
 #[derive(Debug, Clone, Serialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 pub struct TraceResult {
     pub host: String,
     pub tool: String,

@@ -24,11 +24,29 @@ export function numberOrUndefined(value?: string): number | undefined {
  * `\r` and tab are in the trigger set because both can carry a value onto a
  * fresh line or cell where it would lead again.
  */
+/** A control character other than the tab, CR and LF a CSV cell can carry.
+ *  Unicode Cc, U+0000-U+001F and U+007F-U+009F, which is Rust's `is_control`. */
+function isDefusedControl(char: string): boolean {
+  if (char === '\t' || char === '\r' || char === '\n') return false;
+  const code = char.codePointAt(0) ?? 0;
+  return code <= 0x1f || (code >= 0x7f && code <= 0x9f);
+}
+
+/** A finite decimal number, as Rust's `str::parse::<f64>` accepts it. */
+const DECIMAL = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+
 export function csvEscape(value: unknown): string {
-  const text = String(value ?? '');
+  // Control characters become `.`, as in the CLI's --csv, except tab, CR and
+  // LF, which a quoted cell carries and a multi-line banner needs. An escape
+  // sequence in a banner would otherwise run in a terminal that prints the
+  // file.
+  const text = Array.from(String(value ?? ''), (char) => (isDefusedControl(char) ? '.' : char)).join('');
   // A cell that parses as a number cannot be a formula, so latency of -1 or
   // a `+`-signed figure stays a number rather than gaining a stray quote.
-  const numeric = text !== '' && Number.isFinite(Number(text));
+  // A decimal literal only, as Rust's f64 parse in the CLI reads it:
+  // `Number()` also accepted surrounding whitespace, so a cell of "\t1"
+  // counted as a number and skipped the guard the CLI applies.
+  const numeric = DECIMAL.test(text);
   const guarded = !numeric && /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
   if (guarded.includes(',') || guarded.includes('"') || guarded.includes('\n') || guarded.includes('\r')) {
     return `"${guarded.replace(/"/g, '""')}"`;

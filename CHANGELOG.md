@@ -26,6 +26,14 @@ its heading and collects entries. The date and the link go on with the tag.
   Felix Stubner. Upgrading from an earlier version leaves one entry, under the
   new name.
 
+### Fixed
+
+- **The desktop app's CSV export defuses control characters, as the CLI's
+  does.** A banner containing an escape sequence went into the file as it
+  was, and a cell such as a tab followed by a number skipped the guard that
+  stops a spreadsheet reading it as a formula. Both exports are now tested
+  against the same list of cases.
+
 ## [0.3.4] - 2026-10-04
 
 ### Added

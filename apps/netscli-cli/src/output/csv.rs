@@ -63,6 +63,22 @@ fn escape(cell: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The cases the desktop app's `csvEscape` is tested against too, so the
+    /// two CSV exports quote and defuse a cell the same way.
+    #[test]
+    fn matches_the_shared_cases() {
+        let fixture: serde_json::Value =
+            serde_json::from_str(include_str!("../../../../testdata/csv-escape.json")).unwrap();
+        for case in fixture["cases"].as_array().unwrap() {
+            let input = case["in"].as_str().unwrap();
+            assert_eq!(
+                escape(input),
+                case["out"].as_str().unwrap(),
+                "input {input:?}"
+            );
+        }
+    }
     use serde::Serialize;
 
     #[derive(Serialize)]

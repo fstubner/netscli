@@ -49,8 +49,12 @@ pnet_datalink = "0.35"
 [target.'cfg(windows)'.dependencies]
 ipconfig = "0.3"
 windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_NetworkManagement_IpHelper", "Win32_NetworkManagement_Ndis", "Win32_Networking_WinSock", "Win32_System_IO"] }
+ts-rs = { version = "12.0.1", optional = true }
 
 [features]
+# Generates the desktop app's TypeScript types from these structs (see
+# apps/netscli-gui/src/types/generated). Build and test tooling only.
+ts = ["dep:ts-rs"]
 # Lean by default: scan, discover, DNS, ARP, OUI lookup, stats.
 # Consumers who want the SQLite persistence or packet capture opt in.
 default = []

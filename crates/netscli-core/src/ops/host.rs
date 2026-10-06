@@ -83,6 +83,7 @@ impl Ops {
 }
 
 #[derive(Debug, Clone, Serialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 pub struct PingSummary {
     pub host: String,
     pub ip: IpAddr,

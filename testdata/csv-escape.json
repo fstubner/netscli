@@ -1,0 +1,101 @@
+{
+  "comment": "CSV cell escaping, shared by the CLI (apps/netscli-cli/src/output/csv.rs) and the desktop app (apps/netscli-gui/src/tools/presentation/values.ts). Both test against every case here, so the two implementations cannot drift apart.",
+  "cases": [
+    {
+      "in": "=HYPERLINK(\"http://x\",\"y\")",
+      "out": "\"'=HYPERLINK(\"\"http://x\"\",\"\"y\"\")\""
+    },
+    {
+      "in": "@SUM(A1:A9)",
+      "out": "'@SUM(A1:A9)"
+    },
+    {
+      "in": "+cmd|' /C calc'!A0",
+      "out": "'+cmd|' /C calc'!A0"
+    },
+    {
+      "in": "-2+3",
+      "out": "'-2+3"
+    },
+    {
+      "in": "-",
+      "out": "'-"
+    },
+    {
+      "in": "-1",
+      "out": "-1"
+    },
+    {
+      "in": "+1",
+      "out": "+1"
+    },
+    {
+      "in": "-1.5e3",
+      "out": "-1.5e3"
+    },
+    {
+      "in": ".5",
+      "out": ".5"
+    },
+    {
+      "in": "+Infinity",
+      "out": "'+Infinity"
+    },
+    {
+      "in": "-inf",
+      "out": "'-inf"
+    },
+    {
+      "in": "nan",
+      "out": "nan"
+    },
+    {
+      "in": "0x10",
+      "out": "0x10"
+    },
+    {
+      "in": "\t1",
+      "out": "'\t1"
+    },
+    {
+      "in": "\r5",
+      "out": "\"'\r5\""
+    },
+    {
+      "in": "plain",
+      "out": "plain"
+    },
+    {
+      "in": "a,b",
+      "out": "\"a,b\""
+    },
+    {
+      "in": "say \"hi\"",
+      "out": "\"say \"\"hi\"\"\""
+    },
+    {
+      "in": "line one\nline two",
+      "out": "\"line one\nline two\""
+    },
+    {
+      "in": "bell\u0007here",
+      "out": "bell.here"
+    },
+    {
+      "in": "\u001b[31mred",
+      "out": ".[31mred"
+    },
+    {
+      "in": "nel\u0085x",
+      "out": "nel.x"
+    },
+    {
+      "in": "tab\tinside",
+      "out": "tab\tinside"
+    },
+    {
+      "in": "",
+      "out": ""
+    }
+  ]
+}

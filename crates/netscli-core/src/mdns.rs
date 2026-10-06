@@ -27,6 +27,7 @@ use crate::error::{Error, Result};
 /// announcement becomes a separate `MdnsService` — callers that want a
 /// per-host view should group by [`MdnsService::hostname`].
 #[derive(Debug, Clone, Serialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 pub struct MdnsService {
     /// Full service instance name, e.g. `MyPrinter._ipp._tcp.local.`
     pub full_name: String,
