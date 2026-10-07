@@ -1,7 +1,28 @@
 use super::super::command_catalog::{CommandDef, COMMAND_DEFS};
 use super::super::history::{EntryState, HistoryEntry};
 use super::TuiApp;
+use netscli_core::sanitize_for_terminal;
 use ratatui::text::Line;
+use std::borrow::Cow;
+
+/// Replace the characters that could drive or deceive a terminal, in every
+/// span of `lines`, before they are stored.
+///
+/// Much of what a command prints is chosen by whatever answered it: mDNS
+/// names, DNS TXT values, hop names. ratatui drops control characters when it
+/// draws, but it keeps the bidi and zero-width ones, and `/export` reads
+/// these stored lines, not the screen. Cleaning once, here, covers the
+/// screen and both exports.
+fn clean_remote_text(mut lines: Vec<Line<'static>>) -> Vec<Line<'static>> {
+    for span in lines.iter_mut().flat_map(|line| line.spans.iter_mut()) {
+        let cleaned = match sanitize_for_terminal(&span.content) {
+            Cow::Borrowed(_) => continue,
+            Cow::Owned(text) => text,
+        };
+        span.content = Cow::Owned(cleaned);
+    }
+    lines
+}
 
 impl<'a> TuiApp<'a> {
     pub fn push_command(&mut self, cmd: String) {
@@ -18,7 +39,7 @@ impl<'a> TuiApp<'a> {
 
     pub fn finish_current(&mut self, output: Vec<Line<'static>>) {
         if let Some(entry) = self.history.last_mut() {
-            entry.output = output;
+            entry.output = clean_remote_text(output);
             entry.state = EntryState::Done;
         }
     }

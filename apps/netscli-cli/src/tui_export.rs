@@ -2,6 +2,7 @@ use crate::tui::{EntryState, HistoryEntry};
 use anyhow::Result;
 use chrono::Local;
 use dirs::home_dir;
+use netscli_core::sanitize_for_terminal;
 use serde::Serialize;
 use std::fs;
 use std::path::PathBuf;
@@ -132,11 +133,18 @@ fn render_markdown(history: &[HistoryEntry]) -> String {
         // allows any backtick run of ≥3, so we pick the shortest run
         // not present in the body. This prevents embedded ``` in user
         // output from prematurely closing the fence.
+        //
+        // The lines are the TUI's stored text, not what ratatui drew, and
+        // they include names and TXT values a remote host chose. The screen
+        // never shows an escape sequence in them, but this file would carry
+        // it, and run when someone `cat`s it. They are cleaned when stored
+        // too; this file is the sink that outlives the session, so it does
+        // not lean on that.
         let body: String = entry
             .output
             .iter()
             .map(|l| {
-                let mut s = l.to_string();
+                let mut s = sanitize_for_terminal(&l.to_string()).into_owned();
                 s.push('\n');
                 s
             })
@@ -194,4 +202,44 @@ fn render_json(history: &[HistoryEntry]) -> Result<String> {
             .collect(),
     };
     Ok(serde_json::to_string_pretty(&doc)?)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ratatui::text::Line;
+
+    fn done(command: &str, output: Vec<Line<'static>>) -> HistoryEntry {
+        HistoryEntry {
+            command: command.to_string(),
+            output,
+            state: EntryState::Done,
+        }
+    }
+
+    #[test]
+    fn a_markdown_export_carries_no_escape_sequences() {
+        // An mDNS name or a TXT value a remote host chose, as the TUI stores
+        // it. ESC here would run when the file is printed to a terminal.
+        let history = vec![done(
+            "/mdns",
+            vec![Line::from(
+                "evil\u{1b}[31m\u{1b}]52;c;ZWNobw==\u{7}  [10.0.0.9]",
+            )],
+        )];
+        let md = render_markdown(&history);
+        assert!(!md.contains('\u{1b}'), "ESC reached the file: {md:?}");
+        assert!(!md.contains('\u{7}'), "BEL reached the file: {md:?}");
+        assert!(md.contains("evil.[31m"), "the name vanished: {md:?}");
+    }
+
+    #[test]
+    fn a_markdown_export_carries_no_bidi_overrides() {
+        let history = vec![done(
+            "/dns example.com",
+            vec![Line::from("v=spf1 \u{202E}ssap\u{200B}")],
+        )];
+        let md = render_markdown(&history);
+        assert!(!md.contains('\u{202E}') && !md.contains('\u{200B}'));
+    }
 }

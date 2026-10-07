@@ -1,7 +1,7 @@
 use super::super::{events, state::TuiApp};
 use super::SharedDb;
 use crate::tui_formatter::Formatter;
-use netscli_core::{Ops, OpsConfig, PcapCancelToken};
+use netscli_core::{sanitize_for_terminal, Ops, OpsConfig, PcapCancelToken};
 use ratatui::text::Line;
 use tokio::sync::watch;
 
@@ -22,9 +22,11 @@ impl TaskRuntime {
 
     pub(super) fn refresh_running_detail(&mut self, app: &mut TuiApp<'_>) {
         if app.running {
+            // Trace progress carries the router names a hop reported, which
+            // are not ours to trust any more than the finished output is.
             app.running_detail = self.progress_rx.as_ref().and_then(|rx| {
                 let msg = rx.borrow().clone();
-                (!msg.trim().is_empty()).then_some(msg)
+                (!msg.trim().is_empty()).then(|| sanitize_for_terminal(&msg).into_owned())
             });
         } else {
             app.running_detail = None;
@@ -121,5 +123,27 @@ impl TaskRuntime {
     fn clear(&mut self) {
         self.pcap_cancel = None;
         self.progress_rx = None;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn progress_text_is_cleaned_before_it_is_shown() {
+        // A trace hop line, with the router's own name in it.
+        let (_tx, rx) = watch::channel("hop 3/30 - evil\u{202E}name \u{1b}[2J".to_string());
+        let mut tasks = TaskRuntime::new();
+        tasks.progress_rx = Some(rx);
+        let mut app = TuiApp::new();
+        app.running = true;
+
+        tasks.refresh_running_detail(&mut app);
+
+        assert_eq!(
+            app.running_detail.as_deref(),
+            Some("hop 3/30 - evil.name .[2J")
+        );
     }
 }

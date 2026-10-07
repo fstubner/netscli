@@ -216,6 +216,23 @@ fn empty_suggestions_does_not_panic_on_tab() {
 }
 
 #[test]
+fn stored_output_has_remote_text_cleaned() {
+    use crate::tui::EntryState;
+    use ratatui::text::{Line, Span};
+
+    let mut app = TuiApp::new();
+    app.push_command("/mdns".to_string());
+    app.finish_current(vec![Line::from(vec![
+        Span::raw("evil\u{1b}[31m"),
+        Span::raw(" name\u{202E}fdp"),
+    ])]);
+
+    let entry = &app.history[0];
+    assert_eq!(entry.state, EntryState::Done);
+    assert_eq!(entry.output[0].to_string(), "evil.[31m name.fdp");
+}
+
+#[test]
 fn status_setter_updates_message() {
     let mut app = TuiApp::new();
     app.set_status("Running...");
