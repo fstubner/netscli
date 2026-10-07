@@ -39,7 +39,6 @@ So a dash in the MCP column of the table below does not mean you need another in
 | Result bundles | ✓ | – | – | – |
 | First-run setup | – | ✓ | – | – |
 | Diagnostics | – | ✓ | – | – |
-| MCP service management | – | ✓ | – | – |
 | Completions and man page | – | ✓ | – | – |
 
 ✓ available here · – not offered here
@@ -75,7 +74,7 @@ So a dash in the MCP column of the table below does not mean you need another in
 Interactive network work, with tabs, filtering, row selection, a details pane, history, exports, and local status indicators. It exposes the shared
 operations where a table or a details pane earns its place.
 
-Shell maintenance (setup, doctor, completions, man pages, MCP service management) stays in the CLI, because none of it benefits from a window.
+Shell maintenance (setup, doctor, completions, man pages) stays in the CLI, because none of it benefits from a window.
 
 ## CLI (`netscli <command>`)
 
@@ -86,8 +85,8 @@ prompt:
   ones that return a list.
 - `netscli setup` for the first-run wizard, `netscli doctor` for a headless
   capability report.
-- `netscli serve` to start the MCP server, and `netscli mcp-service` to
-  manage it as a system service where that is supported.
+- `netscli serve` to start the MCP server. An MCP client starts it for you,
+  so it does not run as a system service.
 - `netscli completions` and `netscli man`.
 
 ## TUI (`netscli` with no command)

@@ -34,7 +34,7 @@ Use the desktop app when:
 - You want to export JSON, CSV, or a reusable NetsCLI result bundle.
 - You prefer a desktop interface but still want to see the equivalent CLI command.
 
-Use the CLI instead when you need setup, doctor, shell completions, manpages, service management, or scripts that run unattended.
+Use the CLI instead when you need setup, doctor, shell completions, manpages, or scripts that run unattended.
 
 ## Shell layout
 
