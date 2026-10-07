@@ -252,9 +252,9 @@ A checksum only proves the file matches its own sidecar, and both come from
 the same place. The signature is what ties the asset to the workflow run that
 built it.
 
-Every asset is signed with [Sigstore
-cosign](https://docs.sigstore.dev/cosign/overview/) by the release workflow,
-and the signature is tied to the exact run that built it. Each asset ships a
+Every CLI and desktop asset is signed with [Sigstore
+cosign](https://docs.sigstore.dev/cosign/signing/overview/) by the release workflow,
+and the signature is tied to the exact run that built it. Each of those assets ships a
 `.sig` and a `.pem` beside it:
 
 ```bash

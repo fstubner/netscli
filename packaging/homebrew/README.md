@@ -45,9 +45,9 @@ brew audit --cask --strict fstubner/tap/netscli-gui
 brew install --cask fstubner/tap/netscli-gui
 ```
 
-The Cask installs DMGs for the desktop app. macOS signing and
-notarization are separate release-trust work; the Cask can point at an
-unsigned DMG, but users may see Gatekeeper friction.
+The Cask installs DMGs for the desktop app. They are ad-hoc signed and not
+notarized, so users see Gatekeeper friction on the first launch. The Cask
+declares `auto_updates`, because the app updates itself.
 
 ## Moving to homebrew-core later
 

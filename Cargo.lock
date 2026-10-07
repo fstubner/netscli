@@ -3184,7 +3184,7 @@ dependencies = [
  "serde_json",
  "serde_yaml_ng",
  "shell-words",
- "thiserror 2.0.21",
+ "sysinfo",
  "tokio",
  "unicode-width",
 ]

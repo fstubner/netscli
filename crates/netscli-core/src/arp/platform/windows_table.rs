@@ -17,8 +17,8 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use mac_address::MacAddress;
 use windows_sys::Win32::Foundation::NO_ERROR;
 use windows_sys::Win32::NetworkManagement::IpHelper::{
-    FreeMibTable, GetIpNetTable2, GetUnicastIpAddressTable, MIB_IPNET_TABLE2,
-    MIB_UNICASTIPADDRESS_TABLE,
+    FreeMibTable, GetIpNetTable2, GetUnicastIpAddressTable, MIB_IPNET_ROW2, MIB_IPNET_TABLE2,
+    MIB_UNICASTIPADDRESS_ROW, MIB_UNICASTIPADDRESS_TABLE,
 };
 use windows_sys::Win32::Networking::WinSock::{
     NlnsDelay, NlnsPermanent, NlnsProbe, NlnsReachable, NlnsStale, AF_INET, AF_INET6,
@@ -39,8 +39,12 @@ pub(super) fn read() -> Result<Vec<ArpEntry>> {
         return Err(Error::Network(format!("GetIpNetTable2 failed: {status}")));
     }
     // SAFETY: on success `table` points at NumEntries rows; freed below.
+    // `Table` is declared as one row and the rest follow it, so the pointer
+    // is taken from `table` itself. `.Table.as_ptr()` borrowed the
+    // one-row array first, which covers only the first row.
     let rows = unsafe {
-        std::slice::from_raw_parts((*table).Table.as_ptr(), (*table).NumEntries as usize)
+        let first = std::ptr::addr_of!((*table).Table).cast::<MIB_IPNET_ROW2>();
+        std::slice::from_raw_parts(first, (*table).NumEntries as usize)
     };
     let mut entries = Vec::new();
     for row in rows {
@@ -97,8 +101,10 @@ fn interface_ipv4_by_index() -> HashMap<u32, Ipv4Addr> {
         return map;
     }
     // SAFETY: on success `table` points at NumEntries rows; freed below.
+    // The pointer comes from `table`, as in `read` above.
     let rows = unsafe {
-        std::slice::from_raw_parts((*table).Table.as_ptr(), (*table).NumEntries as usize)
+        let first = std::ptr::addr_of!((*table).Table).cast::<MIB_UNICASTIPADDRESS_ROW>();
+        std::slice::from_raw_parts(first, (*table).NumEntries as usize)
     };
     for row in rows {
         if let Some(IpAddr::V4(ip)) = sockaddr_ip(&row.Address) {

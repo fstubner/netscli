@@ -1,4 +1,5 @@
 mod artifacts;
+mod dialog;
 mod export;
 mod pcap_path;
 mod preferences;

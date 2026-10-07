@@ -86,34 +86,12 @@ pub(super) fn send_icmp_echo_v4(
 }
 
 fn configure_read_timeout(rx: &TransportReceiver, timeout: Duration) -> anyhow::Result<()> {
+    // No Windows branch: this module is not built there. One used to sit
+    // here, unsafe code that no build ever compiled.
     #[cfg(unix)]
     {
         pnet_sys::set_socket_receive_timeout(rx.socket.fd, timeout)
             .map_err(|e| anyhow::anyhow!("failed to set read timeout: {e}"))?;
-    }
-
-    #[cfg(windows)]
-    {
-        use windows_sys::Win32::Networking::WinSock::{
-            setsockopt, SOCKET_ERROR, SOL_SOCKET, SO_RCVTIMEO,
-        };
-
-        let timeout_ms = timeout.as_millis().min(i32::MAX as u128) as i32;
-        let result = unsafe {
-            setsockopt(
-                rx.socket.fd,
-                SOL_SOCKET,
-                SO_RCVTIMEO,
-                (&timeout_ms as *const i32).cast(),
-                std::mem::size_of::<i32>() as i32,
-            )
-        };
-        if result == SOCKET_ERROR {
-            return Err(anyhow::anyhow!(
-                "failed to set read timeout: {}",
-                std::io::Error::last_os_error()
-            ));
-        }
     }
 
     Ok(())

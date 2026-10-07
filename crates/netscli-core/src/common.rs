@@ -22,4 +22,4 @@ pub use ports::{
 };
 #[cfg(windows)]
 pub(crate) use system_tools::system_tool;
-pub use terminal::sanitize_for_terminal;
+pub use terminal::{is_unsafe_for_display, sanitize_for_terminal};

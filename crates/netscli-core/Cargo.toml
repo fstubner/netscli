@@ -2,9 +2,12 @@
 name = "netscli-core"
 version = "0.3.5"
 description = "Core networking library: discovery, scanning, DNS, ARP, PCAP, and OUI resolution"
+keywords = ["networking", "scanner", "port-scanner", "dns", "arp"]
+categories = ["network-programming"]
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 # The OUI vendor DB ships with the crate so vendor lookups work

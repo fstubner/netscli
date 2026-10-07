@@ -162,6 +162,20 @@ pre {
   font-family: "Cascadia Code", "JetBrains Mono", Consolas, monospace;
 }
 
+/* Off screen but still read by a screen reader. Not `display: none` or
+   `visibility: hidden`, which take the text out of the accessibility tree. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .container :focus-visible {
   outline: 1px solid var(--focus-ring);
   outline-offset: 2px;

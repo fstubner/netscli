@@ -91,7 +91,13 @@ pub(super) fn guess_service(port: u16) -> Option<String> {
 pub(super) fn classify_connect_error(kind: ErrorKind) -> PortStatus {
     match kind {
         ErrorKind::ConnectionRefused => PortStatus::Closed,
-        ErrorKind::TimedOut => PortStatus::Filtered,
+        // An ICMP unreachable (host, network or administratively
+        // prohibited) is a firewall's REJECT as often as a missing route,
+        // and nmap calls it filtered too. As `error`, a host behind one
+        // returned an error row for every port it was asked about.
+        ErrorKind::TimedOut | ErrorKind::HostUnreachable | ErrorKind::NetworkUnreachable => {
+            PortStatus::Filtered
+        }
         _ => PortStatus::Error,
     }
 }

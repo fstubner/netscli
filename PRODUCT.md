@@ -12,17 +12,17 @@ Answer questions about a local network — what is on it, what is reachable,
 what is listening — and return the answer as structured data rather than
 text a human has to read and re-type.
 
-The origin, from the README, was narrower: driving those questions from an
-AI agent, which existing tools make awkward ("half a dozen CLI invocations,
-brittle output parsing, no shared context"). The MCP server was built
-first, then the TUI, CLI, and desktop app, all over one Rust core
+The origin, from the README, was the terminal UI. It was built first, to
+learn how the newer TUIs work, with a network scanner to give it something
+to do. The MCP server came next, so an agent could ask about a network
+instead of parsing output written for a person. The CLI followed, for
+scripts and cron jobs, and the desktop app came last, all over one Rust core
 (`netscli-core`).
 
-**A tension worth recording.** The README and the website both lead with
-the agent/MCP story, but the maintainer ranks agent-driven users *last* of
-four (see Users). The code's history explains the emphasis; the priorities
-below are what the product is actually for now. Where the two disagree,
-this document is the current intent and the README is the origin story.
+The README tells that history. The priorities below are what the product is
+for now, and the maintainer ranks agent-driven users *last* of four (see
+Users). Where the two disagree, this document is the current intent and the
+README is the origin story.
 
 ## Users
 
@@ -83,10 +83,10 @@ a moment in time.
 
 ## Constraints
 
-- **Rust 1.96**, one workspace, crates versioned together but not
-  inheriting a workspace version — each manifest carries its own, and a
-  release has to touch all of them plus `package.json` and
-  `tauri.conf.json`. See `docs/PUBLISHING.md`.
+- **Rust**, at the version in `rust-toolchain.toml`, one workspace, crates
+  versioned together but not inheriting a workspace version. Each manifest
+  carries its own, and a release has to touch all of them plus
+  `package.json` and `tauri.conf.json`. See `docs/PUBLISHING.md`.
 - **Privilege boundaries are real and platform-specific.** Raw ICMP needs
   administrator rights on Windows; clearing the ARP table needs them
   everywhere. Where a capability is unavailable the product must say so and

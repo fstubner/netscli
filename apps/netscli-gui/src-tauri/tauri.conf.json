@@ -25,9 +25,12 @@
       "csp": {
         "default-src": "'self' asset: http://asset.localhost",
         "connect-src": "ipc: http://ipc.localhost https://api.github.com",
-        "img-src": "'self' asset: http://asset.localhost blob: data:",
+        "img-src": "'self'",
         "style-src": "'self'",
-        "script-src": "'self'"
+        "script-src": "'self'",
+        "base-uri": "'none'",
+        "form-action": "'none'",
+        "object-src": "'none'"
       }
     }
   },

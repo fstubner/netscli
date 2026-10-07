@@ -110,9 +110,24 @@ describe('useReleaseNotifications: which kind of notice', () => {
     const { result } = renderHook(() => useReleaseNotifications(options({ showUpdateToast })));
 
     await waitFor(() => expect(showUpdateToast).toHaveBeenCalledTimes(1));
-    expect(showUpdateToast.mock.calls[0]).toHaveLength(2); // no dialog flag
+    expect(showUpdateToast.mock.calls[0][2]).toBe(false); // does not open the dialog
     expect(checkForUpdate).not.toHaveBeenCalled();
     expect(result.current.pendingUpdate).toBeNull();
+  });
+
+  it('says why an install cannot update itself', async () => {
+    // The backend computes a reason for exactly these installs. A Scoop copy
+    // told only "update available, view release" is invited to download an
+    // MSI over the top of the install Scoop manages.
+    const reason = 'Installed with Scoop, so update it there: scoop update netscli-gui';
+    vi.mocked(getInstallSupport).mockResolvedValue({ supported: false, reason });
+    vi.mocked(fetchLatestRelease).mockResolvedValue({ version: '0.4.0', url: 'https://github.com/fstubner/netscli/releases/tag/v0.4.0' });
+    const showUpdateToast = vi.fn();
+
+    renderHook(() => useReleaseNotifications(options({ showUpdateToast })));
+
+    await waitFor(() => expect(showUpdateToast).toHaveBeenCalledTimes(1));
+    expect(showUpdateToast.mock.calls[0][3]).toBe(reason);
   });
 
   it('falls back to the link when latest.json cannot be fetched', async () => {
@@ -128,6 +143,8 @@ describe('useReleaseNotifications: which kind of notice', () => {
 
     await waitFor(() => expect(showUpdateToast).toHaveBeenCalledTimes(1));
     expect(showUpdateToast.mock.calls[0][0]).toBe('0.4.0');
+    // This install can update itself, so there is no reason to give.
+    expect(showUpdateToast.mock.calls[0][3]).toBeUndefined();
   });
 
   it('stays quiet about a version the user skipped', async () => {

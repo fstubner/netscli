@@ -86,4 +86,16 @@ describe('ToastHost update toast', () => {
     );
     expect(screen.getByTestId('update-dialog')).toBeTruthy();
   });
+
+  // The toast region is polite and atomic, so it reads out everything inside
+  // it whenever anything inside it changes. The dialog's progress text changes
+  // many times a second during a download, and sat in there, which meant the
+  // whole dialog was read out again for each change.
+  it('keeps the dialog out of the atomic live region', () => {
+    renderToast(
+      true,
+      updates({ dialogOpen: true, pendingUpdate: { version: '0.4.0', body: 'notes' } }),
+    );
+    expect(screen.getByTestId('update-dialog').closest('[aria-atomic="true"]')).toBeNull();
+  });
 });

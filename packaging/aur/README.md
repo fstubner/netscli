@@ -36,8 +36,9 @@ git push origin master
 ## After each release
 
 The normal path is `.github/workflows/publish.yml`: it waits for release
-assets, reads the `.sha256` sidecars, computes the tagged LICENSE hash,
-renders the checked-in PKGBUILD, and pushes to AUR over SSH.
+assets, downloads each one and checks its hash against the `.sha256` sidecar,
+computes the tagged LICENSE hash, renders the checked-in PKGBUILD, and pushes
+to AUR over SSH.
 
 If updating manually:
 

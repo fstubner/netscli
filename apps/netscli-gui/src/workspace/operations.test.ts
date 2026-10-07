@@ -101,6 +101,35 @@ describe('runWorkspaceTab op-id race guard', () => {
     expect(activeOps.current[tab.id]).toBeUndefined();
   });
 
+  it('tells a run made of several calls when it has been stopped', async () => {
+    // DNS Lookup "ALL" asks the backend ten times in a row. Stop only reaches
+    // the call in flight, so the loop has to be able to see it for itself.
+    const { executeTool } = await import('./toolExecution');
+    const activeOps = { current: {} as Record<string, string> };
+    const tab = createTab('dns');
+    tab.form.host = 'netscli.com';
+    const seen: boolean[] = [];
+    vi.mocked(executeTool).mockImplementation(async (_tab, _opId, _probes, isCurrent) => {
+      seen.push(isCurrent?.() ?? true);
+      delete activeOps.current[tab.id]; // what cancelWorkspaceTab does first
+      seen.push(isCurrent?.() ?? true);
+      return scanResult();
+    });
+
+    await runWorkspaceTab({
+      activeOps,
+      isTabActive: () => true,
+      maxConcurrentProbes: 256,
+      patchTab: vi.fn(),
+      persistentHistory: false,
+      setHistory: vi.fn(),
+      showToast: vi.fn(),
+      tab,
+    });
+
+    expect(seen).toEqual([true, false]);
+  });
+
   it('clears busy state and shows an error toast when execution fails', async () => {
     const { executeTool } = await import('./toolExecution');
     vi.mocked(executeTool).mockRejectedValue(new Error('boom'));

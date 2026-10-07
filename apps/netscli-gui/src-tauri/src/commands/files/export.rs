@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 use tauri::State;
 use tauri_plugin_dialog::DialogExt;
 
+use super::dialog;
 use super::preferences::{
     default_save_directory, format_byte_limit, preferred_save_directory,
     read_file_save_preferences, timestamp_millis,
@@ -11,8 +12,9 @@ use crate::state::ArtifactRegistry;
 
 const MAX_RESULT_BUNDLE_BYTES: u64 = 25 * 1024 * 1024;
 
+// The commands that can open a dialog are `async`; see `dialog::ask`.
 #[tauri::command]
-pub(crate) fn export_text_file(
+pub(crate) async fn export_text_file(
     app: tauri::AppHandle,
     artifact_registry: State<'_, ArtifactRegistry>,
     filename: String,
@@ -27,7 +29,7 @@ pub(crate) fn export_text_file(
         );
     }
 
-    let path = resolve_export_path(&app, &filename)?;
+    let path = resolve_export_path(&app, &filename).await?;
 
     if let Some(parent) = path
         .parent()
@@ -43,7 +45,7 @@ pub(crate) fn export_text_file(
 }
 
 #[tauri::command]
-pub(crate) fn save_result_bundle(
+pub(crate) async fn save_result_bundle(
     app: tauri::AppHandle,
     artifact_registry: State<'_, ArtifactRegistry>,
     contents: String,
@@ -55,17 +57,18 @@ pub(crate) fn save_result_bundle(
         ));
     }
     let filename = format!("netscli-result-{}.netscli-result.json", timestamp_millis());
-    export_text_file(app, artifact_registry, filename, contents, None)
+    export_text_file(app, artifact_registry, filename, contents, None).await
 }
 
 #[tauri::command]
-pub(crate) fn open_result_bundle(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
-    let selected = app
+pub(crate) async fn open_result_bundle(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
+    let picker = app
         .dialog()
         .file()
         .set_title("Open NetsCLI Result")
-        .add_filter("NetsCLI Result", &["json"])
-        .blocking_pick_file()
+        .add_filter("NetsCLI Result", &["json"]);
+    let selected = dialog::ask(|done| picker.pick_file(done))
+        .await
         .ok_or_else(|| "Open result cancelled".to_string())?;
     let path = selected
         .into_path()
@@ -95,7 +98,7 @@ pub(crate) fn ensure_file_size_limit(
     Ok(())
 }
 
-fn resolve_export_path(app: &tauri::AppHandle, filename: &str) -> Result<PathBuf, String> {
+async fn resolve_export_path(app: &tauri::AppHandle, filename: &str) -> Result<PathBuf, String> {
     if let Some(mut path) = std::env::var_os("NETSCLI_EXPORT_DIR").map(PathBuf::from) {
         path.push(filename);
         return Ok(path);
@@ -113,16 +116,16 @@ fn resolve_export_path(app: &tauri::AppHandle, filename: &str) -> Result<PathBuf
         return export_path_in_directory(dir, filename);
     }
 
-    let dialog_path = ask_export_path(app, filename, prefs.default_directory.as_deref())?;
+    let dialog_path = ask_export_path(app, filename, prefs.default_directory.as_deref()).await?;
     Ok(dialog_path)
 }
 
-fn ask_export_path(
+async fn ask_export_path(
     app: &tauri::AppHandle,
     filename: &str,
     default_directory: Option<&str>,
 ) -> Result<PathBuf, String> {
-    let mut dialog = app
+    let mut picker = app
         .dialog()
         .file()
         .set_title("Save NetsCLI Export")
@@ -130,14 +133,14 @@ fn ask_export_path(
         .set_can_create_directories(true);
 
     if let Some((name, extensions)) = export_filter(filename) {
-        dialog = dialog.add_filter(name, &extensions);
+        picker = picker.add_filter(name, &extensions);
     }
     if let Some(directory) = preferred_save_directory(default_directory)? {
-        dialog = dialog.set_directory(directory);
+        picker = picker.set_directory(directory);
     }
 
-    let selected = dialog
-        .blocking_save_file()
+    let selected = dialog::ask(|done| picker.save_file(done))
+        .await
         .ok_or_else(|| "Export cancelled".to_string())?;
 
     let path = selected
@@ -198,4 +201,67 @@ fn sanitize_export_filename(filename: &str) -> Result<String, String> {
     }
 
     Ok(cleaned)
+}
+
+// What the renderer is and is not allowed to write. The webview supplies the
+// filename, so these are what keeps an export inside the save folder.
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_names_the_app_generates_pass_unchanged() {
+        for name in [
+            "netscli-scan-1790000000000.csv",
+            "netscli-result-1790000000000.netscli-result.json",
+        ] {
+            assert_eq!(sanitize_export_filename(name).unwrap(), name);
+        }
+    }
+
+    #[test]
+    fn a_filename_cannot_carry_a_path_out_of_the_folder() {
+        for name in [
+            "../../outside.json",
+            "..\\..\\outside.json",
+            "C:\\Windows\\win.ini",
+            "/etc/passwd",
+            "sub/dir/file.txt",
+            "name:stream.txt",
+        ] {
+            let cleaned = sanitize_export_filename(name).unwrap();
+            assert!(
+                !cleaned.contains(['/', '\\', ':']),
+                "{name:?} became {cleaned:?}"
+            );
+            assert_eq!(
+                PathBuf::from(&cleaned).components().count(),
+                1,
+                "{cleaned:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_filename_with_nothing_usable_in_it_is_refused() {
+        for name in ["", "   ", ".", "..", "---", "///"] {
+            assert!(sanitize_export_filename(name).is_err(), "{name:?}");
+        }
+    }
+
+    #[test]
+    fn the_save_folder_is_created_and_must_be_a_folder() {
+        let base = std::env::temp_dir().join(format!("netscli-export-test-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&base);
+
+        let made = export_path_in_directory(base.join("nested"), "a.csv").unwrap();
+        assert_eq!(made, base.join("nested").join("a.csv"));
+        assert!(base.join("nested").is_dir());
+
+        let file = base.join("not-a-folder");
+        std::fs::write(&file, "x").unwrap();
+        assert!(export_path_in_directory(file, "a.csv").is_err());
+
+        std::fs::remove_dir_all(&base).unwrap();
+    }
 }

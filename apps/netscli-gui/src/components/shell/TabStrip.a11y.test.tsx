@@ -56,6 +56,17 @@ describe('tab strip keyboard access', () => {
     expect(tabIndexes).toEqual(['-1', '0', '-1']);
   });
 
+  // The close buttons sit inside the tabs. A button is a tab stop by default,
+  // so each one added a stop of its own to a strip meant to be a single one,
+  // and an ARIA tab's children are presentational, so a screen reader had no
+  // button to offer there anyway. Delete closes the focused tab by keyboard.
+  it('keeps the close buttons out of the tab order', () => {
+    renderStrip(1);
+    const closeButtons = Array.from(document.querySelectorAll<HTMLElement>('button.tab-close'));
+    expect(closeButtons).toHaveLength(3);
+    expect(closeButtons.map((el) => el.getAttribute('tabindex'))).toEqual(['-1', '-1', '-1']);
+  });
+
   it('moves to the next tab on ArrowRight and wraps at the end', () => {
     const { tabs, onSelectTab } = renderStrip(2);
     const active = screen.getAllByRole('tab')[2];

@@ -29,7 +29,7 @@ const SAMPLE_FIELDS: Record<ToolKind, string[]> = {
   pcap: ['protocol', 'source', 'destination', 'info'],
 };
 
-export function filterHintsFor(tab: WorkspaceTab | undefined): FilterHints {
+export function filterHintsFor(tab: Pick<WorkspaceTab, 'kind' | 'result'> | undefined): FilterHints {
   if (!tab) {
     return {
       placeholder: 'filter results',

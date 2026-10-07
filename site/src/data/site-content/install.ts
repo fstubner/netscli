@@ -34,9 +34,13 @@ export const installByPlatform: Record<Platform, PlatformInstall> = {
         command: 'winget install netscli',
       },
       {
+        // Two lines, not `a && b`. Windows PowerShell 5.1, the shell most
+        // Windows users have, rejects `&&`, and `;` does not separate commands
+        // in cmd. Two lines run in PowerShell 5.1, PowerShell 7 and cmd, and
+        // the copy button copies both.
         label: 'Scoop',
         command:
-          'scoop bucket add fstubner https://github.com/fstubner/scoop-bucket && scoop install netscli',
+          'scoop bucket add fstubner https://github.com/fstubner/scoop-bucket\nscoop install netscli',
       },
       {
         label: 'PowerShell script',
@@ -50,9 +54,10 @@ export const installByPlatform: Record<Platform, PlatformInstall> = {
         command: 'winget install netscli-gui',
       },
       {
+        // Two lines for the same reason as the CLI entry above.
         label: 'Scoop',
         command:
-          'scoop bucket add fstubner https://github.com/fstubner/scoop-bucket && scoop install netscli-gui',
+          'scoop bucket add fstubner https://github.com/fstubner/scoop-bucket\nscoop install netscli-gui',
       },
       {
         label: 'Installer',
@@ -171,7 +176,7 @@ export const tryCommands: TryCommand[] = [
  * alternative route for every platform, which is what made it read as a wall
  * rather than a choice. */
 export const installBinariesNote =
-  'Rust users can <code>cargo install netscli</code>. Every binary and installer is checksummed and signed with <a href="https://docs.sigstore.dev/cosign/overview/">Sigstore cosign</a>. The install guide shows <a href="/docs/install/#verifying-a-download">how to verify a download</a> and lists the standalone binaries and packet-capture builds.';
+  'Rust users can <code>cargo install netscli</code>. Every binary and installer is checksummed and signed with <a href="https://docs.sigstore.dev/cosign/signing/overview/">Sigstore cosign</a>. The install guide shows <a href="/docs/install/#verifying-a-download">how to verify a download</a> and lists the standalone binaries and packet-capture builds.';
 
 // Two things /llms.txt says that no page does: a build-from-source route,
 // listed after the per-platform quickstart, and any caveat a reader acting

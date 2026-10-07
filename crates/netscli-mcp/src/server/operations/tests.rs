@@ -52,6 +52,24 @@ fn an_ordinary_private_default_is_returned_unchanged() {
     assert_eq!(subnet, "192.168.1.0/24");
 }
 
+#[cfg(feature = "mdns")]
+#[test]
+fn mdns_service_types_are_deduplicated_and_capped() {
+    let repeated = vec!["_http._tcp.local.".to_string(); 40];
+    assert_eq!(
+        service_types_to_browse(Some(repeated)).unwrap(),
+        ["_http._tcp.local."]
+    );
+
+    let many: Vec<String> = (0..=MAX_MDNS_SERVICE_TYPES)
+        .map(|i| format!("_s{i}._tcp.local."))
+        .collect();
+    assert!(matches!(
+        service_types_to_browse(Some(many)),
+        Err(RpcError::InvalidParams(_))
+    ));
+}
+
 #[test]
 fn an_explicit_subnet_wins_over_the_default() {
     // The default must not be consulted at all when one was supplied,

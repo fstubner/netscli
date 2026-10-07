@@ -3,6 +3,7 @@ use netscli_core::sweep::SweepEntry;
 use std::time::Instant;
 
 use super::style::{cyan, dim, duration_tag, green, source_tag};
+use super::table::count_hosts;
 use super::CliFormatter;
 
 impl CliFormatter {
@@ -18,10 +19,10 @@ impl CliFormatter {
             .collect();
 
         let mut header_parts = vec![format!(
-            "{} in subnet {} ({} hosts with open ports)",
-            green(&format!("Swept {} hosts", entries.len())),
+            "{} in subnet {} ({} with open ports)",
+            green(&format!("Swept {}", count_hosts(entries.len()))),
             cyan(subnet),
-            with_open.len()
+            count_hosts(with_open.len())
         )];
         if let Some(tag) = duration_tag(start_time) {
             header_parts.push(tag);

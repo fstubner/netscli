@@ -8,6 +8,8 @@ use ratatui_textarea::{CursorMove, TextArea};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 mod config_ui;
+#[cfg(test)]
+mod hardening_tests;
 mod interaction;
 mod render;
 #[cfg(test)]
@@ -34,7 +36,6 @@ pub struct TuiApp<'a> {
     pub history: Vec<HistoryEntry>,
     pub command_history: Vec<String>,
     pub input: TextArea<'a>,
-    pub status: String,
     pub suggestions: Vec<CommandDef>,
     pub suggestion_index: usize,
     pub history_nav: Option<usize>,
@@ -59,12 +60,32 @@ pub struct TuiApp<'a> {
     settings_dirty: bool,
 }
 
+/// The name the status line shows for this machine.
+///
+/// The operating system is asked first. `$HOSTNAME` is a shell variable that
+/// bash sets and zsh does not, so on most Linux and macOS terminals it was
+/// missing and the line read `host n/a`. The variables are what is left when
+/// the system will not say.
+fn host_label(
+    system: Option<String>,
+    hostname_var: Option<String>,
+    computername_var: Option<String>,
+) -> String {
+    system
+        .filter(|name| !name.is_empty())
+        .or(hostname_var)
+        .or(computername_var)
+        .unwrap_or_else(|| "n/a".to_string())
+        .to_lowercase()
+}
+
 impl<'a> TuiApp<'a> {
     pub fn new() -> Self {
-        let hostname = std::env::var("HOSTNAME")
-            .or_else(|_| std::env::var("COMPUTERNAME"))
-            .unwrap_or_else(|_| "n/a".to_string())
-            .to_lowercase();
+        let hostname = host_label(
+            sysinfo::System::host_name(),
+            std::env::var("HOSTNAME").ok(),
+            std::env::var("COMPUTERNAME").ok(),
+        );
 
         let context_address = netscli_core::detect_default_ipv4_addr().map(|ip| ip.to_string());
 
@@ -80,7 +101,6 @@ impl<'a> TuiApp<'a> {
             history: Vec::new(),
             command_history: Vec::new(),
             input,
-            status: "ready".to_string(),
             suggestions: Vec::new(),
             suggestion_index: 0,
             history_nav: None,

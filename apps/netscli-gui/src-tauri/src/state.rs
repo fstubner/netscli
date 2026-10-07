@@ -59,8 +59,10 @@ impl OperationManager {
     /// sender either way.
     ///
     /// `register` also aborts a task when an op id is re-used, which would
-    /// look the same. Op ids are UUIDs minted per run (`generateId('op')`), so
-    /// that path is unreachable in practice.
+    /// look the same. Op ids are UUIDs minted per run (`generateId('op')`),
+    /// with one exception: DNS Lookup with record type ALL makes ten calls,
+    /// one after another, under its run's id. Each is finished before the next
+    /// is sent, so none replaces a live entry.
     pub(crate) async fn is_registered(&self, op_id: &str) -> bool {
         self.tasks.lock().await.contains_key(op_id)
     }

@@ -1,7 +1,7 @@
 # netscli
 
 Network diagnostics CLI, terminal UI, and MCP server, written in Rust.
-Discovery, port scans, ping, DNS, ARP, mDNS — with structured JSON output
+Discovery, port scans, ping, DNS, ARP and mDNS, with structured JSON output
 and an MCP server so a model can use the same operations.
 
 Full documentation: **[netscli.com](https://netscli.com)**
@@ -9,7 +9,7 @@ Full documentation: **[netscli.com](https://netscli.com)**
 ## Use it without installing
 
 ```bash
-npx netscli scan-ports 192.168.1.1
+npx netscli scan 192.168.1.1 -p 22,80,443
 ```
 
 This package carries no code of its own. It declares one small package per
@@ -28,7 +28,7 @@ platform and npm fetches the single prebuilt binary that matches yours.
 }
 ```
 
-**If you already have netscli installed, use the binary instead** — set
+**If you already have netscli installed, use the binary instead.** Set
 `"command": "netscli"` and drop the `npx -y`. You get the version you chose
 rather than whatever `latest` resolves to at launch, you skip a second copy
 of a 13 MB binary, and packet capture works, which it cannot here.
@@ -55,7 +55,7 @@ cargo install netscli               # anywhere with Rust
 ## Scanning other people's networks
 
 The MCP server refuses targets outside your local networks unless you set
-`NETSCLI_MCP_ALLOW_PUBLIC_TARGETS=1`. The CLI does not — it does what you
+`NETSCLI_MCP_ALLOW_PUBLIC_TARGETS=1`. The CLI does not. It does what you
 type.
 
 The split is deliberate. The MCP server is the one surface where the

@@ -203,6 +203,10 @@ foreach ($t in 'discover','scan','inspect','dns','mdns') {
 }
 ```
 
+The README's `docs/screenshots/gui-scan.png` is the `scan` capture from the
+same mode, with `--force-device-scale-factor=1.4641` in place of `2`, which
+makes the image 2000 x 1124.
+
 ### Store logos
 
 Both are in `packaging/msstore/`, rendered by the app icon's own generator
