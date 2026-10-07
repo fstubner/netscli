@@ -258,6 +258,9 @@ html[data-theme='light'] #install .reco{
   font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.82rem;
   color:var(--ui-text);overflow-wrap:anywhere;word-break:normal;
 }
+/* A command can be more than one line (Scoop's bucket add and install), and
+   the break has to show: collapsed into a space it reads as one command. */
+.alt-cmd:not(.install-download){white-space:pre-line}
 /* Reserve for the copy button, which only command rows have. It used to sit
    on `.alt-cmd` unconditionally, so a download row reserved 50px for a button
    that is never rendered there -- dead space the Download button was then
@@ -461,9 +464,11 @@ a.install-download:focus-visible{
   /* `.alt-cmd` too. It was left on `overflow-wrap:anywhere`, so while the
      recommended command truncated to one line the alternates below it broke
      mid-token across four -- the Scoop line did exactly that at 375px. Same
-     treatment, same reason: the copy button carries the full command. */
+     treatment, same reason: the copy button carries the full command.
+     `pre` rather than `nowrap` so a two-line command keeps its break; for a
+     one-line command the two are the same. */
   .alt-cmd:not(.install-download){
-    white-space:nowrap;
+    white-space:pre;
     overflow:hidden;
     text-overflow:ellipsis;
   }

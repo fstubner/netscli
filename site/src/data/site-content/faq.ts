@@ -109,12 +109,15 @@ export const faq: FaqItem[] = [
     group: 'Install and updates',
     q: 'Is NetsCLI a free network scanner for Windows, macOS, or Linux?',
     a: 'Yes. NetsCLI is MIT-licensed and free for personal, open-source, and commercial use. Windows users can install the CLI/TUI with `winget install netscli` and the desktop app with `winget install netscli-gui`. macOS and Linux users can install through the script, Homebrew, Cargo, or packaged release artifacts.',
+    // The Scoop row is two lines (the \n inside its <code>), for the reason
+    // given in install.ts. `.faq-command code` keeps line breaks, and its copy
+    // button copies both lines.
     aHtml: `
       <p>Yes. NetsCLI is MIT-licensed and free for personal, open-source, and commercial use.</p>
       <div class="faq-command-list" aria-label="Package manager commands">
         <div class="faq-command"><span>Winget (CLI)</span><code>winget install netscli</code></div>
         <div class="faq-command"><span>Winget (app)</span><code>winget install netscli-gui</code></div>
-        <div class="faq-command"><span>Scoop</span><code>scoop bucket add fstubner https://github.com/fstubner/scoop-bucket &amp;&amp; scoop install netscli</code></div>
+        <div class="faq-command"><span>Scoop</span><code>scoop bucket add fstubner https://github.com/fstubner/scoop-bucket\nscoop install netscli</code></div>
         <div class="faq-command"><span>Homebrew</span><code>brew tap fstubner/tap &amp;&amp; brew install netscli</code></div>
         <div class="faq-command"><span>Install script</span><code>${INSTALL_SH_COMMAND}</code></div>
         <div class="faq-command"><span>AUR</span><code>yay -S netscli-bin</code></div>

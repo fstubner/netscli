@@ -34,9 +34,13 @@ export const installByPlatform: Record<Platform, PlatformInstall> = {
         command: 'winget install netscli',
       },
       {
+        // Two lines, not `a && b`. Windows PowerShell 5.1, the shell most
+        // Windows users have, rejects `&&`, and `;` does not separate commands
+        // in cmd. Two lines run in PowerShell 5.1, PowerShell 7 and cmd, and
+        // the copy button copies both.
         label: 'Scoop',
         command:
-          'scoop bucket add fstubner https://github.com/fstubner/scoop-bucket && scoop install netscli',
+          'scoop bucket add fstubner https://github.com/fstubner/scoop-bucket\nscoop install netscli',
       },
       {
         label: 'PowerShell script',
@@ -50,9 +54,10 @@ export const installByPlatform: Record<Platform, PlatformInstall> = {
         command: 'winget install netscli-gui',
       },
       {
+        // Two lines for the same reason as the CLI entry above.
         label: 'Scoop',
         command:
-          'scoop bucket add fstubner https://github.com/fstubner/scoop-bucket && scoop install netscli-gui',
+          'scoop bucket add fstubner https://github.com/fstubner/scoop-bucket\nscoop install netscli-gui',
       },
       {
         label: 'Installer',
