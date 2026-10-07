@@ -64,13 +64,14 @@ signed by `.github/workflows/release.yml`. How to check both is in the
 - **Sigstore signatures.** Each asset also has a `.sig` and a `.pem`, made
   by cosign's keyless signing under the release workflow's GitHub identity.
   A passing `cosign verify-blob` shows the file was built and signed by this
-  repository's release workflow and has not changed since. The install
-  scripts do not check it, so that step is yours to take.
+  repository's release workflow and has not changed since. `install.sh`
+  checks it when `cosign` is installed and refuses a binary that fails.
 - **Windows.** The `netscli` executables (standard and `-pcap`), the `.msi`
   and the desktop app inside it carry an Authenticode signature from a
   Certum certificate, timestamped so it keeps verifying after the
   certificate expires. The executables and the `.msi` have been signed since
-  0.3.3, and the app inside the `.msi` since 0.3.4.
+  0.3.3, and the app inside the `.msi` since 0.3.4. `install.ps1` refuses a
+  `netscli.exe` whose signature is not valid or not from that certificate.
 - **macOS.** The `.dmg` is ad-hoc signed and not notarized, so macOS asks you
   to approve the first launch.
 - **In-app updates.** The desktop app reads `latest.json` from the latest
@@ -83,9 +84,12 @@ signed by `.github/workflows/release.yml`. How to check both is in the
   and restart**, and **Release Notifications** in Settings turns the check
   off. Installs that a package manager owns (Scoop, the AUR and `.deb`) show
   a link to the release instead of updating themselves.
-- **Not signed.** The `.mcpb` bundles and `latest.json` have no checksum or
-  signature file of their own. The binary inside a bundle is checked against
-  its published checksum when the bundle is built.
+- **MCP bundles.** The `.mcpb` bundles have a `.sha256`, `.sig` and `.pem`
+  like every other asset, signed by the publishing workflow
+  (`publish.yml`) rather than the release workflow.
+- **Not signed as a file.** `latest.json` has no signature file of its own.
+  Every update it lists is signed, and the signature names the version it
+  was made for, which the app requires.
 
 ## How far the supply chain has been reviewed
 

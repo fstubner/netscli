@@ -4,7 +4,8 @@ Manifest templates, generated package metadata, and submission notes for
 getting NetsCLI into the major OS package managers.
 
 Most live package-manager updates are automated from
-`.github/workflows/publish.yml` after a GitHub release is published. The
+`.github/workflows/publish.yml`, which `publish-release.yml` starts once a
+release's files are all in place and it has been published. The
 files in this directory are reference templates/snapshots and should stay
 accurate enough to review. The publish jobs download each release asset,
 re-hash it, and check the result against the uploaded `.sha256` sidecar
@@ -35,7 +36,7 @@ trusting GitHub's binary storage:
 cosign verify-blob \
   --certificate netscli-linux-x86_64.pem \
   --signature   netscli-linux-x86_64.sig \
-  --certificate-identity-regexp 'https://github.com/fstubner/netscli/.github/workflows/release\.yml@.*' \
+  --certificate-identity-regexp '^https://github\.com/fstubner/netscli/\.github/workflows/release\.yml@refs/(heads/main|tags/v[0-9.]+)$' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
   netscli-linux-x86_64
 ```
@@ -102,9 +103,12 @@ System Settings, under Privacy & Security.
 
 ## Release-day checklist
 
-1. Publish the GitHub release for `vX.Y.Z`.
-2. Confirm `release.yml` uploads the expected CLI binaries, GUI
-   installers, `.sha256` sidecars, and sigstore `.sig`/`.pem` files.
+1. Run `gh workflow run publish-release.yml -f tag=vX.Y.Z` from `main`
+   (the steps before it are in `docs/RELEASE.md`). It builds into the
+   draft, checks every file, and only then publishes.
+2. Confirm the run's asset check passed, so the CLI binaries, GUI
+   installers, `.sha256` sidecars and sigstore `.sig`/`.pem` files are all
+   on the release.
 3. Confirm `publish.yml` completes. After a transient registry failure, run
    just that registry again with
    `gh workflow run publish.yml -f tag=vX.Y.Z -f only=<job>`. Re-running
