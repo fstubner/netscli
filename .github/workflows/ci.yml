@@ -148,7 +148,12 @@ jobs:
       # push to three package registries. Both are worth linting, and
       # neither is exercised by any other job.
       - name: shellcheck install.sh
-        run: shellcheck scripts/install.sh
+        run: shellcheck scripts/install.sh scripts/install_test.sh
+      # What install.sh checks before it installs, against a fake release:
+      # a wrong checksum or a signature that does not verify must stop it,
+      # and a download cut short must run nothing.
+      - name: test install.sh
+        run: bash scripts/install_test.sh
       - name: shellcheck release scripts
         run: shellcheck scripts/release/*.sh
       # The publish path only executes during a release, so a regression in

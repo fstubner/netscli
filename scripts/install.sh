@@ -16,10 +16,22 @@
 #     the release and REFUSES to install if it cannot be verified.
 #   - NETSCLI_ALLOW_UNVERIFIED=1: install without checksum verification
 #     (not recommended; only for releases that publish no checksum asset)
+#   - NETSCLI_SKIP_SIGNATURE=1: do not check the Sigstore signature even when
+#     cosign is installed (see below)
 #   - NETSCLI_PCAP=1: install the PCAP-enabled binary AND libpcap system lib
 #   - NETSCLI_SKIP_LIBPCAP=1: with NETSCLI_PCAP=1, skip installing libpcap
 #     (for users who already manage libpcap themselves)
 #   - NETSCLI_LINUX_VARIANT=gnu|musl (Linux only; default: auto-detect)
+#
+# What is verified before anything is installed:
+#   - Always: the binary's SHA-256, against "<asset>.sha256" from the same
+#     release (or NETSCLI_SHA256 / NETSCLI_SHA256_URL). That proves the
+#     download is intact, not who built it, since both come from one place.
+#   - When cosign is installed: the binary's Sigstore signature
+#     ("<asset>.sig" and ".pem"), which must have been made by this
+#     repository's release workflow, release.yml, on main or a release tag.
+#     A signature that does not verify stops the install.
+# The script says which of the two it checked.
 
 set -euo pipefail
 
@@ -53,12 +65,17 @@ is_true() {
   esac
 }
 
+# HTTPS only, TLS 1.2 or newer, also after a redirect. GitHub answers every
+# release download with a redirect, and by default curl would follow one to
+# plain HTTP.
+CURL_OPTS=(--proto '=https' --proto-redir '=https' --tlsv1.2 -fsSL)
+
 download() {
   local url="$1"
   local out="$2"
 
   if have_cmd curl; then
-    curl -fsSL "$url" -o "$out"
+    curl "${CURL_OPTS[@]}" "$url" -o "$out"
     return 0
   fi
 
@@ -77,7 +94,7 @@ download_optional() {
   local out="$2"
 
   if have_cmd curl; then
-    if curl -fsSL "$url" -o "$out"; then
+    if curl "${CURL_OPTS[@]}" "$url" -o "$out"; then
       return 0
     fi
     return 1
@@ -194,6 +211,57 @@ install_libpcap() {
   return 1
 }
 
+# The checksum comes from the same release as the binary, so it proves the
+# download is intact but not who built it. Every CLI asset also carries a
+# Sigstore signature, made by this repository's release workflow, and with
+# cosign installed that is checked too, failing closed: a signature that is
+# missing or does not verify stops the install. Without cosign, the script
+# keeps working and says exactly what it did and did not check.
+#
+# $1 is what the checksum was checked against, or empty if it was waived.
+verify_signature() {
+  local sum_source="$1" repo_re identity
+  local checked="${sum_source:-nothing (NETSCLI_ALLOW_UNVERIFIED=1)}"
+
+  if is_true "${NETSCLI_SKIP_SIGNATURE:-}"; then
+    echo "Checked: ${checked}. Not checked: the Sigstore signature (NETSCLI_SKIP_SIGNATURE=1)."
+    return 0
+  fi
+  if ! have_cmd cosign; then
+    echo "Checked: ${checked}. Not checked: the Sigstore signature, because cosign is not installed."
+    return 0
+  fi
+
+  if ! download_optional "${DOWNLOAD_URL}.sig" "${TMP_DIR}/${BINARY_NAME}.sig" ||
+     ! download_optional "${DOWNLOAD_URL}.pem" "${TMP_DIR}/${BINARY_NAME}.pem"; then
+    echo "ERROR: cosign is installed, but ${DOWNLOAD_URL}.sig or .pem could not be fetched." >&2
+    echo "Refusing to install a binary whose signature cannot be checked." >&2
+    echo "To install anyway: NETSCLI_SKIP_SIGNATURE=1" >&2
+    exit 1
+  fi
+
+  # The one workflow that signs release assets: release.yml in this
+  # repository, run from main, or from a release tag before v0.3.1. Not
+  # `release\.yml@.*`, which would accept a signature made by that file on
+  # any branch someone with write access pushes. Owner and repository names
+  # can hold no regex metacharacter but the dot.
+  repo_re="${REPO//./\\.}"
+  identity='^https://github\.com/'"${repo_re}"'/\.github/workflows/release\.yml@refs/(heads/main|tags/v[0-9.]+)$'
+  echo "Verifying the Sigstore signature..."
+  if ! cosign verify-blob \
+      --signature "${TMP_DIR}/${BINARY_NAME}.sig" \
+      --certificate "${TMP_DIR}/${BINARY_NAME}.pem" \
+      --certificate-identity-regexp "$identity" \
+      --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+      "${TMP_DIR}/${BINARY_NAME}"; then
+    echo "ERROR: the Sigstore signature did not verify. Refusing to install this binary." >&2
+    echo "If cosign failed for a reason you know, such as no network access to" >&2
+    echo "Sigstore, NETSCLI_SKIP_SIGNATURE=1 skips this check." >&2
+    exit 1
+  fi
+  echo "Checked: ${checked}, and the Sigstore signature from ${REPO}'s release workflow."
+}
+
 # Everything the installer does, in order. The rest of this file only
 # defines things.
 main() {
@@ -259,11 +327,15 @@ main() {
   # Deliberately NOT chmod +x yet — that happens only after the checksum
   # check below passes, so an unverified download is never left executable.
 
+  # Where the expected digest came from, for the summary of what was checked.
+  SUM_SOURCE="the SHA-256 given in NETSCLI_SHA256"
   if [[ -n "$NETSCLI_SHA256_URL" ]]; then
     echo "Fetching checksum from ${NETSCLI_SHA256_URL}"
     download "${NETSCLI_SHA256_URL}" "${TMP_DIR}/${BINARY_NAME}.sha256"
     NETSCLI_SHA256="$(awk '{print $1}' "${TMP_DIR}/${BINARY_NAME}.sha256" | head -n 1)"
+    SUM_SOURCE="the SHA-256 from NETSCLI_SHA256_URL"
   elif [[ -z "$NETSCLI_SHA256" ]]; then
+    SUM_SOURCE="the SHA-256 published with this release"
     # Every release since v0.2.x publishes "<asset>.sha256" alongside the
     # binary. Fetch it — and treat its absence as a failure, not as
     # permission to skip verification. An attacker on the path can always
@@ -298,10 +370,13 @@ main() {
     fi
   elif is_true "${NETSCLI_ALLOW_UNVERIFIED:-}"; then
     echo "Warning: installing WITHOUT checksum verification (NETSCLI_ALLOW_UNVERIFIED=1)."
+    SUM_SOURCE=""
   else
     echo "ERROR: no checksum available and NETSCLI_ALLOW_UNVERIFIED is not set." >&2
     exit 1
   fi
+
+  verify_signature "$SUM_SOURCE"
 
   # Verified (or explicitly waived) — safe to make executable now.
   chmod +x "${TMP_DIR}/${BINARY_NAME}"
