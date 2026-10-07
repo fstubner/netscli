@@ -202,3 +202,66 @@ fn sanitize_export_filename(filename: &str) -> Result<String, String> {
 
     Ok(cleaned)
 }
+
+// What the renderer is and is not allowed to write. The webview supplies the
+// filename, so these are what keeps an export inside the save folder.
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_names_the_app_generates_pass_unchanged() {
+        for name in [
+            "netscli-scan-1790000000000.csv",
+            "netscli-result-1790000000000.netscli-result.json",
+        ] {
+            assert_eq!(sanitize_export_filename(name).unwrap(), name);
+        }
+    }
+
+    #[test]
+    fn a_filename_cannot_carry_a_path_out_of_the_folder() {
+        for name in [
+            "../../outside.json",
+            "..\\..\\outside.json",
+            "C:\\Windows\\win.ini",
+            "/etc/passwd",
+            "sub/dir/file.txt",
+            "name:stream.txt",
+        ] {
+            let cleaned = sanitize_export_filename(name).unwrap();
+            assert!(
+                !cleaned.contains(['/', '\\', ':']),
+                "{name:?} became {cleaned:?}"
+            );
+            assert_eq!(
+                PathBuf::from(&cleaned).components().count(),
+                1,
+                "{cleaned:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_filename_with_nothing_usable_in_it_is_refused() {
+        for name in ["", "   ", ".", "..", "---", "///"] {
+            assert!(sanitize_export_filename(name).is_err(), "{name:?}");
+        }
+    }
+
+    #[test]
+    fn the_save_folder_is_created_and_must_be_a_folder() {
+        let base = std::env::temp_dir().join(format!("netscli-export-test-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&base);
+
+        let made = export_path_in_directory(base.join("nested"), "a.csv").unwrap();
+        assert_eq!(made, base.join("nested").join("a.csv"));
+        assert!(base.join("nested").is_dir());
+
+        let file = base.join("not-a-folder");
+        std::fs::write(&file, "x").unwrap();
+        assert!(export_path_in_directory(file, "a.csv").is_err());
+
+        std::fs::remove_dir_all(&base).unwrap();
+    }
+}
