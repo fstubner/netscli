@@ -37,7 +37,7 @@ export const surfaces: SurfaceCard[] = [
   {
     title: 'Command line',
     body:
-      'Use the CLI for repeatable diagnostics and automation. Network operations take <code>--json</code> and <code>--yaml</code>, and lists also <code>--csv</code> and <code>--md</code>, so scripts and other tools can consume the same data the desktop app displays.',
+      'Use the CLI for repeatable diagnostics and automation. Network operations take <code>--json</code> and <code>--yaml</code>, and lists also <code>--csv</code> and <code>--md</code>, so scripts and other tools can consume the same data the desktop app displays. The sample output is trimmed to a few fields.',
     // `--resolve` on the discover line is load-bearing, not decoration.
     // `hostname` is only populated when the flag is passed (core's
     // discover.rs guards the reverse-lookup pass on it), so without it this
