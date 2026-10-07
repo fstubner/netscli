@@ -260,6 +260,13 @@ where
     // hour-long capture meant an hour.
     let aborted = handlers.len();
     handlers.shutdown().await;
+    // Background captures belong to no request, so the line above does not
+    // reach them, and they ran to the end of their duration after the client
+    // had gone.
+    #[cfg(feature = "pcap")]
+    if let Ok(state) = state.lock() {
+        state.stop_pcap_jobs();
+    }
     drop(tx);
     let requests_handled = writer_task.await.unwrap_or(0);
 

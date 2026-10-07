@@ -170,7 +170,7 @@ pub fn tools_list() -> serde_json::Value {
                     "interface": { "type": "string" },
                     "filter": { "type": "string" },
                     "duration": { "type": "number", "default": 10, "minimum": 1, "maximum": 120 },
-                    "outputFile": { "type": "string", "default": "capture.pcap" },
+                    "outputFile": { "type": "string", "description": "A filename ending in .pcap, written in the server's working directory. Omit for a new name. An existing file is never replaced." },
                     "maxPackets": { "type": "number" }
                 },
                 "required": ["interface"]
@@ -190,7 +190,7 @@ pub fn tools_list() -> serde_json::Value {
                     "interface": { "type": "string" },
                     "filter": { "type": "string" },
                     "duration": { "type": "number", "default": 10 },
-                    "outputFile": { "type": "string", "description": "Where to write the capture. Omit for a file named after the job." },
+                    "outputFile": { "type": "string", "description": "A filename ending in .pcap, written in the server's working directory. Omit for a file named after the job. An existing file is never replaced." },
                     "maxPackets": { "type": "number" }
                 },
                 "required": ["interface"]

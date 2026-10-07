@@ -22,6 +22,11 @@ pub(super) struct PcapCaptureJob {
     started_at: Instant,
     finished_at: Option<Instant>,
     outcome: Option<Result<netscli_core::PcapResult, String>>,
+    /// Reported from the start. With no `outputFile` the name is made up
+    /// here, and a client had no way to learn it before the result.
+    output_file: String,
+    /// Stops the capture when the server shuts down.
+    cancel: netscli_core::PcapCancelToken,
 }
 
 #[derive(Debug, Serialize)]
@@ -32,6 +37,7 @@ pub(super) struct PcapJobStatus {
     pub(super) running: bool,
     pub(super) elapsed_ms: u64,
     pub(super) result_available: bool,
+    pub(super) output_file: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(super) error: Option<String>,
 }
@@ -44,6 +50,7 @@ pub(super) struct PcapJobResult {
     pub(super) running: bool,
     pub(super) elapsed_ms: u64,
     pub(super) result_available: bool,
+    pub(super) output_file: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(super) result: Option<netscli_core::PcapResult>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -51,12 +58,18 @@ pub(super) struct PcapJobResult {
 }
 
 impl PcapCaptureJob {
-    pub(super) fn new() -> Self {
+    pub(super) fn new(output_file: String) -> Self {
         Self {
             started_at: Instant::now(),
             finished_at: None,
             outcome: None,
+            output_file,
+            cancel: netscli_core::PcapCancelToken::new(),
         }
+    }
+
+    pub(super) fn cancel_token(&self) -> netscli_core::PcapCancelToken {
+        self.cancel.clone()
     }
 
     pub(super) fn complete(&mut self, result: netscli_core::PcapResult) {
@@ -90,6 +103,7 @@ impl PcapCaptureJob {
             running,
             elapsed_ms: self.elapsed_ms(),
             result_available,
+            output_file: self.output_file.clone(),
             error,
         }
     }
@@ -107,6 +121,7 @@ impl PcapCaptureJob {
             running,
             elapsed_ms: self.elapsed_ms(),
             result_available,
+            output_file: self.output_file.clone(),
             result,
             error,
         }
@@ -129,6 +144,16 @@ impl ServerState {
             .get(job_id)
             .cloned()
             .ok_or_else(|| RpcError::InvalidParams(format!("unknown pcap jobId: {job_id}")))
+    }
+
+    /// Stop every running capture, for shutdown. A job outlives the request
+    /// that started it, so nothing else stops it when the client goes.
+    pub(super) fn stop_pcap_jobs(&self) {
+        for job in self.pcap_jobs.values() {
+            if let Ok(job) = job.lock() {
+                job.cancel.cancel();
+            }
+        }
     }
 
     pub(super) fn running_pcap_jobs(&self) -> usize {
@@ -179,19 +204,22 @@ pub(super) fn start_pcap_capture_job(
         )));
     }
     let job_id = state.allocate_pcap_job_id();
-    // Timestamped, because the job counter restarts at 1 with the process
-    // and libpcap's savefile truncates: two runs of the server both wrote
-    // `netscli-pcap-1.pcap`, and the second silently replaced the first.
+    // Timestamped, because the job counter restarts at 1 with the process:
+    // two runs of the server both chose `netscli-pcap-1.pcap`. The file is
+    // created here, so a name that is taken fails this call rather than the
+    // job later.
     let stamp = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_secs())
         .unwrap_or(0);
-    request.ensure_default_output_file(format!("netscli-{job_id}-{stamp}.pcap"));
-    let job = Arc::new(Mutex::new(PcapCaptureJob::new()));
+    let output_file = request.claim_output_file(format!("netscli-{job_id}-{stamp}.pcap"))?;
+    let job = PcapCaptureJob::new(output_file);
+    let cancel = job.cancel_token();
+    let job = Arc::new(Mutex::new(job));
     state.pcap_jobs.insert(job_id.clone(), job.clone());
 
     tokio::spawn(async move {
-        let outcome = run_pcap_capture(request).await;
+        let outcome = run_pcap_capture(request, cancel).await;
         let Ok(mut guard) = job.lock() else {
             return;
         };

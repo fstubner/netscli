@@ -269,6 +269,8 @@ use tool_call::handle_tools_call;
 
 #[cfg(test)]
 mod lifecycle_tests;
+#[cfg(all(test, feature = "pcap"))]
+mod pcap_tests;
 #[cfg(test)]
 mod policy_tests;
 #[cfg(test)]
