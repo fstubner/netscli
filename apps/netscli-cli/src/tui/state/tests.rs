@@ -38,6 +38,28 @@ fn input_prompt_renders_with_suggestions_in_medium_terminal() {
 }
 
 #[test]
+fn no_color_draws_the_whole_frame_without_colour() {
+    use ratatui::style::Color;
+
+    let mut app = TuiApp::new();
+
+    let mut coloured = Terminal::new(TestBackend::new(80, 24)).expect("terminal");
+    app.draw_with(&mut coloured, false).expect("draw");
+    let cells = &coloured.backend().buffer().content;
+    assert!(
+        cells.iter().any(|cell| cell.fg != Color::Reset),
+        "the banner should be coloured"
+    );
+
+    let mut plain = Terminal::new(TestBackend::new(80, 24)).expect("terminal");
+    app.draw_with(&mut plain, true).expect("draw");
+    let cells = &plain.backend().buffer().content;
+    assert!(cells
+        .iter()
+        .all(|cell| cell.fg == Color::Reset && cell.bg == Color::Reset));
+}
+
+#[test]
 fn input_prompt_renders_in_short_terminal() {
     let mut app = TuiApp::new();
     app.tip_dismissed = true;
