@@ -252,7 +252,7 @@ pub fn tools_list() -> serde_json::Value {
                     },
                     "service_types": {
                         "type": "array",
-                        "items": { "type": "string" },
+                        "items": { "type": "string" }, "maxItems": 32,
                         "description": "Explicit service types to browse (e.g. [\"_http._tcp.local.\", \"_airplay._tcp.local.\"]). Omit to use a curated default set."
                     }
                 }
