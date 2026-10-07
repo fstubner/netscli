@@ -133,6 +133,7 @@ Settings control:
 - Network interface used for local status indicators.
 - Address family preference for the selected interface display.
 - Traffic unit and precision display.
+- MCP server setup, which gives you the config to paste into your MCP client, or the command to install `netscli` first when the app cannot find it.
 
 ## Updates
 
