@@ -178,9 +178,7 @@ impl PortScanner {
 
         if is_http_port(port, service) {
             let mut stream = stream;
-            if let Some((http, banner, raw)) =
-                probe_http(&mut stream, &target.to_string(), timeout_ms).await
-            {
+            if let Some((http, banner, raw)) = probe_http(&mut stream, target, timeout_ms).await {
                 result.http = Some(http);
                 result.banner = banner;
                 result.raw = raw;

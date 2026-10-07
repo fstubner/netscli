@@ -133,7 +133,7 @@ async fn test_http_probe_captures_banner_and_headers() {
     });
 
     let mut stream = TcpStream::connect(("127.0.0.1", port)).await.unwrap();
-    let (http, banner, raw) = probe_http(&mut stream, "127.0.0.1", 1000)
+    let (http, banner, raw) = probe_http(&mut stream, IpAddr::from([127, 0, 0, 1]), 1000)
         .await
         .expect("HTTP metadata should be captured");
 
@@ -144,6 +144,22 @@ async fn test_http_probe_captures_banner_and_headers() {
         .iter()
         .any(|h| h.name == "Server" && h.value == "netscli-test"));
     assert!(raw.as_deref().unwrap_or_default().contains("HTTP/1.1"));
+}
+
+#[tokio::test]
+async fn the_http_probe_brackets_an_ipv6_host() {
+    // `Host: fe80::1` is malformed, and strict servers answered it with 400.
+    let (mut client, mut server) = tokio::io::duplex(4096);
+    let target: IpAddr = "fe80::1".parse().unwrap();
+    let probe = tokio::spawn(async move { probe_http(&mut client, target, 1000).await });
+
+    let mut request = vec![0_u8; 1024];
+    let read = server.read(&mut request).await.unwrap();
+    server.write_all(b"HTTP/1.1 200 OK\r\n\r\n").await.unwrap();
+    probe.await.unwrap().expect("a reply to parse");
+
+    let request = String::from_utf8_lossy(&request[..read]);
+    assert!(request.contains("\r\nHost: [fe80::1]\r\n"), "{request}");
 }
 
 #[tokio::test]
