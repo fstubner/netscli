@@ -64,6 +64,15 @@ its heading and collects entries. The date and the link go on with the tag.
   `--version` and gives up after 3 seconds. A program still running at that
   point was left behind. It is now stopped.
 
+### Security
+
+- **Three open advisories cleared, all in build tooling.** `source-map-js`
+  1.2.1 → 1.2.2 (GHSA-68fv-2mgg-jv7q, high) is in the build dependencies of
+  both the desktop app and the website. The other two are the website's
+  alone, `http-cache-semantics` 4.2.0 → 4.3.0 (GHSA-ch52-4w7c-c8xp, high)
+  and `smol-toml` 1.8.0 → 1.9.0 (GHSA-r4xh-jqrq-34v2, moderate). None of the
+  three is in anything a release ships.
+
 ## [0.3.4] - 2026-10-04
 
 ### Added
@@ -86,7 +95,7 @@ its heading and collects entries. The date and the link go on with the tag.
   Memcached say nothing until asked, so each gets the one read-only question
   that returns its version. Scans report this as `product` and `version` in
   the JSON, and in a Version column in the CLI, the terminal UI and the
-  desktop app. It's far narrower than nmap's `-sV`: a service that doesn't
+  desktop app. It's far narrower than nmap's `-sV`. A service that doesn't
   announce itself, and isn't one of those three, gets no version.
 
 - **UDP scanning.** `netscli scan <host> --udp` checks the UDP services most
