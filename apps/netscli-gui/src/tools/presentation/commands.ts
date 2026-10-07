@@ -10,7 +10,7 @@ const PLAIN = /^[\w@+=:,./-]+$/;
  * PowerShell, a `"` ends the string in all of them, `%` and `!` expand in cmd
  * and bash, and a trailing backslash escapes the closing quote.
  */
-const UNQUOTABLE = /[$`"%!\u0000-\u001f\u007f]|\\$/;
+const UNQUOTABLE = /[$`"%!\p{Cc}]|\\$/u;
 
 /**
  * A form value as one argument of the copied command, or '' when it cannot be
