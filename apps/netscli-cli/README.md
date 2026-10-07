@@ -18,13 +18,13 @@ netscli serve        # MCP server (JSON-RPC over stdio)
 
 ## Surfaces
 
-- **CLI** — `netscli <cmd>` for scripts, cron, and piping into `jq`.
-  `--json` and `--yaml` output on every non-interactive subcommand, and
-  `--csv` and `--md` on the ones that return a list.
-- **TUI** — `netscli` alone opens a ratatui-based terminal UI with
+- **CLI.** `netscli <cmd>` for scripts, cron, and piping into `jq`.
+  `--json` and `--yaml` output on every subcommand that returns a result,
+  and `--csv` and `--md` on the ones that return a list.
+- **TUI.** `netscli` alone opens a ratatui-based terminal UI with
   autocomplete, command history, in-place progress, status footer,
   and native scrollback/selection.
-- **MCP** — `netscli serve` exposes nine tools over JSON-RPC on stdio
+- **MCP.** `netscli serve` exposes nine tools over JSON-RPC on stdio
   for Claude Code, Cursor, or any MCP client.
 
 There's also a [desktop app](https://github.com/fstubner/netscli/releases)
@@ -52,8 +52,9 @@ build from source with `cargo build --release -p netscli --features pcap`.
 ## Full docs
 
 See the main [README](https://github.com/fstubner/netscli) for
-screenshots, MCP client configuration, building from source,
-cross-compilation, and everything else.
+screenshots and MCP client configuration, and
+[CONTRIBUTING.md](https://github.com/fstubner/netscli/blob/main/CONTRIBUTING.md)
+for building from source and cross-compilation.
 
 ## License
 
