@@ -8,6 +8,20 @@ use crate::state::{ArtifactRegistry, OperationManager};
 
 const MAX_GUI_PCAP_IMPORT_BYTES: u64 = 512 * 1024 * 1024;
 
+/// What opening a capture reads when the Packets field is empty, and the most
+/// it reads whatever that field says: the field's placeholder and its maximum
+/// in registry.ts. Without a limit the core summarises every packet up to ten
+/// million and hands them all back as one JSON value, while the progress text
+/// says "up to 1000".
+const DEFAULT_GUI_PCAP_IMPORT_PACKETS: usize = 1000;
+const MAX_GUI_PCAP_IMPORT_PACKETS: usize = 100_000;
+
+fn import_packet_limit(requested: Option<usize>) -> usize {
+    requested
+        .unwrap_or(DEFAULT_GUI_PCAP_IMPORT_PACKETS)
+        .min(MAX_GUI_PCAP_IMPORT_PACKETS)
+}
+
 #[derive(serde::Serialize)]
 pub(crate) struct PcapCapability {
     compiled: bool,
@@ -89,8 +103,28 @@ pub(crate) async fn open_pcap_file(
 
     let ops = Ops::default();
     let parsed = ops
-        .parse_pcap_file(path.display().to_string(), max_packets)
+        .parse_pcap_file(
+            path.display().to_string(),
+            Some(import_packet_limit(max_packets)),
+        )
         .map_err(|e| e.to_string())?;
     artifact_registry.register(&path)?;
     serde_json::to_value(parsed).map_err(|e| e.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn an_empty_packets_field_does_not_mean_every_packet() {
+        assert_eq!(import_packet_limit(None), 1000);
+    }
+
+    #[test]
+    fn a_requested_limit_is_kept_up_to_the_fields_maximum() {
+        assert_eq!(import_packet_limit(Some(50)), 50);
+        assert_eq!(import_packet_limit(Some(100_000)), 100_000);
+        assert_eq!(import_packet_limit(Some(10_000_000)), 100_000);
+    }
 }
