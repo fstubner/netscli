@@ -219,6 +219,13 @@ impl Drop for RemoveOnDrop {
         // `Drop` cannot await, so the removal is spawned. Nothing waits on
         // the entry being gone -- op ids are unique per run, so a late
         // removal cannot strand a later operation.
+        //
+        // DNS Lookup with record type ALL is the exception: it reuses its
+        // id for ten calls in a row. A removal that ran after the next call
+        // had registered would take that call's entry, and Stop would find
+        // nothing to abort for it. This removal is spawned as one call ends
+        // and the next has to cross the IPC boundary to arrive, so that order
+        // is not expected, and the cost would be one lookup that Stop missed.
         let registry = Arc::clone(&self.registry);
         let op_id = std::mem::take(&mut self.op_id);
         tauri::async_runtime::spawn(async move {

@@ -60,7 +60,12 @@ export async function runWorkspaceTab({
   });
 
   try {
-    const result = await executeTool(tab, opId, maxConcurrentProbes);
+    const result = await executeTool(
+      tab,
+      opId,
+      maxConcurrentProbes,
+      () => activeOps.current[tab.id] === opId,
+    );
     if (activeOps.current[tab.id] !== opId) return;
     patchTab(tab.id, {
       result,

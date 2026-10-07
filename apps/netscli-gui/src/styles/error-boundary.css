@@ -4,15 +4,18 @@
    shell rather than styling anything inside it, and results.css was at its
    size cap with a note asking for exactly this kind of split. */
 
-/* Replaces the entire window when a render throws, so it carries its own
-   background rather than inheriting one from a shell that is no longer
-   mounted. */
+/* Replaces the entire window when a render throws. CrashScreen wraps it in a
+   `.container`, which is what supplies the colour tokens used below, and puts
+   the window frame above it, so it fills the rest of the window and scrolls
+   rather than being 100vh tall. */
 .error-boundary {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 12px;
   align-items: flex-start;
-  min-height: 100vh;
+  min-height: 0;
+  overflow: auto;
   padding: 32px;
   color: var(--text-primary);
   background: var(--bg-body);
@@ -27,6 +30,22 @@
   max-width: 60ch;
   margin: 0;
   color: var(--text-secondary);
+}
+
+/* Styled here like the dialogs' buttons. Nothing global styles a bare button,
+   so it was the browser's light grey face carrying the light text colour it
+   inherits from .container, which is unreadable. */
+.error-boundary button {
+  height: 30px;
+  padding: 0 11px;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+}
+
+.error-boundary button:hover {
+  background: var(--bg-selected);
 }
 
 .error-boundary-detail {

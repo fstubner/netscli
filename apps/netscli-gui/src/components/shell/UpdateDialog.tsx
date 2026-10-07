@@ -76,7 +76,8 @@ export function UpdateDialog({
             <h2 id="update-title">NetsCLI {version} is available</h2>
             <p id="update-summary">
               You have {currentVersion}. The update is checked against NetsCLI&apos;s signing key
-              before it installs, and the app restarts to finish.
+              before it installs. NetsCLI closes to finish and should reopen by itself. If it does
+              not, open it again.
             </p>
           </div>
           <button

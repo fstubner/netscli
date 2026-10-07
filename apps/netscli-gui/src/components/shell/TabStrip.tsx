@@ -203,6 +203,7 @@ export function TabStrip({
                   aria-label={`Close ${identity.label} tab`}
                   data-tooltip="Close Tab"
                   data-tooltip-placement="bottom"
+                  tabIndex={-1}
                   onClick={(event) => {
                     event.stopPropagation();
                     onCloseTab(tab.id);

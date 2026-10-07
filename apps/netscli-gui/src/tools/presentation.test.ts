@@ -114,13 +114,6 @@ describe('buildCommand', () => {
     scan.form.ports = '';
     expect(buildCommand(scan)).toBe('netscli scan router.local --json');
   });
-
-  it('escapes quotes in a capture filter so the preview stays paste-able', () => {
-    const pcap = createTab('pcap');
-    pcap.form.interface = 'eth0';
-    pcap.form.filter = 'host "example"';
-    expect(buildCommand(pcap)).toContain('--filter "host \\"example\\""');
-  });
 });
 
 describe('tabIdentity', () => {

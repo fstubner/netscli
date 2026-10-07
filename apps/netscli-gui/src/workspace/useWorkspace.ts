@@ -56,7 +56,10 @@ export function useWorkspace(options: WorkspaceOptions): WorkspaceModel {
   const selectedIndices = normalizeSelection(activeTab?.selectedIndices, activeTab?.selectedIndex, rows.length);
   const selectedRow = rows[selectedIndex];
   const selectedRows = selectedIndices.map((index) => rows[index]).filter(Boolean);
-  const columns = columnsFor(activeTab?.kind ?? 'scan', activeTab?.result ?? null, baseRows);
+  const columns = useMemo(
+    () => columnsFor(activeTab?.kind ?? 'scan', activeTab?.result ?? null, baseRows),
+    [activeTab?.kind, activeTab?.result, baseRows],
+  );
   const commandPreview = activeTab ? buildCommand(activeTab) : '';
 
   const {

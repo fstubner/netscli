@@ -10,7 +10,7 @@ interface ReleaseNotificationOptions {
   appVersion: string;
   enabled: boolean;
   dismissToast: () => void;
-  showUpdateToast: (version: string, url: string, opensUpdateDialog?: boolean) => void;
+  showUpdateToast: (version: string, url: string, opensUpdateDialog?: boolean, note?: string) => void;
   toast: WorkspaceToast | null;
 }
 
@@ -74,11 +74,16 @@ export function useReleaseNotifications({
     // A notice with a link to the release page. What every install got
     // before in-app updates, and still what an install that cannot replace
     // itself gets -- or one that can, when latest.json is not reachable.
-    async function notifyWithLink() {
+    //
+    // `why` is what the install that cannot replace itself was told by the
+    // backend, such as "Installed with Scoop, so update it there". Without it
+    // the notice only invites a manual download, which is the one thing a
+    // Scoop install must not do.
+    async function notifyWithLink(why?: string | null) {
       const release = await fetchLatestRelease(controller.signal);
       if (cancelled || dismissed() === release.version) return;
       if (!isNewerVersion(release.version, appVersion)) return;
-      callbacks.current.showUpdateToast(release.version, release.url);
+      callbacks.current.showUpdateToast(release.version, release.url, false, why ?? undefined);
     }
 
     async function run() {
@@ -86,7 +91,7 @@ export function useReleaseNotifications({
       if (cancelled) return;
 
       if (!support.supported) {
-        await notifyWithLink();
+        await notifyWithLink(support.reason);
         return;
       }
 

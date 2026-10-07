@@ -22,7 +22,7 @@ export interface WorkspaceModel {
   setFilterText: (filterText: string) => void;
   setTrafficInterfaceName: (name: string) => void;
   dismissToast: () => void;
-  showUpdateToast: (version: string, url: string, opensUpdateDialog?: boolean) => void;
+  showUpdateToast: (version: string, url: string, opensUpdateDialog?: boolean, note?: string) => void;
   patchTab: (id: string, patch: Partial<WorkspaceTab>) => void;
   patchForm: (id: string, key: string, value: string) => void;
   selectRow: (index: number, mode?: RowSelectionMode) => void;

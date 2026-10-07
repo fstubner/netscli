@@ -106,6 +106,36 @@ its heading and collects entries. The date and the link go on with the tag.
   Felix Stubner. Upgrading from an earlier version leaves one entry, under the
   new name.
 
+- **CSV files saved by the desktop app start with a UTF-8 byte-order mark.**
+  The app wrote plain UTF-8, and Excel on Windows reads a CSV that lacks the
+  mark in its older code page, so a device called "Felix’s iPhone" would show
+  as "Felixâ€™s iPhone". Both CSV exports now begin with the mark, which is how
+  Excel is told a file is UTF-8. The command line's CSV is meant for pipes and
+  has none, and JSON exports are unchanged. A script that reads these files as
+  plain UTF-8 will see the mark in front of the first header and needs
+  `utf-8-sig` or the equivalent.
+
+- **The desktop app's content security policy is tighter.** It no longer
+  allows images from data or blob URLs or from the asset protocol, and it
+  forbids `<base>` elements, form submission and plugin objects. The app uses
+  none of them.
+
+- **The update notice says why an install cannot update itself.** Installs
+  from Scoop, the AUR or a .deb got the same "Update available" notice as
+  everyone else, and its link opens the release page, which invites a manual
+  download over a copy the package manager owns. The notice now carries the
+  reason, for example "Installed with Scoop, so update it there".
+
+- **The update dialog says the app closes to finish.** On Windows the app
+  exits as the installer starts, and nothing said so if the installer was then
+  declined or failed. The dialog now says NetsCLI closes to finish and should
+  reopen by itself, and to open it again if it does not.
+
+- **The Packet Capture screen says no published installer includes it.** It
+  told people to use a PCAP-enabled desktop build, which reads as a download
+  that does not exist. It now says the published installers are built without
+  packet capture and that it needs a build made from source.
+
 ### Fixed
 
 - **Text from the network could reorder or hide itself.** The cleaning that
@@ -222,6 +252,88 @@ its heading and collects entries. The date and the link go on with the tag.
   the CLI.** To offer MCP setup it runs each `netscli` it finds with
   `--version` and gives up after 3 seconds. A program still running at that
   point was left behind. It is now stopped.
+
+- **Console windows no longer open when the desktop app looks up names or
+  traces a route on Windows.** Discover and Sweep run `ping -a` for every host
+  that answers, Trace Route runs `tracert`, and Settings runs
+  `netscli --version` for each candidate it finds. The app has no console of
+  its own, so each of those opened one. With Windows Terminal as the default
+  terminal that is a window titled with the tool's path, open for as long as
+  the tool runs. Called from a program with no console, a name lookup opened
+  that window, and with the fix it opened none. The ARP commands already
+  started this way.
+
+- **A route trace no longer fails on a Windows set to another language.**
+  On a Windows in a language with accented letters, such as German or French,
+  `tracert` can print a byte that is not valid UTF-8, and reading its output
+  as UTF-8 ended the whole trace with "trace stdout read failed", hops already
+  printed included. The output is now decoded leniently, so the odd character
+  shows as a replacement mark and the trace completes.
+
+- **A trace refuses a target that the trace tool would read as an option.**
+  The target goes to `tracert`, `traceroute` or `tracepath` as a plain
+  argument, so `netscli trace -- -d` handed the tool a flag. A target that is
+  empty or starts with `-` or `/` now gets an error before anything runs. A
+  host name or an address never starts with either, and Windows' `tracert`
+  reads a leading `/` as an option too.
+
+- **File dialogs in the desktop app no longer freeze the window.** Open
+  Result Bundle, Choose Folder and the Save dialog for exports waited for the
+  dialog on the thread that draws the window, which the dialog library says
+  not to do. On Windows, Open Result Bundle left the window unable to answer
+  anything for as long as its dialog was open, and Windows marked it as not
+  responding after about five seconds. The others wait the same way. They now
+  wait off that thread, and the window keeps answering.
+
+- **A stalled update download no longer traps the update dialog.** The dialog
+  cannot be closed while an update downloads, and nothing limited how long a
+  download could take, so one that stalled kept the dialog open until the app
+  was quit. The update check now gives up after 30 seconds and the download
+  after 10 minutes, and the dialog then shows its message and a link to the
+  release page.
+
+- **The desktop app announces failed runs and progress to screen readers.** A
+  failed run's message and the progress bar were silent at the default
+  settings, because the only live regions were the toasts, which are off by
+  default. The error message is now an alert, and a hidden status line says
+  when a run starts, at each quarter of the way, and when it finishes with its
+  summary or is stopped.
+
+- **Escape no longer stops a scan when it only closes a dialog or menu.**
+  Closing the About dialog, the update dialog or a context menu with Escape
+  also cancelled the scan running underneath it. Escape now closes what is
+  open and leaves the scan alone.
+
+- **A damaged save-settings file no longer stops every export.** One
+  unreadable `gui-save-settings.json` made every export and capture fail
+  until the file was deleted by hand, and the Settings controls could not
+  repair it. It now reads as the defaults, and the next change writes a good
+  file over it. The file is written through a temporary one, so an
+  interruption cannot leave it half written.
+
+- **A damaged result file no longer crashes the desktop window, and the error
+  screen is usable.** A result bundle whose entries lacked fields passed the
+  checks and then broke the table while it was drawn, which ended the
+  session. Such a file is now refused with a message. The error screen was
+  black on near-black on a light theme and gave no way to move or close the
+  window. It is now readable and has the window buttons.
+
+- **The command the desktop app copies can no longer carry a shell command
+  from a result file.** The command strip, its copy button and the History
+  entry are built from the tab's form values, and opening a result file fills
+  those from the file. A host such as `1.1.1.1 && calc` was one click from the
+  clipboard as a working command. Values with spaces or shell syntax are now
+  quoted as one argument, and a value no quoting can make safe (one with a
+  `$`, a backtick, a double quote, a `%` or a `!` in it) is left out. A
+  capture filter containing a double quote is now left out too, where it was
+  escaped before.
+
+- **Smaller accessibility fixes in the desktop app.** Error toasts stay until
+  they are dismissed instead of leaving after under two seconds. The tab
+  close buttons no longer add a Tab stop each to the tab strip. Workspace
+  search tells a screen reader which result is current. The update dialog is
+  no longer read out again at every step of a download. The tab spinner stops
+  turning when the system asks for reduced motion.
 
 - **MCP clients built on the official SDK can connect.** Every reply the MCP
   server sent carried both a result and an error, one of them empty, which

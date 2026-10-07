@@ -92,6 +92,12 @@ export function useKeyboardShortcuts({
       }
 
       if (event.key === 'Escape' && activeTab.busy) {
+        // The press belongs to whatever is open on top of the run. Dialogs and
+        // menus close themselves from their own `document` listeners, which
+        // are added after this one and so run after it, still looking at an
+        // unhandled Escape. Without this, dismissing the About dialog or a
+        // context menu stopped the scan underneath it.
+        if (document.querySelector('[role="dialog"], [role="menu"]')) return;
         event.preventDefault();
         void workspace.cancelTab(activeTab.id);
         return;

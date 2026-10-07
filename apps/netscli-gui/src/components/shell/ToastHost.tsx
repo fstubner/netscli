@@ -32,15 +32,23 @@ export function ToastHost({ appVersion, dismissToast, setActiveTabId, toast, upd
   //
   // `.toast` is `position: absolute`, and a static wrapper does not create a
   // containing block, so this does not move it.
+  //
+  // The update dialog is not inside it. The region is atomic, so it reads
+  // out everything in it whenever anything in it changes, and the dialog's
+  // own status line changes with every step of a download. That read the
+  // whole dialog out again each time. The dialog has its own live region for
+  // the progress text.
   return (
-    <div role="status" aria-live="polite" aria-atomic="true">
-      {toast && <ToastButton
-        actionLabel={actionLabel}
-        dismissToast={dismissToast}
-        openUpdateDialog={updates.openDialog}
-        setActiveTabId={setActiveTabId}
-        toast={toast}
-      />}
+    <>
+      <div role="status" aria-live="polite" aria-atomic="true">
+        {toast && <ToastButton
+          actionLabel={actionLabel}
+          dismissToast={dismissToast}
+          openUpdateDialog={updates.openDialog}
+          setActiveTabId={setActiveTabId}
+          toast={toast}
+        />}
+      </div>
       {updates.dialogOpen && update && (
         <UpdateDialog
           currentVersion={appVersion}
@@ -56,7 +64,7 @@ export function ToastHost({ appVersion, dismissToast, setActiveTabId, toast, upd
           onSkip={() => updates.skipVersion(update.version)}
         />
       )}
-    </div>
+    </>
   );
 }
 
