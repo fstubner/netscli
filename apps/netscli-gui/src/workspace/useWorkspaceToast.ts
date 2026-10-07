@@ -22,7 +22,14 @@ export function useWorkspaceToast(options: WorkspaceOptions) {
     const settings = optionsRef.current;
     if (toast.kind === 'interaction' && !settings.interactionToasts) return;
     if (toast.kind === 'operation' && !settings.operationToasts) return;
-    setToast({ ...toast, id: generateId('toast') });
+    // An error is kept until it is dismissed. It used to leave after 1.8
+    // seconds like a confirmation, which is too short to read, let alone to
+    // act on, for the one kind of message that says something went wrong.
+    setToast({
+      ...toast,
+      id: generateId('toast'),
+      persistent: toast.persistent ?? toast.kind === 'error',
+    });
   }
 
   function dismissToast() {
