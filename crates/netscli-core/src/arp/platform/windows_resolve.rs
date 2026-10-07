@@ -17,8 +17,10 @@ use windows_sys::Win32::NetworkManagement::IpHelper::SendARP;
 
 /// The MAC `ip` answers ARP with, or `None` if nothing answered. Blocking.
 pub(super) fn resolve(ip: Ipv4Addr) -> Option<[u8; 6]> {
-    let mut mac = [0u8; 8];
-    let mut len = mac.len() as u32;
+    // Two ULONGs, as SendARP documents, which also gives the buffer a ULONG's
+    // alignment. A byte array has none.
+    let mut mac = [0u32; 2];
+    let mut len = std::mem::size_of_val(&mac) as u32;
     // SendARP takes the address in network byte order as a u32.
     let dest = u32::from_ne_bytes(ip.octets());
     // SAFETY: an 8-byte buffer and its length; SendARP writes at most `len`.
@@ -26,7 +28,7 @@ pub(super) fn resolve(ip: Ipv4Addr) -> Option<[u8; 6]> {
     if status != 0 || len != 6 {
         return None;
     }
-    let mut out = [0u8; 6];
-    out.copy_from_slice(&mac[..6]);
-    Some(out)
+    // The bytes as SendARP wrote them to memory.
+    let [low, high] = mac.map(u32::to_ne_bytes);
+    Some([low[0], low[1], low[2], low[3], high[0], high[1]])
 }

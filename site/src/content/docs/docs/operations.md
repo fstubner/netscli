@@ -170,6 +170,8 @@ netscli dns netscli.com --record ALL --json
 
 `ALL` asks for the supported record types. Some record families can fail while others succeed. Treat those as partial results unless every lookup fails.
 
+Lookups go only to the DNS servers your computer is set up to use, the same ones `nslookup` asks. Some home routers refuse record types other than A and AAAA. When that happens, `dns` reports the refusal and does not ask anyone else.
+
 Use `reverse` when you already have an IP address:
 
 ```bash

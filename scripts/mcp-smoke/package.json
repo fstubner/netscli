@@ -1,0 +1,8 @@
+{
+  "name": "netscli-mcp-smoke",
+  "description": "Drives netscli serve with the official MCP TypeScript SDK client",
+  "private": true,
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.1"
+  }
+}

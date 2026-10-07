@@ -60,14 +60,16 @@ netscli scan 192.168.1.1 -p 22,80,443 --csv
 ```
 
 ```console
-$ netscli dns netscli.com --record MX --csv
+$ netscli dns netscli.com --record A --csv
 record_type,value,name,ttl_seconds,resolver_source
-MX,10 eforward1.registrar-servers.com,netscli.com,300,public_fallback
+A,172.67.141.41,netscli.com,273,system
+A,104.21.33.43,netscli.com,273,system
 
-$ netscli dns netscli.com --record MX --md
+$ netscli dns netscli.com --record A --md
 | record_type | value | name | ttl_seconds | resolver_source |
 | --- | --- | --- | --- | --- |
-| MX | 10 eforward1.registrar-servers.com | netscli.com | 300 | public\_fallback |
+| A | 104.21.33.43 | netscli.com | 273 | system |
+| A | 172.67.141.41 | netscli.com | 273 | system |
 ```
 
 - **Columns are the JSON field names**, in the same order, so a script can

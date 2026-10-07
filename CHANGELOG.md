@@ -223,6 +223,93 @@ its heading and collects entries. The date and the link go on with the tag.
   `--version` and gives up after 3 seconds. A program still running at that
   point was left behind. It is now stopped.
 
+- **MCP clients built on the official SDK can connect.** Every reply the MCP
+  server sent carried both a result and an error, one of them empty, which
+  the protocol doesn't allow. The official TypeScript SDK drops a reply like
+  that, so a client built on it waited for the answer to its first message
+  and timed out. Replies now carry one or the other, and CI connects to the
+  server with the SDK whenever the code changes.
+
+- **Cancelling an MCP call works when the server is busy.** When a 17th call
+  arrived with 16 running, the server stopped reading what the client sent
+  until one finished. A cancel, which is how a client frees a slot, went
+  unread, and so did the client closing the connection. The server now
+  keeps reading. Up to 16 more calls wait for a slot, and any past that are
+  refused at once with an error.
+
+- **Cancelling or disconnecting stops an MCP packet capture.** A capture
+  ran on after its call was cancelled, timed out or lost its client, for up
+  to an hour, and gave its slot back straight away, so cancelling and
+  restarting got past the limit of four captures. It now stops, and gives
+  the slot back once it has. Background captures stop when the client goes
+  too. In a test on Windows, a server whose client left mid-capture exited
+  within 0.3 seconds, where before it was still running after 20. A
+  `capture_pcap` call with only `maxPackets` could also run for an hour. It
+  now stops after the 10 seconds the tool advertises.
+
+- **mDNS discovery no longer leaves its listener running.** A service type
+  without its final dot, such as `_http._tcp.local`, or a cancelled MCP
+  call left the listener running in the background, its network sockets
+  open and any searches it had started still repeating, until the program
+  exited. It now always stops.
+
+- **An MCP result too large to send keeps its file path and counts.** A
+  result over 1 MiB that wasn't a plain list was replaced by an error, so a
+  large packet capture lost its file name, packet count and job status along
+  with its packets. Now only its longest list is cut to fit. A background
+  capture also reports its file name as soon as it starts.
+
+- **Smaller MCP server fixes.**
+  - The server answers `ping`, which clients use to check that a server is
+    alive. It answered with an error.
+  - It agrees a protocol version it supports, instead of whatever version
+    the client asked for.
+  - Text from scanned hosts in HTTP headers and mDNS records is cut to 256
+    characters, as banners already were.
+  - `discover_mdns` takes at most 32 service types, and browses each once.
+  - An over-long request line no longer has its tail read as the next
+    message.
+  - A request that reuses the id of one just answered can always be
+    cancelled. A race could leave it impossible to cancel.
+
+- **Smaller scan fixes.**
+  - A port behind a firewall that rejects connections with an ICMP message
+    reads as filtered, as nmap reports it, instead of as an error.
+  - The HTTP probe sends IPv6 targets a valid `Host` header, with the
+    address in brackets. The old one was malformed, and a strict server can
+    refuse it.
+  - A stray `data/oui.json` in the folder netscli ran from no longer
+    replaces or empties the vendor list.
+  - On a network wider than /16, the default /24 is the one around this
+    machine's address on that network. It could come from another interface
+    or fall back to 192.168.1.0/24.
+  - Windows discovery re-checks at most 64 devices at once. Checked all at
+    once, a very long device table could drop devices that were there.
+  - The example in the `netscli-core` README compiles.
+
+### Security
+
+- **MCP packet captures never overwrite a file or follow a symlink.**
+  `capture_pcap` wrote `capture.pcap` in the server's working directory,
+  often your project, and replaced any file of that name. On Linux and
+  macOS, a `capture.pcap` symlink in a repository could send the capture
+  through to wherever it pointed, as root if the server ran as root.
+  Captures now create a new file and refuse a name that is taken, symlinks
+  included, and without `outputFile` each capture gets a new name.
+
+- **DNS lookups no longer go to Cloudflare behind your back.** When your own
+  DNS servers could not answer a lookup, including when a name simply had no
+  records of the type asked for, NetsCLI asked Cloudflare's public resolver
+  (1.1.1.1) the same question. That sent names you looked up to a third
+  party, unencrypted and without saying so, and the privacy page said the
+  opposite. It affected `dns` and every command that turns a host name into
+  an address, in the CLI, the terminal UI, the desktop app and the MCP
+  server. Lookups now go only to the DNS servers your computer is set up to
+  use. Some home routers refuse record types other than A and AAAA, and `dns`
+  now reports that refusal instead of quietly asking someone else.
+  `NETSCLI_DNS_FALLBACK` no longer does anything. The privacy page now says
+  what 0.3.4 and earlier did.
+
 ## [0.3.4] - 2026-10-04
 
 ### Added

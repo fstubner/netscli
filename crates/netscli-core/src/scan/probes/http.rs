@@ -1,3 +1,5 @@
+use std::net::IpAddr;
+
 use tokio::io::{AsyncRead, AsyncWrite, AsyncWriteExt};
 use tokio::time::timeout;
 
@@ -9,12 +11,18 @@ const USER_AGENT: &str = "netscli-scan";
 
 pub(in crate::scan) async fn probe_http<S>(
     stream: &mut S,
-    host: &str,
+    target: IpAddr,
     timeout_ms: u64,
 ) -> Option<(HttpProbe, Option<String>, Option<String>)>
 where
     S: AsyncRead + AsyncWrite + Unpin,
 {
+    // An IPv6 address goes in brackets, as in a URL. `Host: fe80::1` is
+    // malformed, and strict servers answered it with 400.
+    let host = match target {
+        IpAddr::V4(v4) => v4.to_string(),
+        IpAddr::V6(v6) => format!("[{v6}]"),
+    };
     let req = format!(
         "{}\r\nHost: {}\r\nUser-Agent: {}\r\nConnection: close\r\n\r\n",
         String::from_utf8_lossy(HTTP_METHOD),
