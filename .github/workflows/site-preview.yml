@@ -3,9 +3,9 @@ name: Site Preview
 # Per-PR preview deploys of site/ to Cloudflare Pages.
 #
 # PRODUCTION IS NOT TOUCHED BY THIS WORKFLOW. netscli.com is served from
-# GitHub Pages via pages.yml, which stays manual-only. This deploys to a
-# separate Cloudflare Pages project and always passes an explicit
-# `--branch=pr-<N>`, which Cloudflare treats as a *preview* deployment.
+# GitHub Pages via pages.yml. This deploys to a separate Cloudflare Pages
+# project, always with an explicit `--branch` (`pr-<N>` for a pull request,
+# `main` for a push), which that project treats as a *preview* deployment.
 # There is no code path here that produces a production deployment.
 #
 # A missing secret fails this workflow rather than skipping it.
@@ -59,6 +59,7 @@ jobs:
   preview:
     name: Deploy preview
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     # Secrets are not exposed to pull_request runs from forks, so a fork PR
     # would otherwise fail on an empty token. Skip rather than fail; the
     # maintainer can deploy a preview from a local branch if needed.
@@ -151,7 +152,12 @@ jobs:
           # If a production branch is ever set on it, and it is set to main,
           # this line starts producing production deployments of the preview
           # project. Point it at a name that is not the production branch.
-          npx --yes wrangler@4 pages deploy dist \
+          #
+          # An exact wrangler version, not `wrangler@4`, which installed the
+          # newest 4.x on every run and handed it CLOUDFLARE_API_TOKEN.
+          # Dependabot does not see this line, so bump it by hand:
+          # `npm view wrangler@4 version` lists the candidates.
+          npx --yes wrangler@4.148.0 pages deploy dist \
             --project-name=netscli-site-preview \
             --branch="${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || 'main' }}" \
             --commit-dirty=true \
@@ -172,7 +178,7 @@ jobs:
             const body = `${marker}\n**Site preview:** ${url}\n\n` +
               `Built from ${context.sha.slice(0, 7)} with \`NETSCLI_PREVIEW=1\` — ` +
               `noindex, and analytics disabled so it does not report into netscli.com's numbers.\n\n` +
-              `Production is unaffected: netscli.com is served from GitHub Pages via \`pages.yml\`, which is manual-only.`;
+              `Production is unaffected: netscli.com is served from GitHub Pages via \`pages.yml\`, which deploys from main.`;
             const { data: comments } = await github.rest.issues.listComments({
               ...context.repo, issue_number: context.issue.number,
             });

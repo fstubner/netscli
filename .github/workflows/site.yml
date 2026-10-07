@@ -38,6 +38,7 @@ jobs:
   changes:
     name: Detect site changes
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       site: ${{ steps.filter.outputs.site }}
     steps:
@@ -76,6 +77,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.site == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -125,6 +127,7 @@ jobs:
     needs: [changes, maintainability]
     if: needs.changes.outputs.site == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: site
@@ -208,6 +211,7 @@ jobs:
       - maintainability
       - build
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Verify no upstream job failed
         shell: bash
