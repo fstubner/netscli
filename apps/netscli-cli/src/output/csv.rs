@@ -42,9 +42,9 @@ fn render(rows: &[Row]) -> String {
 /// export applies (`csvEscape` in apps/netscli-gui). A cell that parses as a
 /// number is left alone, so a negative figure stays a number.
 ///
-/// Control characters become `.`, as they do in text output, except tab, CR
-/// and LF, which CSV carries inside a quoted cell and a multi-line banner
-/// needs.
+/// Control characters, and the bidi and zero-width ones that reorder or hide
+/// text, become `.`, as they do in text output, except tab, CR and LF, which
+/// CSV carries inside a quoted cell and a multi-line banner needs.
 fn escape(cell: &str) -> String {
     let cleaned = defuse_controls(cell, &['\t', '\r', '\n']);
     let numeric = cleaned.parse::<f64>().is_ok_and(f64::is_finite);
@@ -199,5 +199,11 @@ mod tests {
     fn a_host_cannot_send_escape_sequences_to_the_terminal() {
         assert_eq!(escape("\u{1b}[31mred"), ".[31mred");
         assert_eq!(escape("bell\u{7}"), "bell.");
+    }
+
+    #[test]
+    fn a_host_cannot_reorder_or_hide_text() {
+        assert_eq!(escape("invoice\u{202E}fdp.exe"), "invoice.fdp.exe");
+        assert_eq!(escape("a\u{200B}b"), "a.b");
     }
 }
