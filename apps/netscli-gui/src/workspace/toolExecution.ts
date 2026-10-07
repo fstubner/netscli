@@ -38,6 +38,9 @@ export async function executeTool(
   tab: WorkspaceTab,
   opId: string,
   maxConcurrentProbes: number,
+  /** False once this run has been stopped or replaced. Only a run made of
+   *  several backend calls one after another needs it. */
+  isCurrent: () => boolean = () => true,
 ): Promise<ToolResult> {
   if (!isTauri()) {
     throw new Error("Tauri backend not available. Run 'npm run tauri dev' to execute tools.");
@@ -77,7 +80,7 @@ export async function executeTool(
         ),
       };
     case 'dns':
-      return executeDns(tab, opId);
+      return executeDns(tab, opId, isCurrent);
     case 'reverse':
       return {
         kind: 'reverse',
@@ -157,7 +160,7 @@ function serviceTypes(value: string | undefined): string[] | undefined {
   return items && items.length > 0 ? items : undefined;
 }
 
-async function executeDns(tab: WorkspaceTab, opId: string): Promise<ToolResult> {
+async function executeDns(tab: WorkspaceTab, opId: string, isCurrent: () => boolean): Promise<ToolResult> {
   const host = tab.form.host.trim();
   const record = tab.form.record?.trim().toUpperCase();
 
@@ -171,7 +174,12 @@ async function executeDns(tab: WorkspaceTab, opId: string): Promise<ToolResult> 
   const data: DnsRecord[] = [];
   const failures: string[] = [];
 
+  // The one run that makes several backend calls, one after another, under a
+  // single operation id. Stop reaches the call that is in flight, and between
+  // two calls there is none, so a Stop that lands there cancels nothing and
+  // the loop would go on to ask for the rest.
   for (const recordType of DNS_ALL_RECORDS) {
+    if (!isCurrent()) throw new Error('Operation cancelled');
     try {
       data.push(...await netscli.dnsLookup(host, recordType, opId));
     } catch (error) {

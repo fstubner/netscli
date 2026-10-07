@@ -100,6 +100,26 @@ describe('executeTool DNS "ALL" aggregation', () => {
 
     await expect(executeTool(tab, 'op-4', 256)).rejects.toThrow(/cancelled/i);
   });
+
+  // Stop reaches a backend call that is in flight. Between two of the ten
+  // there is none, so a Stop that lands there cancelled nothing and the loop
+  // went on to ask for every record type that was left.
+  it('stops asking for record types once the run is no longer current', async () => {
+    const netscli = await import('../services/netscli');
+    let asked = 0;
+    vi.mocked(netscli.dnsLookup).mockImplementation(async () => {
+      asked += 1;
+      return [];
+    });
+
+    const tab = createTab('dns');
+    tab.form.host = 'netscli.com';
+    tab.form.record = 'ALL';
+
+    // Stopped after the third call has been made.
+    await expect(executeTool(tab, 'op-5', 256, () => asked < 3)).rejects.toThrow(/cancelled/i);
+    expect(asked).toBe(3);
+  });
 });
 
 // The mDNS timeout was the one numeric field sent to the backend without the
