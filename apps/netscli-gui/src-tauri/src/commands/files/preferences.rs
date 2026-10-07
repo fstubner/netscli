@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
@@ -93,21 +93,47 @@ pub(super) fn read_file_save_preferences() -> Result<FileSavePreferences, String
         if legacy_path.exists() {
             let text = std::fs::read_to_string(&legacy_path)
                 .map_err(|e| format!("Failed to read legacy save settings: {e}"))?;
-            return serde_json::from_str(&text)
-                .map_err(|e| format!("Failed to parse legacy save settings: {e}"));
+            return Ok(parse_preferences(&text, LEGACY_CAPTURE_SETTINGS_FILE));
         }
         return Ok(FileSavePreferences::default());
     }
     let text =
         std::fs::read_to_string(&path).map_err(|e| format!("Failed to read save settings: {e}"))?;
-    serde_json::from_str(&text).map_err(|e| format!("Failed to parse save settings: {e}"))
+    Ok(parse_preferences(&text, SAVE_SETTINGS_FILE))
+}
+
+/// A settings file that does not parse reads as the defaults.
+///
+/// It used to be an error, and every export and capture reads these settings
+/// first, so one damaged file stopped all of them. The Settings controls could
+/// not repair it either: each one reads the file before it writes it. Reading
+/// the defaults lets the next change write a good file over the bad one. The
+/// cost is that a save folder the user had chosen is forgotten, which is
+/// better than nothing being saveable.
+fn parse_preferences(text: &str, file: &str) -> FileSavePreferences {
+    serde_json::from_str(text).unwrap_or_else(|error| {
+        // Only a debug build has anywhere to show this; the release app has no
+        // console.
+        eprintln!("netscli-gui: {file} could not be read, using the defaults: {error}");
+        FileSavePreferences::default()
+    })
 }
 
 fn write_file_save_preferences(prefs: &FileSavePreferences) -> Result<(), String> {
     let path = save_settings_path()?;
     let text = serde_json::to_string_pretty(prefs)
         .map_err(|e| format!("Failed to serialize save settings: {e}"))?;
-    std::fs::write(&path, text).map_err(|e| format!("Failed to write save settings: {e}"))
+    replace_file(&path, &text).map_err(|e| format!("Failed to write save settings: {e}"))
+}
+
+/// Write beside the file and rename over it, so an interruption leaves the old
+/// settings in place rather than a truncated file.
+fn replace_file(path: &Path, text: &str) -> std::io::Result<()> {
+    let temp = path.with_extension("json.tmp");
+    std::fs::write(&temp, text)?;
+    std::fs::rename(&temp, path).inspect_err(|_| {
+        let _ = std::fs::remove_file(&temp);
+    })
 }
 
 pub(super) fn preferred_save_directory(directory: Option<&str>) -> Result<Option<PathBuf>, String> {
@@ -144,5 +170,53 @@ pub(super) fn format_byte_limit(bytes: u64) -> String {
         format!("{} MiB", bytes / MIB)
     } else {
         format!("{bytes} bytes")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_damaged_settings_file_reads_as_the_defaults() {
+        // Truncated by a crash mid-write, empty, and the wrong shape.
+        for text in [
+            "",
+            "{\"ask_each_time\": tr",
+            "not json",
+            "{\"ask_each_time\": \"yes\"}",
+        ] {
+            let prefs = parse_preferences(text, SAVE_SETTINGS_FILE);
+            assert!(!prefs.ask_each_time, "{text:?}");
+            assert_eq!(prefs.default_directory, None, "{text:?}");
+        }
+    }
+
+    #[test]
+    fn a_good_settings_file_is_read_as_written() {
+        let prefs = parse_preferences(
+            r#"{"ask_each_time": true, "default_directory": "D:\\Scans"}"#,
+            SAVE_SETTINGS_FILE,
+        );
+        assert!(prefs.ask_each_time);
+        assert_eq!(prefs.default_directory.as_deref(), Some("D:\\Scans"));
+    }
+
+    #[test]
+    fn replacing_a_file_swaps_its_contents_and_leaves_no_temporary_behind() {
+        let dir = std::env::temp_dir().join(format!("netscli-prefs-test-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("gui-save-settings.json");
+
+        replace_file(&path, "old").unwrap();
+        replace_file(&path, "new").unwrap();
+
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "new");
+        let names: Vec<_> = std::fs::read_dir(&dir)
+            .unwrap()
+            .map(|entry| entry.unwrap().file_name())
+            .collect();
+        assert_eq!(names, ["gui-save-settings.json"]);
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 }
