@@ -166,6 +166,9 @@ export interface InstallEntry {
    *  than a copyable command, for the installer artifacts that have no
    *  package-manager equivalent (.msi / .dmg / .deb / .AppImage). */
   href?: string;
+  /** Store listing URL. Entries with a `storeHref` render Microsoft's own
+   *  "Get it from Microsoft" badge, unmodified, linking to the listing. */
+  storeHref?: string;
   /** Optional small hint, rendered under the label. Used to warn about
    *  the unsigned installers before someone hits a Gatekeeper or
    *  SmartScreen dialog with no explanation. */

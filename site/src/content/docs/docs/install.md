@@ -35,6 +35,9 @@ The desktop app is distributed separately:
 winget install netscli-gui
 ```
 
+It is also in the [Microsoft Store](https://apps.microsoft.com/detail/xpfg556rr6b76z),
+which installs the same signed `.msi`.
+
 If a short name ever matches more than one package, use the full
 identifiers, `fstubner.netscli` and `fstubner.netscli.gui`.
 
