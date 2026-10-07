@@ -9,6 +9,10 @@ import type { ComparisonColumn, ComparisonRow, SectionCopy } from './types';
 // replies on radmin-club.com). NetsCLI's column was checked against this
 // repository's code, not against the site copy.
 //
+// Re-checked on 2026-10-07. All three versions are still the latest. Three
+// nmap cells changed, because a dash or a tick in them said more than nmap's own
+// pages do: the MCP server, Wake-on-LAN and Open source rows (see each).
+//
 // A dash means the tool's own documentation and source show no such feature.
 // Where a feature exists but is undocumented -- Advanced IP Scanner's console
 // version, which Famatech confirms but never describes -- the cell says so
@@ -34,8 +38,8 @@ export const compareColumns: ComparisonColumn[] = [
 // to take in, nothing to scan. A tick table is only honest if some rows go to
 // the other tools, so some do: service versions and OS detection, where nmap
 // goes further than netscli's partial answers; add-ons (nmap,
-// Angry IP Scanner); remote actions (Advanced IP Scanner); and "Open source"
-// is a tick for three of four.
+// Angry IP Scanner); remote actions (Advanced IP Scanner); and "Open source",
+// a tick for NetsCLI and Angry IP Scanner, and words for nmap (see the row).
 // Rows every tool ticks (desktop app, naming devices by MAC vendor) are left
 // out: they tell nobody anything.
 export const compareRows: ComparisonRow[] = [
@@ -44,7 +48,11 @@ export const compareRows: ComparisonRow[] = [
   // never documented.
   { feature: 'Command line', cells: ['✓', '✓', '✓', 'Undocumented'] },
   { feature: 'Terminal UI', cells: ['✓', '—', '—', '—'] },
-  { feature: 'AI agents (MCP server)', cells: ['✓', '—', '—', '—'] },
+  // nmap ships no MCP server, but other people have written several and they
+  // are easy to find, so its cell says third-party rather than a dash that reads
+  // as "none exist". Angry IP Scanner and Advanced IP Scanner have none that we
+  // could find.
+  { feature: 'AI agents (MCP server)', cells: ['✓', 'Third-party only', '—', '—'] },
   // NetsCLI and Angry IP Scanner do TCP connect scans. Advanced IP Scanner's
   // docs cover checks for HTTP, HTTPS, FTP, RDP, Radmin and shared folders;
   // Famatech sells port scanning as Advanced Port Scanner.
@@ -74,17 +82,23 @@ export const compareRows: ComparisonRow[] = [
   // nmap queries other record types and DNS-SD only from specific NSE
   // scripts. Angry IP Scanner asks mDNS only to name a local host.
   { feature: 'DNS record and mDNS queries', cells: ['✓', 'Via scripts', '—', '—'] },
-  { feature: 'Remote desktop, shutdown, Wake-on-LAN', cells: ['—', '—', '—', '✓'] },
+  // nmap's NSE script broadcast-wake-on-lan sends a Wake-on-LAN packet, so a dash
+  // would be wrong for that third of the row. nmap has nothing for remote
+  // desktop or shutdown, hence "only".
+  { feature: 'Remote desktop, shutdown, Wake-on-LAN', cells: ['—', 'Wake-on-LAN only, via a script', '—', '✓'] },
   // No output-format row. A "JSON output" row went to NetsCLI alone, but
   // nmap writes XML, Angry IP Scanner CSV, XML, text and SQL, and Advanced
   // IP Scanner CSV, XML and HTML: every tool has a machine-readable export,
   // so singling out JSON read as a gotcha.
-  // nmap calls itself "free and open source" (NPSL, source available).
-  // Advanced IP Scanner publishes no source code or licence text.
-  { feature: 'Open source', cells: ['✓', '✓', '✓', '—'] },
+  // nmap calls itself "free and open source", under its own Nmap Public Source
+  // License. nmap.org/npsl says it believes the licence meets the Open Source
+  // Definition but has not been through the OSI's certification, so a tick would
+  // claim more than nmap does. Angry IP Scanner is GPL-2.0. Advanced IP Scanner
+  // publishes no source code or licence text.
+  { feature: 'Open source', cells: ['✓', 'Source available', '✓', '—'] },
 ];
 
 // When and against what, because every cell goes stale as the other tools
 // release. Keep the versions in step with the header comment when rechecking.
 export const compareNoteHtml =
-  'Compared in September 2026 against NetsCLI 0.3.4, nmap 7.991, Angry IP Scanner 3.10.0 and Advanced IP Scanner 2.5. Spot something wrong? <a href="https://github.com/fstubner/netscli/issues/new">Open an issue</a>.';
+  'Compared in October 2026 against NetsCLI 0.3.4, nmap 7.991, Angry IP Scanner 3.10.0 and Advanced IP Scanner 2.5. nmap\'s licence is not certified by the Open Source Initiative, so its Open source cell reads Source available. Spot something wrong? <a href="https://github.com/fstubner/netscli/issues/new">Open an issue</a>.';
