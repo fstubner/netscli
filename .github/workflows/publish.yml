@@ -333,10 +333,14 @@ jobs:
   # digest (KOMAC_* at the top of this file), and the token in the
   # environment of the two steps that use it and of nothing else.
   #
-  # Re-running it does not open a second PR. Komac looks for an existing PR
-  # for the same package and version first, and in CI it stops there rather
-  # than asking (src/commands/utils/mod.rs, `prompt_existing_pull_request`,
-  # at v2.16.0).
+  # Re-running it does not open a second PR. Komac first searches
+  # winget-pkgs for a PR whose title names this package and version, and in
+  # CI it stops there, exiting 0, rather than asking (v2.16.0,
+  # src/github/graphql/get_existing_pull_request.rs and
+  # src/commands/utils/mod.rs). The search ignores the PR's state, so a PR a
+  # moderator closed counts too, and then a re-run goes green without
+  # submitting anything. To resubmit after a closed PR, run Komac by hand
+  # with --skip-pr-check (docs/PUBLISHING.md).
   winget:
     name: Winget
     if: inputs.only == '' || inputs.only == 'winget'

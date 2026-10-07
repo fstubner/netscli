@@ -49,10 +49,12 @@ repository, so only the jobs that sign can read them.
 | `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | The password you gave that command. | the same |
 
 Set **Deployment branches and tags** on the environment to the branch `main`
-and the tag pattern `v*`. Every job that uses the environment runs from a
-workflow dispatched on `main`, so nothing in the release needs more, and a
-workflow pushed to any other branch cannot read the secrets. Add no required
-reviewers. A reviewer would hold the release at its first signing job, which
+and nothing else. Every job that uses the environment runs from a workflow
+dispatched on `main`, so nothing in the release needs more, and a workflow
+pushed to any other branch cannot read the secrets. Leave tags out. Nothing
+that signs runs from a tag any more, and with no ruleset on `v*` tags,
+anyone who can push could push a `v` tag onto a commit whose workflow reads
+the secrets. Add no required reviewers. A reviewer would hold the release at its first signing job, which
 the draft can afford, but a stolen maintainer token can approve its own
 deployment through the API, so it would protect against nothing the branch
 policy does not.
@@ -267,7 +269,8 @@ again.
 
 Re-running is safe for each of them. `crates-io` skips crates that already
 have the version. `npm` and `mcp-registry` skip what their registries
-already have. Komac stops when it finds its own PR for the version. The tap
+already have. Komac stops when winget-pkgs has a PR for the version, even a
+closed one (see [`PUBLISHING.md`](PUBLISHING.md#winget)). The tap
 and bucket scripts, and the AUR action, commit nothing when nothing changed.
 `mcpb` uploads with `--clobber`.
 

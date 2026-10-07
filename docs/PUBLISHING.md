@@ -435,8 +435,20 @@ Komac's GitHub release.
 the one channel that is not fully automated, and the CLA must be signed once
 per account.
 
-Re-running a winget job does not open a second PR. Komac finds its own PR
-for the version and, in CI, stops there.
+Re-running a winget job does not open a second PR. Komac first searches
+winget-pkgs for a PR whose title names the package and version, from any
+author and in any state, and in CI it stops there and exits successfully.
+That includes a PR a moderator closed, so after a rejection a re-run goes
+green and submits nothing. To resubmit, fix what the moderator asked for and
+run Komac by hand with `--skip-pr-check`:
+
+```powershell
+$env:GITHUB_TOKEN = "<the winget token>"
+komac update fstubner.netscli --version X.Y.Z --urls https://github.com/fstubner/netscli/releases/download/vX.Y.Z/netscli-windows-x86_64.exe --submit --skip-pr-check
+```
+
+For the desktop app it is `fstubner.netscli.gui` with the
+`netscli-gui-windows-x86_64.msi` URL.
 
 winget checks the installer against the SHA-256 in its manifest. The
 installers it points at are Authenticode-signed since 0.3.3, so Windows names
@@ -574,7 +586,8 @@ Failure modes worth knowing:
 | `<asset>.sha256 is not a 64-char hex digest` | Sidecar truncated or missing. Previously this silently produced a manifest with blank hashes. |
 | `never became available` after 15 min | The asset is not on the release. On the normal path every asset is checked before the release goes public, so this means the release was promoted by hand. Check the release first. |
 | `komac.exe digest ..., expected ...` | The Komac download does not match the pinned digest. Do not re-pin without checking the new digest against Komac's own `SHA256SUMS`. |
-| winget job ends with "There is already ... pull request" | Komac found its own PR for this version and stopped. Nothing to fix. |
+| winget job ends with "There is already an open pull request" or "a merged" one | Komac found the PR for this version and stopped. Nothing to fix. |
+| winget job ends with "There is already a closed pull request" | A moderator closed the PR and nothing was resubmitted. See [winget](#winget) for resubmitting. |
 | a hand-run `cargo publish` fails on a crate that already has the version | crates.io refuses a version it has. The job leaves those crates out, and by hand you list only the ones still missing. |
 
 Because crates.io publishes are **permanent**, a crate that went up broken

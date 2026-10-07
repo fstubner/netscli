@@ -54,9 +54,9 @@ jobs:
   # release is still a draft.
   #
   # The default branch, because the `release-signing` environment the
-  # signing jobs use allows deployments from `main` and `v*` tags only. A run
-  # from anywhere else would build and then be refused at its first signing
-  # job.
+  # signing jobs use deploys from `main` only (its settings, see
+  # docs/RELEASE.md). A run from anywhere else would build and then be
+  # refused at its first signing job.
   guard:
     name: Check the release is a draft
     runs-on: ubuntu-latest
@@ -389,8 +389,8 @@ jobs:
     timeout-minutes: 60
     # For TAURI_SIGNING_PRIVATE_KEY, the in-app updater's signing key, and on
     # Windows the Certum credentials. Same environment as sign-windows. It
-    # admits deployments from `main` and `v*` tags only, which the `guard`
-    # job checks before anything is built.
+    # deploys from `main` only, which the `guard` job checks before
+    # anything is built.
     environment: release-signing
     permissions:
       contents: write
@@ -846,8 +846,7 @@ jobs:
   # so the runner's OS stops mattering. See scripts/release/sign-windows.sh.
   #
   # `environment: release-signing` scopes the credentials to this job. The
-  # environment admits deployments from `main` and `v*` tags only, and has
-  # no required reviewers. A reviewer would hold the release at this job,
+  # environment deploys from `main` only, and has no required reviewers. A reviewer would hold the release at this job,
   # but on a draft that holds nothing public, so it is possible now that the
   # release is built before it is published. Not added, because a stolen
   # maintainer token can approve its own deployment through the API.

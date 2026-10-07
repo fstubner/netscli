@@ -15,8 +15,9 @@ name: Publish preflight
 # build. The `signing` job finds it before a release is started.
 #
 # Every request below is a read. Nothing is created, forked, pushed or
-# tagged. Run it before publishing a release, from main: the `signing` job
-# uses the release-signing environment, which admits main and v* tags only.
+# tagged. Run it before publishing a release, from main. The `signing` job
+# uses the release-signing environment, which deploys from main only (its
+# settings, see docs/RELEASE.md).
 #
 # No secret value is ever echoed. The checks report HTTP status codes and
 # exit codes only, so a failure says which credential is bad without
