@@ -91,14 +91,14 @@ export const compareRows: ComparisonRow[] = [
   // IP Scanner CSV, XML and HTML: every tool has a machine-readable export,
   // so singling out JSON read as a gotcha.
   // nmap calls itself "free and open source", under its own Nmap Public Source
-  // License. nmap.org/npsl says it believes the licence meets the Open Source
+  // License. nmap.org/npsl says it believes the license meets the Open Source
   // Definition but has not been through the OSI's certification, so a tick would
   // claim more than nmap does. Angry IP Scanner is GPL-2.0. Advanced IP Scanner
-  // publishes no source code or licence text.
+  // publishes no source code or license text.
   { feature: 'Open source', cells: ['✓', 'Source available', '✓', '—'] },
 ];
 
 // When and against what, because every cell goes stale as the other tools
 // release. Keep the versions in step with the header comment when rechecking.
 export const compareNoteHtml =
-  'Compared in October 2026 against NetsCLI 0.3.4, <a href="https://nmap.org/changelog.html">nmap 7.991</a>, <a href="https://angryip.org/">Angry IP Scanner 3.10.0</a> and <a href="https://www.advanced-ip-scanner.com/">Advanced IP Scanner 2.5</a>. nmap\'s licence is not certified by the Open Source Initiative, so its Open source cell reads Source available. Spot something wrong? <a href="https://github.com/fstubner/netscli/issues/new">Open an issue</a>.';
+  'Compared in October 2026 against NetsCLI 0.3.4, <a href="https://nmap.org/changelog.html">nmap 7.991</a>, <a href="https://angryip.org/">Angry IP Scanner 3.10.0</a> and <a href="https://www.advanced-ip-scanner.com/">Advanced IP Scanner 2.5</a>. nmap\'s license is not certified by the Open Source Initiative, so its Open source cell reads Source available. Spot something wrong? <a href="https://github.com/fstubner/netscli/issues/new">Open an issue</a>.';
