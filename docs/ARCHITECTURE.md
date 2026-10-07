@@ -120,7 +120,7 @@ cargo clippy --all-targets --features pcap -- -D warnings
 ./scripts/test-pcap.ps1
 cd apps/netscli-gui && npm run lint && npm run test:unit && npm run build
 cd apps/netscli-gui && npm run test:maintainability
-cd apps/netscli-gui && npm run test:tauri-render
+cd apps/netscli-gui && npm run test:tauri-render  # local only, not a PR check
 ```
 
 For final release-level confidence, run:
