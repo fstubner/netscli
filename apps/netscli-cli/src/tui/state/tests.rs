@@ -60,6 +60,24 @@ fn no_color_draws_the_whole_frame_without_colour() {
 }
 
 #[test]
+fn drawing_survives_any_terminal_size() {
+    // A terminal gets resized to almost nothing often enough, and a panic
+    // here would take the session with it. The layout does its sums in
+    // saturating arithmetic, and this is what keeps that true.
+    for (width, height) in [(1, 1), (2, 2), (10, 3), (30, 4), (200, 2), (3, 40), (80, 1)] {
+        let mut app = TuiApp::new();
+        render_to_lines(&mut app, width, height);
+
+        // With a running command, suggestions and the exit prompt as well,
+        // which each add to what has to fit.
+        app.running = true;
+        app.suggestions = COMMAND_DEFS.iter().copied().take(6).collect();
+        app.confirm_exit = true;
+        render_to_lines(&mut app, width, height);
+    }
+}
+
+#[test]
 fn input_prompt_renders_in_short_terminal() {
     let mut app = TuiApp::new();
     app.tip_dismissed = true;
