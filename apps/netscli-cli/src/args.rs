@@ -268,6 +268,10 @@ pub enum Commands {
         #[arg(long, default_value = "capture.pcap")]
         output: String,
 
+        /// Overwrite the output file if it already exists
+        #[arg(long)]
+        force: bool,
+
         /// Only check pcap support and list capture devices
         #[arg(long)]
         check: bool,

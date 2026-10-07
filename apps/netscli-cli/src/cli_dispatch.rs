@@ -100,6 +100,7 @@ pub(crate) async fn run_command(command: &Commands, ctx: CommandContext<'_>) -> 
             duration,
             max_packets,
             output,
+            force,
             check,
             format,
         } => {
@@ -111,6 +112,7 @@ pub(crate) async fn run_command(command: &Commands, ctx: CommandContext<'_>) -> 
                 *duration,
                 *max_packets,
                 output,
+                *force,
                 *check,
                 *format,
             )

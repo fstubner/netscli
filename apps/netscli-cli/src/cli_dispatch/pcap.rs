@@ -2,7 +2,7 @@ use super::CommandContext;
 use crate::args::ListOutput;
 use crate::cli_formatter::CliFormatter;
 use crate::commands;
-use crate::output::{list_output_format, print_structured, OutputFormat};
+use crate::output::{ensure_not_overwritten, list_output_format, print_structured, OutputFormat};
 use anyhow::Result;
 
 #[allow(clippy::too_many_arguments)]
@@ -14,6 +14,7 @@ pub(super) async fn run(
     duration: Option<u64>,
     max_packets: Option<usize>,
     output: &str,
+    force: bool,
     check: bool,
     flags: ListOutput,
 ) -> Result<()> {
@@ -61,6 +62,10 @@ pub(super) async fn run(
     let interface = interface
         .clone()
         .ok_or_else(|| anyhow::anyhow!("--interface is required when not using --check"))?;
+
+    // The default name is the same every time, so a second capture would
+    // otherwise quietly replace the first.
+    ensure_not_overwritten(std::path::Path::new(output), force)?;
 
     let res = ctx
         .ops
