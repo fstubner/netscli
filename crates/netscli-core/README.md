@@ -39,7 +39,7 @@ async fn main() -> anyhow::Result<()> {
 
     let scanner = PortScanner::new(100); // max concurrent connections
     let target = "192.168.1.1".parse()?;
-    let results = scanner.scan_host(target, ports, 500).await; // timeout_ms
+    let results = scanner.scan_host(target, ports, 500).await?; // timeout_ms
 
     for result in results {
         // `PortResult` carries the port, not the host — the host is the
@@ -56,6 +56,8 @@ async fn main() -> anyhow::Result<()> {
 |---------|---------|---------|
 | `db`    | off     | Enables the `Database` type and SQLite persistence via sqlx + chrono. Pulls ~90 extra transitive crates, so library consumers who don't need scan history should leave this off. |
 | `pcap`  | off     | Enables `PcapEngine` packet capture. Needs libpcap/Npcap at runtime. |
+| `mdns`  | off     | Enables `MdnsEngine` for mDNS/DNS-SD (Bonjour) discovery. Pure Rust, no system dependency. |
+| `ts`    | off     | Generates TypeScript types for the desktop app. Build tooling only. |
 
 The `netscli` binary crate enables `db` by default (it uses `Database`
 for scan history). Library consumers who only want the scan / DNS /
