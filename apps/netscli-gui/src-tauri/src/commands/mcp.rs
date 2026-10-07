@@ -41,6 +41,11 @@ const BIN_NAME: &str = if cfg!(windows) {
 /// A hung probe would freeze the panel with no way out.
 const PROBE_TIMEOUT: Duration = Duration::from_secs(3);
 
+/// Process creation flag that stops a console program opening a window. The
+/// same one the core sets for `arp`, `ping` and `tracert`.
+#[cfg(windows)]
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CliDetection {
@@ -132,6 +137,10 @@ async fn probe_version(path: &Path) -> Option<String> {
         .arg("--version")
         .stdin(std::process::Stdio::null())
         .kill_on_drop(true);
+    // `netscli` is a console program and this app has no console, so each
+    // candidate would otherwise open its own window while Settings is opening.
+    #[cfg(windows)]
+    command.creation_flags(CREATE_NO_WINDOW);
     let output = timeout(PROBE_TIMEOUT, command.output()).await.ok()?.ok()?;
 
     if !output.status.success() {

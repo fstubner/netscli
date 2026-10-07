@@ -6,6 +6,16 @@ use tokio::sync::watch;
 
 use crate::error::{Error, Result};
 
+/// Process creation flag that stops a console program opening a window.
+///
+/// The installed desktop app is a GUI-subsystem process with no console, so a
+/// console tool it starts gets a new one, and on Windows 11 that is a visible
+/// Windows Terminal window titled with the tool's path, open for as long as the
+/// trace runs. The CLI and TUI have a console to inherit and are unaffected.
+/// Same flag, and same reason, as `arp/platform/command.rs`.
+#[cfg(windows)]
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+
 #[derive(Debug, Clone, Serialize)]
 #[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 pub struct TraceResult {
@@ -110,6 +120,8 @@ async fn run_command_streaming(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .kill_on_drop(true);
+    #[cfg(windows)]
+    cmd.creation_flags(CREATE_NO_WINDOW);
 
     let mut child = cmd
         .spawn()
