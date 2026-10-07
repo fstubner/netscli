@@ -70,7 +70,11 @@ const groups = [
                   {alternatives.length > 0 && (
                     <div class="alts">
                       {alternatives.map((e) => (
-                        <div class={`alt${e.command ? ' has-copy' : ''}`}>
+                        /* `data-copy` is the command and nothing else. Without
+                           it the copy button falls back to the row's text,
+                           which is the label glued to the front of the
+                           command ("Scoopscoop bucket add ..."). */
+                        <div class={`alt${e.command ? ' has-copy' : ''}`} data-copy={e.command}>
                           <div class="alt-label">
                             {e.label}
                             {/* A caveat about a command belongs by the label;
