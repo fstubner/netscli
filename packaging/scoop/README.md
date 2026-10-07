@@ -33,9 +33,8 @@ checked-in JSON files here are reference snapshots.
 This paragraph used to say the scripts parse the sidecar and write its
 value straight through. That was true once and was the bug: sidecar and
 asset come from the same origin, so trusting one to describe the other
-can only ever catch corruption in transit (C-35, B-03). The same
-correction landed in the parent [`packaging/README.md`](../README.md) and
-never reached this file.
+can only ever catch corruption in transit. The parent
+[`packaging/README.md`](../README.md) says the same.
 
 Validation still needs a real Scoop install because the CLI and GUI use
 different package mechanics:
@@ -54,17 +53,14 @@ For the CLI, confirm the `#/netscli.exe` rename works and the
 PowerShell completion file is generated. For the GUI, confirm the MSI
 installs cleanly and the `NetsCLI` shortcut launches.
 
-The GUI check is the one to actually run rather than assume, and it has
-not been run since the manifest was written. `netscli-gui.json` carries
-`"installer": { "type": "msi" }`, and Scoop's current manifest schema
-defines `installer` with `additionalProperties: false` and only
-`_comment`, `args`, `file`, `script` and `keep` — there is no `type`.
-Scoop's documentation says the MSI mechanism is deprecated and
-"support will be removed in a future version", the replacement being to
-extract an `.msi` like an archive rather than run it. If that is what
-happens here, the `shortcuts` entry points at a `NetsCLI.exe` that the
-extraction never produces at the top level. Unverified either way: it
-needs a real `scoop install netscli-gui` on Windows.
+`netscli-gui.json` has no `installer` block. Scoop extracts the `.msi`
+like an archive rather than running it (its documentation calls the MSI
+mechanism deprecated), which leaves the app at
+`PFiles\NetsCLI\netscli-gui.exe`. So `extract_dir` lifts that folder to
+the top of the app directory, and the `shortcuts` entry names
+`netscli-gui.exe`, the file that is actually in the package.
+`scripts/release/publish-scoop-gui.sh` sets both on every release,
+because it edits the bucket's manifest rather than copying this one.
 
 ## Moving to extras later
 
