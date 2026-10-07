@@ -60,14 +60,17 @@ async fn check_pcap() -> DependencyStatus {
     }
 }
 
+/// A build without capture is not broken, so nothing here is required. It is
+/// not "installed" either: `doctor` is how people find out whether their build
+/// can capture, and a tick would say it can.
 #[cfg(not(feature = "pcap"))]
 async fn check_pcap() -> DependencyStatus {
     DependencyStatus {
         name: "libpcap".to_string(),
-        installed: true,
+        installed: false,
         required: false,
         details: Some(
-            "pcap support disabled at compile time (build with --features pcap to enable)"
+            "packet capture is not compiled into this build (use a -pcap download, or build with --features pcap)"
                 .to_string(),
         ),
     }
@@ -88,4 +91,19 @@ pub(super) async fn collect_status() -> Vec<DependencyStatus> {
     }
 
     deps
+}
+
+#[cfg(all(test, not(feature = "pcap")))]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn a_build_without_capture_does_not_report_libpcap_as_installed() {
+        // `doctor` is how people learn what their build can do, and it used
+        // to answer a standard build with a tick.
+        let libpcap = check_pcap().await;
+        assert!(!libpcap.installed);
+        assert!(!libpcap.required, "a build without capture is not broken");
+        assert!(libpcap.details.unwrap().contains("not compiled"));
+    }
 }

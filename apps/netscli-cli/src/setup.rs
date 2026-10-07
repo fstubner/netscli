@@ -30,10 +30,22 @@ pub async fn run_setup(execute: bool, print_only: bool) -> Result<()> {
 
     print_dependency_status(&deps);
 
-    let missing: Vec<_> = deps.iter().filter(|d| !d.installed).collect();
+    // Installing libpcap cannot add packet capture to a build that was
+    // compiled without it, so such a build has nothing to install.
+    let missing: Vec<_> = deps
+        .iter()
+        .filter(|d| cfg!(feature = "pcap") && !d.installed)
+        .collect();
     if missing.is_empty() {
-        println!("\n✨ All optional dependencies are installed!\n");
-        save_state(&state)?;
+        if cfg!(feature = "pcap") {
+            println!("\n✨ All optional dependencies are installed!\n");
+        } else {
+            println!("\nThis build has no packet capture, so there is nothing to install.\n");
+        }
+        // `--print` is "print only", and that includes not writing a file.
+        if !print_only {
+            save_state(&state)?;
+        }
         return Ok(());
     }
 
@@ -45,7 +57,6 @@ pub async fn run_setup(execute: bool, print_only: bool) -> Result<()> {
     if print_only {
         let commands = recommend_commands();
         print_recommended_commands(&commands);
-        save_state(&state)?;
         return Ok(());
     }
 
