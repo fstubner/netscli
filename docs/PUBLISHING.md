@@ -1,7 +1,7 @@
 # Publishing netscli
 
-Per-channel reference: what each distribution channel is, what publishes to
-it, what it needs, and how to fix it when it breaks.
+The per-channel reference. It says what each distribution channel is, what
+publishes to it, what it needs, and how to fix it when it breaks.
 
 For the step-by-step *process* of cutting a release, see
 [`RELEASE.md`](RELEASE.md). This document is the reference you consult when
@@ -9,136 +9,103 @@ one channel misbehaves.
 
 ## Channels at a glance
 
-netscli publishes to **six** channels via **nine** automated jobs. Everything
-except the crates.io publish is triggered by promoting a GitHub release to
-public.
+`publish-release.yml` builds the GitHub release with `release.yml` while it is
+still a draft, checks it, makes it public, and then starts `publish.yml`,
+which publishes to every other channel in 13 jobs, and `pages.yml`, which
+redeploys netscli.com.
 
-| Channel | Artifacts | Job in `publish.yml` | Deployed to |
+| Channel | Artifacts | Built or published by | Deployed to |
 | --- | --- | --- | --- |
+| GitHub Releases | 11 CLI binaries and 7 desktop files, each with `.sha256`, `.sig` and `.pem`, plus `latest.json` | `release.yml`, called by `publish-release.yml` | this repo's Releases |
 | crates.io | `netscli-core`, `netscli-mcp`, `netscli` | `crates-io` | crates.io |
-| GitHub Releases | 11 CLI assets + 5 GUI installers, each with `.sha256`/`.sig`/`.pem` | *(`release.yml`, not `publish.yml`)* | this repo's Releases |
-| Homebrew | CLI formula + GUI cask | `homebrew`, `homebrew-cask` | `fstubner/homebrew-tap` |
-| Scoop | CLI + GUI manifests | `scoop`, `scoop-gui` | `fstubner/scoop-bucket` |
+| npm | the `netscli` launcher and 5 platform packages | `npm` | npmjs.com |
+| MCP Registry | `io.github.fstubner/netscli`, which points at the npm package | `mcp-registry` | registry.modelcontextprotocol.io |
+| MCP bundles | 5 `.mcpb` files, each with `.sha256`, `.sig` and `.pem` | `mcpb`, `mcpb-sign` | this repo's Releases |
+| Homebrew | CLI formula and GUI cask | `homebrew`, `homebrew-cask` | `fstubner/homebrew-tap` |
+| Scoop | CLI and GUI manifests | `scoop`, `scoop-gui` | `fstubner/scoop-bucket` |
 | winget | `fstubner.netscli`, `fstubner.netscli.gui` | `winget`, `winget-gui` | `microsoft/winget-pkgs` (PR) |
-| AUR | `netscli-bin`, `netscli-gui-bin` | `aur`, `aur-gui` | `aur.archlinux.org` |
+| AUR | `netscli-bin`, `netscli-gui-bin` | `aur`, `aur-gui` | aur.archlinux.org |
+| netscli.com | the site, `/install.sh`, `/install.ps1`, the Store's MSI copies | `pages.yml` | GitHub Pages |
+| Microsoft Store | the desktop MSI | `msstore.yml`, run by hand | Partner Center, see [`MICROSOFT-STORE.md`](MICROSOFT-STORE.md) |
+
+The jobs without a workflow name in the third column are in `publish.yml`.
 
 Templates for the packaging manifests live under [`packaging/`](../packaging/)
 for reference. The **deployed** copies live in the tap, bucket, AUR, and
-winget-pkgs — the jobs re-stamp those on every release; the templates in this
-repo are not what users install.
+winget-pkgs. The jobs regenerate those on every release, and the templates in
+this repo are not what users install.
 
 ### What is NOT published
 
 - **The desktop app is not on crates.io.** `netscli-gui` is a Tauri app,
   distributed only as platform installers.
-- **No published artifact has packet capture.** Every release asset and
-  installer is built without `--features pcap`, deliberately, so the default
-  install has no libpcap/Npcap dependency and we do not redistribute Npcap.
-  The `-pcap` CLI variants are the exception and are published as separate
-  release assets. There is no packet-capture desktop installer at all.
+- **Only the `-pcap` CLI release assets have packet capture.** Every other
+  release asset, every installer and every package-manager build is built
+  without `--features pcap`, so the default install has no libpcap or Npcap
+  dependency and nothing redistributes Npcap. There is no packet-capture
+  desktop installer at all.
 
-## Crates.io
+## crates.io
 
-Three crates depend on each other, and crates.io requires dependencies to be
-published first, so the order matters.
+Three crates depend on each other, so crates.io has to receive them in order.
+`netscli-core` depends on nothing in the workspace, `netscli-mcp` depends on
+`netscli-core`, and `netscli` depends on both.
 
-### Publish order
+The `crates-io` job publishes them from the tag, in one command that handles
+the order itself. It first asks crates.io which of the three already have the
+version and leaves those out, so a re-run after a partial upload finishes the
+rest instead of failing on the first. Then:
 
-1. `netscli-core` (the library — depends on nothing in-workspace)
-2. `netscli-mcp` (depends on `netscli-core`)
-3. `netscli` (depends on `netscli-core` and `netscli-mcp`)
+1. `cargo publish --dry-run` packages each crate and builds the packaged copy,
+   with no token in the step. This is the step that runs every dependency's
+   build scripts.
+2. `cargo publish --no-verify` uploads them in dependency order and waits for
+   each to reach the index. The token is in `CARGO_REGISTRY_TOKEN`, and the
+   step compiles nothing.
 
-The `netscli-gui` crate is a Tauri app, not intended for crates.io — it's
-distributed as platform installers via the GitHub release workflow.
+`ci.yml`'s `publish-dry-run` job runs the same dry run on every push to `main`
+that touches code, so a packaging problem usually shows up long before a
+release.
 
-## One-time setup
+**crates.io publishes are permanent.** You can yank a version but not delete
+it, and a yanked version keeps its number. A crate that went up broken means
+bumping the patch version, not retrying the same one.
 
-```bash
-# If you don't already have one, create an account at https://crates.io
-# and generate an API token in your Account Settings.
-cargo login <your-crates.io-token>
-```
-
-## Pre-publish checklist
-
-Check the publishing credentials first, because they are the slowest thing
-to fix and the only one that fails *during* a release:
-
-```bash
-gh workflow run publish-preflight.yml
-```
-
-It validates all five secrets (crates.io, the tap, the bucket, winget, AUR)
-and publishes nothing — every request is a read. Worth doing because
-`publish.yml` pushes to each registry the moment that job succeeds and AUR
-has no review step, so a credential that expired quietly between releases
-leaves some registries on the new version and some on the old. GitHub PATs
-commonly carry a 90-day expiry; releases here are months apart.
+Publish by hand only if the job cannot, and only after the release is public:
 
 ```bash
-# Everything green, nothing uncommitted.
-cargo fmt --check
-cargo clippy --all-targets -- -D warnings
-cargo clippy --all-targets --features pcap -- -D warnings
-cargo test --all --no-fail-fast
-cargo audit
-cd apps/netscli-gui && npm run test:unit && npm run test:maintainability && npm run build
-git status                                    # should be clean
-
-# Windows note: `--features pcap` needs the Npcap SDK import library.
-# Set LIB to the SDK directory containing wpcap.lib before running the
-# PCAP clippy/build gates, for example C:\path\to\npcap-sdk\Lib\x64.
-
-# Dry-run each crate — this builds a tarball without uploading and
-# validates the manifest (no missing metadata, no path-only deps, etc).
-cargo package -p netscli-core
-cargo package -p netscli-mcp
-cargo package -p netscli
+cargo publish -p netscli-core -p netscli-mcp -p netscli
 ```
 
-Read the tarball contents (`target/package/*.crate`) if you want to be
-sure the right files are being shipped. `cargo package --list -p <crate>`
-prints the file list without building.
-
-## Publish
-
-```bash
-# Do these ONE AT A TIME. Each publish blocks until crates.io has indexed
-# the new version (usually a few seconds) before the next one can resolve it.
-
-cargo publish -p netscli-core
-# wait a bit, then:
-cargo publish -p netscli-mcp
-# wait again:
-cargo publish -p netscli
-```
-
-If something goes wrong after step 1 or 2, remember: **crates.io publishes
-are permanent**. You can't delete a published version, only `yank` it,
-and a yanked version still occupies the version number. Bump the patch
-(0.1.1, 0.1.2, …) instead of re-publishing the same number.
+crates.io also supports trusted publishing from GitHub Actions, which would
+remove `CARGO_REGISTRY_TOKEN` altogether. It needs a trusted publisher set up
+on each crate's settings page first, and then the job switches to
+`rust-lang/crates-io-auth-action`.
 
 ## Version bumps
 
-**The crates do NOT inherit a version from the workspace.** Root
-`Cargo.toml`'s `[workspace.package]` block has no `version` key — each
-crate hardcodes its own, and the desktop app carries three more copies
-outside Cargo entirely. Seven files have to move together:
+**The crates do NOT inherit a version from the workspace.** Root `Cargo.toml`'s
+`[workspace.package]` block has no `version` key. Each crate hardcodes its
+own, and the desktop app carries two more copies outside Cargo. Seven files
+have to move together:
 
 | File | What it sets |
 | --- | --- |
 | `crates/netscli-core/Cargo.toml` | core crate version |
-| `crates/netscli-mcp/Cargo.toml` | MCP crate version **+ its `netscli-core` dep spec** |
-| `apps/netscli-cli/Cargo.toml` | CLI crate version **+ its `netscli-core`/`netscli-mcp` dep specs** |
+| `crates/netscli-mcp/Cargo.toml` | MCP crate version **and its `netscli-core` dependency** |
+| `apps/netscli-cli/Cargo.toml` | CLI crate version **and its `netscli-core`/`netscli-mcp` dependencies** |
 | `apps/netscli-gui/src-tauri/Cargo.toml` | Tauri backend crate version |
 | `apps/netscli-gui/src-tauri/tauri.conf.json` | installer/bundle version |
-| `apps/netscli-gui/package.json` | version shown in the GUI About dialog and on the website |
+| `apps/netscli-gui/package.json` | version shown in the GUI About dialog |
 | `CHANGELOG.md` | the release heading (see below for its date and link) |
 
-Six more, under `packaging/`, carry a version that nothing reads — every
-publish job rewrites it from the tag before the manifest reaches a
-registry. They still have to move, because the version in a template is
-what a human reviewing that template believes:
+`apps/netscli-gui/package-lock.json` repeats the app's own version, and
+`Cargo.lock` the crates', so both change too.
+
+Six more, under `packaging/`, carry a version that nothing reads. Every
+publish job rewrites it from the tag before the manifest reaches a registry.
+They still have to move, because the version in a template is what a human
+reviewing that template believes:
 
 | File | What it sets |
 | --- | --- |
@@ -146,33 +113,35 @@ what a human reviewing that template believes:
 | `packaging/aur/netscli-gui-bin/PKGBUILD` | `pkgver` |
 | `packaging/homebrew/netscli.rb` | `version` |
 | `packaging/homebrew/Casks/netscli-gui.rb` | `version` |
-| `packaging/scoop/netscli.json` | `version` **+ the asset URL** |
-| `packaging/scoop/netscli-gui.json` | `version` **+ the asset URL** |
+| `packaging/scoop/netscli.json` | `version` **and the asset URL** |
+| `packaging/scoop/netscli-gui.json` | `version` **and the asset URL** |
 
-All six sat at `0.3.0` — a version that was tagged, never published, and
-whose tag was then deleted — until the 0.3.1 release. That is the same
-failure the `@@…@@` digest placeholders in those files exist to prevent,
-one field over: a plausible-looking value that describes nothing.
+All six sat at `0.3.0`, a version that was tagged, never published, and
+whose tag was then deleted, until the 0.3.1 release. That is the same failure
+the `@@…@@` digest placeholders in those files exist to prevent, one field
+over. A plausible-looking value describes nothing.
 
-Missing the last three of the first table is what shipped a GUI installer stamped with the
-wrong version at v0.2.4 and got the Winget submission rejected by a
-moderator (see the 0.2.4 entry in `CHANGELOG.md`). The website reads its
-version from `apps/netscli-gui/package.json`, so a miss there also
-silently mislabels netscli.com.
+Missing the GUI's three, rows four to six of the first table, is what shipped
+a GUI installer stamped with the wrong version at v0.2.4 and got the winget
+submission rejected by a moderator (see the 0.2.4 entry in `CHANGELOG.md`).
 
 ### The changelog date and link go on after the tag, not with the bump
 
 A version heading gets `## [0.4.0]` at bump time and nothing more. The
-` — YYYY-MM-DD` and the `[0.4.0]: …/releases/tag/v0.4.0` reference are a
-separate commit, made once the tag is pushed — see "Dating the release"
-below for the sequence and for why they cannot go in earlier.
+` - YYYY-MM-DD` and the `[0.4.0]: …/releases/tag/v0.4.0` reference are a
+separate commit, made once the tag is pushed. See
+[Dating the release](#dating-the-release) for the sequence and for why they
+cannot go in earlier.
 
-Both are claims about the outside world, and the website reads them straight
-out of this file. 0.3.1 was bumped and dated `2026-08-24` in the release
-commit, then not tagged; netscli.com showed "v0.3.1 — 24 Aug 2026" for four
-days, and the link reference pointed at a tag page that did not exist. The
-version bump is a statement about this repository and can happen whenever;
-the date and the link are statements about a release that exists.
+0.3.1 was bumped and dated `2026-08-24` in the release commit, then not
+tagged. netscli.com showed "v0.3.1, 24 Aug 2026" for four days, and the link
+reference pointed at a tag page that did not exist. A date is still not a
+release, though. The tag is pushed before the release goes public, so the
+date is the day you mean to publish, and it moves if the release slips.
+netscli.com does not take a dated heading as published. When `pages.yml`
+deploys, it asks GitHub which releases are published, names the newest one
+as the current version, and labels any other changelog entry "Not yet
+released".
 
 To release 0.4.0 from 0.3.0:
 
@@ -192,8 +161,14 @@ sed -i "s/\"version\": \"${OLD}\"/\"version\": \"${NEW}\"/" \
     apps/netscli-gui/package.json \
     apps/netscli-gui/src-tauri/tauri.conf.json
 
+# package-lock.json records the app's own version twice, at the top and
+# under packages[""]. Only its first lines, so a dependency that happens to
+# share the version number is not touched.
+sed -i "1,10 s/\"version\": \"${OLD}\"/\"version\": \"${NEW}\"/" \
+    apps/netscli-gui/package-lock.json
+
 # Packaging templates. The scoop manifests carry the version twice (the
-# field and the asset URL), so those take a global replace; the PKGBUILDs
+# field and the asset URL), so those take a global replace. The PKGBUILDs
 # and the Ruby files are anchored, because both carry the old version in a
 # comment describing a past mistake and those must not move.
 sed -i "s/${OLD}/${NEW}/g" \
@@ -210,8 +185,8 @@ sed -i "s/^  version \"${OLD}\"/  version \"${NEW}\"/" \
 cargo update -w
 ```
 
-Then verify every surface agrees before tagging — this should print
-`${NEW}` and nothing else:
+Then check every surface agrees before tagging. This should print `${NEW}`
+and nothing else:
 
 ```bash
 {
@@ -219,6 +194,7 @@ Then verify every surface agrees before tagging — this should print
       apps/netscli-gui/src-tauri/Cargo.toml
   grep -h '"version"' apps/netscli-gui/package.json \
       apps/netscli-gui/src-tauri/tauri.conf.json
+  head -n 10 apps/netscli-gui/package-lock.json | grep -h '"version"'
   grep -h '^pkgver=' packaging/aur/PKGBUILD \
       packaging/aur/netscli-gui-bin/PKGBUILD
   grep -h '^  version "' packaging/homebrew/netscli.rb \
@@ -234,106 +210,129 @@ in their explanatory comments, and the check would report a second value
 on every run until someone stopped believing it.
 
 Finally, rename the `## [Unreleased]` heading in `CHANGELOG.md` to
-`## [X.Y.Z]` — the version and nothing else. **The date and the link
-reference do not go on here.** See the next section for where they go and
-why they cannot go here.
+`## [X.Y.Z]`, the version and nothing else. **The date and the link
+reference do not go on here.** The next section says where they go and why.
 
 ## Dating the release
 
-The `— YYYY-MM-DD` and the `[X.Y.Z]: …/releases/tag/vX.Y.Z` reference are a
-separate commit, made **after** the tag is pushed.
-
-That is the opposite of what this file said until 0.3.2, and the old order
-could not be followed. `site/scripts/changelog-dates.mjs` asks
-`git tag --list` and fails a dated version with no matching tag:
+The ` - YYYY-MM-DD` and the `[X.Y.Z]: …/releases/tag/vX.Y.Z` reference are a
+separate commit, made **after** the tag is pushed. That is forced.
+`site/scripts/changelog-dates.mjs` asks `git tag --list` and fails a dated
+version with no matching tag:
 
 ```
 0.3.2: CHANGELOG.md dates it 2026-09-21, but there is no v0.3.2 tag.
 The date goes on with the tag, not with the version bump.
 ```
 
-Under branch protection that commit can never go green, because the tag it
-is waiting for was supposed to come after it. Nobody hit it before 0.3.2
-because 0.3.1 was dated in a commit that reached `main` without that check
-in front of it — and was then not tagged for four days, which is the bug
-the check exists to catch.
+Under branch protection a commit that dates a version before its tag exists
+can never go green, because the tag it is waiting for comes after it. So the
+sequence is:
 
-So the sequence is:
+1. Bump the versions and rename the heading to `## [X.Y.Z]` (above), and
+   merge.
+2. Tag the bump commit and push the tag. This builds nothing.
+3. Date the heading, add the link reference, add the release's one-line
+   `releaseSummaries` entry in `site/src/data/site-content/changelog.ts`,
+   and merge.
+4. Run `publish-preflight.yml`, then `publish-release.yml`.
 
-1. Bump the versions and rename the heading to `## [X.Y.Z]` (above).
-2. Tag and push (below). This builds nothing on its own.
-3. Date the heading, add the link reference, merge that.
-4. Write the release notes and publish.
-
-The reasoning is the one in `CHANGELOG.md`'s own header, which this now
-matches: the version bump is a statement about this repository and can
-happen whenever; the date and the link are statements about a release that
-exists.
+The release body is generated from the `CHANGELOG.md` section and the
+summary when the release goes public, so step 3 is also where the release
+notes are written. [`RELEASE.md`](RELEASE.md#the-release-flow) has the whole
+flow.
 
 ## GitHub Releases
 
-Platform installers, and the download links the install scripts resolve,
-come from the GitHub release — not crates.io. `release.yml` is started by
-`publish-release.yml`, and still answers `release: published` and a manual
-dispatch.
+Platform binaries and installers, and the download links the install
+scripts resolve, come from the GitHub release, not crates.io.
+
+`release.yml` builds them, and `publish-release.yml` calls it while the
+release is still a draft. It refuses a release that is already public,
+because a rebuild would change every digest the package managers have
+published. To rebuild a draft's assets by hand:
 
 ```bash
-git tag vX.Y.Z
-git push origin vX.Y.Z
-# Pushing the tag builds nothing: release.yml answers `release: published`
-# and a manual dispatch, not a tag push. So there is room between here and
-# the publish to date the changelog (see above) and read the notes back.
-
-# Then: Releases → Draft a new release → pick the tag → write the notes.
-# release-drafter has usually made the draft already; edit that one rather
-# than opening a second.
-# Leave it as a draft, and promote it with the workflow — never with the
-# web UI's publish button, which races release-drafter (see RELEASE.md).
-gh workflow run publish-release.yml -f tag=vX.Y.Z
+gh workflow run release.yml -f tag=vX.Y.Z
 ```
 
-It builds and attaches, per asset, four files: the artifact, `.sha256`,
-`.sig`, and `.pem`.
+Each of these is attached with its `.sha256`, `.sig` and `.pem`:
 
-- **11 CLI assets** — linux x86_64/aarch64 (gnu, each with a `-pcap`
-  variant), linux x86_64 musl (no `-pcap`), windows x86_64 (plus `-pcap`),
-  macos x86_64/aarch64 (each plus `-pcap`).
-- **5 GUI installers** from 4 matrix entries — the Linux entry emits both
-  `.deb` and `.AppImage`; then two `.dmg` (aarch64, x86_64) and one `.msi`.
+- **11 CLI binaries.** Linux x86_64 and aarch64 (gnu, each with a `-pcap`
+  variant), Linux x86_64 musl (no `-pcap`), Windows x86_64 (plus `-pcap`),
+  macOS x86_64 and aarch64 (each plus `-pcap`).
+- **7 desktop files.** The Linux `.deb` and `.AppImage`, a `.dmg` for each
+  macOS architecture, the `.app.tar.gz` each macOS app updates from, and the
+  Windows `.msi`.
 
-Signing is Sigstore keyless via `cosign sign-blob`, using the Actions OIDC
-token — no key material is stored. Consumers verify with the command in
-[`RELEASE.md`](RELEASE.md#sigstore-signature-verification). Note that
-**nothing downstream verifies these signatures automatically**; the package
-managers rely on their own hash checks instead.
+That is 72 files, and `latest.json` for the in-app updater makes 73.
+`publish-release.yml` checks all of them before the release goes public.
+The MCP bundles, with their sidecars, add 20 more once it is public.
+
+Signing:
+
+- **Sigstore**, keyless, with the Actions OIDC token, so no key material is
+  stored. Consumers verify with the command in
+  [`RELEASE.md`](RELEASE.md#verifying-release-signatures).
+- **Authenticode** on every Windows executable and installer, since 0.3.3.
+  See [`RELEASE.md`](RELEASE.md#windows-signing).
+- **The updater key** on the four files `latest.json` names, each signature
+  bound to the release's version, and checked against the app's public key
+  before `latest.json` is uploaded.
+
+The package managers check the SHA-256 in their own manifests.
+`scripts/install.sh` also checks the Sigstore signature when `cosign` is
+installed, and `scripts/install.ps1` the Authenticode signature.
 
 **Windows pcap builds** link against the Npcap SDK, which `release.yml`
-downloads and verifies against a pinned SHA256. Bumping the SDK version
-means re-pinning that digest.
+downloads and checks against a pinned SHA-256. Bumping the SDK version means
+re-pinning that digest, in `ci.yml` too.
+
+## netscli.com
+
+`pages.yml` builds the Astro site in `site/` and deploys it to GitHub Pages.
+It runs on pushes to `main` that touch the site or the files it reads, by
+hand, and after every release, when `publish-release.yml` starts it.
+
+- **The current version** is the newest release GitHub lists as published.
+  The build asks GitHub before it starts, and the changelog page labels
+  every newer `CHANGELOG.md` entry "Not yet released". If GitHub cannot be
+  asked, the site names no version and dates no entry rather than guess.
+- **`/install.sh` and `/install.ps1`** are `scripts/install.*`, generated
+  by the build. Before deploying, a job that never ran `npm` checks both are
+  byte for byte what the commit holds.
+- **`/download/<tag>/netscli-gui-windows-x86_64.msi`** holds the MSI of the
+  three newest releases that have one, for the Microsoft Store, which
+  refuses an installer URL that redirects. Each is checked against its
+  release's `.sha256` and, from v0.3.3 on, its Authenticode signature.
+
+Only the deploy job holds `pages: write` and `id-token: write`.
 
 ## Site previews (Cloudflare Pages)
 
-**Production is not involved.** netscli.com is served from GitHub Pages via
-`pages.yml`, which stays manual-only. `site-preview.yml` deploys to a
-separate Cloudflare Pages project and always passes an explicit
-`--branch=pr-<N>`, which Cloudflare treats as a preview deployment. There is
-no code path in that workflow that produces a production deploy.
+**Production is not involved.** netscli.com is served from GitHub Pages by
+`pages.yml`. `site-preview.yml` deploys to a separate Cloudflare Pages
+project, always with an explicit `--branch`. A pull request deploys to
+`pr-<N>` and a push to `main` deploys to `main`, and that project treats
+both as preview deployments. There is no code path in that workflow that
+produces a production deploy.
 
 ### Enabling it
 
-The workflow runs today and reports "not configured" until two repository
-secrets exist. Nothing fails in the meantime.
+Until two repository secrets exist, the workflow fails with an error naming
+them. It used to skip and report success, which hid the missing secrets for
+weeks.
 
-1. **Create the Pages project** (one-off, direct-upload mode — do *not*
+1. **Create the Pages project** (one-off, direct-upload mode). Do *not*
    connect it to Git, or Cloudflare will start building on its own and you
-   will have two things deploying the site):
+   will have two things deploying the site.
 
    ```bash
    npx wrangler@4 pages project create netscli-site-preview \
      --production-branch=unused-production-branch
    ```
 
-   The production branch is deliberately a name no PR will ever use, so the
+   The production branch is deliberately a name nothing deploys to, so the
    project has no reachable production deployment.
 
 2. **Add two repository secrets** under Settings → Secrets and variables →
@@ -353,7 +352,7 @@ Preview builds set `NETSCLI_PREVIEW=1`, which does two things that matter:
 
 - **`robots: noindex, nofollow` on every page.** Emitted by
   `src/layouts/Page.astro` for the landing/changelog/404 pages *and* by the
-  `head` entry in `astro.config.mjs` for the Starlight docs pages — those use
+  `head` entry in `astro.config.mjs` for the Starlight docs pages. Those use
   Starlight's own layout, so the first mechanism alone leaves 11 of 14 pages
   crawlable.
 - **The Cloudflare Web Analytics beacon is suppressed.** A preview is still a
@@ -363,7 +362,7 @@ Preview builds set `NETSCLI_PREVIEW=1`, which does two things that matter:
 The workflow **verifies both before deploying** and fails the job rather than
 publishing an indexable or analytics-reporting preview.
 
-Neither affects a normal build: production still emits the beacon, and only
+Neither affects a normal build. Production still emits the beacon, and only
 the 404 carries `noindex`.
 
 ## Homebrew
@@ -378,8 +377,8 @@ Two artifacts in one tap, `fstubner/homebrew-tap`:
 **The Cask's token is `netscli-gui`, not `netscli`.** It used to be
 `netscli`, sharing a token with the CLI Formula in the same tap, which made
 a bare `brew install netscli` ambiguous and left Homebrew as the only
-registry that did not distinguish the two artifacts by name — scoop has
-`netscli`/`netscli-gui`, AUR `netscli-bin`/`netscli-gui-bin`, winget
+registry that did not distinguish the two artifacts by name. Scoop has
+`netscli`/`netscli-gui`, AUR `netscli-bin`/`netscli-gui-bin`, and winget
 `fstubner.netscli`/`fstubner.netscli.gui`.
 
 `publish-homebrew-cask.sh` deletes a leftover `Casks/netscli.rb` the first
@@ -387,10 +386,12 @@ time it runs against a tap that still has one. Prefer the fully-qualified
 `fstubner/tap/...` form in documentation so it works without a separate
 `brew tap` step.
 
-`publish-homebrew.sh` sed-patches the version and awk-patches each `sha256`
-that follows a matching url line. `publish-homebrew-cask.sh` regenerates the
-Cask wholesale from a quoted heredoc, because the Cask block puts `sha256`
-*before* `url` and a single-pass awk would need a backwards lookup.
+`publish-homebrew.sh` regenerates the formula from
+`packaging/homebrew/netscli.rb`, filling its `@@SHA256_*@@` placeholders with
+digests it computed from the downloaded binaries, and refuses a result with a
+placeholder left. `publish-homebrew-cask.sh` regenerates the Cask from a
+quoted heredoc. Both jobs check out `main`, so a fix to the script or the
+template reaches a re-run.
 
 Needs `HOMEBREW_TAP_TOKEN`.
 
@@ -410,49 +411,55 @@ Needs `SCOOP_BUCKET_TOKEN`.
 
 ## winget
 
-Two package identifiers submitted to `microsoft/winget-pkgs` by
-`vedantmgoyal9/winget-releaser`, which forks the repo under your account and
-opens a PR.
+Two package identifiers in `microsoft/winget-pkgs`:
 
 | Identifier | Job | Install |
 | --- | --- | --- |
 | `fstubner.netscli` | `winget` | `winget install fstubner.netscli` |
 | `fstubner.netscli.gui` | `winget-gui` | `winget install fstubner.netscli.gui` |
 
-**A moderator has to merge the PR** — usually hours to days. This is the one
-channel that is not fully automated, and the CLA must be signed once per
-account.
+Each job downloads Komac, refuses it unless its SHA-256 matches the value
+pinned in `publish.yml`, and runs `komac update` with the release's installer
+URL. Komac reads the latest manifests from winget-pkgs, writes the new
+version's from the installer, and opens a PR from the token owner's fork.
+Then `komac cleanup --only-merged` deletes the fork's branches whose PRs have
+merged. The token is in the environment of those two steps and nowhere else.
 
-Both jobs poll for the relevant `.sha256` sidecar for up to 15 minutes before
-invoking the action, because `release.yml` and `publish.yml` both fire on
-`release: published` and race each other. Without the poll the action sees no
-matching asset and fails with an empty `--urls`.
+This used to be `vedantmgoyal9/winget-releaser`. Its SHA pin did not pin
+what received the token, because the action installs `cargo-binstall` from a
+moving branch and then whichever Komac is newest. Bump Komac by changing
+`KOMAC_VERSION` and `KOMAC_SHA256` together, from the `SHA256SUMS` file on
+Komac's GitHub release.
 
-winget is the **recommended Windows install path** because it verifies the
-installer against the SHA256 in the manifest. Direct MSI/NSIS downloads are
-unsigned and show SmartScreen warnings — see
-[`RELEASE.md`](RELEASE.md#windows-trust-and-signing-policy). Do not describe
-winget as a substitute for Authenticode signing.
+**A moderator has to merge the PR**, usually within hours to days. This is
+the one channel that is not fully automated, and the CLA must be signed once
+per account.
+
+Re-running a winget job does not open a second PR. Komac finds its own PR
+for the version and, in CI, stops there.
+
+winget checks the installer against the SHA-256 in its manifest. The
+installers it points at are Authenticode-signed since 0.3.3, so Windows names
+the publisher instead of "unknown publisher", by winget or by direct
+download. SmartScreen can still warn about a file it has seen too rarely,
+which a signature alone does not change.
 
 The `packaging/winget/<pkg>/<version>/` directories are **reference copies**
 of submitted manifests, one directory per version. Do not edit an existing
-version's directory to hold a different version's content — winget-pkgs keys
-on the directory name, and a mismatch files a conflicting duplicate.
+version's directory to hold a different version's content, because
+winget-pkgs keys on the directory name and a mismatch files a conflicting
+duplicate.
 
-Needs `WINGET_TOKEN` (classic PAT, `public_repo`).
+Needs `WINGET_TOKEN`, a classic PAT with `public_repo` and `workflow`, on a
+bot account (see [`RELEASE.md`](RELEASE.md#the-winget-token)).
 
 ### PackageVersion carries no `v`, and five published versions do
 
-The catalog currently holds, for `fstubner.netscli`:
-
-```
-0.2.0  v0.2.2  v0.2.3  v0.2.4  v0.2.5  v0.2.6
-```
-
-Only `0.2.0` is right. It was submitted by hand; the other five came from the
-`winget` job, which passed the git tag straight through as `PackageVersion`
-before that was fixed. `fstubner.netscli.gui` is unaffected — its single
-`0.2.6` was also hand-submitted.
+`fstubner.netscli` has five catalog versions with a leading `v`, `v0.2.2`
+to `v0.2.6`, beside `0.2.0` and the correctly named `0.3.2` and later. The
+`winget` job passed the git tag straight through as `PackageVersion` before
+that was fixed. `fstubner.netscli.gui` never had the problem. Its first
+version, `0.2.6`, was submitted by hand.
 
 **This does not break upgrades**, checked against the client rather than
 assumed:
@@ -465,48 +472,35 @@ netscli  fstubner.netscli  0.2.0  v0.2.6  winget      # offers the upgrade
 > winget show fstubner.netscli --version 0.2.9        # finds nothing
 ```
 
-The reason is not that winget strips the `v`. It does not: nothing in
+The reason is not that winget strips the `v`. It does not. Nothing in
 `Versions.cpp` trims a leading letter, and `Version::Assign` only trims
 whitespace. What happens is that each dot-separated part is split into a
 leading integer and a remainder, and a part with a non-empty remainder
-sorts *below* one without. `v0` parses as integer `0` with remainder
-`v`; plain `0` parses as integer `0` with none. So `v0.2.6 < 0.2.6`, and
+sorts *below* one without. `v0` parses as integer `0` with remainder `v`,
+and plain `0` parses as integer `0` with none. So `v0.2.6 < 0.2.6`, and
 every `v0.2.x` in the catalog sits below any `0.3.x` on the first part
 alone.
 
 Same outcome, but the mechanism decides what happens next. Under
 normalisation `v0.2.6` and `0.2.6` would be the *same* version, and
 re-submitting `0.2.6` would be a duplicate. Under the real rule they are
-two distinct versions and `0.2.6` is the higher one — so a correctly
-formed re-submission of an already-published number would land as an
-upgrade rather than being rejected. Nothing plans to do that, but it is
-the kind of thing the wrong mental model licenses.
+two distinct versions and `0.2.6` is the higher one. A correctly formed
+re-submission of an already-published number would land as an upgrade
+rather than being rejected. Nothing plans to do that, but it is the kind of
+thing the wrong mental model licenses.
 
-What the bad versions do do is display a version the project never issued, and put the
-two packages side by side inconsistently in `winget search`:
+The bad versions only ever displayed a version the project never issued,
+and since 0.3.2 the newest version in the catalog is correctly named, which
+is what `winget search` and `winget install` use. The old directories stay
+in the catalog unless someone removes them. **Removing them is optional and
+not automated.** It means a PR to `microsoft/winget-pkgs` deleting
+`manifests/f/fstubner/netscli/v0.2.*/`, which breaks anyone pinned to one of
+those versions with `winget install --version`. Doing nothing is a
+defensible answer. A release should not prune them as a side effect.
 
-```
-netscli          fstubner.netscli      v0.2.6
-NetsCLI Desktop  fstubner.netscli.gui  0.2.6
-```
-
-The next correctly-versioned release fixes the display, since `winget search`
-and `winget install` use the latest version. The old directories stay in the
-catalog unless someone removes them.
-
-**Removing them is optional and not automated.** It means a PR to
-`microsoft/winget-pkgs` deleting `manifests/f/fstubner/netscli/v0.2.*/`, which
-breaks anyone pinned to one of those versions with
-`winget install --version`. Weigh that against a tidy version list; doing
-nothing is a defensible answer.
-
-Do **not** set the action's `max-versions-to-keep` to prune them. That deletes
-versions from the public catalog as a side effect of an ordinary release,
-which is not something a release should do quietly.
-
-The `Resolve PackageVersion` step now asserts `MAJOR.MINOR.PATCH` and fails
-the job otherwise. Stripping the `v` was already enough to produce the right
-answer; the assertion exists because winget-pkgs accepted all five bad ones
+The `Resolve PackageVersion` step asserts `MAJOR.MINOR.PATCH` and fails the
+job otherwise. Stripping the `v` was already enough to produce the right
+answer. The assertion exists because winget-pkgs accepted all five bad ones
 without complaint, so nothing downstream will catch a recurrence.
 
 ## AUR
@@ -519,40 +513,69 @@ regenerates `.SRCINFO` server-side.
 | `netscli-bin` | `aur` | `yay -S netscli-bin` |
 | `netscli-gui-bin` | `aur-gui` | `yay -S netscli-gui-bin` |
 
-Each job computes the asset SHA256s, renders a bumped PKGBUILD with `sed`,
-and pushes. The render happens **inside `$GITHUB_WORKSPACE`**, not `/tmp` —
-the deploy action runs in a container that mounts the workspace only, and a
-`/tmp` path produces a confusing `bash: --command: invalid option` error.
+Each job downloads the release assets, hashes the bytes and requires the
+`.sha256` sidecar to agree, renders a bumped PKGBUILD from the template with
+`sed`, and pushes. The render happens **inside `$GITHUB_WORKSPACE`**, not
+`/tmp`, because the deploy action runs in a container that mounts the
+workspace only, and a `/tmp` path produces a confusing
+`bash: --command: invalid option` error.
 
 AUR has **no review step**. A bad push is live immediately.
 
 Needs `AUR_SSH_PRIVATE_KEY`.
 
+## npm and the MCP Registry
+
+The `npm` job publishes the `netscli` launcher and one package per platform,
+each holding a prebuilt binary downloaded from the release and checked
+against its digest. That is what makes `npx netscli serve` work as an MCP
+command. It publishes with npm trusted publishing, an OIDC credential
+minted for the run, so no npm token exists. `NPM_TOKEN` is needed only to
+publish a package that does not exist yet, see
+[`packaging/README.md`](../packaging/README.md).
+
+The `mcp-registry` job lists `packaging/mcp-registry/server.json` in the MCP
+Registry. It runs after `npm`, because the registry checks the npm package
+it points at, and authenticates with the workflow's OIDC token.
+
+## MCP bundles
+
+The `mcpb` job builds five `.mcpb` bundles, one per platform, from the
+published binaries, with `npx @anthropic-ai/mcpb`. It holds a read-only
+token and no OIDC, because that tool's dependencies are resolved afresh on
+every run. `mcpb-sign` then hashes and Sigstore-signs each bundle and
+uploads it with its `.sha256`, `.sig` and `.pem`. Their signing identity is
+`publish.yml`, not `release.yml`, see
+[`RELEASE.md`](RELEASE.md#verifying-release-signatures).
+
 ## When a channel fails
 
-Every job is independent and re-runnable. `publish.yml` accepts a
-`workflow_dispatch` tag input, so you can re-run a single channel without
-rebuilding binaries or touching the others:
+Every job is independent. If nothing in the workflow or its scripts had to
+change, use **Re-run failed jobs** on the publish run. If a fix had to merge,
+dispatch the one job, which picks the fix up:
 
 ```bash
-gh workflow run publish.yml -f tag=vX.Y.Z
+gh workflow run publish.yml -f tag=vX.Y.Z -f only=<job>
 ```
 
-The publish scripts are idempotent — re-running a channel that already
-succeeded commits nothing and exits cleanly, rather than failing on "nothing
-to commit".
+The job ids are `crates-io`, `npm`, `homebrew`, `scoop`, `winget`, `aur`,
+`homebrew-cask`, `scoop-gui`, `winget-gui`, `aur-gui`, `mcpb` (which also
+runs `mcpb-sign`) and `mcp-registry`. Without `-f only` every job runs
+again. Each is safe to run twice (see
+[`RELEASE.md`](RELEASE.md#when-something-fails)), but every registry is
+contacted again.
 
 Failure modes worth knowing:
 
 | Symptom | Cause |
 | --- | --- |
-| `refusing to publish malformed tag` | The tag input is not `vMAJOR.MINOR.PATCH[-prerelease]`. Deliberate — the tag reaches `sed` replacements and commit messages. |
-| `checksum mismatch for <asset>` | The `.sha256` sidecar disagrees with the actual bytes. The scripts download and re-hash rather than trusting the sidecar; investigate before overriding. |
+| `refusing to publish malformed tag` | The tag input is not `vMAJOR.MINOR.PATCH[-prerelease]`. Deliberate, because the tag reaches `sed` replacements and commit messages. |
+| `checksum mismatch for <asset>` | The `.sha256` sidecar disagrees with the actual bytes. The scripts download and re-hash rather than trusting the sidecar, so investigate before overriding. |
 | `<asset>.sha256 is not a 64-char hex digest` | Sidecar truncated or missing. Previously this silently produced a manifest with blank hashes. |
-| `never became available` after 15 min | `release.yml` did not attach the asset. Check that job first; publishing cannot proceed without it. |
-| winget job fails with empty `--urls` | Asset poll passed but the action ran too early, or the package has never been accepted into winget-pkgs. |
-| crates.io "no matching package named …" | An earlier crate in the order has not indexed yet. Wait and re-run; the job sleeps 90s between publishes. |
+| `never became available` after 15 min | The asset is not on the release. On the normal path every asset is checked before the release goes public, so this means the release was promoted by hand. Check the release first. |
+| `komac.exe digest ..., expected ...` | The Komac download does not match the pinned digest. Do not re-pin without checking the new digest against Komac's own `SHA256SUMS`. |
+| winget job ends with "There is already ... pull request" | Komac found its own PR for this version and stopped. Nothing to fix. |
+| a hand-run `cargo publish` fails on a crate that already has the version | crates.io refuses a version it has. The job leaves those crates out, and by hand you list only the ones still missing. |
 
-Because crates.io publishes are **permanent** — you can yank but not delete,
-and a yanked version keeps its number — a failed crates.io publish means
-bumping the patch version, not retrying the same one.
+Because crates.io publishes are **permanent**, a crate that went up broken
+means bumping the patch version, not retrying the same one.

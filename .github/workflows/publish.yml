@@ -845,6 +845,8 @@ jobs:
   # Sigstore identity is this file rather than release.yml, because the
   # bundles are built after the release is public:
   #   https://github.com/fstubner/netscli/.github/workflows/publish.yml@refs/heads/main
+  # or @refs/tags/vX.Y.Z when a release promoted by hand starts this
+  # workflow from its tag. docs/RELEASE.md gives the verify command.
   mcpb-sign:
     name: MCP bundles (sign and attach)
     needs: mcpb
