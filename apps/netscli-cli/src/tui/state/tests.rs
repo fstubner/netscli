@@ -113,6 +113,38 @@ fn tab_completion_advances_to_unique_match() {
 }
 
 #[test]
+fn enter_on_a_partial_command_completes_it_instead_of_running_it() {
+    let mut app = TuiApp::new();
+    type_text(&mut app, "/e");
+    app.update_suggestions();
+
+    // `/e` used to run `/export`, the first suggestion, which writes a file,
+    // when the user was heading for `/exit`.
+    assert!(app.enter_completes_command("/e"));
+    app.apply_tab_completion();
+    assert_eq!(app.input.lines().join("\n"), "/export");
+
+    // Now it is a whole command, so Enter runs it, and so it does for
+    // anything with arguments or that is not a command at all.
+    assert!(!app.enter_completes_command("/export"));
+    assert!(!app.enter_completes_command("/scan 10.0.0.1"));
+    assert!(!app.enter_completes_command("hello"));
+}
+
+#[test]
+fn a_paste_is_text_and_never_a_keypress() {
+    let mut app = TuiApp::new();
+    // A second line that would have run on its own.
+    app.paste("/scan 10.0.0.5\n/arp clear\r\n");
+    assert_eq!(app.input.lines().len(), 1);
+    assert_eq!(app.input.lines().join("\n"), "/scan 10.0.0.5 /arp clear");
+
+    let mut app = TuiApp::new();
+    app.paste("evil\u{1b}[2Jname\there");
+    assert_eq!(app.input.lines().join("\n"), "evil[2Jname here");
+}
+
+#[test]
 fn is_exact_command_matches_lowercase() {
     let app = TuiApp::new();
     assert!(app.is_exact_command("/discover"));

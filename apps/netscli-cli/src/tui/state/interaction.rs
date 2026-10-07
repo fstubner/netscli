@@ -44,6 +44,41 @@ impl<'a> TuiApp<'a> {
         }
     }
 
+    /// Put pasted text in the input.
+    ///
+    /// Typed one key at a time, each pasted newline was a press of Enter, so
+    /// pasting two lines ran the first as a command, and a clipboard that held
+    /// `/arp clear` on its second line ran that too. A paste is text, so its
+    /// line breaks become spaces and the user presses Enter themselves.
+    pub fn paste(&mut self, text: &str) {
+        let one_line: String = text
+            .lines()
+            .collect::<Vec<_>>()
+            .join(" ")
+            .chars()
+            .map(|c| if c == '\t' { ' ' } else { c })
+            .filter(|c| !c.is_control())
+            .collect();
+        self.input.insert_str(one_line);
+        self.reset_history_nav();
+        self.suggestion_index = 0;
+        self.confirm_exit = false;
+    }
+
+    /// Whether Enter on this input should finish the command name and stop,
+    /// as Tab does, instead of running it.
+    ///
+    /// It used to run the highlighted suggestion, so `/e` then Enter ran
+    /// `/export`, which writes a file, and not `/exit`, and `/d` started a
+    /// discovery of the default subnet. Finishing the name costs one more
+    /// Enter and cannot start anything by accident.
+    pub fn enter_completes_command(&self, trimmed: &str) -> bool {
+        !self.suggestions.is_empty()
+            && !trimmed.contains(' ')
+            && trimmed.starts_with('/')
+            && !self.is_exact_command(trimmed)
+    }
+
     pub fn update_suggestions(&mut self) {
         let text = self.input.lines().join("\n");
         let trimmed = text.trim();

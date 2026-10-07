@@ -36,6 +36,15 @@ impl InputRuntime {
         }
     }
 
+    /// A paste that arrived as one event. Ignored while a command is running
+    /// or `/config` is open, as typing is.
+    pub(super) fn handle_paste(&mut self, text: &str, app: &mut TuiApp<'_>) {
+        if app.running || app.is_config_mode() {
+            return;
+        }
+        app.paste(text);
+    }
+
     pub(super) async fn handle_key(
         &mut self,
         key: KeyEvent,
@@ -207,7 +216,12 @@ impl InputRuntime {
             return Ok(false);
         }
 
-        let input = self.resolve_submission(app, trimmed);
+        if app.enter_completes_command(trimmed) {
+            app.apply_tab_completion();
+            return Ok(false);
+        }
+
+        let input = trimmed.to_string();
         let first = input.split_whitespace().next().unwrap_or("").to_string();
         if first == "/quit" || first == "/exit" {
             return Ok(true);
@@ -225,19 +239,6 @@ impl InputRuntime {
 
         self.start_command(app, tasks, db, input, &first);
         Ok(false)
-    }
-
-    fn resolve_submission(&self, app: &TuiApp<'_>, trimmed: &str) -> String {
-        if !app.suggestions.is_empty()
-            && !trimmed.contains(' ')
-            && trimmed.starts_with('/')
-            && !app.is_exact_command(trimmed)
-        {
-            if let Some(s) = app.selected_suggestion() {
-                return s.cmd.to_string();
-            }
-        }
-        trimmed.to_string()
     }
 
     fn enter_config(&mut self, app: &mut TuiApp<'_>) {
