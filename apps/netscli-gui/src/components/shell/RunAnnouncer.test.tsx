@@ -70,7 +70,7 @@ describe('RunAnnouncer', () => {
     for (let completed = 10; completed <= 900; completed += 10) {
       rerender(<RunAnnouncer tab={running({ completed, total: 1000 })} />);
       const text = spoken() ?? '';
-      if (heard.at(-1) !== text) heard.push(text);
+      if (heard[heard.length - 1] !== text) heard.push(text);
     }
     expect(heard).toEqual([
       'Port Scan started',
