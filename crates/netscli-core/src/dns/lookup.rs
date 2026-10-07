@@ -4,7 +4,7 @@ use std::time::Duration;
 use tokio::time::timeout;
 
 use super::records::{normalize_value, ALL_RECORD_TYPES};
-use super::resolver::{fallback_resolver, shared_resolver};
+use super::resolver::shared_resolver;
 use super::types::DnsRecord;
 use crate::error::{Error, Result};
 
@@ -13,7 +13,7 @@ pub async fn lookup_record_timeout(
     record_type: RecordType,
     timeout_ms: u64,
 ) -> Result<Vec<DnsRecord>> {
-    let (response, resolver_source) = lookup_with_fallback(host, record_type, timeout_ms).await?;
+    let response = lookup_system(host, record_type, timeout_ms).await?;
 
     // hickory 0.26 dropped `Lookup::record_iter()` in favor of explicit
     // `.answers()` / `.authorities()` / `.additionals()` slice accessors.
@@ -28,7 +28,7 @@ pub async fn lookup_record_timeout(
             value: normalize_value(&record.data.to_string()),
             name: Some(normalize_value(&record.name.to_string())),
             ttl_seconds: Some(record.ttl),
-            resolver_source: Some(resolver_source.to_string()),
+            resolver_source: Some("system".to_string()),
         });
     }
     Ok(records)
@@ -74,7 +74,7 @@ pub async fn resolve_a(host: &str) -> Result<Vec<String>> {
 }
 
 pub async fn resolve_a_timeout(host: &str, timeout_ms: u64) -> Result<Vec<String>> {
-    let (response, _) = lookup_with_fallback(host, RecordType::A, timeout_ms).await?;
+    let response = lookup_system(host, RecordType::A, timeout_ms).await?;
     // hickory 0.26 returns the flat `Lookup` here (it used to be a typed
     // `Ipv4Lookup` wrapper that yielded `&Ipv4Addr` directly). We now
     // extract the IPv4 from each answer's RData::A variant.
@@ -93,7 +93,7 @@ pub async fn resolve_aaaa(host: &str) -> Result<Vec<String>> {
 }
 
 pub async fn resolve_aaaa_timeout(host: &str, timeout_ms: u64) -> Result<Vec<String>> {
-    let (response, _) = lookup_with_fallback(host, RecordType::AAAA, timeout_ms).await?;
+    let response = lookup_system(host, RecordType::AAAA, timeout_ms).await?;
     Ok(response
         .answers()
         .iter()
@@ -104,11 +104,9 @@ pub async fn resolve_aaaa_timeout(host: &str, timeout_ms: u64) -> Result<Vec<Str
         .collect())
 }
 
-async fn lookup_with_fallback(
-    host: &str,
-    record_type: RecordType,
-    timeout_ms: u64,
-) -> Result<(Lookup, &'static str)> {
+/// One lookup against the system resolver. See `resolver::shared_resolver` for
+/// why there is no other.
+async fn lookup_system(host: &str, record_type: RecordType, timeout_ms: u64) -> Result<Lookup> {
     let resolver = shared_resolver()?;
     match timeout(
         Duration::from_millis(timeout_ms),
@@ -116,29 +114,8 @@ async fn lookup_with_fallback(
     )
     .await
     {
-        Ok(Ok(resp)) => Ok((resp, "system")),
-        Ok(Err(system_err)) => {
-            if !super::resolver::should_use_public_fallback(host) {
-                return Err(Error::dns(format!(
-                    "{record_type} lookup failed: system resolver returned {system_err}; public fallback disabled"
-                )));
-            }
-            let fallback = fallback_resolver()?;
-            match timeout(
-                Duration::from_millis(timeout_ms),
-                fallback.lookup(host, record_type),
-            )
-            .await
-            {
-                Ok(Ok(resp)) => Ok((resp, "public_fallback")),
-                Ok(Err(fallback_err)) => Err(Error::dns(format!(
-                    "{record_type} lookup failed: system resolver returned {system_err}; public fallback returned {fallback_err}"
-                ))),
-                Err(_) => Err(Error::dns(format!(
-                    "{record_type} lookup failed: system resolver returned {system_err}; public fallback timed out after {timeout_ms}ms"
-                ))),
-            }
-        }
+        Ok(Ok(resp)) => Ok(resp),
+        Ok(Err(e)) => Err(Error::dns(format!("{record_type} lookup failed: {e}"))),
         Err(_) => Err(Error::Timeout(timeout_ms)),
     }
 }
