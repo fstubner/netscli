@@ -8,6 +8,9 @@
 //
 // Usage: node smoke.mjs <path to the netscli binary>
 // Exits 0 when every check passes, 1 on any failure, 2 on bad usage.
+//
+// Checks, in order: initialize, ping, tools/list, one tool call that
+// succeeds, and one that is refused with an error reply.
 
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
@@ -45,6 +48,7 @@ try {
   if (server?.name !== 'netscli') {
     fail(`initialize named the server ${JSON.stringify(server)}, expected netscli`);
   }
+  await client.ping();
 
   const { tools } = await client.listTools();
   const names = tools.map((tool) => tool.name);

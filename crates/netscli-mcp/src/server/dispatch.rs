@@ -21,6 +21,24 @@ use super::operations::op_discover_mdns;
 #[cfg(feature = "mdns")]
 use super::schemas::MdnsParams;
 
+/// MCP protocol versions this server implements, newest first.
+const SUPPORTED_PROTOCOL_VERSIONS: &[&str] = &["2025-06-18", "2025-03-26", "2024-11-05"];
+
+/// The version to answer `initialize` with: the client's, when this server
+/// implements it, and otherwise the newest this server does, as the MCP
+/// lifecycle asks. The client's version used to be echoed whatever it was,
+/// which claimed support for versions this server has never seen.
+fn negotiate_protocol_version(requested: Option<&str>) -> &'static str {
+    let Some(requested) = requested else {
+        // What a client that names no version always got.
+        return "2024-11-05";
+    };
+    SUPPORTED_PROTOCOL_VERSIONS
+        .iter()
+        .find(|supported| **supported == requested)
+        .unwrap_or(&SUPPORTED_PROTOCOL_VERSIONS[0])
+}
+
 #[derive(Debug, Default)]
 pub(super) struct ServerState {
     pub(super) initialized: bool,
@@ -113,8 +131,11 @@ async fn handle_request_inner(
     }
 
     // Enforce MCP init lifecycle for requests. Read and release — the guard
-    // must not survive into the tool dispatch below.
-    if !lock(state)?.initialized && req.method != "initialize" && req.method != "tools/list" {
+    // must not survive into the tool dispatch below. `ping` is allowed at
+    // any time.
+    if !lock(state)?.initialized
+        && !matches!(req.method.as_str(), "initialize" | "tools/list" | "ping")
+    {
         return Err(RpcError::NotInitialized);
     }
 
@@ -131,9 +152,7 @@ async fn handle_request_inner(
         // MCP lifecycle
         "initialize" => {
             let p: InitializeParams = parse_params(params)?;
-            let protocol = p
-                .protocol_version
-                .unwrap_or_else(|| "2024-11-05".to_string());
+            let protocol = negotiate_protocol_version(p.protocol_version.as_deref());
             lock(state)?.initialized = true;
             Ok(json!({
                 "protocolVersion": protocol,
@@ -141,6 +160,9 @@ async fn handle_request_inner(
                 "serverInfo": { "name": "netscli", "version": env!("CARGO_PKG_VERSION") }
             }))
         }
+        // MCP's liveness check. It answered -32601, so a client that pings
+        // took a working server for a broken one.
+        "ping" => Ok(json!({})),
         "tools/list" => Ok(tools_list()),
         "tools/call" => handle_tools_call(state, params).await,
 
@@ -245,6 +267,8 @@ async fn dispatch_tool_inner(name: &str, params: Value) -> Result<Value, RpcErro
 mod tool_call;
 use tool_call::handle_tools_call;
 
+#[cfg(test)]
+mod lifecycle_tests;
 #[cfg(test)]
 mod policy_tests;
 #[cfg(test)]
