@@ -1,7 +1,7 @@
 use netscli_core::scan::{PortResult, PortStatus, Protocol};
 use std::time::Instant;
 
-use super::style::cyan;
+use super::style::{cyan, with_color};
 use super::CliFormatter;
 
 #[test]
@@ -158,5 +158,76 @@ fn sweep_output_neutralises_a_hostile_hostname() {
     assert!(
         !out.contains(CURSOR_UP),
         "cursor-up survived into sweep output: {out:?}"
+    );
+}
+
+// --- Layout -----------------------------------------------------------------
+
+fn host_with(ip: &str, vendor: &str, hostname: &str) -> netscli_core::discover::Host {
+    netscli_core::discover::Host {
+        ip: ip.parse().unwrap(),
+        hostname: Some(hostname.to_string()),
+        mac: Some("aa:bb:cc:dd:ee:ff".to_string()),
+        vendor: Some(vendor.to_string()),
+        rtt_ms: Some(1),
+        found_by: netscli_core::FoundBy::Probe,
+        hostname_source: None,
+    }
+}
+
+#[test]
+fn discover_rows_line_up_whatever_the_vendor_is() {
+    // One too long for its column, and one the width of its characters and
+    // not of its bytes. Either used to push the hostname column along.
+    let hosts = [
+        host_with("10.0.0.1", "Short", "a"),
+        host_with(
+            "10.0.0.2",
+            "An unreasonably long vendor name with no business in a column",
+            "b",
+        ),
+        host_with("10.0.0.3", "Zürich Gerätebau GmbH", "c"),
+    ];
+    let out = with_color(false, || {
+        CliFormatter::format_discover_result(&hosts, "10.0.0.0/24", Instant::now(), None)
+    });
+
+    // The title, a blank line, the table's header and its rule, then the rows.
+    let rows: Vec<&str> = out.lines().skip(4).collect();
+    assert_eq!(rows.len(), 3, "{out}");
+    let widths: Vec<usize> = rows.iter().map(|row| row.chars().count()).collect();
+    assert!(
+        widths.windows(2).all(|pair| pair[0] == pair[1]),
+        "{widths:?}\n{out}"
+    );
+    assert!(rows[1].contains('…'), "the long vendor was not cut: {out}");
+}
+
+#[test]
+fn counts_say_one_host_not_1_hosts() {
+    let one = host_with("10.0.0.1", "Vendor", "a");
+    let discovered = with_color(false, || {
+        CliFormatter::format_discover_result(
+            std::slice::from_ref(&one),
+            "10.0.0.0/24",
+            Instant::now(),
+            None,
+        )
+    });
+    assert!(
+        discovered.contains("Discovered 1 host in subnet"),
+        "{discovered}"
+    );
+
+    let entry = netscli_core::sweep::SweepEntry {
+        host: one,
+        open_ports: vec![port_result(22, PortStatus::Open, true, Some(1), None)],
+    };
+    let swept = with_color(false, || {
+        CliFormatter::format_sweep_result(&[entry], "10.0.0.0/24", Instant::now(), None)
+    });
+    assert!(
+        swept.contains("Swept 1 host in subnet 10.0.0.0/24 (1 host with open ports)"),
+        "{swept}"
     );
 }

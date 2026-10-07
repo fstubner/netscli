@@ -25,7 +25,6 @@ impl InputRuntime {
             if let Some(at) = self.exit_confirmed_at {
                 if at.elapsed() >= Duration::from_secs(3) {
                     app.confirm_exit = false;
-                    app.set_status("ready");
                     self.exit_confirmed_at = None;
                 }
             } else {
@@ -34,6 +33,15 @@ impl InputRuntime {
         } else {
             self.exit_confirmed_at = None;
         }
+    }
+
+    /// A paste that arrived as one event. Ignored while a command is running
+    /// or `/config` is open, as typing is.
+    pub(super) fn handle_paste(&mut self, text: &str, app: &mut TuiApp<'_>) {
+        if app.running || app.is_config_mode() {
+            return;
+        }
+        app.paste(text);
     }
 
     pub(super) async fn handle_key(
@@ -62,7 +70,6 @@ impl InputRuntime {
         let is_exit_key = key.code == KeyCode::Esc || is_ctrl_c;
         if app.confirm_exit && !is_exit_key {
             app.confirm_exit = false;
-            app.set_status("ready");
             self.exit_confirmed_at = None;
         }
 
@@ -179,7 +186,6 @@ impl InputRuntime {
             true
         } else {
             app.confirm_exit = true;
-            app.set_status("Press Esc or Ctrl+C again to exit");
             self.exit_confirmed_at = Some(Instant::now());
             false
         }
@@ -207,7 +213,12 @@ impl InputRuntime {
             return Ok(false);
         }
 
-        let input = self.resolve_submission(app, trimmed);
+        if app.enter_completes_command(trimmed) {
+            app.apply_tab_completion();
+            return Ok(false);
+        }
+
+        let input = trimmed.to_string();
         let first = input.split_whitespace().next().unwrap_or("").to_string();
         if first == "/quit" || first == "/exit" {
             return Ok(true);
@@ -227,22 +238,8 @@ impl InputRuntime {
         Ok(false)
     }
 
-    fn resolve_submission(&self, app: &TuiApp<'_>, trimmed: &str) -> String {
-        if !app.suggestions.is_empty()
-            && !trimmed.contains(' ')
-            && trimmed.starts_with('/')
-            && !app.is_exact_command(trimmed)
-        {
-            if let Some(s) = app.selected_suggestion() {
-                return s.cmd.to_string();
-            }
-        }
-        trimmed.to_string()
-    }
-
     fn enter_config(&mut self, app: &mut TuiApp<'_>) {
         app.confirm_exit = false;
-        app.set_status("ready");
         app.enter_config();
         Self::clear_input_state(app);
     }
@@ -253,7 +250,6 @@ impl InputRuntime {
             .and_then(|req| crate::tui_export::export_session(&snapshot, &req));
 
         app.confirm_exit = false;
-        app.set_status("ready");
         app.push_command(input.clone());
         Self::remember_command(app, &input);
         Self::clear_input_state(app);
@@ -278,7 +274,6 @@ impl InputRuntime {
     ) {
         app.confirm_exit = false;
         app.running = true;
-        app.set_status("Running...");
         app.push_command(input.clone());
         Self::remember_command(app, &input);
         Self::clear_input_state(app);

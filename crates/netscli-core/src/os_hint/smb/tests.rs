@@ -74,12 +74,16 @@ fn a_hostile_computer_name_is_trimmed_to_plain_text() {
     let build = 19045u16.to_le_bytes();
     let info = parse_challenge(&challenge(
         [10, 0, build[0], build[1]],
-        "EVIL\u{1b}[2J-NAME-THAT-GOES-ON-FOR-FAR-TOO-LONG",
+        "EVIL\u{1b}[2J\u{202E}-NAME-THAT-GOES-ON-FOR-FAR-TOO-LONG",
         true,
     ))
     .unwrap();
     let name = info.computer.unwrap();
     assert!(!name.chars().any(char::is_control));
+    assert!(
+        !name.contains('\u{202E}'),
+        "bidi override survived: {name:?}"
+    );
     assert!(name.chars().count() <= 32);
 }
 

@@ -6,9 +6,11 @@ mod cli_formatter;
 mod commands;
 mod mcp_service;
 mod output;
+mod private_fs;
 mod setup;
 mod trace;
 mod tui;
+mod tui_args;
 mod tui_export;
 mod tui_formatter;
 mod tui_settings;
@@ -24,7 +26,13 @@ async fn main() -> Result<()> {
 
     print_first_run_hint(&cli);
 
-    let db = commands::try_init_db().await;
+    // History is off unless NETSCLI_HISTORY=1. The TUI, which has no
+    // subcommand, opens its own handle when it starts.
+    let db = if cli.command.is_some() {
+        commands::try_init_db().await
+    } else {
+        None
+    };
     let ops = Ops::new(OpsConfig {
         concurrency: cli
             .concurrency

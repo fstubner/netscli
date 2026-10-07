@@ -1,3 +1,4 @@
+use super::parse::parse_discover;
 use crate::commands;
 use crate::tui_formatter::Formatter;
 use netscli_core::{parse_ports_checked, Database, Ops};
@@ -12,7 +13,13 @@ pub(super) async fn handle_discover(
     progress: Option<watch::Sender<String>>,
 ) -> Vec<Line<'static>> {
     let mut out = Vec::new();
-    let subnet = parts.get(1).map(|s| s.to_string());
+    let (subnet, resolve) = match parse_discover(parts) {
+        Ok(parsed) => parsed,
+        Err(message) => {
+            out.push(Formatter::format_error(&message));
+            return out;
+        }
+    };
     let progress_cb = progress.map(|tx| {
         let last_sent = std::sync::Arc::new(std::sync::Mutex::new(
             Instant::now() - std::time::Duration::from_secs(1),
@@ -39,11 +46,11 @@ pub(super) async fn handle_discover(
         }) as std::sync::Arc<dyn Fn(netscli_core::DiscoverProgress) + Send + Sync>
     });
 
-    match commands::run_discover(ops, db, subnet, true, progress_cb).await {
+    match commands::run_discover(ops, db, subnet, resolve, progress_cb).await {
         Ok((subnet_str, hosts)) => {
             out.extend(Formatter::format_discover_summary(
                 &subnet_str,
-                true,
+                resolve,
                 hosts.len(),
             ));
             out.extend(Formatter::format_discovered_hosts(&hosts));

@@ -30,10 +30,22 @@ pub async fn run_setup(execute: bool, print_only: bool) -> Result<()> {
 
     print_dependency_status(&deps);
 
-    let missing: Vec<_> = deps.iter().filter(|d| !d.installed).collect();
+    // Installing libpcap cannot add packet capture to a build that was
+    // compiled without it, so such a build has nothing to install.
+    let missing: Vec<_> = deps
+        .iter()
+        .filter(|d| cfg!(feature = "pcap") && !d.installed)
+        .collect();
     if missing.is_empty() {
-        println!("\n✨ All optional dependencies are installed!\n");
-        save_state(&state)?;
+        if cfg!(feature = "pcap") {
+            println!("\n✨ All optional dependencies are installed!\n");
+        } else {
+            println!("\nThis build has no packet capture, so there is nothing to install.\n");
+        }
+        // `--print` is "print only", and that includes not writing a file.
+        if !print_only {
+            save_state(&state)?;
+        }
         return Ok(());
     }
 
@@ -45,7 +57,6 @@ pub async fn run_setup(execute: bool, print_only: bool) -> Result<()> {
     if print_only {
         let commands = recommend_commands();
         print_recommended_commands(&commands);
-        save_state(&state)?;
         return Ok(());
     }
 
@@ -198,5 +209,63 @@ pub async fn print_status(json: bool, yaml: bool) -> Result<()> {
     } else {
         print_diagnostics(&deps);
     }
+
+    // The report is printed first, so it says what is missing. The exit code
+    // is for the script that runs `netscli doctor` and branches on it.
+    let missing = missing_required(&deps);
+    if !missing.is_empty() {
+        return Err(anyhow!(
+            "missing required dependency: {}",
+            missing.join(", ")
+        ));
+    }
     Ok(())
+}
+
+/// The names of the dependencies this build cannot work without that are not
+/// there. A missing optional one is not in this list.
+fn missing_required(deps: &[DependencyStatus]) -> Vec<&str> {
+    deps.iter()
+        .filter(|d| d.required && !d.installed)
+        .map(|d| d.name.as_str())
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn dep(name: &str, installed: bool, required: bool) -> DependencyStatus {
+        DependencyStatus {
+            name: name.to_string(),
+            installed,
+            required,
+            details: None,
+        }
+    }
+
+    #[test]
+    fn only_a_missing_required_dependency_fails_doctor() {
+        let deps = [
+            dep("libpcap", false, true),
+            dep("tcpdump", false, false),
+            dep("other", true, true),
+        ];
+        assert_eq!(missing_required(&deps), ["libpcap"]);
+    }
+
+    #[test]
+    fn missing_optional_dependencies_do_not() {
+        // A pcap build without tcpdump is not broken.
+        let deps = [dep("libpcap", false, false), dep("tcpdump", false, false)];
+        assert!(missing_required(&deps).is_empty());
+    }
+
+    #[test]
+    fn a_state_file_from_before_the_field_existed_still_reads() {
+        let old =
+            r#"{"last_checked":null,"deps":[{"name":"libpcap","installed":true,"details":null}]}"#;
+        let state: SetupState = serde_json::from_str(old).unwrap();
+        assert!(!state.deps[0].required);
+    }
 }
