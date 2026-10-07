@@ -32,6 +32,22 @@
   color: var(--text-secondary);
 }
 
+/* Styled here like the dialogs' buttons. Nothing global styles a bare button,
+   so it was the browser's light grey face carrying the light text colour it
+   inherits from .container, which is unreadable. */
+.error-boundary button {
+  height: 30px;
+  padding: 0 11px;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+}
+
+.error-boundary button:hover {
+  background: var(--bg-selected);
+}
+
 .error-boundary-detail {
   max-width: 100%;
   margin: 0;
