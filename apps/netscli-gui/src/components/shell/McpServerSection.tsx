@@ -1,6 +1,7 @@
-import { Bot, Check, Copy, ExternalLink } from 'lucide-react';
+import { Bot } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
+import { openAllowedExternalUrl } from '../../services/externalLinks';
 import { type CliDetection, detectNetscliCli } from '../../services/netscli';
 
 /** Matches CommandStrip's badge duration, for the same reason: the pointer is
@@ -41,7 +42,9 @@ function clientConfig(path: string): string {
   );
 }
 
-function CopyButton({ value, label }: { value: string; label: string }) {
+/** A text button in the same style as Choose Folder and Reset above it. Its
+ *  label turns to "Copied" for a moment, the way CommandStrip's badge does. */
+function CopyButton({ value, label, testId }: { value: string; label: string; testId: string }) {
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -66,18 +69,20 @@ function CopyButton({ value, label }: { value: string; label: string }) {
 
   return (
     <button
-      aria-label={copied ? 'Copied' : label}
-      className={copied ? 'copied' : undefined}
       data-copied={copied ? 'true' : undefined}
-      data-testid="settings-mcp-copy"
+      data-testid={testId}
       type="button"
       onClick={() => void handleClick()}
     >
-      {copied ? <Check size={13} /> : <Copy size={13} />}
+      {copied ? 'Copied' : label}
     </button>
   );
 }
 
+/** The MCP section, laid out as ordinary settings rows: a label and a one-line
+ *  note on the left, text buttons on the right. It used to be a heading, a
+ *  wrapped paragraph and a boxed code block, which read as a different dialog
+ *  dropped into this one. */
 export function McpServerSection() {
   const [detection, setDetection] = useState<CliDetection | null>(null);
 
@@ -106,46 +111,75 @@ export function McpServerSection() {
       </span>
 
       {detection === null ? (
-        <div className="settings-row-copy">
-          <small>Looking for the netscli command-line tool…</small>
+        <div className="settings-folder-row">
+          <div className="settings-row-copy">
+            <span>Command-Line Tool</span>
+            <small>Looking for netscli…</small>
+          </div>
         </div>
       ) : detection.path ? (
         <>
-          <div className="settings-row-copy">
-            <span>Ready to connect</span>
-            <small>
-              Paste this into your MCP client&apos;s config to let an agent run network
-              scans. Found netscli {detection.version} at {detection.path}
-            </small>
+          <div className="settings-folder-row">
+            <div className="settings-row-copy">
+              <span>Command-Line Tool</span>
+              <small title={detection.path}>
+                netscli {detection.version} at {detection.path}
+              </small>
+            </div>
           </div>
-          <div className="settings-mcp-config">
+          <div className="settings-folder-row">
+            <div className="settings-row-copy">
+              <span>Agent Config</span>
+              <small>Paste into your MCP client&apos;s config to let an agent run scans.</small>
+            </div>
+            <div className="settings-folder-actions">
+              <CopyButton
+                label="Copy Config"
+                testId="settings-mcp-copy"
+                value={clientConfig(detection.path)}
+              />
+            </div>
+          </div>
+          <details className="settings-mcp-details">
+            <summary>Show config</summary>
             <pre data-testid="settings-mcp-config">{clientConfig(detection.path)}</pre>
-            <CopyButton label="Copy MCP config" value={clientConfig(detection.path)} />
-          </div>
+          </details>
         </>
       ) : (
         <>
-          <div className="settings-row-copy">
-            <span>Command-line tool not found</span>
-            <small>
-              The MCP server is part of the netscli command-line tool, which installs
-              separately from this app. Install it and reopen Settings to get a config
-              block for your agent.
-            </small>
+          <div className="settings-folder-row">
+            <div className="settings-row-copy">
+              <span>Command-Line Tool</span>
+              <small>Not installed. The MCP server comes with it.</small>
+            </div>
+            <div className="settings-folder-actions">
+              <button
+                type="button"
+                onClick={() =>
+                  openAllowedExternalUrl(INSTALL_DOCS).catch((error: unknown) =>
+                    console.error('Opening the link failed', error),
+                  )
+                }
+              >
+                Install Options
+              </button>
+            </div>
           </div>
-          <div className="settings-mcp-config">
-            <pre data-testid="settings-mcp-install">{INSTALL_COMMAND[detection.os]}</pre>
-            <CopyButton label="Copy install command" value={INSTALL_COMMAND[detection.os]} />
+          <div className="settings-folder-row">
+            <div className="settings-row-copy">
+              <span>Install Command</span>
+              <small className="settings-mcp-command" data-testid="settings-mcp-install">
+                {INSTALL_COMMAND[detection.os]}
+              </small>
+            </div>
+            <div className="settings-folder-actions">
+              <CopyButton
+                label="Copy"
+                testId="settings-mcp-copy"
+                value={INSTALL_COMMAND[detection.os]}
+              />
+            </div>
           </div>
-          <a
-            className="settings-mcp-link"
-            href={INSTALL_DOCS}
-            rel="noreferrer"
-            target="_blank"
-          >
-            All install options
-            <ExternalLink size={11} />
-          </a>
         </>
       )}
     </section>
