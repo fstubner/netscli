@@ -61,9 +61,7 @@ pub(crate) async fn save_result_bundle(
 }
 
 #[tauri::command]
-pub(crate) async fn open_result_bundle(
-    app: tauri::AppHandle,
-) -> Result<serde_json::Value, String> {
+pub(crate) async fn open_result_bundle(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
     let picker = app
         .dialog()
         .file()
