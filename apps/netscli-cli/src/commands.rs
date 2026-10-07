@@ -10,10 +10,12 @@
 //! `db_upsert_*_safe` and `db_add_scan_history_safe` log on failure
 //! instead of propagating, so a corrupted history database never
 //! kills a working scan. `try_init_db` does the same for opening
-//! the DB itself: history is best-effort.
+//! the DB itself: history is best-effort, and off unless
+//! `NETSCLI_HISTORY=1`.
 //!
 //! Originally lived inline in `main.rs`; extracted here to keep the
 //! CLI entry point focused on arg parsing + dispatch.
+use crate::private_fs;
 use anyhow::{Context, Result};
 use dirs::home_dir;
 use netscli_core::{sanitize_for_terminal, Database, Ops};
@@ -214,11 +216,42 @@ pub async fn run_reverse(ops: &Ops, db: Option<&Database>, ip: &str) -> Result<O
     Ok(name)
 }
 
-/// Open the local SQLite history database, swallowing any failure so a
-/// corrupted DB never blocks a working scan. The user gets a one-line
-/// warning and the rest of the CLI runs against an in-memory void.
+/// Environment variable that turns history recording on.
+const HISTORY_ENV: &str = "NETSCLI_HISTORY";
+
+/// History is off unless the user asks for it.
+///
+/// Nothing reads the database back yet, and it keeps every result and every
+/// device for good, so it should not appear on anyone's disk by default. The
+/// values that count as yes are the ones `NETSCLI_MCP_ALLOW_PUBLIC_TARGETS`
+/// takes.
+pub fn history_enabled() -> bool {
+    history_requested(std::env::var(HISTORY_ENV).ok().as_deref())
+}
+
+fn history_requested(value: Option<&str>) -> bool {
+    value.is_some_and(|value| {
+        matches!(
+            value.trim().to_ascii_lowercase().as_str(),
+            "1" | "true" | "yes" | "on"
+        )
+    })
+}
+
+/// Open the local SQLite history database when `NETSCLI_HISTORY` asks for it,
+/// swallowing any failure so a corrupted DB never blocks a working scan. The
+/// user gets a one-line warning and the rest of the CLI runs against an
+/// in-memory void. Without the variable this opens nothing and creates
+/// nothing, so no file appears in the home directory.
 pub async fn try_init_db() -> Option<Database> {
-    match init_db().await {
+    try_init_db_in(history_enabled(), home_dir()).await
+}
+
+async fn try_init_db_in(enabled: bool, home: Option<PathBuf>) -> Option<Database> {
+    if !enabled {
+        return None;
+    }
+    match init_db(home).await {
         Ok(db) => Some(db),
         Err(e) => {
             eprintln!("netscli: warning: database unavailable ({e}); continuing without history");
@@ -227,13 +260,75 @@ pub async fn try_init_db() -> Option<Database> {
     }
 }
 
-async fn init_db() -> Result<Database> {
-    let base = home_dir().unwrap_or_else(|| PathBuf::from("."));
-    let db_path = base.join(".netscli").join("netscli.db");
-    let parent = db_path
-        .parent()
-        .context("netscli db path has no parent directory")?;
-    std::fs::create_dir_all(parent)?;
+async fn init_db(home: Option<PathBuf>) -> Result<Database> {
+    // No fallback to the current directory when there is no home. That put a
+    // `.netscli/` folder in whatever workspace a container or CI job was
+    // running in, and `setup` fixed the same thing for its own file.
+    let home = home.context("could not determine the home directory (set HOME or USERPROFILE)")?;
+    let dir = home.join(".netscli");
+    private_fs::create_private_dir(&dir)?;
+    let db_path = dir.join("netscli.db");
+    private_fs::create_private_file(&db_path)?;
     let db = Database::new(db_path).await?;
     Ok(db)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A home directory of this test's own, empty and not yet created.
+    fn scratch_home(name: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("netscli-home-{}-{name}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        dir
+    }
+
+    #[test]
+    fn history_is_off_unless_asked_for() {
+        assert!(!history_requested(None));
+        assert!(!history_requested(Some("")));
+        assert!(!history_requested(Some("0")));
+        assert!(!history_requested(Some("off")));
+        assert!(history_requested(Some("1")));
+        assert!(history_requested(Some(" True ")));
+        assert!(history_requested(Some("yes")));
+    }
+
+    #[tokio::test]
+    async fn with_history_off_nothing_is_opened_or_created() {
+        let home = scratch_home("off");
+        std::fs::create_dir_all(&home).unwrap();
+
+        assert!(try_init_db_in(false, Some(home.clone())).await.is_none());
+
+        assert!(!home.join(".netscli").exists(), "a folder appeared");
+        std::fs::remove_dir_all(&home).unwrap();
+    }
+
+    #[tokio::test]
+    async fn with_history_on_the_database_is_created_under_the_home() {
+        let home = scratch_home("on");
+        std::fs::create_dir_all(&home).unwrap();
+
+        let db = try_init_db_in(true, Some(home.clone())).await;
+
+        assert!(db.is_some());
+        assert!(home.join(".netscli").join("netscli.db").is_file());
+        // Best effort. SQLite can still hold the file open for a moment on
+        // Windows, and the next run clears the folder first anyway.
+        drop(db);
+        let _ = std::fs::remove_dir_all(&home);
+    }
+
+    #[tokio::test]
+    async fn with_no_home_no_database_and_no_stray_folder() {
+        // Used to fall back to the current directory, which here is the
+        // crate's own folder.
+        assert!(try_init_db_in(true, None).await.is_none());
+        assert!(
+            !std::path::Path::new(".netscli").exists(),
+            "a .netscli folder was created in the working directory"
+        );
+    }
 }

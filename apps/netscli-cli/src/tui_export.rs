@@ -1,5 +1,5 @@
 use crate::tui::{EntryState, HistoryEntry};
-use anyhow::Result;
+use anyhow::{Context, Result};
 use chrono::Local;
 use dirs::home_dir;
 use netscli_core::sanitize_for_terminal;
@@ -75,10 +75,10 @@ pub fn parse_export_command(input: &str) -> Result<ExportRequest> {
 
 pub fn export_session(history: &[HistoryEntry], req: &ExportRequest) -> Result<PathBuf> {
     let explicit = req.output.is_some();
-    let path = req
-        .output
-        .clone()
-        .unwrap_or_else(|| default_output_path(req.format));
+    let path = match &req.output {
+        Some(path) => path.clone(),
+        None => default_output_path(req.format)?,
+    };
 
     // Refuse to clobber an existing file (B-13).
     //
@@ -92,8 +92,8 @@ pub fn export_session(history: &[HistoryEntry], req: &ExportRequest) -> Result<P
         );
     }
 
-    // Only create directories the user actually asked for. This used to run
-    // for the default path too, materialising trees as a side effect.
+    // The default folder does not exist the first time, and a folder in a
+    // path the user typed is one they asked for.
     if let Some(parent) = path.parent() {
         if !parent.as_os_str().is_empty() {
             fs::create_dir_all(parent)?;
@@ -108,13 +108,15 @@ pub fn export_session(history: &[HistoryEntry], req: &ExportRequest) -> Result<P
     Ok(path)
 }
 
-fn default_output_path(format: ExportFormat) -> PathBuf {
+fn default_output_path(format: ExportFormat) -> Result<PathBuf> {
     let ts = Local::now().format("%Y%m%d-%H%M%S");
-    let base = home_dir()
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join(".netscli")
-        .join("exports");
-    base.join(format!("netscli-session-{ts}.{}", format.extension()))
+    // No home means no default folder. Falling back to the current directory
+    // left a `.netscli/` folder in whatever workspace this ran in, so the
+    // user is asked for a path instead.
+    let home =
+        home_dir().context("could not determine the home directory; give a path with --output")?;
+    let base = home.join(".netscli").join("exports");
+    Ok(base.join(format!("netscli-session-{ts}.{}", format.extension())))
 }
 
 fn render_markdown(history: &[HistoryEntry]) -> String {
