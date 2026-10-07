@@ -90,7 +90,7 @@ $ netscli dns netscli.com --record MX --md
 
 ## Example output
 
-Captured from a real run against loopback, so every port reads `filtered`, because nothing is listening on 127.0.0.1 for these ports. A host with services up
+Captured from a real run against loopback, so every port reads `closed`, because nothing is listening on 127.0.0.1 for these ports and the host refuses the connection. A host with services up
 returns `open` with latency, and a banner where one was offered.
 
 ```console
@@ -98,21 +98,27 @@ $ netscli scan 127.0.0.1 -p 22,80,443 --json
 [
   {
     "port": 22,
+    "protocol": "tcp",
     "open": false,
-    "status": "filtered",
-    "service": "ssh"
+    "status": "closed",
+    "service": "ssh",
+    "latency_ms": 4
   },
   {
     "port": 80,
+    "protocol": "tcp",
     "open": false,
-    "status": "filtered",
-    "service": "http"
+    "status": "closed",
+    "service": "http",
+    "latency_ms": 0
   },
   {
     "port": 443,
+    "protocol": "tcp",
     "open": false,
-    "status": "filtered",
-    "service": "https"
+    "status": "closed",
+    "service": "https",
+    "latency_ms": 0
   }
 ]
 ```
@@ -154,6 +160,24 @@ $ netscli dns localhost --json
 ]
 ```
 
+## Exit codes
+
+A script can branch on the exit code, and the command still prints its output before it exits.
+
+| Code | Meaning |
+| --- | --- |
+| `0` | The command worked. |
+| `1` | The command ran and failed. A lookup failed, nothing answered, a tool it relies on failed, or a dependency the build needs is missing. |
+| `2` | The command line was wrong. That covers an unknown command or flag, a value out of range such as `ping -c 0`, and two output formats at once. |
+
+What counts as a failure for the commands where it is not obvious:
+
+- `ping` exits 1 when no reply came back at all, after printing the summary with `loss=100.0%`. A host that answers some of the pings exits 0, whatever the loss.
+- `trace` exits 1 when `tracert`, `traceroute` or `tracepath` fails, for example on a name it cannot resolve. A route that ends without an answer from the last hop is not a failure, because those tools exit 0 for it.
+- `doctor` exits 1 when a dependency the build needs is missing. That is libpcap, or Npcap on Windows, in a build with packet capture. A missing tcpdump is reported and exits 0, and so does a standard build that has no packet capture. The `required` field in `doctor --json` says which is which.
+- `dns --record ALL` exits 0 when any record type has records, because most names have no `MX` or `SRV`. It exits 1 when none do.
+- `mcp-service --install` exits 1, because it no longer installs anything.
+
 ## Command list
 
 The CLI exposes shared network operations plus command-line maintenance workflows:
@@ -171,9 +195,9 @@ The CLI exposes shared network operations plus command-line maintenance workflow
 | `mdns` | Discover local mDNS/DNS-SD service announcements. |
 | `interfaces` | List local network interfaces. |
 | `arp` | Read the local ARP neighbor cache. |
-| `pcap` | Capture or parse packets when built with packet-capture support. |
-| `serve` | Run the MCP server over stdio. |
-| `mcp-service` | Manage MCP server auto-start on supported systems. |
+| `pcap` | Capture or parse packets when built with packet-capture support. It will not replace an existing capture file unless you pass `--force`. |
+| `serve` | Run the MCP server over stdio. Your MCP client starts it, as the [MCP guide](/docs/mcp/) shows. |
+| `mcp-service` | Remove the systemd unit that 0.3.4 and earlier installed. It no longer installs one. |
 | `setup` / `doctor` | Check local environment and dependencies. |
 | `completions` / `man` | Generate shell completions or a man page. |
 
@@ -187,17 +211,35 @@ netscli scan --help
 netscli dns --help
 ```
 
-`--concurrency` / `-j` is a global option for limiting in-flight network work. It is useful on fragile gateways or when scanning larger local ranges.
+`--concurrency` / `-j` is a global option for limiting in-flight network work. It is useful on fragile gateways or when scanning larger local ranges. Without it the limit is 256, or the value you saved with `/config` in the terminal UI.
 
 The help output is the source of truth for flags. The docs explain workflow and intent, and the binary explains exact syntax.
+
+### Environment variables
+
+| Variable | Effect |
+| --- | --- |
+| `NETSCLI_HISTORY=1` | Keep every result in a local database. See [Local history](#local-history). |
+| `NO_COLOR` | No colour, in the output or in the terminal UI. |
+| `CLICOLOR_FORCE=1` | Colour the output even when it is piped, for `less -R` or a CI log. |
+
+The output also has no colour when `TERM` is `dumb`, and when it is not going to a terminal.
 
 ## CLI-only workflows
 
 Some workflows intentionally stay in the command-line interface:
 
 - `setup` and `doctor` for local environment checks.
-- `serve` and `mcp-service` for MCP server launch and supported service management.
+- `serve` to start the MCP server, and `mcp-service --uninstall` to remove the systemd unit that earlier versions installed.
 - Shell completions and manpage generation.
+
+## Local history
+
+NetsCLI 0.3.4 and earlier kept a copy of every result in a database at `~/.netscli/netscli.db`, whether or not you wanted one. Nothing in NetsCLI reads it back yet, so from 0.3.5 it is off. NetsCLI no longer opens or creates the file unless you ask, and does not create the `~/.netscli` folder for it.
+
+To keep history, set `NETSCLI_HISTORY=1` where you run `netscli`. Every `discover`, `scan`, `inspect`, `sweep`, `dns`, `reverse` and `pcap` run, from the command line or the terminal UI, then stores its full result there, along with the devices it found. Nothing prunes it, so it grows. On Linux and macOS a folder and file that NetsCLI creates for it are readable by you alone. One that already exists keeps the permissions it has.
+
+NetsCLI never deletes the file for you. If an earlier version left one, it is still there, and deleting `~/.netscli/netscli.db` is how you get rid of it.
 
 
 ## Permissions and limits
@@ -205,3 +247,12 @@ Some workflows intentionally stay in the command-line interface:
 Raw ICMP, traceroute, and packet capture can require elevated permissions depending on the platform. Port scans and DNS lookups normally do not.
 
 Limits on subnet size, port count, concurrency, and timeouts apply the same way in every interface.
+
+A request that breaks one of two limits is refused with an error. A subnet larger than a /16 is, and so is a scan of more than 4,096 ports.
+
+Four others cut the value to fit and carry on, without saying so.
+
+- `--concurrency` is held between 1 and 1024.
+- `ping -c` is held to 256 pings at most.
+- `trace --max-hops` is held between 1 and 255.
+- `mdns --timeout-ms` waits 30 seconds at most.
