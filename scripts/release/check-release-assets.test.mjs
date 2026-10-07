@@ -121,6 +121,27 @@ test('latest.json missing a platform fails it', () => {
   assert.deepEqual(checkReleaseAssets(draft), ['latest.json has no darwin-x86_64-app entry']);
 });
 
+test('an updater signature bound to no version fails it', () => {
+  // 0.3.4's MSI and AppImage entries looked exactly like this.
+  const draft = completeDraft();
+  draft.latest.platforms['windows-x86_64-msi'].signature = Buffer.from(
+    'untrusted comment: test\nsig\ntrusted comment: timestamp:1791080847\tfile:netscli-gui-windows-x86_64.msi\nglobal\n',
+  ).toString('base64');
+  assert.deepEqual(checkReleaseAssets(draft), [
+    "latest.json's windows-x86_64-msi signature is bound to no version, not 0.3.5",
+  ]);
+});
+
+test('an updater signature bound to another version fails it', () => {
+  const draft = completeDraft();
+  draft.latest.platforms['linux-x86_64-appimage'].signature = Buffer.from(
+    'untrusted comment: test\nsig\ntrusted comment: timestamp:1\tfile:x.AppImage\tversion:0.3.4\nglobal\n',
+  ).toString('base64');
+  assert.deepEqual(checkReleaseAssets(draft), [
+    "latest.json's linux-x86_64-appimage signature is bound to 0.3.4, not 0.3.5",
+  ]);
+});
+
 test('extra assets are reported, not failed', () => {
   const draft = completeDraft();
   draft.assets.push({ name: 'NetsCLI_0.3.5_x64_en-US.msi', size: 10, digest: `sha256:${digestOf('x')}` });

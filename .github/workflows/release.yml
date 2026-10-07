@@ -662,11 +662,18 @@ jobs:
       # macOS updates install from a .app.tar.gz, a separate file from the
       # .dmg people download; it joins the release assets here so the digest
       # and sigstore steps below cover it like everything else. Its bundler
-      # signature is final, since nothing touches the tarball afterwards.
+      # signature is final, since nothing touches the tarball afterwards,
+      # and the bundler binds it to the app's version.
       #
       # Linux updates install the AppImage itself, which the host-library
       # fix above has already rewritten, so it is signed again now, on the
       # bytes that ship. The Windows MSI is handled in sign-windows.
+      #
+      # `--app-version` binds the signature to this version. The app sets
+      # requireSignedVersion and refuses an update whose signature names no
+      # version, which 0.3.4's AppImage signature did not, because this
+      # re-sign did not pass one. updater-manifest.mjs now refuses such a
+      # signature before latest.json is built.
       #
       # The signatures go to a workflow artifact, never to the release: the
       # sigstore sidecars below are also named `<asset>.sig`, and one would
@@ -696,7 +703,7 @@ jobs:
           else
             image="${OUT_DIR}/${ASSET_PREFIX}.AppImage"
             [ -f "${image}" ] || { echo "::error::${image} missing"; exit 1; }
-            (cd apps/netscli-gui && npm run tauri -- signer sign "${image}")
+            (cd apps/netscli-gui && npm run tauri -- signer sign --app-version "${TAG#v}" "${image}")
             mv "${image}.sig" "${SIG_DIR}/${ASSET_PREFIX}.AppImage.sig"
           fi
           ls -la "${SIG_DIR}"
@@ -897,6 +904,23 @@ jobs:
           CERTUM_OTP: ${{ secrets.CERTUM_OTP }}
         run: bash scripts/release/sign-windows.sh "${RUNNER_TEMP}/win"
 
+      # The Tauri CLI, for `signer sign` below. Installed in a step of its own,
+      # with no secret in its environment and no package's install scripts
+      # run, because the next step hands it the updater key. This used to be
+      # `npx --yes` inside that step, so the download ran beside the key.
+      #
+      # The version is the one apps/netscli-gui/package-lock.json locks on
+      # the default branch checked out above, so it follows Dependabot's
+      # bumps. It used to be typed here by hand "to match package.json", and
+      # had drifted to 2.11.5 while the lockfile moved to 2.12.1.
+      - name: Install the Tauri CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./apps/netscli-gui/package-lock.json').packages['node_modules/@tauri-apps/cli'].version")"
+          npm install --prefix "${RUNNER_TEMP}/tauri-cli" --no-save --no-audit --no-fund --ignore-scripts "@tauri-apps/cli@${version}"
+          "${RUNNER_TEMP}/tauri-cli/node_modules/.bin/tauri" --version
+
       # The in-app updater's signature, over the Authenticode-signed MSI.
       #
       # It has to come after Authenticode: that rewrites the file, so the
@@ -904,9 +928,9 @@ jobs:
       # And it goes to a workflow artifact, not the release, because the
       # sigstore step below writes `<asset>.sig` too.
       #
-      # The CLI version is pinned to match apps/netscli-gui/package.json;
-      # this job checks out tooling only and does not install the app's
-      # dependencies.
+      # `--app-version` binds the signature to this version, which the app
+      # requires (requireSignedVersion). 0.3.4's MSI signature named no
+      # version, because this step did not pass one.
       - name: Sign the MSI for the in-app updater
         shell: bash
         env:
@@ -916,7 +940,7 @@ jobs:
           set -euo pipefail
           msi="${RUNNER_TEMP}/win/netscli-gui-windows-x86_64.msi"
           [ -f "${msi}" ] || { echo "::error::${msi} missing"; exit 1; }
-          npx --yes @tauri-apps/cli@2.11.5 signer sign "${msi}"
+          "${RUNNER_TEMP}/tauri-cli/node_modules/.bin/tauri" signer sign --app-version "${TAG#v}" "${msi}"
           mkdir -p "${RUNNER_TEMP}/updater-sigs"
           mv "${msi}.sig" "${RUNNER_TEMP}/updater-sigs/"
 

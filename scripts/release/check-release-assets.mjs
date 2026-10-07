@@ -21,7 +21,8 @@
  * .sha256 names the digest GitHub computed for the uploaded file. A re-run
  * that replaced a file but failed to replace its sidecar would otherwise
  * publish a checksum that every installer then rejects. And latest.json is
- * there, announces this version, and points every platform at this tag.
+ * there, announces this version, points every platform at this tag, and
+ * carries signatures bound to this version, as the app requires.
  *
  * What it does not check is whether the signatures verify. sign-windows
  * checks every Authenticode signature with osslsigncode, and the
@@ -35,7 +36,7 @@ import { join } from 'node:path';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 
-import { UPDATE_ASSETS } from './updater-manifest.mjs';
+import { UPDATE_ASSETS, signedVersion } from './updater-manifest.mjs';
 
 /** Every file release.yml builds. Each ships with the three SIDECARS. */
 export const ARTIFACTS = [
@@ -116,6 +117,13 @@ export function checkReleaseAssets({ tag, assets, sidecars, latest }) {
       }
       if (typeof entry.signature !== 'string' || entry.signature.trim() === '') {
         problems.push(`latest.json has no signature for ${key}`);
+        continue;
+      }
+      // The app sets requireSignedVersion, so a signature bound to no
+      // version, or to another one, is an update it refuses.
+      const signed = signedVersion(entry.signature);
+      if (signed?.replace(/^v/, '') !== version) {
+        problems.push(`latest.json's ${key} signature is bound to ${signed ?? 'no version'}, not ${version}`);
       }
     }
   }
