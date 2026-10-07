@@ -15,7 +15,11 @@ pub struct Cli {
 }
 
 /// `--json` / `--yaml`, for commands whose result is not a list of rows.
+///
+/// `multiple = false` makes the flags exclusive, so asking for two is a usage
+/// error from clap (exit 2) and not a failure of the command (exit 1).
 #[derive(Args, Clone, Copy, Debug)]
+#[group(multiple = false)]
 pub struct StructuredOutput {
     /// Output JSON
     #[arg(long)]
@@ -27,8 +31,10 @@ pub struct StructuredOutput {
 }
 
 /// `--json` / `--yaml` / `--csv` / `--md`, for commands that return a list:
-/// one table row per host, port, record or packet.
+/// one table row per host, port, record or packet. Exclusive, like
+/// [`StructuredOutput`].
 #[derive(Args, Clone, Copy, Debug)]
+#[group(multiple = false)]
 pub struct ListOutput {
     /// Output JSON
     #[arg(long)]
@@ -153,8 +159,13 @@ pub enum Commands {
         /// Host to ping (IP or hostname)
         host: String,
 
-        /// Number of pings to send
-        #[arg(short = 'c', long, default_value_t = 4)]
+        /// Number of pings to send, at least 1 (more than 256 is cut to 256)
+        #[arg(
+            short = 'c',
+            long,
+            default_value_t = 4,
+            value_parser = clap::value_parser!(u32).range(1..)
+        )]
         count: u32,
 
         #[command(flatten)]

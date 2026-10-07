@@ -33,6 +33,8 @@ async fn has_command(cmd: &str) -> bool {
     }
 }
 
+/// libpcap is what a build with packet capture cannot capture without, so it
+/// is the one dependency `doctor` treats as required.
 #[cfg(feature = "pcap")]
 async fn check_pcap() -> DependencyStatus {
     let result = tokio::task::spawn_blocking(PcapEngine::check_support).await;
@@ -40,16 +42,19 @@ async fn check_pcap() -> DependencyStatus {
         Ok(Ok(devs)) => DependencyStatus {
             name: "libpcap".to_string(),
             installed: true,
+            required: true,
             details: Some(format!("interfaces: {}", devs.join(", "))),
         },
         Ok(Err(e)) => DependencyStatus {
             name: "libpcap".to_string(),
             installed: false,
+            required: true,
             details: Some(e.to_string()),
         },
         Err(e) => DependencyStatus {
             name: "libpcap".to_string(),
             installed: false,
+            required: true,
             details: Some(e.to_string()),
         },
     }
@@ -60,6 +65,7 @@ async fn check_pcap() -> DependencyStatus {
     DependencyStatus {
         name: "libpcap".to_string(),
         installed: true,
+        required: false,
         details: Some(
             "pcap support disabled at compile time (build with --features pcap to enable)"
                 .to_string(),
@@ -76,6 +82,7 @@ pub(super) async fn collect_status() -> Vec<DependencyStatus> {
         deps.push(DependencyStatus {
             name: "tcpdump".to_string(),
             installed: tcpdump,
+            required: false,
             details: None,
         });
     }
