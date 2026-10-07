@@ -76,6 +76,22 @@ impl JsonRpcResponse {
             id,
         }
     }
+
+    /// A request that arrived with `held` requests already running or
+    /// waiting for a slot.
+    pub(super) fn server_busy(id: Option<serde_json::Value>, held: usize) -> Self {
+        Self {
+            jsonrpc: "2.0".to_string(),
+            result: None,
+            error: Some(JsonRpcError {
+                code: -32000,
+                message: format!(
+                    "server busy: {held} requests are already running or waiting. Retry when one has been answered."
+                ),
+            }),
+            id,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]

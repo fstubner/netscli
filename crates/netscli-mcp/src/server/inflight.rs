@@ -38,9 +38,22 @@ impl InFlight {
         map.insert(key, handle);
     }
 
-    /// The request answered; stop tracking it.
+    /// The request answered; stop tracking it. Called from the request's own
+    /// task, and removes the entry only if it is still that task's.
+    ///
+    /// The key alone is not enough. A client may reuse an id as soon as it
+    /// has the answer, and a second request with an id already in flight
+    /// replaces the first one's entry. Either way the entry under this key
+    /// could belong to a newer request, and removing it left that request
+    /// impossible to cancel.
     pub(super) fn finish(&self, key: &str) {
-        self.map().remove(key);
+        let mut map = self.map();
+        let own = map
+            .get(key)
+            .is_some_and(|handle| Some(handle.id()) == tokio::task::try_id());
+        if own {
+            map.remove(key);
+        }
     }
 
     /// Handle `notifications/cancelled`. Returns whether a running request
@@ -77,6 +90,34 @@ mod tests {
         let joined = tokio::time::timeout(Duration::from_secs(1), set.join_next()).await;
         let outcome = joined.expect("cancel must end the task promptly").unwrap();
         assert!(outcome.unwrap_err().is_cancelled());
+    }
+
+    #[tokio::test]
+    async fn a_finished_request_does_not_untrack_a_newer_one_with_its_id() {
+        let inflight = std::sync::Arc::new(InFlight::default());
+        let mut set = tokio::task::JoinSet::new();
+        let (finish_old, finished) = tokio::sync::oneshot::channel::<()>();
+        let tracker = std::sync::Arc::clone(&inflight);
+        inflight.track(key(&json!(1)), || {
+            set.spawn(async move {
+                let _ = finished.await;
+                tracker.finish(&key(&json!(1)));
+            })
+        });
+        // The client reuses the id while the first request is still
+        // finishing, which replaces the entry.
+        inflight.track(key(&json!(1)), || {
+            set.spawn(async { tokio::time::sleep(Duration::from_secs(60)).await })
+        });
+
+        finish_old.send(()).unwrap();
+        let first = tokio::time::timeout(Duration::from_secs(1), set.join_next()).await;
+        assert!(first.expect("the first request finishes").unwrap().is_ok());
+
+        assert!(
+            inflight.cancel(Some(&json!({"requestId": 1}))),
+            "the newer request must still be cancellable"
+        );
     }
 
     #[test]
