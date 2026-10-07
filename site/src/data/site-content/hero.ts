@@ -70,7 +70,7 @@ export const hero: Hero = {
   heroImage: '/assets/tui-discover.png',
   heroImageWebp: '/assets/tui-discover.webp',
   heroImageAlt:
-    'netscli terminal UI running /discover with demo hostnames, vendors, and response times',
+    'The NetsCLI terminal UI running /discover, listing hosts with their device IDs, vendors and hostnames, with local interface activity along the bottom',
   heroImageWidth: 1640,
   heroImageHeight: 930,
   sourceUrl: 'https://github.com/fstubner/netscli',
@@ -160,7 +160,10 @@ export const heroCommands: HeroCommands = {
     script: INSTALL_SH_COMMAND,
   },
   linux: {
-    packageManager: 'yay -S netscli-bin',
+    // Homebrew, not `yay -S netscli-bin`. The AUR package is for Arch only, and
+    // this row is shown to every Linux visitor. The install tabs list it last
+    // for the same reason (install.ts).
+    packageManager: 'brew tap fstubner/tap && brew install netscli',
     script: INSTALL_SH_COMMAND,
   },
 };

@@ -1,10 +1,19 @@
 import type { ToolKind, ResultColumn, ResultRow, WorkspaceTab } from '../tools/types';
 import type { ToolResult } from '../types/app';
-import { serializeRowsAsCsv } from '../tools/presentation';
+import { buildRows, resultSummary, serializeRowsAsCsv } from '../tools/presentation';
 import { TOOL_KINDS } from '../tools/registry';
 import { downloadText } from './toolExecution';
 
 export const RESULT_BUNDLE_SCHEMA = 'netscli.result.v1';
+
+/**
+ * Written first in a CSV file so Excel reads it as UTF-8. Excel takes the
+ * encoding from this mark, and on Windows a file without one is read in the
+ * legacy code page, so a name like "Felix’s iPhone" (the apostrophe is three
+ * bytes in UTF-8) turns into "Felixâ€™s iPhone". Only what is saved to a file
+ * gets it. The command line's CSV is for pipes and has none.
+ */
+const CSV_BYTE_ORDER_MARK = '\uFEFF';
 
 export interface ResultBundle {
   schema: typeof RESULT_BUNDLE_SCHEMA;
@@ -41,7 +50,7 @@ export function exportCurrentResult(
   exportText(
     `netscli-${activeTab.kind}-${stamp}.csv`,
     'text/csv',
-    serializeRowsAsCsv(columns, rows),
+    CSV_BYTE_ORDER_MARK + serializeRowsAsCsv(columns, rows),
     'Exported CSV',
     onSuccess,
     onError,
@@ -83,6 +92,7 @@ export function parseResultBundle(value: unknown): ResultBundle {
     throw new Error('Result bundle kind does not match its result payload');
   }
   validateResultDataShape(bundle.kind, result.data);
+  rejectUndrawableResult(bundle.kind, bundle.result as ToolResult);
   return {
     schema: RESULT_BUNDLE_SCHEMA,
     exportedAt: typeof bundle.exportedAt === 'string' ? bundle.exportedAt : new Date().toISOString(),
@@ -121,7 +131,7 @@ export function exportSelectedRows(
   exportText(
     `netscli-${activeTab.kind}-selected-${stamp}.csv`,
     'text/csv',
-    serializeRowsAsCsv(columns, selectedRows),
+    CSV_BYTE_ORDER_MARK + serializeRowsAsCsv(columns, selectedRows),
     fallback,
     onSuccess,
     onError,
@@ -169,6 +179,25 @@ function isStringRecord(value: unknown): value is Record<string, string> {
 
 function isToolKind(value: string): value is ToolKind {
   return (TOOL_KINDS as readonly string[]).includes(value);
+}
+
+/**
+ * Run what the screen is about to run, so a bundle that would crash it is
+ * refused here with a message instead.
+ *
+ * `validateResultDataShape` only checks what its author thought of. A field the
+ * row builders read and a damaged or hand-edited bundle lacks (`addresses` on
+ * an mDNS service) threw inside a `useMemo` during render, past every catch,
+ * and ended up on the crash screen. The builders are pure, so running them
+ * finds every such field, including the ones nobody has added yet.
+ */
+function rejectUndrawableResult(kind: ToolKind, result: ToolResult) {
+  try {
+    buildRows(result);
+    resultSummary(result);
+  } catch {
+    throw new Error(`Result bundle data for ${kind} is missing fields NetsCLI needs to show it`);
+  }
 }
 
 function validateResultDataShape(kind: ToolKind, data: unknown) {

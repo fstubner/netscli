@@ -10,10 +10,12 @@
 //! `db_upsert_*_safe` and `db_add_scan_history_safe` log on failure
 //! instead of propagating, so a corrupted history database never
 //! kills a working scan. `try_init_db` does the same for opening
-//! the DB itself: history is best-effort.
+//! the DB itself: history is best-effort, and off unless
+//! `NETSCLI_HISTORY=1`.
 //!
 //! Originally lived inline in `main.rs`; extracted here to keep the
 //! CLI entry point focused on arg parsing + dispatch.
+use crate::private_fs;
 use anyhow::{Context, Result};
 use dirs::home_dir;
 use netscli_core::{sanitize_for_terminal, Database, Ops};
@@ -110,8 +112,8 @@ pub async fn run_scan(
     host: &str,
     ports: Option<Vec<u16>>,
     udp: bool,
-) -> Result<Vec<netscli_core::PortResult>> {
-    let (_ip, results) = if udp {
+) -> Result<(IpAddr, Vec<netscli_core::PortResult>)> {
+    let (ip, results) = if udp {
         ops.scan_udp_ports(host, ports).await?
     } else {
         ops.scan_ports(host, ports).await?
@@ -119,7 +121,7 @@ pub async fn run_scan(
     if let Some(db) = db {
         db_add_scan_history_safe(db, "scan", 0, &results).await;
     }
-    Ok(results)
+    Ok((ip, results))
 }
 
 pub async fn run_inspect(
@@ -214,11 +216,42 @@ pub async fn run_reverse(ops: &Ops, db: Option<&Database>, ip: &str) -> Result<O
     Ok(name)
 }
 
-/// Open the local SQLite history database, swallowing any failure so a
-/// corrupted DB never blocks a working scan. The user gets a one-line
-/// warning and the rest of the CLI runs against an in-memory void.
+/// Environment variable that turns history recording on.
+const HISTORY_ENV: &str = "NETSCLI_HISTORY";
+
+/// History is off unless the user asks for it.
+///
+/// Nothing reads the database back yet, and it keeps every result and every
+/// device for good, so it should not appear on anyone's disk by default. The
+/// values that count as yes are the ones `NETSCLI_MCP_ALLOW_PUBLIC_TARGETS`
+/// takes.
+pub fn history_enabled() -> bool {
+    history_requested(std::env::var(HISTORY_ENV).ok().as_deref())
+}
+
+fn history_requested(value: Option<&str>) -> bool {
+    value.is_some_and(|value| {
+        matches!(
+            value.trim().to_ascii_lowercase().as_str(),
+            "1" | "true" | "yes" | "on"
+        )
+    })
+}
+
+/// Open the local SQLite history database when `NETSCLI_HISTORY` asks for it,
+/// swallowing any failure so a corrupted DB never blocks a working scan. The
+/// user gets a one-line warning and the rest of the CLI runs against an
+/// in-memory void. Without the variable this opens nothing and creates
+/// nothing, so no file appears in the home directory.
 pub async fn try_init_db() -> Option<Database> {
-    match init_db().await {
+    try_init_db_in(history_enabled(), home_dir()).await
+}
+
+async fn try_init_db_in(enabled: bool, home: Option<PathBuf>) -> Option<Database> {
+    if !enabled {
+        return None;
+    }
+    match init_db(home).await {
         Ok(db) => Some(db),
         Err(e) => {
             eprintln!("netscli: warning: database unavailable ({e}); continuing without history");
@@ -227,13 +260,18 @@ pub async fn try_init_db() -> Option<Database> {
     }
 }
 
-async fn init_db() -> Result<Database> {
-    let base = home_dir().unwrap_or_else(|| PathBuf::from("."));
-    let db_path = base.join(".netscli").join("netscli.db");
-    let parent = db_path
-        .parent()
-        .context("netscli db path has no parent directory")?;
-    std::fs::create_dir_all(parent)?;
+async fn init_db(home: Option<PathBuf>) -> Result<Database> {
+    // No fallback to the current directory when there is no home. That put a
+    // `.netscli/` folder in whatever workspace a container or CI job was
+    // running in, and `setup` fixed the same thing for its own file.
+    let home = home.context("could not determine the home directory (set HOME or USERPROFILE)")?;
+    let dir = home.join(".netscli");
+    private_fs::create_private_dir(&dir)?;
+    let db_path = dir.join("netscli.db");
+    private_fs::create_private_file(&db_path)?;
     let db = Database::new(db_path).await?;
     Ok(db)
 }
+
+#[cfg(test)]
+mod tests;

@@ -1,7 +1,28 @@
 use super::super::command_catalog::{CommandDef, COMMAND_DEFS};
 use super::super::history::{EntryState, HistoryEntry};
 use super::TuiApp;
+use netscli_core::sanitize_for_terminal;
 use ratatui::text::Line;
+use std::borrow::Cow;
+
+/// Replace the characters that could drive or deceive a terminal, in every
+/// span of `lines`, before they are stored.
+///
+/// Much of what a command prints is chosen by whatever answered it: mDNS
+/// names, DNS TXT values, hop names. ratatui drops control characters when it
+/// draws, but it keeps the bidi and zero-width ones, and `/export` reads
+/// these stored lines, not the screen. Cleaning once, here, covers the
+/// screen and both exports.
+fn clean_remote_text(mut lines: Vec<Line<'static>>) -> Vec<Line<'static>> {
+    for span in lines.iter_mut().flat_map(|line| line.spans.iter_mut()) {
+        let cleaned = match sanitize_for_terminal(&span.content) {
+            Cow::Borrowed(_) => continue,
+            Cow::Owned(text) => text,
+        };
+        span.content = Cow::Owned(cleaned);
+    }
+    lines
+}
 
 impl<'a> TuiApp<'a> {
     pub fn push_command(&mut self, cmd: String) {
@@ -18,9 +39,44 @@ impl<'a> TuiApp<'a> {
 
     pub fn finish_current(&mut self, output: Vec<Line<'static>>) {
         if let Some(entry) = self.history.last_mut() {
-            entry.output = output;
+            entry.output = clean_remote_text(output);
             entry.state = EntryState::Done;
         }
+    }
+
+    /// Put pasted text in the input.
+    ///
+    /// Typed one key at a time, each pasted newline was a press of Enter, so
+    /// pasting two lines ran the first as a command, and a clipboard that held
+    /// `/arp clear` on its second line ran that too. A paste is text, so its
+    /// line breaks become spaces and the user presses Enter themselves.
+    pub fn paste(&mut self, text: &str) {
+        let one_line: String = text
+            .lines()
+            .collect::<Vec<_>>()
+            .join(" ")
+            .chars()
+            .map(|c| if c == '\t' { ' ' } else { c })
+            .filter(|c| !c.is_control())
+            .collect();
+        self.input.insert_str(one_line);
+        self.reset_history_nav();
+        self.suggestion_index = 0;
+        self.confirm_exit = false;
+    }
+
+    /// Whether Enter on this input should finish the command name and stop,
+    /// as Tab does, instead of running it.
+    ///
+    /// It used to run the highlighted suggestion, so `/e` then Enter ran
+    /// `/export`, which writes a file, and not `/exit`, and `/d` started a
+    /// discovery of the default subnet. Finishing the name costs one more
+    /// Enter and cannot start anything by accident.
+    pub fn enter_completes_command(&self, trimmed: &str) -> bool {
+        !self.suggestions.is_empty()
+            && !trimmed.contains(' ')
+            && trimmed.starts_with('/')
+            && !self.is_exact_command(trimmed)
     }
 
     pub fn update_suggestions(&mut self) {
@@ -138,9 +194,5 @@ impl<'a> TuiApp<'a> {
 
     pub fn reset_history_nav(&mut self) {
         self.history_nav = None;
-    }
-
-    pub fn set_status(&mut self, msg: impl Into<String>) {
-        self.status = msg.into();
     }
 }

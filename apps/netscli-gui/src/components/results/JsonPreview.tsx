@@ -1,9 +1,12 @@
-import type { ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 
 export function JsonPreview({ value }: { value: string }) {
+  // Tokenising a large result is not cheap, and this re-rendered with the whole
+  // app on every selection change and status poll while `value` stayed the same.
+  const tokens = useMemo(() => highlightJson(value), [value]);
   return (
     <pre className="json-preview">
-      <code>{highlightJson(value)}</code>
+      <code>{tokens}</code>
     </pre>
   );
 }

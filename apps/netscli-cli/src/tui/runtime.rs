@@ -59,8 +59,13 @@ pub async fn run_tui(concurrency: Option<usize>) -> Result<()> {
         .await
         .map_err(|e| std::io::Error::other(e.to_string()))??;
 
-        let Some(Event::Key(key)) = polled else {
-            continue;
+        let key = match polled {
+            Some(Event::Key(key)) => key,
+            Some(Event::Paste(text)) => {
+                input.handle_paste(&text, &mut app);
+                continue;
+            }
+            _ => continue,
         };
 
         if input.handle_key(key, &mut app, &mut tasks, &db).await? {

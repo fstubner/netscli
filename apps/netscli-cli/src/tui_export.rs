@@ -1,7 +1,8 @@
 use crate::tui::{EntryState, HistoryEntry};
-use anyhow::Result;
+use anyhow::{Context, Result};
 use chrono::Local;
 use dirs::home_dir;
+use netscli_core::sanitize_for_terminal;
 use serde::Serialize;
 use std::fs;
 use std::path::PathBuf;
@@ -36,11 +37,11 @@ pub struct ExportRequest {
 }
 
 pub fn parse_export_command(input: &str) -> Result<ExportRequest> {
-    // Use shell-words so paths with spaces work when quoted:
+    // Quotes keep a path with spaces together:
     //   /export --output "C:\Users\Me\My Scans\out.md"
-    // Plain whitespace-split would have made this impossible.
-    let parts = shell_words::split(input)
-        .map_err(|e| anyhow::anyhow!("Could not parse /export arguments: {e}"))?;
+    // Backslashes are not escapes. See `tui_args` for why.
+    let parts = crate::tui_args::split_args(input)
+        .map_err(|e| anyhow::anyhow!("Could not read /export arguments: {e}"))?;
     let mut format = ExportFormat::Markdown;
     let mut output: Option<PathBuf> = None;
 
@@ -52,7 +53,7 @@ pub fn parse_export_command(input: &str) -> Result<ExportRequest> {
                 let Some(path) = parts.get(i + 1) else {
                     anyhow::bail!("Missing value for --output");
                 };
-                output = Some(PathBuf::from(path));
+                output = Some(expand_home(path));
                 i += 2;
             }
             t if t.starts_with('-') => {
@@ -72,12 +73,26 @@ pub fn parse_export_command(input: &str) -> Result<ExportRequest> {
     Ok(ExportRequest { format, output })
 }
 
+/// A leading `~` means the home directory. A shell does that for you, and
+/// this is not a shell, so `~/scans/out.md` made a folder literally named
+/// `~` in the working directory.
+fn expand_home(path: &str) -> PathBuf {
+    if let Some(rest) = path.strip_prefix('~') {
+        if rest.is_empty() || rest.starts_with(['/', '\\']) {
+            if let Some(home) = home_dir() {
+                return home.join(rest.trim_start_matches(['/', '\\']));
+            }
+        }
+    }
+    PathBuf::from(path)
+}
+
 pub fn export_session(history: &[HistoryEntry], req: &ExportRequest) -> Result<PathBuf> {
     let explicit = req.output.is_some();
-    let path = req
-        .output
-        .clone()
-        .unwrap_or_else(|| default_output_path(req.format));
+    let path = match &req.output {
+        Some(path) => path.clone(),
+        None => default_output_path(req.format)?,
+    };
 
     // Refuse to clobber an existing file (B-13).
     //
@@ -91,8 +106,8 @@ pub fn export_session(history: &[HistoryEntry], req: &ExportRequest) -> Result<P
         );
     }
 
-    // Only create directories the user actually asked for. This used to run
-    // for the default path too, materialising trees as a side effect.
+    // The default folder does not exist the first time, and a folder in a
+    // path the user typed is one they asked for.
     if let Some(parent) = path.parent() {
         if !parent.as_os_str().is_empty() {
             fs::create_dir_all(parent)?;
@@ -107,13 +122,15 @@ pub fn export_session(history: &[HistoryEntry], req: &ExportRequest) -> Result<P
     Ok(path)
 }
 
-fn default_output_path(format: ExportFormat) -> PathBuf {
+fn default_output_path(format: ExportFormat) -> Result<PathBuf> {
     let ts = Local::now().format("%Y%m%d-%H%M%S");
-    let base = home_dir()
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join(".netscli")
-        .join("exports");
-    base.join(format!("netscli-session-{ts}.{}", format.extension()))
+    // No home means no default folder. Falling back to the current directory
+    // left a `.netscli/` folder in whatever workspace this ran in, so the
+    // user is asked for a path instead.
+    let home =
+        home_dir().context("could not determine the home directory; give a path with --output")?;
+    let base = home.join(".netscli").join("exports");
+    Ok(base.join(format!("netscli-session-{ts}.{}", format.extension())))
 }
 
 fn render_markdown(history: &[HistoryEntry]) -> String {
@@ -132,11 +149,18 @@ fn render_markdown(history: &[HistoryEntry]) -> String {
         // allows any backtick run of ≥3, so we pick the shortest run
         // not present in the body. This prevents embedded ``` in user
         // output from prematurely closing the fence.
+        //
+        // The lines are the TUI's stored text, not what ratatui drew, and
+        // they include names and TXT values a remote host chose. The screen
+        // never shows an escape sequence in them, but this file would carry
+        // it, and run when someone `cat`s it. They are cleaned when stored
+        // too; this file is the sink that outlives the session, so it does
+        // not lean on that.
         let body: String = entry
             .output
             .iter()
             .map(|l| {
-                let mut s = l.to_string();
+                let mut s = sanitize_for_terminal(&l.to_string()).into_owned();
                 s.push('\n');
                 s
             })
@@ -195,3 +219,6 @@ fn render_json(history: &[HistoryEntry]) -> Result<String> {
     };
     Ok(serde_json::to_string_pretty(&doc)?)
 }
+
+#[cfg(test)]
+mod tests;

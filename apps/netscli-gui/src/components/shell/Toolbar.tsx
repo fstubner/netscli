@@ -1,5 +1,5 @@
 import { ChevronDown, Download, FileSpreadsheet, Filter, Square, X } from 'lucide-react';
-import { useRef, type RefObject } from 'react';
+import { useMemo, useRef, type RefObject } from 'react';
 
 import { TOOL_CONFIG } from '../../tools/registry';
 import { filterHintsFor } from '../../tools/presentation';
@@ -39,7 +39,15 @@ export function Toolbar({
 }: ToolbarProps) {
   const filterMenuOpen = openMenu === 'advanced-filter';
   const kind = activeTab?.kind ?? 'scan';
-  const filterHints = filterHintsFor(activeTab);
+  // Builds every row of the result and scans each column for its values, and
+  // depends on nothing but the tab's kind and result. Done in the render body
+  // it was redone for every progress event, selection change and status poll.
+  const hintsKind = activeTab?.kind;
+  const hintsResult = activeTab?.result ?? null;
+  const filterHints = useMemo(
+    () => filterHintsFor(hintsKind ? { kind: hintsKind, result: hintsResult } : undefined),
+    [hintsKind, hintsResult],
+  );
   const runLabel = activeTab ? runLabelFor(kind) : 'Start';
   const filterButtonRef = useRef<HTMLButtonElement | null>(null);
   const filterPanelRef = useRef<HTMLDivElement | null>(null);

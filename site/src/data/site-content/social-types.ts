@@ -5,7 +5,9 @@ export interface SocialProof {
   /**
    * crates.io crate name, when the product is installable with `cargo install`.
    * Its all-time downloads are added to the GitHub release-asset total, because
-   * a cargo install never touches a release asset and the label says "total".
+   * a cargo install never touches a release asset. The label names the sources
+   * it counts, so a registry left unset here is a registry the label does not
+   * claim.
    * Omit for a product that is not on crates.io: the fetch is then skipped and
    * the total comes from GitHub alone.
    *

@@ -16,6 +16,7 @@
 //!   same from row to row and from run to run.
 
 use anyhow::Result;
+use netscli_core::is_unsafe_for_display;
 use serde::de::{Deserializer, MapAccess, Visitor};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -112,18 +113,36 @@ fn is_plain(value: &Value) -> bool {
     !matches!(value, Value::Array(_) | Value::Object(_))
 }
 
-/// Replace control characters with `.`, except the whitespace a format can
-/// carry (`keep`). Both table formats usually print straight to a terminal,
-/// and an escape sequence in a banner would be run there -- the attack
-/// `sanitize_for_terminal` exists for.
+/// Replace control characters, and the bidi and zero-width characters that
+/// reorder or hide text, with `.`, except the whitespace a format can carry
+/// (`keep`). Both table formats usually print straight to a terminal, and an
+/// escape sequence in a banner would be run there -- the attack
+/// `sanitize_for_terminal` exists for. They are also pasted into issues and
+/// wikis, which render a bidi override too.
 pub(super) fn defuse_controls(text: &str, keep: &[char]) -> String {
     text.chars()
         .map(|c| {
-            if c.is_control() && !keep.contains(&c) {
+            if is_unsafe_for_display(c) && !keep.contains(&c) {
                 '.'
             } else {
                 c
             }
         })
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::defuse_controls;
+
+    #[test]
+    fn bidi_and_zero_width_characters_are_defused_like_controls() {
+        let keep = ['\t', '\r', '\n'];
+        assert_eq!(defuse_controls("a\u{202E}b", &keep), "a.b");
+        assert_eq!(defuse_controls("a\u{200B}b\u{FEFF}c", &keep), "a.b.c");
+        assert_eq!(defuse_controls("a\u{2028}b", &keep), "a.b");
+        // What the format carries stays, and so does ordinary text.
+        assert_eq!(defuse_controls("a\tb\r\nc", &keep), "a\tb\r\nc");
+        assert_eq!(defuse_controls("café 日本", &keep), "café 日本");
+    }
 }

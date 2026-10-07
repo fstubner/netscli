@@ -212,7 +212,7 @@ fn netbios_computer_name(mut info: &[u8]) -> Option<String> {
                     .collect();
                 let name: String = String::from_utf16_lossy(&units)
                     .chars()
-                    .filter(|c| !c.is_control())
+                    .filter(|c| !crate::common::is_unsafe_for_display(*c))
                     .take(32)
                     .collect();
                 return (!name.is_empty()).then_some(name);

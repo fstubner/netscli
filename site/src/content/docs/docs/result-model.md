@@ -70,7 +70,8 @@ netscli discover --json | jq '.[].ip'
 ```
 
 `sweep` returns a different shape. Each entry pairs a whole host object with
-the ports found open on it, so the host fields are one level down:
+the ports found open on it, so the host fields are one level down. The sample is
+trimmed to a few fields of each:
 
 ```json
 [
@@ -97,7 +98,7 @@ DNS records expose type and value first, then additive metadata when the resolve
 | `value` | Display value for the record. |
 | `ttl_seconds` | TTL when available. |
 | `name` | Owner name when available. |
-| `resolver_source` | Resolver source when NetsCLI can report it. |
+| `resolver_source` | Always `system`. Lookups only use the DNS servers your computer is set up to use. Results saved by 0.3.4 and earlier can say `public_fallback`, from a public DNS fallback that has since been removed. |
 
 When `ALL` records are requested, some record families can fail while others succeed. When at least one record is returned, interfaces present the lookup as partial results rather than a total failure.
 

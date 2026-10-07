@@ -6,6 +6,16 @@ use tokio::sync::watch;
 
 use crate::error::{Error, Result};
 
+/// Process creation flag that stops a console program opening a window.
+///
+/// The installed desktop app is a GUI-subsystem process with no console, so a
+/// console tool it starts gets a new one. With Windows Terminal as the default
+/// terminal that is a visible window titled with the tool's path, open for as
+/// long as the trace runs. The CLI and TUI start the tool from a console of
+/// their own. Same flag, and same reason, as `arp/platform/command.rs`.
+#[cfg(windows)]
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+
 #[derive(Debug, Clone, Serialize)]
 #[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
 pub struct TraceResult {
@@ -21,6 +31,7 @@ pub async fn trace_route(
     resolve: bool,
     progress: Option<watch::Sender<String>>,
 ) -> Result<TraceResult> {
+    ensure_not_an_option(host)?;
     let max_hops = max_hops.clamp(1, 255);
 
     #[cfg(windows)]
@@ -60,6 +71,31 @@ pub async fn trace_route(
 
         Err(last_err.unwrap_or_else(|| Error::unsupported("trace tool unavailable")))
     }
+}
+
+/// Refuse a target that the trace tool would read as one of its own options.
+///
+/// The target is handed to `tracert`, `traceroute` or `tracepath` as a plain
+/// argument, so `-d` or `--help` is a flag and not a host, and so is `/d` for
+/// Windows' `tracert`, which takes `/` options as well as `-` ones
+/// (`tracert /d /h 1 127.0.0.1` runs as `-d -h 1`). A host name or an address
+/// never starts with either character, so refusing is exact. It is also the
+/// only fix that works everywhere, because Windows' `tracert` has no `--` to
+/// end its options ("-- is not a valid command option").
+///
+/// The command line passes the target through as given, so
+/// `netscli trace -- -d` reached the tool as a flag.
+fn ensure_not_an_option(host: &str) -> Result<()> {
+    let target = host.trim_start();
+    if target.is_empty() {
+        return Err(Error::invalid_input("trace target is empty"));
+    }
+    if target.starts_with(['-', '/']) {
+        return Err(Error::invalid_input(format!(
+            "trace target {host:?} looks like a command-line option, not a host"
+        )));
+    }
+    Ok(())
 }
 
 #[cfg(windows)]
@@ -110,6 +146,8 @@ async fn run_command_streaming(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .kill_on_drop(true);
+    #[cfg(windows)]
+    cmd.creation_flags(CREATE_NO_WINDOW);
 
     let mut child = cmd
         .spawn()
@@ -124,18 +162,20 @@ async fn run_command_streaming(
         .ok_or_else(|| Error::Other("failed to capture stderr".to_string()))?;
 
     let mut out_lines: Vec<String> = Vec::new();
-    let mut stdout_lines = BufReader::new(stdout).lines();
-    let mut stderr_lines = BufReader::new(stderr).lines();
+    // `split` rather than `lines`: `lines` fails on the first byte that is not
+    // UTF-8, and that error ended the whole trace. See `decode_line`.
+    let mut stdout_lines = BufReader::new(stdout).split(b'\n');
+    let mut stderr_lines = BufReader::new(stderr).split(b'\n');
     let mut stdout_done = false;
     let mut stderr_done = false;
     let mut status: Option<std::process::ExitStatus> = None;
 
     while !(stdout_done && stderr_done && status.is_some()) {
         tokio::select! {
-            line = stdout_lines.next_line(), if !stdout_done => {
+            line = stdout_lines.next_segment(), if !stdout_done => {
                 match line.map_err(|e| Error::Other(format!("trace stdout read failed: {e}")))? {
                     Some(line) => {
-                        let trimmed = line.trim_end().to_string();
+                        let trimmed = decode_line(&line);
                         if let Some(tx) = progress.as_ref() {
                             if let Some(hop) = trimmed.split_whitespace().next().and_then(|t| t.parse::<u32>().ok()) {
                                 let _ = tx.send(format!(
@@ -149,10 +189,10 @@ async fn run_command_streaming(
                     None => stdout_done = true,
                 }
             }
-            line = stderr_lines.next_line(), if !stderr_done => {
+            line = stderr_lines.next_segment(), if !stderr_done => {
                 match line.map_err(|e| Error::Other(format!("trace stderr read failed: {e}")))? {
                     Some(line) => {
-                        let trimmed = line.trim_end().to_string();
+                        let trimmed = decode_line(&line);
                         if !trimmed.is_empty() {
                             out_lines.push(trimmed);
                         }
@@ -174,6 +214,21 @@ async fn run_command_streaming(
     })
 }
 
+/// One line of the tool's output, with anything that is not UTF-8 replaced.
+///
+/// `tracert` translates its messages and writes them in the console's OEM code
+/// page, so on a Windows set to a language with accented letters a timed-out
+/// hop can print bytes that are not valid UTF-8 ("Zeitüberschreitung" is
+/// `Zeit\x81berschreitung` in code page 850). Reading lines as strict UTF-8
+/// turned the first of those into "trace stdout read failed" and discarded the
+/// whole trace, including the hops already printed. The hop number and the
+/// timings are plain ASCII, so a replacement character in the free text after
+/// them costs nothing that matters. `ping -a` in `dns/reverse.rs` is decoded
+/// the same way.
+fn decode_line(bytes: &[u8]) -> String {
+    String::from_utf8_lossy(bytes).trim_end().to_string()
+}
+
 fn args_max_hops(args: &[String]) -> Option<u32> {
     for i in 0..args.len().saturating_sub(1) {
         if (args[i] == "-h" || args[i] == "-m") && args[i + 1].parse::<u32>().is_ok() {
@@ -190,3 +245,6 @@ fn is_not_found(err: &Error) -> bool {
         _ => false,
     }
 }
+
+#[cfg(test)]
+mod tests;

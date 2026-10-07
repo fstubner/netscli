@@ -35,7 +35,7 @@ fn packet(index: usize) -> PcapPacketSummary {
 
 fn completed_job(packets: usize) -> ServerState {
     let mut state = ServerState::default();
-    let job = Arc::new(Mutex::new(PcapCaptureJob::new()));
+    let job = Arc::new(Mutex::new(PcapCaptureJob::new("capture.pcap".to_string())));
     job.lock().unwrap().complete(PcapResult {
         packets_captured: packets,
         duration: Duration::from_secs(1),

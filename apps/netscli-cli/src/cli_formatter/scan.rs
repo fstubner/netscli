@@ -78,23 +78,85 @@ impl CliFormatter {
                     }
                 })
                 .unwrap_or("-");
+            // Pad first and colour second. The colour codes are characters
+            // too, and `{:<14}` counts them, so padding a coloured cell left
+            // it a few columns short and slid the rest of the row left.
             let state = match port.status {
-                PortStatus::Open => green("OPEN"),
-                PortStatus::Closed => red("CLOSED"),
-                PortStatus::Filtered => yellow("FILTERED"),
-                PortStatus::Error => red("ERROR"),
-                PortStatus::OpenFiltered => yellow("OPEN|FILTERED"),
+                PortStatus::Open => green(&format!("{:<14}", "OPEN")),
+                PortStatus::Closed => red(&format!("{:<14}", "CLOSED")),
+                PortStatus::Filtered => yellow(&format!("{:<14}", "FILTERED")),
+                PortStatus::Error => red(&format!("{:<14}", "ERROR")),
+                PortStatus::OpenFiltered => yellow(&format!("{:<14}", "OPEN|FILTERED")),
             };
             rows.push(format!(
-                "{:<8} {:<14} {:<9} {:<14} {:<22} {}",
+                "{:<8} {} {} {} {:<22} {}",
                 port.port_label(),
                 state,
-                dim(&latency),
-                dim(service),
+                dim(&format!("{latency:<9}")),
+                dim(&format!("{service:<14}")),
                 version.as_deref().unwrap_or("-"),
                 dim(banner)
             ));
         }
         rows.join("\n")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::style::with_color;
+    use super::*;
+
+    fn port(port: u16, status: PortStatus, latency_ms: Option<u64>, service: &str) -> PortResult {
+        PortResult {
+            port,
+            protocol: Protocol::Tcp,
+            open: status == PortStatus::Open,
+            status,
+            service: Some(service.to_string()),
+            product: None,
+            version: None,
+            latency_ms,
+            banner: None,
+            http: None,
+            tls: None,
+            raw: None,
+            error: None,
+        }
+    }
+
+    /// The text a terminal shows, which is the text without its colour codes.
+    fn visible(text: &str) -> String {
+        let mut out = String::new();
+        let mut chars = text.chars();
+        while let Some(c) = chars.next() {
+            if c == '\u{1b}' {
+                // ESC [ ... m
+                for end in chars.by_ref() {
+                    if end == 'm' {
+                        break;
+                    }
+                }
+            } else {
+                out.push(c);
+            }
+        }
+        out
+    }
+
+    #[test]
+    fn a_coloured_scan_table_lines_up_like_the_plain_one() {
+        let ports = [
+            port(22, PortStatus::Open, Some(1), "ssh"),
+            port(80, PortStatus::Closed, Some(12), "http"),
+            port(443, PortStatus::Filtered, None, "https"),
+            port(5353, PortStatus::OpenFiltered, None, "mdns"),
+        ];
+        let plain = with_color(false, || CliFormatter::format_scan_table(&ports));
+        let coloured = with_color(true, || CliFormatter::format_scan_table(&ports));
+
+        assert!(coloured.contains('\u{1b}'), "colour was not applied");
+        // Colour changes how the table looks, never where anything sits.
+        assert_eq!(visible(&coloured), plain);
     }
 }

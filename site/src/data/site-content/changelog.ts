@@ -32,17 +32,17 @@ export const releaseSummaries: Record<string, string> = {
   'v0.3.4':
     'Port scans now name the software and version a service reports, can check common UDP services, and report closed ports as closed on Windows instead of filtered. The CLI writes CSV and Markdown tables, inspect gives an OS hint, and the desktop app can update itself. Discovery no longer lists the network broadcast address as a device.',
   'v0.3.3':
-    'Windows executables and the desktop installer are signed, so Windows no longer warns that the publisher is unknown. Connecting the MCP server to a client no longer means installing netscli first and writing the configuration by hand: `npx netscli serve` works, and each release carries a one-click bundle for clients that support them.',
+    'Windows executables and the desktop installer are signed, so Windows no longer warns that the publisher is unknown. Connecting the MCP server to a client no longer means installing netscli first and writing the configuration by hand. `npx netscli serve` now works, and each release carries a one-click bundle for clients that support them.',
   'v0.3.2':
     'Repairs the Linux packaging. The AUR desktop package installed a file that could not start, and the AppImage aborted before opening a window on any host with a recent Mesa. A desktop window that opens blank now recovers by itself, `netscli` with no arguments no longer hangs where there is no terminal, and discover names devices from mDNS when reverse DNS comes back empty.',
   'v0.3.1':
     'The desktop app is redesigned around a denser diagnostic workspace, with reorderable tabs, right-click tab management and a refreshed icon. Port scans return richer status data on every interface, probe concurrency is configurable everywhere, and the website and docs were rebuilt alongside.',
   'v0.2.6':
-    'Installed GUI builds now identify themselves correctly, and the Windows title-bar controls work. Also completes the CLI/TUI refactors that make future interface changes easier to review and test.',
+    'The desktop app now shows its real version number instead of 0.1.0, and its Windows title-bar buttons (close, minimize and maximize) work.',
   'v0.2.5':
     'Closes a DNS resolver security advisory. Windows subnet detection is fixed, so discovery and sweep find real LAN hosts again, and package publishing now covers GUI installers.',
   'v0.2.4':
-    'v0.2.3 built the GUI installers but never attached them. Publishing is repaired here, along with the AUR deploy action that was blocking Linux packages.',
+    'Desktop installers are attached to the release. v0.2.3 built them but never attached them. The publishing step for the Arch Linux package is repaired too.',
   'v0.2.3':
     'GUI installer builds move again once the Tauri JavaScript and Rust versions agree, and the AUR packaging handoff is fixed. CLI packages were already usable from v0.2.2, and the GUI artifacts needed these pipeline fixes.',
   'v0.2.2':

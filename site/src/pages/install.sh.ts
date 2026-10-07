@@ -18,8 +18,10 @@ export async function GET() {
   if (!body.trim()) throw new Error(`${source} is empty; refusing to publish it.`);
   return new Response(body, {
     headers: {
-      // text/plain, not application/x-sh: a browser should show it, since
-      // "read the script before you pipe it" is advice worth making easy.
+      // This header does not reach the live site. The build writes the body to
+      // dist/install.sh and GitHub Pages picks the type from the file extension.
+      // Checked 2026-10-07: /install.sh is served as application/x-sh and
+      // /install.ps1 as application/octet-stream.
       'Content-Type': 'text/plain; charset=utf-8',
     },
   });

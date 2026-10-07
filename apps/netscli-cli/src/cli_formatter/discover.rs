@@ -3,7 +3,7 @@ use netscli_core::sanitize_for_terminal;
 use std::time::Instant;
 
 use super::style::{cyan, dim, duration_tag, green, source_tag, white, yellow};
-use super::table::column_width;
+use super::table::{cell_width, column_width, count_hosts, fit};
 use super::CliFormatter;
 
 impl CliFormatter {
@@ -15,7 +15,7 @@ impl CliFormatter {
     ) -> String {
         let mut header_parts = vec![format!(
             "{} in subnet {}",
-            green(&format!("Discovered {} hosts", hosts.len())),
+            green(&format!("Discovered {}", count_hosts(hosts.len()))),
             cyan(subnet)
         )];
         if let Some(tag) = duration_tag(start_time) {
@@ -38,22 +38,14 @@ impl CliFormatter {
         }
 
         let ip_w = column_width(hosts.iter().map(|h| h.ip.to_string().len()), 16, 39);
-        let mac_w = column_width(
-            hosts.iter().map(|h| h.mac.as_deref().map_or(1, str::len)),
-            18,
-            18,
-        );
+        let mac_w = column_width(hosts.iter().map(|h| cell_width(h.mac.as_deref())), 18, 18);
         let vendor_w = column_width(
-            hosts
-                .iter()
-                .map(|h| h.vendor.as_deref().map_or(1, str::len)),
+            hosts.iter().map(|h| cell_width(h.vendor.as_deref())),
             12,
             24,
         );
         let hostname_w = column_width(
-            hosts
-                .iter()
-                .map(|h| h.hostname.as_deref().map_or(1, str::len)),
+            hosts.iter().map(|h| cell_width(h.hostname.as_deref())),
             8,
             40,
         );
@@ -81,7 +73,9 @@ impl CliFormatter {
         for host in hosts {
             let ip_str = host.ip.to_string();
             let mac = host.mac.as_deref().unwrap_or("-");
-            let vendor = host.vendor.as_deref().unwrap_or("-");
+            // Cut to its column, which caps at 24. A longer one used to push
+            // the hostname column out of line for that row.
+            let vendor = fit(host.vendor.as_deref().unwrap_or("-"), vendor_w);
             // Hostnames are remote-chosen. `normalize_hostname` in core now
             // rejects control characters at the source, so this is the second
             // layer — it holds no matter which code path produced the name,

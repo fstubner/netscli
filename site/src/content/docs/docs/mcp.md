@@ -105,7 +105,7 @@ Opening the connection, then telling the server the client is ready:
 ```
 
 ```json
-{"jsonrpc":"2.0","result":{"capabilities":{"tools":{}},"protocolVersion":"2024-11-05","serverInfo":{"name":"netscli","version":"0.3.4"}},"error":null,"id":1}
+{"jsonrpc":"2.0","result":{"capabilities":{"tools":{}},"protocolVersion":"2024-11-05","serverInfo":{"name":"netscli","version":"0.3.5"}},"id":1}
 ```
 
 ```json
@@ -132,7 +132,6 @@ would print, so a model reads one shape wherever it came from:
       }
     ]
   },
-  "error": null,
   "id": 2
 }
 ```
@@ -144,8 +143,13 @@ ports on a machine with two open came to 178 bytes this way, and to 93,799
 with `include_closed`. An empty list means every port scanned was closed or
 filtered.
 
-Closing stdin cancels any operation still running and shuts the
-server down, which is why a client that exits mid-scan leaves nothing behind.
+A tool result is capped at 1 MiB. Past that, its longest list is cut short
+and everything else in it is kept. The result then has `truncated` set to
+true, and `returned` and `total` say how many items of that list arrived.
+
+Closing stdin cancels any operation still running, packet captures included,
+and shuts the server down, which is why a client that exits mid-scan leaves
+nothing behind.
 
 ## Progress and cancelling
 
@@ -159,6 +163,13 @@ A client can stop any call by sending `notifications/cancelled` with the
 call's `requestId`. The scan stops, frees its slot for the next request, and,
 as the protocol asks, sends no response for the cancelled call.
 
+The server runs up to 16 calls at once, and up to 16 more wait for a slot. A
+cancel still gets through when every slot is busy, and so does closing stdin.
+A call beyond those 32 is refused straight away with an error, so a client can
+retry it once an earlier call has been answered.
+
+The server also answers `ping` at any time, with an empty result.
+
 ## Packet capture jobs
 
 Packet-capture tools appear only in MCP builds that include packet-capture support. Captures also need Npcap on Windows or libpcap on Linux/macOS. Supported builds expose two packet-capture styles.
@@ -170,7 +181,11 @@ Use the job-style flow by default. Start the capture, poll status, then fetch th
 | `start_pcap_capture` -> `get_pcap_capture_status` -> `get_pcap_capture_result` | Recommended for packet capture, especially when duration, traffic volume, or client timeout behavior is uncertain. |
 | `capture_pcap` | Compatibility path for very short captures where the MCP client can safely wait for one blocking response. |
 
-The start call returns a `jobId`. Poll with that ID until `resultAvailable` is true, then fetch the result.
+The start call returns a `jobId` and the `outputFile` the capture goes to. Poll with that ID until `resultAvailable` is true, then fetch the result.
+
+Captures are written to the server's working directory. Give `outputFile` as a filename ending in `.pcap`, or leave it out and the server picks a new name. `capture_pcap` names it after the time, and `start_pcap_capture` after the job. A capture never replaces a file that is already there, and never follows a symlink at that name. Choose another name if one is taken.
+
+Without a `duration`, `capture_pcap` stops after 10 seconds, even when you give `maxPackets`. A longer `duration` is cut to 2 minutes.
 
 ## Safety model
 

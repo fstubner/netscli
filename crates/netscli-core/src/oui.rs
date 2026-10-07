@@ -10,7 +10,7 @@ static OUI_MAP: OnceCell<HashMap<String, String>> = OnceCell::new();
 // Embedded copy of the vendor DB that ships inside the crate, so
 // `cargo install netscli` and release binaries without a data/ dir
 // next to them still get working vendor lookups. Overridable via
-// NETSCLI_OUI_PATH or any of the on-disk candidates below.
+// NETSCLI_OUI_PATH or a copy next to the executable.
 const EMBEDDED_OUI: &[u8] = include_bytes!("../data/oui.min.json.gz");
 
 pub fn lookup_vendor(mac: &str) -> Option<String> {
@@ -56,9 +56,9 @@ fn load_oui() -> HashMap<String, String> {
             candidates.push(dir.join("data").join("oui.json"));
         }
     }
-
-    candidates.push(PathBuf::from("data/oui.min.json.gz"));
-    candidates.push(PathBuf::from("data/oui.json"));
+    // Not the working directory. A `data/oui.json` that happened to be in
+    // whatever directory netscli ran from replaced the vendor list, or
+    // emptied it, with nothing to say so.
 
     for cand in &candidates {
         if let Some(map) = read_map(cand) {
@@ -109,18 +109,20 @@ fn parse_gz(bytes: &[u8]) -> Option<HashMap<String, String>> {
     parse_json(&buf)
 }
 
+/// The vendor map in `data`, or `None` if it is not one. JSON that is not an
+/// object used to parse as an empty map, which still won over every other
+/// candidate and the embedded copy, so vendor names silently disappeared.
 fn parse_json(data: &str) -> Option<HashMap<String, String>> {
     let json: Value = serde_json::from_str(data).ok()?;
+    let obj = json.as_object()?;
     let mut map = HashMap::new();
-    if let Some(obj) = json.as_object() {
-        for (k, v) in obj {
-            if let Some(s) = v.as_str() {
-                // Same char-vs-byte hazard as `lookup_vendor`: keys come
-                // from a JSON file that may be user-supplied via
-                // NETSCLI_OUI_PATH, so a multi-byte key must not panic.
-                if let Some(prefix) = oui_prefix(k) {
-                    map.insert(prefix, s.to_string());
-                }
+    for (k, v) in obj {
+        if let Some(s) = v.as_str() {
+            // Same char-vs-byte hazard as `lookup_vendor`: keys come
+            // from a JSON file that may be user-supplied via
+            // NETSCLI_OUI_PATH, so a multi-byte key must not panic.
+            if let Some(prefix) = oui_prefix(k) {
+                map.insert(prefix, s.to_string());
             }
         }
     }
@@ -129,7 +131,16 @@ fn parse_json(data: &str) -> Option<HashMap<String, String>> {
 
 #[cfg(test)]
 mod tests {
-    use super::{lookup_vendor, oui_prefix};
+    use super::{lookup_vendor, oui_prefix, parse_json};
+
+    #[test]
+    fn json_that_is_not_a_vendor_map_is_not_taken_for_an_empty_one() {
+        for data in ["[]", "null", "42", "\"aa:bb:cc\""] {
+            assert!(parse_json(data).is_none(), "{data}");
+        }
+        let map = parse_json(r#"{"AA:BB:CC": "Example"}"#).unwrap();
+        assert_eq!(map.get("AABBCC").map(String::as_str), Some("Example"));
+    }
 
     #[test]
     fn normalizes_common_mac_separators() {
