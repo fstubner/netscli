@@ -137,7 +137,7 @@ Settings control:
 ## Updates
 
 When the app opens, it checks GitHub for a newer release. If there is one, a
-notice appears in the corner. The check fetches one small file and nothing else. You can turn it off under **Settings → Release Notifications**.
+notice appears in the corner. The check is one small request. Installs that can update themselves fetch a small file from the release downloads, and the rest ask GitHub's API for the latest release. Nothing else is fetched. You can turn it off under **Settings → Release Notifications**.
 
 Where the app can update itself, the notice opens a dialog with the new version's release notes and three choices, **Install and restart**, **Later** or **Skip this version**. Nothing downloads until you choose to install. The
 update is checked against NetsCLI's signing key before it is installed. On
