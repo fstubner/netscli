@@ -5,6 +5,8 @@
 name = "netscli"
 version = "0.3.5"
 description = "Interactive TUI and CLI for network discovery, scanning, and diagnostics"
+keywords.workspace = true
+categories.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
