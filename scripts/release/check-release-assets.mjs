@@ -12,9 +12,10 @@
  *
  * Why it exists: a release used to go public before its files did. v0.3.4
  * had no Windows installer and no latest.json for 1 h 38 min after it was
- * published, and install.ps1, the in-app updater and every package manager
- * that had already published pointed at nothing. Now the release is built
- * as a draft and stays one until this passes, so "public" means "complete".
+ * published. In that time install.ps1 and the in-app updater found
+ * nothing, and the publish jobs that needed the Windows files failed. Now
+ * the release is built as a draft and stays one until this passes, so
+ * "public" means "complete".
  *
  * What it checks, for each of the 18 files release.yml builds: the file
  * and its .sha256, .sig and .pem are all there and none is empty, and the

@@ -48,10 +48,9 @@ keeps a bare heading and collects entries.
 
 - **A release goes public only once every file is in it.** Each release used
   to go public first and receive its files afterwards, and until they
-  arrived the Windows one-line installer, the desktop app's update check and
-  the package managers that had already updated pointed at files that were
-  not there. For 0.3.4 the Windows files and the update manifest arrived
-  1 h 38 min after the release went public. Releases are now built as
+  arrived the Windows one-line installer and the desktop app's update check
+  found nothing to download. For 0.3.4 the Windows files and the update
+  manifest arrived 1 h 38 min after the release went public. Releases are now built as
   drafts, checked file by file, and published last.
 
 - **The MCP bundles come with checksums and signatures.** The `.mcpb` files
