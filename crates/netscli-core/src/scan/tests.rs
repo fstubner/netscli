@@ -39,6 +39,19 @@ fn test_timeout_error_classifies_as_filtered() {
     );
 }
 
+#[test]
+fn an_icmp_unreachable_classifies_as_filtered() {
+    // A host behind a firewall that rejects with ICMP returned an error row
+    // for every port it was asked about.
+    for kind in [ErrorKind::HostUnreachable, ErrorKind::NetworkUnreachable] {
+        assert_eq!(
+            classify_connect_error(kind),
+            PortStatus::Filtered,
+            "{kind:?}"
+        );
+    }
+}
+
 #[tokio::test]
 async fn test_scan_localhost_common_ports() {
     let scanner = PortScanner::new(10);

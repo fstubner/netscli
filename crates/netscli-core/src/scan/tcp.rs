@@ -145,7 +145,14 @@ impl PortScanner {
             Err(e) => match classify_connect_error(e.kind()) {
                 PortStatus::Closed => PortResult::new(port, PortStatus::Closed, service)
                     .with_latency(started.elapsed().as_millis() as u64),
-                PortStatus::Filtered => PortResult::new(port, PortStatus::Filtered, service),
+                // A timeout says nothing more than `filtered` does. An
+                // unreachable says what answered, so it keeps the text.
+                PortStatus::Filtered if e.kind() == std::io::ErrorKind::TimedOut => {
+                    PortResult::new(port, PortStatus::Filtered, service)
+                }
+                PortStatus::Filtered => {
+                    PortResult::new(port, PortStatus::Filtered, service).with_error(e.to_string())
+                }
                 PortStatus::Error | PortStatus::Open | PortStatus::OpenFiltered => {
                     PortResult::new(port, PortStatus::Error, service)
                         .with_latency(started.elapsed().as_millis() as u64)
