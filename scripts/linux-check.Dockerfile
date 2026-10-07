@@ -6,7 +6,7 @@
 # The toolchain is pinned to match rust-toolchain.toml. Keep the two in step:
 # the image ships 1.96.0 as its default, so a mismatch means rustup silently
 # downloads the pinned version on first use and every run pays for it.
-FROM rust:1.96-bookworm
+FROM rust:1.98-bookworm
 
 # libpcap-dev + pkg-config: netscli-core's `pcap` feature links against
 # libpcap, so --all-features does not build without it.
