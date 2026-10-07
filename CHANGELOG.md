@@ -46,6 +46,18 @@ keeps a bare heading and collects entries.
   Felix Stubner. Upgrading from an earlier version leaves one entry, under the
   new name.
 
+- **A release goes public only once every file is in it.** Each release used
+  to go public first and receive its files afterwards, and until they
+  arrived the Windows one-line installer, the desktop app's update check and
+  the package managers that had already updated pointed at files that were
+  not there. For 0.3.4 the Windows files and the update manifest arrived
+  1 h 38 min after the release went public. Releases are now built as
+  drafts, checked file by file, and published last.
+
+- **The MCP bundles come with checksums and signatures.** The `.mcpb` files
+  were the only release files that carry a program and had no `.sha256`,
+  `.sig` or `.pem`. They now have all three, like every other file.
+
 ### Fixed
 
 - **Discovery on Windows listed devices that had left the network.** The
@@ -66,6 +78,27 @@ keeps a bare heading and collects entries.
   the CLI.** To offer MCP setup it runs each `netscli` it finds with
   `--version` and gives up after 3 seconds. A program still running at that
   point was left behind. It is now stopped.
+
+- **The Windows one-line installer no longer closes PowerShell when it
+  fails.** Run as `iwr ... | iex`, the installer's `exit` ended the
+  PowerShell session itself, so the window closed and took the error message
+  with it. It now stops with an error and leaves the window open.
+
+### Security
+
+- **The install scripts check signatures, not only checksums.** A checksum
+  from the same release proves a download is intact, not who built it.
+  `install.ps1` now refuses a `netscli.exe` whose Authenticode signature is
+  not valid or not the project's, and `install.sh` checks the Sigstore
+  signature when `cosign` is installed. Both say what they checked.
+  `install.sh` also downloads over HTTPS only, redirects included, and a
+  download cut short runs nothing.
+
+- **The desktop app installs an update only if its signature names the
+  version.** The update manifest itself is not signed, so someone able to
+  edit it could offer an older, validly signed installer under a newer
+  version number. The app now requires each update's signature to carry the
+  version it was made for, and every update file is signed that way.
 
 ## [0.3.4] - 2026-10-04
 
