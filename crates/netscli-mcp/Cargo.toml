@@ -2,9 +2,12 @@
 name = "netscli-mcp"
 version = "0.3.5"
 description = "Model Context Protocol (MCP) server exposing netscli-core tools to LLM agents"
+keywords = ["mcp", "networking", "scanner", "llm", "agents"]
+categories = ["network-programming"]
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 

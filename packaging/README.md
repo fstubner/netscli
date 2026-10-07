@@ -14,7 +14,7 @@ asset fails the publish rather than propagating.
 Earlier revisions of this file described the sidecar as the source of the
 hash, which made verification circular: the sidecar came from the same
 origin as the asset, so it could only ever detect corruption in transit,
-never a compromised artifact (C-35, B-03).
+never a compromised artifact.
 
 ## How the release pipeline feeds these
 
@@ -96,16 +96,20 @@ it can only be signed before WiX packs it into the MSI;
 `scripts/release/check-msi-signed.ps1` then unpacks the MSI and fails the
 build if anything inside is unsigned.
 
-macOS notarization is still open. The `.dmg` ships unsigned and users see
-"unverified developer" on first launch.
+macOS notarization is still open. The `.dmg` ships ad-hoc signed and not
+notarized, so Gatekeeper blocks the first launch until the user allows it in
+System Settings, under Privacy & Security.
 
 ## Release-day checklist
 
 1. Publish the GitHub release for `vX.Y.Z`.
 2. Confirm `release.yml` uploads the expected CLI binaries, GUI
    installers, `.sha256` sidecars, and sigstore `.sig`/`.pem` files.
-3. Confirm `publish.yml` completes or rerun the individual downstream job
-   after any transient registry failure.
+3. Confirm `publish.yml` completes. After a transient registry failure, run
+   just that registry again with
+   `gh workflow run publish.yml -f tag=vX.Y.Z -f only=<job>`. Re-running
+   failed jobs from the Actions tab replays the old workflow file and would
+   not pick up a fix, and a dispatch without `only` runs every registry.
 4. Monitor registry feedback, especially Winget moderator comments and
    AUR package comments.
 5. Run the platform-specific checks above for any target touched by the

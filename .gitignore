@@ -23,7 +23,7 @@ bun-debug.log*
 
 # Test outputs
 #
-# Scoped to the repo root rather than repo-wide (C-28): a bare `*.csv` also
+# Scoped to the repo root rather than repo-wide: a bare `*.csv` also
 # swallowed any legitimate CSV fixture a test might want to commit, and the
 # only CSVs we actually want ignored are ad-hoc exports dropped at the top
 # level while poking at the CLI.
@@ -62,6 +62,16 @@ nul
 .netscli/
 *.db
 
+# Keys, environment files and crash dumps. Nothing tracked matches these, so
+# they only catch a stray `git add .`. A key or certificate that really is a
+# test fixture needs `git add -f`. Git Bash writes `*.stackdump` when a
+# command crashes.
+*.key
+*.pem
+.env*
+*.stackdump
+*.dmp
+
 # Claude Code
 .claude/
 
@@ -82,7 +92,7 @@ skills-lock.json
 
 # Built by scripts/dev-gui-pcap.ps1, which sets a separate target dir so a
 # pcap build does not clobber the normal one. Multiple GB, and it appeared as
-# untracked noise throughout the documented Windows workflow (C-27).
+# untracked noise throughout the documented Windows workflow.
 /target-pcap/
 
 # Written by scripts/check-linux.sh, from inside the container. Separate from
@@ -94,7 +104,8 @@ skills-lock.json
 .superpowers/
 
 # Local-only docs:
-# - DEVLOG: rolling personal devlog, kept on disk but not part of public history
+# - DEVLOG: rolling personal devlog, kept on disk and out of the tree (it was
+#   committed once and removed on 2026-05-03, so the early history has it)
 # - release-drafts: raw blog / announcement notes before they are polished
 # - docs/superpowers/{specs,plans}: brainstorm/plan artifacts that shouldn't
 #   leak into the repo's docs/ tree (the rendered design lives in CHANGELOG +

@@ -26,9 +26,9 @@ Commands:
 ```
 
 The checked-in reference manifests under `cli/<version>/` capture that
-shape. The automated `winget-releaser` update should preserve the
-accepted manifest's installer type once the first CLI package is in
-`microsoft/winget-pkgs`.
+shape. The automated `winget-releaser` update carries the accepted
+manifest's installer type forward. The 0.3.4 manifest in
+`microsoft/winget-pkgs` is still `portable`.
 
 ## What the checked-in directories are
 
@@ -91,7 +91,15 @@ automatically.
 
 ## After each release
 
-Re-run `wingetcreate update`:
+Nothing to run by hand. The `winget` and `winget-gui` jobs in
+`.github/workflows/publish.yml` submit each release with `winget-releaser`,
+which opens a follow-up PR updating the existing manifest. To run one of them
+again, dispatch the workflow with
+`gh workflow run publish.yml -f tag=vX.Y.Z -f only=winget` (or
+`only=winget-gui`). A dispatch without `only` runs every registry, and that
+would open a second PR for a version winget already has.
+
+`wingetcreate update` does the same by hand, as a fallback:
 
 ```powershell
 wingetcreate update fstubner.netscli `
@@ -99,8 +107,6 @@ wingetcreate update fstubner.netscli `
   --version X.Y.Z `
   --submit --token <gh-token>
 ```
-
-This auto-opens a follow-up PR updating the existing manifest.
 
 ## Reference manifest (what wingetcreate generates)
 

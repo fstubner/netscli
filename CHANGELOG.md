@@ -401,6 +401,14 @@ its heading and collects entries. The date and the link go on with the tag.
 
 ### Security
 
+- **Four open advisories cleared, all in build tooling.** `source-map-js`
+  1.2.1 → 1.2.2 (GHSA-68fv-2mgg-jv7q, high) is in the build dependencies of
+  both the desktop app and the website. The other three are the website's
+  alone, `http-cache-semantics` 4.2.0 → 4.3.0 (GHSA-ch52-4w7c-c8xp, high),
+  `sharp` 0.35.4 → 0.35.5 (GHSA-wq5f-xc86-pv6w, high) and `smol-toml` 1.8.0
+  → 1.9.0 (GHSA-r4xh-jqrq-34v2, moderate). None of the four is in anything a
+  release ships.
+
 - **MCP packet captures never overwrite a file or follow a symlink.**
   `capture_pcap` wrote `capture.pcap` in the server's working directory,
   often your project, and replaced any file of that name. On Linux and
@@ -444,7 +452,7 @@ its heading and collects entries. The date and the link go on with the tag.
   Memcached say nothing until asked, so each gets the one read-only question
   that returns its version. Scans report this as `product` and `version` in
   the JSON, and in a Version column in the CLI, the terminal UI and the
-  desktop app. It's far narrower than nmap's `-sV`: a service that doesn't
+  desktop app. It's far narrower than nmap's `-sV`. A service that doesn't
   announce itself, and isn't one of those three, gets no version.
 
 - **UDP scanning.** `netscli scan <host> --udp` checks the UDP services most

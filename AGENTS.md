@@ -18,9 +18,9 @@ netscli/
     netscli-gui/        # Desktop GUI (Tauri 2 + React 19 + TypeScript)
       src/              #   React frontend
       src-tauri/        #   Tauri Rust backend
-  scripts/              # OUI generator, install scripts (excluded from workspace)
+  scripts/              # OUI generator, install scripts, release/ helpers, check-*.mjs guards (excluded from workspace)
   site/                 # Astro/Starlight landing page + docs (netscli.com)
-  docs/                 # Repo-internal docs (ARCHITECTURE, PUBLISHING, RELEASE) + assets
+  docs/                 # Repo-internal docs (ARCHITECTURE, PUBLISHING, RELEASE, MICROSOFT-STORE) + assets
   packaging/            # Distribution manifests and installer templates
 ```
 
@@ -52,7 +52,7 @@ cargo test -p netscli-core                    # targeted test run
 ./scripts/test-pcap.ps1                       # Windows PCAP tests with Npcap SDK env
 cd apps/netscli-gui && npm run test:unit      # GUI helper tests
 cd apps/netscli-gui && npm run build          # GUI typecheck + Vite build
-cd apps/netscli-gui && npm run test:tauri-render  # Tauri render automation
+cd apps/netscli-gui && npm run test:tauri-render  # Tauri render automation, local only (not a PR check)
 
 # Linting & formatting
 cargo fmt                                     # apply rustfmt
@@ -95,10 +95,10 @@ binary directly.
 
 ## Toolchain
 
-- Rust **1.96.0** pinned in `rust-toolchain.toml` (includes rustfmt + clippy)
-- MSRV: 1.96
+- Rust at the version pinned in `rust-toolchain.toml` (includes rustfmt + clippy)
+- MSRV: the same version (`rust-version` in `Cargo.toml`)
 - Cargo resolver: v2
-- GUI frontend: Node.js with npm, Vite, TypeScript
+- GUI frontend: Node.js (the version in `.nvmrc`) with npm, Vite, TypeScript
 
 ## Key Dependencies
 
@@ -116,7 +116,7 @@ binary directly.
 | `clap` 4.6 (derive) | CLI argument parsing |
 | `ratatui` 0.30 + `crossterm` 0.29 | Terminal UI |
 | `ratatui-textarea` 0.9 | TUI input editing (replaced `tui-textarea`) |
-| `tauri` 2.0 | Desktop GUI framework |
+| `tauri` 2 | Desktop GUI framework |
 | React 19 + Vite + TypeScript | GUI frontend |
 
 ## Architecture Rules
@@ -166,6 +166,7 @@ All network operations are async (tokio). Long-running operations accept progres
 | `oui.rs` | MAC vendor database (compressed gzip JSON) |
 | `dns.rs` | DNS lookup (A, AAAA, CNAME, MX, NS, TXT, SRV, PTR, SOA, CAA) |
 | `inspect.rs` | Combined host analysis (ping + scan + resolve) |
+| `os_hint.rs` + `os_hint/` | A best guess at a host's OS from clues a scan already has, each with its source |
 | `sweep.rs` | Full network sweep (discover + scan all hosts) |
 | `trace.rs` | Traceroute; shells out to the platform tool |
 | `mdns.rs` | mDNS/DNS-SD device discovery (behind `mdns` feature flag) |
@@ -251,3 +252,4 @@ Enforced in `ops/validation.rs` (subnet size) and `common/ports/` (port count), 
 
 - Use clear, imperative commit subjects (e.g., "Add scan timeout flag")
 - PRs should describe user-facing impact, mention affected commands/modules, and note any required setup
+- Branch protection on `main` requires the `CI Gate` and `Site Gate` checks, which are the summary jobs of `ci.yml` and `site.yml`. A PR needs both green.
