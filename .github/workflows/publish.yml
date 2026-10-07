@@ -31,8 +31,13 @@ on:
       # replays the original run, including the workflow file as it was
       # then, so a fix merged since is invisible to it. Only a fresh
       # dispatch picks up a changed workflow -- and a fresh dispatch without
-      # this input runs the whole fan-out, which means Winget opens a second
-      # PR against microsoft/winget-pkgs for a version it already has.
+      # this input runs the whole fan-out again. Most jobs would find their
+      # work done (crates.io and npm skip versions they already have, Komac
+      # finds its own winget PR, the tap and bucket scripts commit nothing),
+      # but every registry is contacted again. Name the one job instead.
+      # The ids are the job ids below: crates-io, npm, homebrew, scoop,
+      # winget, aur, homebrew-cask, scoop-gui, winget-gui, aur-gui, mcpb,
+      # mcp-registry.
       #
       # v0.3.3 hit this three times before the pattern was clear: npm
       # rejected a package name, the fix merged, and three successive
@@ -55,16 +60,19 @@ on:
 # The jobs below push to registries the moment they succeed, and AUR has no
 # review step — cancelling halfway leaves some registries on the new version
 # and some on the old, with no record of which. Queueing costs a few idle
-# minutes; the duplicate run is a no-op, since every publish script is
-# idempotent for a tag it has already pushed.
+# minutes, and the duplicate run finds most of its work already done (see
+# the `only` input above).
 concurrency:
   group: publish-${{ github.event.inputs.tag || github.ref_name }}
   cancel-in-progress: false
 
 # These jobs hold five publishing secrets between them (crates.io, the tap,
-# the bucket, winget, AUR) and every one of those is a PAT or an SSH key —
+# the bucket, winget, AUR), plus NPM_TOKEN for bootstrapping a new npm
+# package, and every one of those is a PAT, an SSH key or an npm token --
 # none of them needs GITHUB_TOKEN to write to this repo. Read is what the
-# checkouts need and nothing here wants more.
+# checkouts need. The three jobs that need more say so themselves: npm and
+# mcp-registry mint OIDC credentials, and mcpb-sign signs and uploads the
+# MCP bundles.
 permissions:
   contents: read
 
@@ -105,9 +113,9 @@ jobs:
   # transactional across registries either way -- that is a property of the
   # design, not something a timeout introduces.
   # ─── crates.io ──────────────────────────────────────────────────────
-  # Bottom-up publish (netscli-core → netscli-mcp → netscli). Sleep
-  # between each to let the index update; downstream crates' resolvers
-  # otherwise can't see the just-published version.
+  # netscli-core, netscli-mcp and netscli, from the tag. This is the one job
+  # that builds the source rather than downloading release assets, so it is
+  # also the one that checks out the tag rather than the default branch.
   crates-io:
     name: crates.io
     if: inputs.only == '' || inputs.only == 'crates-io'
@@ -137,22 +145,72 @@ jobs:
       # ships. The only way out is burning the next patch number across all
       # three.
       #
-      # Publishing the set in one command removes that. Cargo resolves the
+      # Handling the set in one command removes that. Cargo resolves the
       # not-yet-published inter-crate dependencies from the workspace,
-      # packages every member, builds each packaged copy to verify it
-      # compiles standing alone, and only then uploads -- in dependency
-      # order, waiting on the index itself rather than on a guessed sleep.
-      # Anything wrong with packaging or compilation is caught while nothing
-      # has been uploaded.
+      # packages every member and builds each packaged copy to verify it
+      # compiles standing alone (the dry run below), and only then uploads
+      # -- in dependency order, waiting on the index itself rather than on a
+      # guessed sleep (the upload below). Anything wrong with packaging or
+      # compilation is caught while nothing has been uploaded.
       #
       # What this does NOT make atomic: an upload failing partway through
       # after an earlier one succeeded. crates.io has no transaction across
       # crates, so that window cannot be closed from here -- it is just far
       # narrower than "the CLI does not package".
-      - name: cargo publish (all three crates)
-        run: cargo publish -p netscli-core -p netscli-mcp -p netscli --token "$CARGO_TOKEN"
+      #
+      # What it can do is make the job re-runnable after that happens.
+      # cargo refuses to upload a version that already exists, so a re-run
+      # that names all three after netscli-core landed fails on netscli-core
+      # and never reaches the other two. This step asks crates.io which of
+      # the three already have the version, and the steps below publish the
+      # rest. A crate that is up there resolves from the index instead of
+      # the workspace, which is the same code.
+      - name: Find the crates not yet on crates.io
+        id: pending
         env:
-          CARGO_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          TAG: ${{ env.TAG }}
+        run: |
+          set -euo pipefail
+          . scripts/release/lib.sh
+          validate_tag "$TAG"
+          version="${TAG#v}"
+          args=""
+          for crate in netscli-core netscli-mcp netscli; do
+            # crates.io's API asks for a User-Agent naming the caller.
+            code=$(curl -sS -o /dev/null -w '%{http_code}' \
+              -H 'User-Agent: netscli-release (github.com/fstubner/netscli)' \
+              "https://crates.io/api/v1/crates/${crate}/${version}")
+            case "$code" in
+              200) echo "${crate} ${version} is already on crates.io; skipping it." ;;
+              404) args="${args} -p ${crate}" ;;
+              *) echo "::error::crates.io answered HTTP ${code} for ${crate} ${version}"; exit 1 ;;
+            esac
+          done
+          echo "args=${args# }" >> "$GITHUB_OUTPUT"
+          [ -n "$args" ] || echo "All three crates are already published at ${version}. Nothing to do."
+
+      # Packages each crate and builds the packaged copy, so it is the step
+      # that runs every dependency's build scripts. It has no token: a dry
+      # run never authenticates (publish-preflight.yml says how that was
+      # checked).
+      - name: Package and build the crates (no token)
+        if: steps.pending.outputs.args != ''
+        env:
+          ARGS: ${{ steps.pending.outputs.args }}
+        # $ARGS is a list of `-p <crate>` words, split on purpose.
+        run: cargo publish --dry-run $ARGS
+
+      # The upload, with the token in cargo's own environment variable
+      # rather than on the command line, where it was visible in the
+      # process table to everything the build started. `--no-verify`
+      # because the step above verified exactly these crates, so this step
+      # compiles nothing and runs no build script while it holds the token.
+      - name: Upload the crates
+        if: steps.pending.outputs.args != ''
+        env:
+          ARGS: ${{ steps.pending.outputs.args }}
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: cargo publish --no-verify $ARGS
 
   # ─── npm ────────────────────────────────────────────────────────────
   # One launcher package plus five prebuilt-binary packages. This is what
@@ -204,8 +262,13 @@ jobs:
       # it would fall back to looking for a token and fail with an auth
       # error rather than anything naming the real cause. 11.5.1 is the
       # first version that supports it.
+      #
+      # An exact version, not a range. This job can mint npm's OIDC
+      # credential, and `^11.5.1` installed whatever npm 11 was newest at
+      # run time. Dependabot does not see this line, so bump it by hand:
+      # `npm view npm@11 version` lists the candidates.
       - name: Upgrade npm for trusted publishing
-        run: npm install -g npm@^11.5.1
+        run: npm install -g npm@11.21.0
 
       # Normally unset: all six packages have a trusted publisher, and the
       # script uses OIDC whenever NPM_TOKEN is empty.
@@ -227,10 +290,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      # Release tooling, so the default branch. See the npm job above.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          ref: ${{ env.TAG }}
+          ref: ${{ github.event.repository.default_branch }}
       - name: Update fstubner/homebrew-tap
         env:
           GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
@@ -243,10 +307,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      # Release tooling, so the default branch. See the npm job above.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          ref: ${{ env.TAG }}
+          ref: ${{ github.event.repository.default_branch }}
       - name: Update fstubner/scoop-bucket
         env:
           GH_TOKEN: ${{ secrets.SCOOP_BUCKET_TOKEN }}
@@ -384,10 +449,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      # Release tooling, so the default branch. See the npm job above.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          ref: ${{ env.TAG }}
+          ref: ${{ github.event.repository.default_branch }}
 
       # The tag reaches a `sed` replacement in the render step below, and
       # `workflow_dispatch` lets anyone with repo write access supply an
@@ -496,10 +562,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      # Release tooling, so the default branch. See the npm job above.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          ref: ${{ env.TAG }}
+          ref: ${{ github.event.repository.default_branch }}
       - name: Update fstubner/homebrew-tap (Cask)
         env:
           GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
@@ -515,10 +582,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      # Release tooling, so the default branch. See the npm job above.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          ref: ${{ env.TAG }}
+          ref: ${{ github.event.repository.default_branch }}
       - name: Update fstubner/scoop-bucket (GUI)
         env:
           GH_TOKEN: ${{ secrets.SCOOP_BUCKET_TOKEN }}
@@ -639,10 +707,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      # Release tooling, so the default branch. See the npm job above.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          ref: ${{ env.TAG }}
+          ref: ${{ github.event.repository.default_branch }}
 
       # Same reasoning as the CLI AUR job: the tag reaches an inline `sed`
       # below, and workflow_dispatch makes it caller-controlled.
@@ -735,16 +804,17 @@ jobs:
   # published assets and verifies their checksums, exactly as the Homebrew
   # and Scoop jobs do -- release.yml's matrix legs upload their own outputs
   # and never see each other's.
+  #
+  # Two jobs. This one builds the bundles with `npx @anthropic-ai/mcpb`,
+  # whose dependencies are caret ranges resolved afresh on every run, so it
+  # gets a read-only token and no OIDC. `mcpb-sign` below, which holds
+  # both, runs no package code: it hashes, signs and uploads what this one
+  # built.
   mcpb:
     name: MCP bundles
     if: inputs.only == '' || inputs.only == 'mcpb'
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    permissions:
-      # The only job here that writes. It uploads to the release it read
-      # from; the workflow-level default is read, so this is the exception
-      # rather than a loosening for everyone.
-      contents: write
     steps:
       # The default branch, for the same reason as the npm job above: this
       # checkout provides the bundle script and the manifest template, and
@@ -761,6 +831,73 @@ jobs:
       - name: Build bundles
         run: bash scripts/release/build-mcpb.sh "$TAG" "${RUNNER_TEMP}/mcpb"
 
+      - name: Hand the bundles to the signing job
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: mcpb-bundles
+          path: ${{ runner.temp }}/mcpb/*.mcpb
+          retention-days: 1
+          if-no-files-found: error
+
+  # The bundles were the only release assets that carry executables and had
+  # no .sha256, .sig or .pem, while the docs said every asset is signed. Now
+  # they get all three, made the same way release.yml makes them. Their
+  # Sigstore identity is this file rather than release.yml, because the
+  # bundles are built after the release is public:
+  #   https://github.com/fstubner/netscli/.github/workflows/publish.yml@refs/heads/main
+  mcpb-sign:
+    name: MCP bundles (sign and attach)
+    needs: mcpb
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      # The one job here that writes to this repository. It uploads to the
+      # release it read from.
+      contents: write
+      # Sigstore keyless signing, as in release.yml.
+      id-token: write
+    steps:
+      - name: Collect the bundles
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: mcpb-bundles
+          path: ${{ runner.temp }}/mcpb
+
+      - name: Generate SHA256
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "${RUNNER_TEMP}/mcpb"
+          for f in *.mcpb; do
+            sha256sum "$f" > "${f}.sha256"
+          done
+          cat ./*.sha256
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        with:
+          # The same pin as release.yml, for the reasons given there.
+          cosign-release: v3.0.6
+
+      - name: Sign with sigstore
+        shell: bash
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+        run: |
+          set -euo pipefail
+          cd "${RUNNER_TEMP}/mcpb"
+          for f in *.mcpb; do
+            # Both flags as in release.yml's CLI signing step, where the
+            # reason for each is written out.
+            cosign sign-blob --yes \
+              --use-signing-config=false \
+              --new-bundle-format=false \
+              --output-signature "${f}.sig" \
+              --output-certificate "${f}.pem" \
+              "$f"
+          done
+          ls -la
+
       # `--clobber` so a re-run after a partial upload replaces what is
       # there rather than failing on the first bundle that already exists.
       # Every other job here is re-runnable and this one should be too.
@@ -768,7 +905,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-        run: gh release upload "$TAG" "${RUNNER_TEMP}"/mcpb/*.mcpb --clobber
+        run: gh release upload "$TAG" "${RUNNER_TEMP}"/mcpb/* --clobber
 
   # ─── MCP Registry ───────────────────────────────────────────────────
   # The official directory MCP clients browse (registry.modelcontextprotocol.io).
@@ -813,8 +950,8 @@ jobs:
   # The jobs above are deliberately independent — crates.io landing
   # while AUR fails is a normal, recoverable state, and each job re-runs on
   # its own. The cost of that independence was that "did this release
-  # actually reach every registry?" could only be answered by opening nine
-  # job pages, and a single failure among eight greens is easy to miss.
+  # actually reach every registry?" could only be answered by opening a
+  # dozen job pages, and a single failure among the greens is easy to miss.
   #
   # This job REPORTS, it does not gate, and that is on purpose: failing the
   # run on a partial publish would contradict the independence above and
@@ -834,6 +971,7 @@ jobs:
       - npm
       - mcp-registry
       - mcpb
+      - mcpb-sign
       - homebrew
       - scoop
       - winget
@@ -874,7 +1012,10 @@ jobs:
             {
               echo ""
               echo "**${TAG} did not reach every registry.** Re-run the failed jobs from the"
-              echo "Actions tab, or \`workflow_dispatch\` this workflow with tag \`${TAG}\`."
+              echo "Actions tab. If the fix was to this workflow or its scripts, dispatch it"
+              echo "again for that one job, which picks the fix up:"
+              echo "\`gh workflow run publish.yml -f tag=${TAG} -f only=<job>\`."
+              echo "\`mcpb-sign\` runs with \`only=mcpb\`."
             } >> "$GITHUB_STEP_SUMMARY"
           else
             echo "All registries published for ${TAG}."
