@@ -118,11 +118,13 @@ its heading and collects entries. The date and the link go on with the tag.
   host name or an address never starts with either, and Windows' `tracert`
   reads a leading `/` as an option too.
 
-- **File dialogs in the desktop app no longer hold up the window.** Open
+- **File dialogs in the desktop app no longer freeze the window.** Open
   Result Bundle, Choose Folder and the Save dialog for exports waited for the
   dialog on the thread that draws the window, which the dialog library says
-  not to do. They now wait off that thread, so the window can keep painting
-  while a dialog is open.
+  not to do. On Windows, Open Result Bundle left the window unable to answer
+  anything for as long as its dialog was open, and Windows marked it as not
+  responding after about five seconds. The others wait the same way. They now
+  wait off that thread, and the window keeps answering.
 
 - **A stalled update download no longer traps the update dialog.** The dialog
   cannot be closed while an update downloads, and nothing limited how long a
