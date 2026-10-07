@@ -176,7 +176,7 @@ export const tryCommands: TryCommand[] = [
  * alternative route for every platform, which is what made it read as a wall
  * rather than a choice. */
 export const installBinariesNote =
-  'Rust users can <code>cargo install netscli</code>. Every binary and installer is checksummed and signed with <a href="https://docs.sigstore.dev/cosign/overview/">Sigstore cosign</a>. The install guide shows <a href="/docs/install/#verifying-a-download">how to verify a download</a> and lists the standalone binaries and packet-capture builds.';
+  'Rust users can <code>cargo install netscli</code>. Every binary and installer is checksummed and signed with <a href="https://docs.sigstore.dev/cosign/signing/overview/">Sigstore cosign</a>. The install guide shows <a href="/docs/install/#verifying-a-download">how to verify a download</a> and lists the standalone binaries and packet-capture builds.';
 
 // Two things /llms.txt says that no page does: a build-from-source route,
 // listed after the per-platform quickstart, and any caveat a reader acting
