@@ -4,8 +4,9 @@ NetsCLI has one behavioral core and four user-facing interfaces. New network beh
 
 ## Parts
 
-Five deployables over one behavioural core. Only the core is shared; nothing
-below it imports anything above it.
+Five deployables over one behavioural core. The core is shared by every
+interface, and the CLI also embeds the MCP crate, which is how `netscli serve`
+works. Nothing below the core imports anything above it.
 
 | Part | Path | Ships as | Talks to |
 | --- | --- | --- | --- |
@@ -74,7 +75,7 @@ holds no credentials.
 | Area | Primary Path | Ownership |
 | --- | --- | --- |
 | Core operations facade | `crates/netscli-core/src/ops.rs`, `ops/` | Stable high-level methods used by CLI, TUI, GUI, and MCP |
-| Port scanning | `crates/netscli-core/src/scan.rs`, `scan/` | TCP connect classification and open-port enrichment |
+| Port scanning | `crates/netscli-core/src/scan/` | TCP connect classification and open-port enrichment |
 | DNS | `crates/netscli-core/src/dns.rs`, `dns/` | Record parsing, resolver construction, lookup, reverse lookup |
 | ARP/interfaces | `crates/netscli-core/src/arp.rs`, `arp/` | Shared ARP/interface types plus platform implementations |
 | Persistence | `crates/netscli-core/src/db.rs`, `db/` | SQLite bootstrap, migrations, host and scan-history repositories |
@@ -117,7 +118,7 @@ cargo test -p netscli
 cargo clippy --all-targets -- -D warnings
 cargo clippy --all-targets --features pcap -- -D warnings
 ./scripts/test-pcap.ps1
-cd apps/netscli-gui && npm run test:unit && npm run build
+cd apps/netscli-gui && npm run lint && npm run test:unit && npm run build
 cd apps/netscli-gui && npm run test:maintainability
 cd apps/netscli-gui && npm run test:tauri-render
 ```
@@ -137,8 +138,8 @@ Npcap SDK import library. Put the SDK architecture directory containing
 `wpcap.lib` on `LIB` for the build process, and put
 `C:\Windows\System32\Npcap` on `PATH` for runtime checks. Do not commit a
 machine-local SDK path into Cargo config. `scripts/test-pcap.ps1` sets the
-expected Windows environment for the PCAP test target from `NPCAP_SDK` or
-`C:\tmp\netscli-npcap-sdk`.
+expected Windows environment for the PCAP test target from `NPCAP_SDK`, or
+from `%LOCALAPPDATA%\netscli\npcap-sdk` when that is not set.
 
 ## Module Size Guidance
 
