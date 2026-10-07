@@ -71,6 +71,30 @@ pub const COMMON_SERVICE_TYPES: &[&str] = &[
 
 pub struct MdnsEngine;
 
+/// Owns the mdns-sd daemon and shuts it down when dropped.
+///
+/// The daemon is a thread with multicast sockets on every interface, and it
+/// never stops by itself: it holds a sender to its own command channel, so
+/// dropping every handle is not enough. `discover` shut it down on its
+/// normal exit and when a browse task failed, and nowhere else. An invalid
+/// service type returned early through `?`, and a dropped future (an MCP
+/// cancel or timeout) never reached the end, so both left the thread running,
+/// re-sending every browse it had started, until the process exited.
+struct Daemon(ServiceDaemon);
+
+impl Drop for Daemon {
+    fn drop(&mut self) {
+        // Best effort. If the daemon has already gone there is nothing to stop.
+        let _ = self.0.shutdown();
+    }
+}
+
+/// The suffix mdns-sd requires of a service type, checked before a daemon
+/// exists rather than by `browse` after one has started.
+fn is_service_type(service_type: &str) -> bool {
+    service_type.ends_with("._tcp.local.") || service_type.ends_with("._udp.local.")
+}
+
 impl MdnsEngine {
     /// Browse every `service_type` in parallel for up to `timeout`, then
     /// return every service the daemon fully resolved during that window.
@@ -84,9 +108,25 @@ impl MdnsEngine {
         if service_types.is_empty() {
             return Ok(Vec::new());
         }
+        if let Some(bad) = service_types.iter().find(|t| !is_service_type(t)) {
+            return Err(Error::invalid_input(format!(
+                "mDNS service type {bad} must end in ._tcp.local. or ._udp.local., final dot included"
+            )));
+        }
 
         let daemon = ServiceDaemon::new()
             .map_err(|e| Error::Other(format!("mDNS daemon init failed: {e}")))?;
+        Self::browse_on(daemon, service_types, timeout).await
+    }
+
+    /// The body of `discover`, given the daemon. Split so a test can keep a
+    /// handle to the daemon and see that it is shut down.
+    async fn browse_on(
+        daemon: ServiceDaemon,
+        service_types: &[&str],
+        timeout: Duration,
+    ) -> Result<Vec<MdnsService>> {
+        let daemon = Daemon(daemon);
 
         // Browse each service type concurrently. `daemon.browse(..)` returns
         // a flume receiver per type; we drain each one until the deadline.
@@ -96,6 +136,7 @@ impl MdnsEngine {
         for stype in service_types {
             let stype = (*stype).to_string();
             let receiver = daemon
+                .0
                 .browse(&stype)
                 .map_err(|e| Error::Other(format!("mDNS browse({stype}) failed: {e}")))?;
             tasks.spawn(async move {
@@ -140,27 +181,20 @@ impl MdnsEngine {
             });
         }
 
-        // Collect every task's results. Errors propagate; the daemon is
-        // always shut down after the JoinSet drains.
+        // Collect every task's results. Errors propagate; `Daemon` shuts the
+        // daemon down on every way out of this function.
         let mut services: Vec<MdnsService> = Vec::new();
         while let Some(res) = tasks.join_next().await {
             match res {
                 Ok(Ok(mut v)) => services.append(&mut v),
-                Ok(Err(e)) => {
-                    let _ = daemon.shutdown();
-                    return Err(e);
-                }
+                Ok(Err(e)) => return Err(e),
                 Err(join_err) => {
-                    let _ = daemon.shutdown();
                     return Err(Error::Other(format!(
                         "mDNS browse task panicked: {join_err}"
                     )));
                 }
             }
         }
-
-        // Best-effort shutdown — if the daemon is already gone we don't care.
-        let _ = daemon.shutdown();
         Ok(services)
     }
 
@@ -192,5 +226,47 @@ mod tests {
         assert!(res.unwrap().is_empty());
         // Must return immediately without waiting for the timeout.
         assert!(t0.elapsed() < Duration::from_secs(1));
+    }
+
+    /// Whether the daemon behind `handle` stops within a few seconds.
+    fn stops(handle: &ServiceDaemon) -> bool {
+        for _ in 0..30 {
+            match handle.status() {
+                // Its thread has exited and dropped the channel.
+                Err(_) => return true,
+                Ok(status) => match status.recv_timeout(Duration::from_millis(100)) {
+                    Ok(mdns_sd::DaemonStatus::Shutdown) => return true,
+                    _ => std::thread::sleep(Duration::from_millis(100)),
+                },
+            }
+        }
+        false
+    }
+
+    #[tokio::test]
+    async fn the_daemon_stops_when_a_service_type_is_refused() {
+        let daemon = ServiceDaemon::new().unwrap();
+        let handle = daemon.clone();
+        // No final dot: the typo that left a daemon running per call.
+        let res =
+            MdnsEngine::browse_on(daemon, &["_http._tcp.local"], Duration::from_secs(10)).await;
+        assert!(res.is_err());
+        assert!(stops(&handle), "the daemon was left running");
+    }
+
+    #[tokio::test]
+    async fn the_daemon_stops_when_the_browse_is_dropped() {
+        let daemon = ServiceDaemon::new().unwrap();
+        let handle = daemon.clone();
+        let browse = MdnsEngine::browse_on(
+            daemon,
+            &["_netscli-test._tcp.local."],
+            Duration::from_secs(30),
+        );
+        // What an MCP cancel or timeout does to the future.
+        assert!(tokio::time::timeout(Duration::from_millis(200), browse)
+            .await
+            .is_err());
+        assert!(stops(&handle), "the daemon was left running");
     }
 }

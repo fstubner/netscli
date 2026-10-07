@@ -48,13 +48,25 @@ impl NetworkManager {
 pub(crate) async fn still_present(candidates: &[Ipv4Addr], wait: Duration) -> HashSet<Ipv4Addr> {
     #[cfg(target_os = "windows")]
     {
-        let checks = candidates.iter().map(|&ip| async move {
+        use futures::stream::StreamExt;
+
+        // Lookups in flight at once. All of them used to start together, and
+        // each `wait` was counted from then, so with more candidates than
+        // tokio's blocking pool has threads, lookups spent their time queued
+        // and real neighbours were dropped. Now `wait` starts when a lookup
+        // does.
+        const AT_ONCE: usize = 64;
+        // By value: a closure over `&Ipv4Addr` makes the stream's future not
+        // `Send` for every lifetime, which `tokio::spawn` in discovery needs.
+        let checks = candidates.iter().copied().map(|ip| async move {
             // A lookup that outlives `wait` keeps its blocking thread until
             // Windows gives up on it, about 4 s; its answer is just ignored.
             let asked = tokio::task::spawn_blocking(move || platform::answers_arp(ip));
             matches!(tokio::time::timeout(wait, asked).await, Ok(Ok(true))).then_some(ip)
         });
-        futures::future::join_all(checks)
+        futures::stream::iter(checks)
+            .buffer_unordered(AT_ONCE)
+            .collect::<Vec<_>>()
             .await
             .into_iter()
             .flatten()

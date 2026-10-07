@@ -12,12 +12,27 @@ mod config_panel;
 mod content;
 mod input;
 mod message;
+mod mono;
 mod scrollbar;
 mod stats;
 
 impl<'a> TuiApp<'a> {
     pub fn draw<B: Backend>(&mut self, terminal: &mut Terminal<B>) -> Result<(), B::Error> {
-        terminal.draw(|f| self.draw_frame(f))?;
+        self.draw_with(terminal, mono::no_color())
+    }
+
+    /// `draw`, with `NO_COLOR` as a parameter so a test can ask for it.
+    pub(super) fn draw_with<B: Backend>(
+        &mut self,
+        terminal: &mut Terminal<B>,
+        no_color: bool,
+    ) -> Result<(), B::Error> {
+        terminal.draw(|f| {
+            self.draw_frame(f);
+            if no_color {
+                mono::strip_colour(f.buffer_mut());
+            }
+        })?;
         Ok(())
     }
 

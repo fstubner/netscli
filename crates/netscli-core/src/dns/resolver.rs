@@ -1,15 +1,17 @@
-use hickory_resolver::{
-    config::{ResolverConfig, CLOUDFLARE},
-    net::runtime::TokioRuntimeProvider,
-    TokioResolver,
-};
+use hickory_resolver::TokioResolver;
 use std::sync::OnceLock;
 
 use crate::error::{Error, Result};
 
-const DNS_FALLBACK_ENV: &str = "NETSCLI_DNS_FALLBACK";
-
-/// Shared resolver — parsing the system config (`/etc/resolv.conf` or the
+/// The only resolver NetsCLI uses: the system's own DNS configuration.
+///
+/// There is deliberately no fallback. Until 0.3.5 a name the system resolver
+/// could not answer (including a plain "no records" answer) was asked again of
+/// Cloudflare's public resolver, which sent names the user looked up to a
+/// third party without saying so. A lookup now goes only to the DNS servers
+/// the system is configured to use.
+///
+/// Shared, because parsing the system config (`/etc/resolv.conf` or the
 /// Windows registry) on every lookup is wasteful for high-volume scans like
 /// a /24 with reverse DNS enabled.
 pub(super) fn shared_resolver() -> Result<&'static TokioResolver> {
@@ -31,82 +33,42 @@ pub(super) fn shared_resolver() -> Result<&'static TokioResolver> {
     }
 }
 
-/// Public fallback resolver used only after the system resolver returns an
-/// error. Normal lookups should still respect the OS resolver first so local
-/// split-DNS/VPN names keep working.
-pub(super) fn fallback_resolver() -> Result<&'static TokioResolver> {
-    static RESOLVER: OnceLock<std::result::Result<TokioResolver, String>> = OnceLock::new();
-    let cached = RESOLVER.get_or_init(|| {
-        TokioResolver::builder_with_config(
-            ResolverConfig::udp_and_tcp(&CLOUDFLARE),
-            TokioRuntimeProvider::default(),
-        )
-        .build()
-        .map_err(|e| e.to_string())
-    });
-
-    match cached {
-        Ok(r) => Ok(r),
-        Err(e) => Err(Error::dns(format!(
-            "failed to create DNS fallback resolver: {e}"
-        ))),
-    }
-}
-
-pub(super) fn should_use_public_fallback(host: &str) -> bool {
-    if std::env::var(DNS_FALLBACK_ENV)
-        .map(|value| {
-            matches!(
-                value.to_ascii_lowercase().as_str(),
-                "0" | "false" | "off" | "no"
-            )
-        })
-        .unwrap_or(false)
-    {
-        return false;
-    }
-
-    !is_local_or_internal_name(host)
-}
-
-fn is_local_or_internal_name(host: &str) -> bool {
-    let name = host.trim().trim_end_matches('.').to_ascii_lowercase();
-    // Single-label names (no dot) are never public FQDNs — e.g. "nas" or
-    // "printer" resolved via mDNS/NetBIOS/local search domains — so treat
-    // them as local rather than leaking them to the public fallback.
-    !name.contains('.')
-        || name == "localhost"
-        || name.ends_with(".localhost")
-        || name.ends_with(".local")
-        || name.ends_with(".lan")
-        || name.ends_with(".home")
-        || name.ends_with(".home.arpa")
-        || name.ends_with(".internal")
-        || name.ends_with(".test")
-}
-
 #[cfg(test)]
 mod tests {
-    use super::is_local_or_internal_name;
-
+    /// Lookups must only ever reach the system's DNS servers. A second
+    /// resolver built from one of hickory's public presets is how the old
+    /// Cloudflare fallback worked, and nothing else would notice one coming
+    /// back: it changes no result, only where the question goes.
     #[test]
-    fn local_names_skip_public_fallback() {
-        for host in [
-            "localhost",
-            "printer.local",
-            "router.lan",
-            "service.internal",
-            "fixture.test.",
-            "nas",
-            "printer",
-            "router.home.arpa",
-        ] {
-            assert!(is_local_or_internal_name(host));
+    fn no_resolver_other_than_the_system_one() {
+        // Assembled at run time so this file does not match itself.
+        let banned = [
+            ["Resolver", "Config"].concat(),
+            ["builder_with", "_config"].concat(),
+            ["CLOUD", "FLARE"].concat(),
+            ["GOO", "GLE"].concat(),
+            ["QUA", "D9"].concat(),
+        ];
+        let mut dirs = vec![std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src")];
+        let mut hits = Vec::new();
+        while let Some(dir) = dirs.pop() {
+            for entry in std::fs::read_dir(&dir).expect("read src dir") {
+                let path = entry.expect("dir entry").path();
+                if path.is_dir() {
+                    dirs.push(path);
+                } else if path.extension().is_some_and(|ext| ext == "rs") {
+                    let text = std::fs::read_to_string(&path).expect("read source file");
+                    for word in &banned {
+                        if text.contains(word.as_str()) {
+                            hits.push(format!("{} mentions {word}", path.display()));
+                        }
+                    }
+                }
+            }
         }
-    }
-
-    #[test]
-    fn public_names_can_use_public_fallback() {
-        assert!(!is_local_or_internal_name("netscli.com"));
+        assert!(
+            hits.is_empty(),
+            "a non-system DNS resolver is back: {hits:?}"
+        );
     }
 }

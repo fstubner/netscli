@@ -19,6 +19,31 @@ pub(crate) struct CommandContext<'a> {
     pub(crate) local_addr: Option<&'a str>,
 }
 
+/// Run the MCP server, then end the process at once.
+///
+/// Returning to `main` would drop the tokio runtime, and dropping a runtime
+/// waits for every blocking thread it has. When stdin closes the server
+/// abandons its in-flight requests, but a ping or capture already on a
+/// blocking thread cannot be abandoned. It runs to its own timeout, which MCP
+/// allows to be ten minutes, with the client long gone and the process still
+/// open. Nothing is left to wait for here, so leave. The server's writer has
+/// flushed every response by the time `run_server` returns, and the flush
+/// below covers anything left in the standard library's buffer.
+async fn serve_then_exit() -> ! {
+    use std::io::Write;
+
+    let outcome = netscli_mcp::run_server().await;
+    let _ = std::io::stdout().flush();
+    match outcome {
+        Ok(()) => std::process::exit(0),
+        Err(error) => {
+            // What returning the error from `main` would have printed.
+            eprintln!("Error: {error:?}");
+            std::process::exit(1);
+        }
+    }
+}
+
 pub(crate) async fn run_command(command: &Commands, ctx: CommandContext<'_>) -> Result<()> {
     match command {
         Commands::Setup { print, execute } => {
@@ -100,6 +125,7 @@ pub(crate) async fn run_command(command: &Commands, ctx: CommandContext<'_>) -> 
             duration,
             max_packets,
             output,
+            force,
             check,
             format,
         } => {
@@ -111,6 +137,7 @@ pub(crate) async fn run_command(command: &Commands, ctx: CommandContext<'_>) -> 
                 *duration,
                 *max_packets,
                 output,
+                *force,
                 *check,
                 *format,
             )
@@ -132,22 +159,18 @@ pub(crate) async fn run_command(command: &Commands, ctx: CommandContext<'_>) -> 
         Commands::Man => {
             docs::print_man::<Cli>()?;
         }
-        Commands::McpServe => {
-            netscli_mcp::run_server().await?;
-        }
+        Commands::McpServe => serve_then_exit().await,
         Commands::McpService {
-            install,
-            uninstall,
-            status,
+            install, uninstall, ..
         } => {
+            // clap requires exactly one of the three flags, so --status is
+            // what is left when the other two are not set.
             if *install {
                 mcp_service::install_service()?;
             } else if *uninstall {
                 mcp_service::uninstall_service()?;
-            } else if *status {
-                mcp_service::show_status()?;
             } else {
-                println!("Use --install, --uninstall, or --status");
+                mcp_service::show_status()?;
             }
         }
     }

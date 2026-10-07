@@ -1,12 +1,25 @@
 use clap::{Args, Parser, Subcommand};
 use clap_complete::Shell;
 
+const ENVIRONMENT_HELP: &str = "\
+Environment:
+  NETSCLI_HISTORY=1  Keep every result in ~/.netscli/netscli.db (off by default)
+  NO_COLOR           No colour in the output or the terminal UI
+  CLICOLOR_FORCE=1   Colour the output even when it is piped";
+
 #[derive(Parser)]
-#[command(name = "netscli", version, about = "Modern network scanner", long_about = None)]
+#[command(
+    name = "netscli",
+    version,
+    about = "Modern network scanner",
+    long_about = None,
+    after_help = ENVIRONMENT_HELP
+)]
 pub struct Cli {
-    /// Max in-flight network operations (default 256; clamped to [1, 1024];
-    /// mDNS discovery sub-caps internally at 32). Lower this on fragile home
-    /// gateways that struggle with hundreds of simultaneous probes.
+    /// Max in-flight network operations (default 256, or the value saved by
+    /// the terminal UI's /config; clamped to [1, 1024]; mDNS discovery
+    /// sub-caps internally at 32). Lower this on fragile home gateways that
+    /// struggle with hundreds of simultaneous probes.
     #[arg(short = 'j', long, global = true, value_name = "N")]
     pub concurrency: Option<usize>,
 
@@ -15,7 +28,11 @@ pub struct Cli {
 }
 
 /// `--json` / `--yaml`, for commands whose result is not a list of rows.
+///
+/// `multiple = false` makes the flags exclusive, so asking for two is a usage
+/// error from clap (exit 2) and not a failure of the command (exit 1).
 #[derive(Args, Clone, Copy, Debug)]
+#[group(multiple = false)]
 pub struct StructuredOutput {
     /// Output JSON
     #[arg(long)]
@@ -27,8 +44,10 @@ pub struct StructuredOutput {
 }
 
 /// `--json` / `--yaml` / `--csv` / `--md`, for commands that return a list:
-/// one table row per host, port, record or packet.
+/// one table row per host, port, record or packet. Exclusive, like
+/// [`StructuredOutput`].
 #[derive(Args, Clone, Copy, Debug)]
+#[group(multiple = false)]
 pub struct ListOutput {
     /// Output JSON
     #[arg(long)]
@@ -153,8 +172,13 @@ pub enum Commands {
         /// Host to ping (IP or hostname)
         host: String,
 
-        /// Number of pings to send
-        #[arg(short = 'c', long, default_value_t = 4)]
+        /// Number of pings to send, at least 1 (more than 256 is cut to 256)
+        #[arg(
+            short = 'c',
+            long,
+            default_value_t = 4,
+            value_parser = clap::value_parser!(u32).range(1..)
+        )]
         count: u32,
 
         #[command(flatten)]
@@ -244,6 +268,10 @@ pub enum Commands {
         #[arg(long, default_value = "capture.pcap")]
         output: String,
 
+        /// Overwrite the output file if it already exists
+        #[arg(long)]
+        force: bool,
+
         /// Only check pcap support and list capture devices
         #[arg(long)]
         check: bool,
@@ -265,8 +293,9 @@ pub enum Commands {
         #[arg(long, default_value_t = 3000)]
         timeout_ms: u64,
 
-        /// Service types to browse (repeatable). Defaults to a curated set
-        /// of common types (_http._tcp, _ssh._tcp, _airplay._tcp, etc.).
+        /// Service types to browse (repeatable), written in full, such as
+        /// `_ipp._tcp.local.`. Defaults to a curated set of common types
+        /// (_http._tcp.local., _ssh._tcp.local., _airplay._tcp.local., etc.).
         #[arg(long = "type", short = 't')]
         service_types: Vec<String>,
 
@@ -284,7 +313,7 @@ pub enum Commands {
     ///   bash:       netscli completions bash       > ~/.local/share/bash-completion/completions/netscli
     ///   zsh:        netscli completions zsh        > ~/.zsh/completions/_netscli
     ///   fish:       netscli completions fish       > ~/.config/fish/completions/netscli.fish
-    ///   powershell: netscli completions powershell > $PROFILE/netscli.ps1
+    ///   powershell: netscli completions powershell | Out-String | Invoke-Expression
     #[command(name = "completions")]
     Completions { shell: Shell },
 
@@ -294,17 +323,27 @@ pub enum Commands {
     #[command(name = "man")]
     Man,
 
-    /// Manage MCP server auto-start (systemd service)
+    /// Remove the systemd unit that netscli 0.3.4 and earlier installed
+    ///
+    /// `netscli serve` speaks MCP over stdin and stdout, so the MCP client has
+    /// to start it. Run as a service it gets no input and exits at once, which
+    /// is why this no longer installs a unit. See https://netscli.com/docs/mcp/
+    #[command(group(
+        clap::ArgGroup::new("mcp_service_action")
+            .args(["install", "uninstall", "status"])
+            .required(true)
+            .multiple(false)
+    ))]
     McpService {
-        /// Generate systemd user service file
+        /// Explain why there is no longer a service to install
         #[arg(long)]
         install: bool,
 
-        /// Remove systemd user service file
+        /// Remove the systemd user unit an earlier version installed
         #[arg(long)]
         uninstall: bool,
 
-        /// Show service status
+        /// Show whether such a unit is still there
         #[arg(long)]
         status: bool,
     },

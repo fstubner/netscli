@@ -20,6 +20,15 @@ its heading and collects entries. The date and the link go on with the tag.
 
 ### Added
 
+- **The terminal UI honours `NO_COLOR`, and the CLI honours `TERM=dumb` and
+  `CLICOLOR_FORCE`.** The CLI's tables already went plain for `NO_COLOR` and
+  for output that is not a terminal. The terminal UI ignored `NO_COLOR` and
+  always drew in 24-bit colour. It now draws without colour when `NO_COLOR` is
+  set, keeping bold, and shows the selected row in `/config` reversed instead
+  of shaded. The CLI also stops colouring for `TERM=dumb`, and
+  `CLICOLOR_FORCE=1` keeps colour when the output is piped, for `less -R` or a
+  CI log. `netscli --help` now lists these, and `NETSCLI_HISTORY`, at the end.
+
 - **The MCP server reports progress and can be cancelled.** Discover, port
   scans and sweeps send progress notifications to clients that ask for them,
   so a long sweep no longer looks stuck. A client that cancels a call now
@@ -27,6 +36,60 @@ its heading and collects entries. The date and the link go on with the tag.
   server's sixteen request slots.
 
 ### Changed
+
+- **History is off unless you set `NETSCLI_HISTORY=1`.** Every `discover`,
+  `scan`, `inspect`, `sweep`, `dns`, `reverse` and `pcap` run, from the command
+  line and the terminal UI, kept its whole result in `~/.netscli/netscli.db`
+  for good, and nothing reads it back. Every other command created the file
+  too, just by starting, `completions` and `man` included. NetsCLI now opens
+  and creates nothing until the variable is set. With it set, history works as
+  before, and on Linux and macOS the folder and file it creates are readable by
+  you alone. A database an earlier version made is left where it is, and
+  deleting it is up to you. Where no home folder can be found, the database and
+  the terminal UI's default export folder no longer fall back to a `.netscli`
+  folder in the current directory. They say there is no home instead.
+
+- **Exit codes follow what happened.** `0` means the command worked, `1` that
+  it ran and failed, and `2` that the command line was wrong. Until now `ping`
+  exited 0 when nothing answered, `trace` exited 0 when `tracert` or
+  `traceroute` had failed, `doctor` exited 0 with a dependency missing, and
+  asking for two output formats exited 1 like a failed scan. `ping` and `trace`
+  now exit 1 in those cases, `doctor` exits 1 when libpcap is missing from a
+  build that has packet capture, and two output formats, or `ping -c 0`, exit 2
+  before anything runs. `ping -c 0` used to print `loss=0.0%` for a ping that
+  sent nothing. A `dns --record ALL` where only some record types have records
+  still exits 0. A script that ignored the exit code of `ping` or `trace` will
+  start to see 1, and the CLI page lists every code.
+
+- **`netscli mcp-service --install` no longer installs a systemd unit.** The
+  unit could not work. `netscli serve` speaks MCP over stdin and stdout and
+  stops when its input closes, and systemd gives a service no input, so the
+  server exited at once and `Restart=always` started it again every five
+  seconds. An MCP client starts the server itself. The command now says so,
+  points to the MCP setup guide, and exits 1. It also wrote the unit on Windows
+  and macOS, where nothing could read it. `--uninstall` and `--status` stay, on
+  every system, to find and remove a unit an earlier version left behind.
+  Running `mcp-service` with no flag is now a usage error instead of a hint and
+  exit 0.
+
+- **The terminal UI's `/discover` looks up hostnames only when you add
+  `--resolve`.** It always looked them up, with no way to turn that off, where
+  the CLI, the desktop app, the MCP server and `/sweep` all leave it out unless
+  asked. Its summary line says which it did. The help for `/sweep` listed
+  `--no-resolve`, which does nothing, and not `--resolve`, which does. It now
+  lists `--resolve`.
+
+- **`netscli pcap` does not replace an existing capture file unless you add
+  `--force`.** It writes `capture.pcap` in the current folder by default and
+  used to overwrite whatever was there, so a second capture quietly destroyed
+  the first. A script that captures to the same name every time now needs
+  `--force`.
+
+- **Enter on half a command name in the terminal UI finishes the name instead
+  of running it.** `/e` then Enter ran `/export`, the first suggestion, which
+  writes a file, when the user was heading for `/exit`, and `/d` started a
+  discovery of the default subnet. The name is now completed, as `Tab` does,
+  and a second Enter runs it.
 
 - **The desktop app stays responsive with large results.** It drew every
   row of a result and redrew all of them on every keypress or scroll, so a
@@ -74,6 +137,102 @@ its heading and collects entries. The date and the link go on with the tag.
   packet capture and that it needs a build made from source.
 
 ### Fixed
+
+- **Text from the network could reorder or hide itself.** The cleaning that
+  makes a hostname, banner or `TXT` value safe to print replaced control
+  characters and let everything else through. That included right-to-left
+  overrides, which make the text after them display backwards, and zero-width
+  characters, which hide text or make two different names look the same. They
+  are now replaced with `.` in the CLI's text, CSV and Markdown output, in
+  service banners (which the desktop app and the MCP server share), in the
+  computer name an SMB host reports, and in the terminal UI. `--json` and
+  `--yaml` still carry the text as it was received. A zero-width joiner inside
+  an emoji in a name now shows as a dot as well.
+
+- **The terminal UI's `/export md` could write an escape sequence into a
+  file.** The screen dropped control characters, but the export wrote the
+  stored text as it was, so an mDNS name or a `TXT` value that carried an
+  escape sequence ran when someone printed the file to a terminal. The text is
+  now cleaned when a command's output is stored, and again when the file is
+  written.
+
+- **The `scan` table did not line up in a colour terminal.** Rows were coloured
+  first and padded second, and the colour codes count as characters, so a cell
+  came out short and the rest of its row slid left. Output sent to a file or a
+  pipe was always fine, which is why the tests never saw it.
+
+- **Pasting into the terminal UI on Linux and macOS ran commands.** Typed in
+  one key at a time, every pasted line break was a press of Enter, so pasting
+  two lines ran the first and went on to the second. A paste now arrives as one
+  piece of text with its line breaks turned into spaces. On Windows nothing
+  changed, because the terminal library does not support it there.
+
+- **Terminal UI commands ignored words they could not read.** `/ping host abc`
+  pinged four times, `/mdns --timeout abc` used 3000, `/discover a b` dropped
+  the `b`, and `/arp add 1.2.3.4` with no MAC showed the ARP table. Each now
+  answers with a usage error. Worst was `/pcap eth0 --filter tcp port 80`,
+  which captured with the filter `tcp`, so every TCP packet, and said nothing.
+  `/pcap` now reads quotes, as in `--filter "tcp port 80"`, and says to use
+  them when a filter has spaces and none. `/mdns` also takes `--timeout-ms`,
+  the CLI's name for it, and `/arp` takes `delete` as well as `del`.
+
+- **`/export --output` in the terminal UI mangled Windows paths and ignored
+  `~`.** The path went through a splitter that treats a backslash as an
+  escape, so `C:\Users\me\out.md` became `C:Usersmeout.md`, a path relative to
+  drive C. And `~/scans/out.md` made a folder named `~`. A backslash is now an
+  ordinary character, and a leading `~` is your home folder.
+
+- **A crash in the terminal UI left no message.** The panic message went to the
+  alternate screen, which is thrown away when the UI closes, so a crash looked
+  like the program closing by itself with exit code 101. The terminal is now
+  put back first, so the message is where you can read it.
+
+- **`netscli ... | head` ended in a panic message.** When the reader closed the
+  pipe, `scan 127.0.0.1 -p 1-4096 --json | head` printed `failed printing to
+  stdout` and a panic, and exited 101. A reader that stops early now just ends
+  the output, with exit 0, for the machine-readable formats and the large
+  reports (`scan`, `discover`, `sweep`, `inspect` and `pcap --read`).
+
+- **`netscli serve` could keep running for minutes after its client had gone.**
+  When the client closes its end, the server drops every request it was
+  working on. A ping or capture already running on a blocking thread cannot be
+  dropped, and the process waited for it, up to the request's own timeout,
+  which the MCP tools allow to be ten minutes. The server now ends the process
+  as soon as it has stopped, with every response already written.
+
+- **`netscli scan <name>` did not say which address it scanned.** A name can
+  have several, the scan used the first, and nothing in the output said which.
+  The text header now reads `example.com (93.184.216.34)`. The JSON is the
+  same as before.
+
+- **`doctor` said a standard build had libpcap installed.** Standard builds
+  have no packet capture, and `doctor` is how people find that out, but it
+  printed a tick. It now reports libpcap as not installed and not compiled in,
+  and still exits 0. `setup` no longer offers to install it for such a build,
+  where it could not help. And `setup --print`, which is meant to print only,
+  no longer writes `~/.netscli/config.json`.
+
+- **Smaller things in what the CLI and the terminal UI print.**
+  - `/inspect` showed the round-trip time as `(RTT: Some(3))`, left out a MAC
+    address unless its maker was known, and never showed the host name.
+  - The terminal UI's status line said `host n/a` in most Linux and macOS
+    terminals, because it read `$HOSTNAME`, which zsh does not export. It asks
+    the system.
+  - In the discover table a long vendor name pushed the hostname column out of
+    line, a name with an accent was measured in bytes, and a single host was
+    "1 hosts". `sweep` had the same plural.
+  - `mdns --timeout-ms 999999` waits 30 seconds and then said nothing was found
+    within 999999ms.
+  - `--help` said `-j` defaults to 256 when `/config` can change that, gave
+    `_http._tcp` as an mDNS type when only `_http._tcp.local.` works, and gave a
+    PowerShell completions example that wrote to a file path that is not one.
+
+- **The CLI and terminal UI pages match the program.** The CLI page showed scan
+  output from before 0.3.4, and did not list the exit codes, the environment
+  variables or the limits that cut a value to fit. The operations page said
+  `inspect` with no ports is a host-only check, when it checks 22, 80 and 443.
+  The terminal UI page described the real screen with an illustration that
+  did not match it, and listed neither the keys nor `/arp add`.
 
 - **Discovery on Windows listed devices that had left the network.** The
   Windows device table keeps an entry for a while after its device goes,
@@ -175,6 +334,93 @@ its heading and collects entries. The date and the link go on with the tag.
   search tells a screen reader which result is current. The update dialog is
   no longer read out again at every step of a download. The tab spinner stops
   turning when the system asks for reduced motion.
+
+- **MCP clients built on the official SDK can connect.** Every reply the MCP
+  server sent carried both a result and an error, one of them empty, which
+  the protocol doesn't allow. The official TypeScript SDK drops a reply like
+  that, so a client built on it waited for the answer to its first message
+  and timed out. Replies now carry one or the other, and CI connects to the
+  server with the SDK whenever the code changes.
+
+- **Cancelling an MCP call works when the server is busy.** When a 17th call
+  arrived with 16 running, the server stopped reading what the client sent
+  until one finished. A cancel, which is how a client frees a slot, went
+  unread, and so did the client closing the connection. The server now
+  keeps reading. Up to 16 more calls wait for a slot, and any past that are
+  refused at once with an error.
+
+- **Cancelling or disconnecting stops an MCP packet capture.** A capture
+  ran on after its call was cancelled, timed out or lost its client, for up
+  to an hour, and gave its slot back straight away, so cancelling and
+  restarting got past the limit of four captures. It now stops, and gives
+  the slot back once it has. Background captures stop when the client goes
+  too. In a test on Windows, a server whose client left mid-capture exited
+  within 0.3 seconds, where before it was still running after 20. A
+  `capture_pcap` call with only `maxPackets` could also run for an hour. It
+  now stops after the 10 seconds the tool advertises.
+
+- **mDNS discovery no longer leaves its listener running.** A service type
+  without its final dot, such as `_http._tcp.local`, or a cancelled MCP
+  call left the listener running in the background, its network sockets
+  open and any searches it had started still repeating, until the program
+  exited. It now always stops.
+
+- **An MCP result too large to send keeps its file path and counts.** A
+  result over 1 MiB that wasn't a plain list was replaced by an error, so a
+  large packet capture lost its file name, packet count and job status along
+  with its packets. Now only its longest list is cut to fit. A background
+  capture also reports its file name as soon as it starts.
+
+- **Smaller MCP server fixes.**
+  - The server answers `ping`, which clients use to check that a server is
+    alive. It answered with an error.
+  - It agrees a protocol version it supports, instead of whatever version
+    the client asked for.
+  - Text from scanned hosts in HTTP headers and mDNS records is cut to 256
+    characters, as banners already were.
+  - `discover_mdns` takes at most 32 service types, and browses each once.
+  - An over-long request line no longer has its tail read as the next
+    message.
+  - A request that reuses the id of one just answered can always be
+    cancelled. A race could leave it impossible to cancel.
+
+- **Smaller scan fixes.**
+  - A port behind a firewall that rejects connections with an ICMP message
+    reads as filtered, as nmap reports it, instead of as an error.
+  - The HTTP probe sends IPv6 targets a valid `Host` header, with the
+    address in brackets. The old one was malformed, and a strict server can
+    refuse it.
+  - A stray `data/oui.json` in the folder netscli ran from no longer
+    replaces or empties the vendor list.
+  - On a network wider than /16, the default /24 is the one around this
+    machine's address on that network. It could come from another interface
+    or fall back to 192.168.1.0/24.
+  - Windows discovery re-checks at most 64 devices at once. Checked all at
+    once, a very long device table could drop devices that were there.
+  - The example in the `netscli-core` README compiles.
+
+### Security
+
+- **MCP packet captures never overwrite a file or follow a symlink.**
+  `capture_pcap` wrote `capture.pcap` in the server's working directory,
+  often your project, and replaced any file of that name. On Linux and
+  macOS, a `capture.pcap` symlink in a repository could send the capture
+  through to wherever it pointed, as root if the server ran as root.
+  Captures now create a new file and refuse a name that is taken, symlinks
+  included, and without `outputFile` each capture gets a new name.
+
+- **DNS lookups no longer go to Cloudflare behind your back.** When your own
+  DNS servers could not answer a lookup, including when a name simply had no
+  records of the type asked for, NetsCLI asked Cloudflare's public resolver
+  (1.1.1.1) the same question. That sent names you looked up to a third
+  party, unencrypted and without saying so, and the privacy page said the
+  opposite. It affected `dns` and every command that turns a host name into
+  an address, in the CLI, the terminal UI, the desktop app and the MCP
+  server. Lookups now go only to the DNS servers your computer is set up to
+  use. Some home routers refuse record types other than A and AAAA, and `dns`
+  now reports that refusal instead of quietly asking someone else.
+  `NETSCLI_DNS_FALLBACK` no longer does anything. The privacy page now says
+  what 0.3.4 and earlier did.
 
 ## [0.3.4] - 2026-10-04
 

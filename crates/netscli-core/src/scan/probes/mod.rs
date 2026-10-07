@@ -1,3 +1,4 @@
+use crate::common::is_unsafe_for_display;
 use std::time::Duration;
 use tokio::io::{AsyncRead, AsyncReadExt};
 use tokio::time::timeout;
@@ -64,7 +65,9 @@ where
 /// Strip dangerous control characters from bytes read off a scanned host.
 ///
 /// Everything here is chosen by the remote end. `ESC` and friends are
-/// replaced so they can never drive the operator's terminal.
+/// replaced so they can never drive the operator's terminal, and so are the
+/// bidi and zero-width characters that reorder or hide text (see
+/// [`is_unsafe_for_display`]).
 ///
 /// `\n`, `\r` and `\t` are deliberately preserved: this feeds
 /// `parse_http`, which splits an HTTP response on `\r\n`, so mangling
@@ -75,7 +78,7 @@ fn sanitize(bytes: &[u8]) -> String {
     String::from_utf8_lossy(bytes)
         .chars()
         .map(|c| {
-            if c.is_control() && c != '\n' && c != '\r' && c != '\t' {
+            if is_unsafe_for_display(c) && c != '\n' && c != '\r' && c != '\t' {
                 '.'
             } else {
                 c
@@ -94,7 +97,7 @@ fn sanitize(bytes: &[u8]) -> String {
 pub(in crate::scan) fn single_line_display(value: &str) -> String {
     value
         .chars()
-        .map(|c| if c.is_control() { '.' } else { c })
+        .map(|c| if is_unsafe_for_display(c) { '.' } else { c })
         .collect()
 }
 
@@ -128,5 +131,21 @@ mod tests {
     fn single_line_display_strips_newlines_and_escapes() {
         assert_eq!(single_line_display("a\nb"), "a.b");
         assert_eq!(single_line_display("a\u{1b}[2Jb"), "a.[2Jb");
+    }
+
+    #[test]
+    fn banners_lose_bidi_overrides_and_zero_width_characters() {
+        // Both reach a table cell: the override reorders what follows it,
+        // and the zero-width space makes two different banners look equal.
+        assert_eq!(sanitize("SSH-2.0\u{202E}hsso".as_bytes()), "SSH-2.0.hsso");
+        assert_eq!(single_line_display("nginx\u{200B}/1.25"), "nginx./1.25");
+        assert_eq!(single_line_display("a\u{2028}b"), "a.b");
+    }
+
+    #[test]
+    fn sanitize_still_keeps_the_http_whitespace() {
+        // The wider blocklist must not reach the three characters the HTTP
+        // parser needs.
+        assert_eq!(sanitize(b"a\r\nb\tc"), "a\r\nb\tc");
     }
 }

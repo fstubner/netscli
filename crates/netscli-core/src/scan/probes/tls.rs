@@ -110,8 +110,7 @@ pub(in crate::scan) async fn probe_tls(
     };
 
     if is_https_port(port, service) && alpn.as_deref() != Some("h2") {
-        if let Some((http, mut banner, raw)) =
-            probe_http(&mut tls_stream, &target.to_string(), timeout_ms).await
+        if let Some((http, mut banner, raw)) = probe_http(&mut tls_stream, target, timeout_ms).await
         {
             if let Some(proto) = tls.protocol.as_deref() {
                 banner = match banner {

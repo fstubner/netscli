@@ -1,52 +1,31 @@
+use super::parse::{parse_arp, parse_mdns, ArpCommand};
 use crate::tui_formatter::Formatter;
 use netscli_core::{NetworkManager, Ops};
 use ratatui::text::Line;
-use std::net::IpAddr;
-use std::str::FromStr;
 use tokio::sync::watch;
 
 pub(super) async fn handle_arp(parts: &[&str], ops: &Ops) -> Vec<Line<'static>> {
     let mut out = Vec::new();
-    match parts.get(1) {
-        Some(&"add") if parts.len() >= 4 => {
-            let ip: IpAddr = match parts[2].parse() {
-                Ok(ip) => ip,
-                Err(_) => {
-                    out.push(Formatter::format_error(
-                        "Invalid IP (usage: /arp add <ip> <mac>)",
-                    ));
-                    return out;
-                }
-            };
-            if let Ok(mac) = mac_address::MacAddress::from_str(parts[3]) {
-                match NetworkManager::add_entry(ip, mac) {
-                    Ok(_) => out.push(Line::from(format!("Added ARP {}", ip))),
-                    Err(e) => out.push(Formatter::format_error(&format!("Error: {}", e))),
-                }
-            } else {
-                out.push(Formatter::format_error("Invalid MAC"));
-            }
-        }
-        Some(&"del") if parts.len() >= 3 => {
-            if let Ok(ip) = parts[2].parse() {
-                match NetworkManager::delete_entry(ip) {
-                    Ok(_) => out.push(Line::from(format!("Deleted {}", ip))),
-                    Err(e) => out.push(Formatter::format_error(&format!("Error: {}", e))),
-                }
-            } else {
-                out.push(Formatter::format_error("Invalid IP"));
-            }
-        }
-        Some(&"clear") => match NetworkManager::clear_table() {
+    match parse_arp(parts) {
+        Ok(ArpCommand::Add(ip, mac)) => match NetworkManager::add_entry(ip, mac) {
+            Ok(_) => out.push(Line::from(format!("Added ARP {}", ip))),
+            Err(e) => out.push(Formatter::format_error(&format!("Error: {}", e))),
+        },
+        Ok(ArpCommand::Delete(ip)) => match NetworkManager::delete_entry(ip) {
+            Ok(_) => out.push(Line::from(format!("Deleted {}", ip))),
+            Err(e) => out.push(Formatter::format_error(&format!("Error: {}", e))),
+        },
+        Ok(ArpCommand::Clear) => match NetworkManager::clear_table() {
             Ok(_) => out.push(Line::from("Cleared ARP table")),
             Err(e) => out.push(Formatter::format_error(&format!("Error: {}", e))),
         },
-        _ => match ops.get_arp_table().await {
+        Ok(ArpCommand::Show) => match ops.get_arp_table().await {
             Ok(entries) => {
                 out.extend(Formatter::format_arp_table(&entries));
             }
             Err(e) => out.push(Formatter::format_error(&format!("Error: {e}"))),
         },
+        Err(message) => out.push(Formatter::format_error(&message)),
     }
     out
 }
@@ -64,22 +43,13 @@ pub(super) async fn handle_mdns(
     progress: Option<watch::Sender<String>>,
 ) -> Vec<Line<'static>> {
     let mut out = Vec::new();
-    // Parse optional --timeout <ms>; defaults to 3000.
-    let mut timeout_ms: u64 = 3000;
-    let mut i = 1usize;
-    while i < parts.len() {
-        match parts[i] {
-            "--timeout" | "-t" => {
-                if let Some(v) = parts.get(i + 1).and_then(|s| s.parse::<u64>().ok()) {
-                    timeout_ms = v.clamp(100, 30_000);
-                    i += 2;
-                    continue;
-                }
-            }
-            _ => {}
+    let timeout_ms = match parse_mdns(parts) {
+        Ok(ms) => ms,
+        Err(message) => {
+            out.push(Formatter::format_error(&message));
+            return out;
         }
-        i += 1;
-    }
+    };
     if let Some(tx) = &progress {
         let _ = tx.send(format!("Browsing mDNS for {timeout_ms}ms..."));
     }

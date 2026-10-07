@@ -4,6 +4,7 @@ mod inflight;
 #[cfg(feature = "pcap")]
 mod jobs;
 mod limits;
+mod lines;
 mod operations;
 mod progress;
 mod protocol;
@@ -11,13 +12,15 @@ mod schemas;
 mod targets;
 mod tools;
 
+use std::future::Future;
 use std::sync::{Arc, Mutex};
 
-use tokio::io::{self, AsyncBufReadExt, AsyncWriteExt, BufReader, BufWriter};
+use tokio::io::{self, AsyncRead, AsyncWrite, AsyncWriteExt, BufReader, BufWriter};
 use tokio::sync::{mpsc, Semaphore};
 use tokio::task::JoinSet;
 
-use dispatch::{handle_request, ServerState};
+use dispatch::{handle_request, ServerState, SharedState};
+use lines::{read_bounded_line, LineError};
 use protocol::{JsonRpcRequest, JsonRpcResponse};
 
 /// Ceiling on requests executing at once.
@@ -25,9 +28,21 @@ use protocol::{JsonRpcRequest, JsonRpcResponse};
 /// Each in-flight request can itself fan out to `Ops`-level concurrency
 /// (which clamps to 1024 sockets), so this bounds how many of those fans a
 /// misbehaving or enthusiastic client can stack up. Requests beyond the
-/// limit queue rather than being rejected — ordering of *responses* is not
-/// guaranteed by JSON-RPC, but every request still gets answered.
+/// limit wait for a slot rather than being rejected, up to
+/// `MAX_HELD_REQUESTS`.
 const MAX_CONCURRENT_REQUESTS: usize = 16;
+
+/// Most requests held at once, running or waiting for a slot.
+///
+/// The read loop used to wait for a free slot itself, so with all sixteen
+/// busy nothing more was read from stdin: not `notifications/cancelled`,
+/// which is how a client frees a slot, and not EOF. Cancelling failed exactly
+/// when the server was busiest. A request that finds every slot taken now
+/// waits in its own task, where a cancel can reach it, and the loop goes back
+/// to reading. This bound replaces the backpressure that waiting gave: past
+/// it, a request is answered with an error at once rather than kept in memory
+/// with its params.
+const MAX_HELD_REQUESTS: usize = 2 * MAX_CONCURRENT_REQUESTS;
 
 /// Longest any single request may run before it is abandoned.
 ///
@@ -36,12 +51,6 @@ const MAX_CONCURRENT_REQUESTS: usize = 16;
 /// ceiling is roughly 42 hours, and it holds one of the permits above for
 /// all of it. Sixteen such calls wedged the server with no way back.
 const MAX_REQUEST_DURATION: std::time::Duration = std::time::Duration::from_secs(15 * 60);
-
-/// Longest line accepted on stdin.
-///
-/// `next_line` grows a `String` without limit, so a client that sends
-/// megabytes and no newline was an unbounded allocation.
-const MAX_REQUEST_LINE_BYTES: usize = 4 * 1024 * 1024;
 
 pub use tools::tools_list;
 
@@ -75,14 +84,27 @@ pub async fn run_server() -> anyhow::Result<()> {
         pcap = cfg!(feature = "pcap"),
         "netscli MCP server starting"
     );
+    serve(io::stdin(), io::stdout(), handle_request).await
+}
 
-    let stdin = io::stdin();
-    let stdout = io::stdout();
-    // `.take()` bounds a single line; `lines()` on its own grows without
-    // limit. The reader is rebuilt per line below so the cap applies to each.
-    let mut reader = BufReader::new(stdin);
+/// The JSON-RPC loop over any transport.
+///
+/// `handle` answers one request. It is a parameter so the tests can drive
+/// the loop itself, with requests that never finish, to pin what happens
+/// when every slot is busy. `run_server` passes `handle_request`.
+async fn serve<R, W, H, F>(input: R, output: W, handle: H) -> anyhow::Result<()>
+where
+    R: AsyncRead + Unpin,
+    W: AsyncWrite + Unpin + Send + 'static,
+    H: Fn(SharedState, JsonRpcRequest) -> F,
+    F: Future<Output = JsonRpcResponse> + Send + 'static,
+{
+    // `read_bounded_line` caps each line; `lines()` on its own grows without
+    // limit.
+    let mut reader = BufReader::new(input);
     let state = Arc::new(Mutex::new(ServerState::default()));
-    let limiter = Arc::new(Semaphore::new(MAX_CONCURRENT_REQUESTS));
+    let slots = Arc::new(Semaphore::new(MAX_CONCURRENT_REQUESTS));
+    let held = Arc::new(Semaphore::new(MAX_HELD_REQUESTS));
     let inflight = Arc::new(inflight::InFlight::default());
 
     // Responses are funnelled through one channel to a single writer task.
@@ -91,7 +113,7 @@ pub async fn run_server() -> anyhow::Result<()> {
     // writer between tasks.
     let (tx, mut rx) = mpsc::unbounded_channel::<String>();
     let writer_task = tokio::spawn(async move {
-        let mut writer = BufWriter::new(stdout);
+        let mut writer = BufWriter::new(output);
         let mut written: u64 = 0;
         while let Some(line) = rx.recv().await {
             if writer.write_all(line.as_bytes()).await.is_err()
@@ -175,33 +197,35 @@ pub async fn run_server() -> anyhow::Result<()> {
             continue;
         }
 
-        // The permit is taken *here*, before spawning, so the semaphore
-        // bounds admission and not merely execution. Acquiring it inside the
-        // task meant a client could stack up unbounded tasks, each holding a
-        // full `params` value, faster than they completed; backpressure now
-        // reaches stdin, which is where it can actually slow the client down.
-        //
-        // Reading the next line still does not wait on the handler, so a slow
-        // `sweep_network` does not block requests queued behind it.
-        let Ok(permit) = Arc::clone(&limiter).acquire_owned().await else {
-            break;
-        };
-
-        let state = Arc::clone(&state);
-        let tx = tx.clone();
         // `Option<Option<_>>` distinguishes absent from explicit null; a
         // notification never reaches here, so the outer layer is always Some.
         let id = request.id.clone().flatten();
+
+        // Never wait here. See `MAX_HELD_REQUESTS`.
+        let Ok(admitted) = Arc::clone(&held).try_acquire_owned() else {
+            tracing::warn!(held = MAX_HELD_REQUESTS, "request refused, server busy");
+            send(&tx, &JsonRpcResponse::server_busy(id, MAX_HELD_REQUESTS));
+            continue;
+        };
+
+        let tx = tx.clone();
         let key = id.as_ref().map(inflight::key);
         let progress = progress::Progress::for_request(request.params.as_ref(), &tx);
         let inflight_for_task = Arc::clone(&inflight);
         let key_for_task = key.clone();
+        let slots = Arc::clone(&slots);
+        let call = handle(Arc::clone(&state), request);
         let task = async move {
-            let _permit = permit;
-            // A hard ceiling on the whole call. Per-probe timeouts are
-            // bounded but their product was not, and a request that never
-            // returns holds its permit forever.
-            let call = progress::scope(progress, handle_request(state, request));
+            let _admitted = admitted;
+            // Waiting for a slot happens in the task, so the read loop keeps
+            // reading and a cancel can reach a request that is still queued.
+            let Ok(_slot) = slots.acquire_owned().await else {
+                return;
+            };
+            // A hard ceiling on the whole call, counted from when it starts
+            // running. Per-probe timeouts are bounded but their product was
+            // not, and a request that never returns holds its slot forever.
+            let call = progress::scope(progress, call);
             let response = match tokio::time::timeout(MAX_REQUEST_DURATION, call).await {
                 Ok(response) => response,
                 Err(_) => {
@@ -236,6 +260,13 @@ pub async fn run_server() -> anyhow::Result<()> {
     // hour-long capture meant an hour.
     let aborted = handlers.len();
     handlers.shutdown().await;
+    // Background captures belong to no request, so the line above does not
+    // reach them, and they ran to the end of their duration after the client
+    // had gone.
+    #[cfg(feature = "pcap")]
+    if let Ok(state) = state.lock() {
+        state.stop_pcap_jobs();
+    }
     drop(tx);
     let requests_handled = writer_task.await.unwrap_or(0);
 
@@ -247,39 +278,5 @@ pub async fn run_server() -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Why a line could not be read.
-enum LineError {
-    /// The bytes were not a usable line, but the transport is still fine.
-    Invalid(&'static str),
-    /// The transport itself failed.
-    Fatal(std::io::Error),
-}
-
-/// Read one line, bounded, treating undecodable bytes as a bad message
-/// rather than the end of the server.
-async fn read_bounded_line<R>(reader: &mut R, out: &mut String) -> Result<usize, LineError>
-where
-    R: tokio::io::AsyncBufRead + Unpin,
-{
-    let mut raw = Vec::new();
-    // One byte past the limit, so an over-long line is detected rather than
-    // silently truncated into something that might still parse as JSON.
-    let mut limited = tokio::io::AsyncReadExt::take(reader, MAX_REQUEST_LINE_BYTES as u64 + 1);
-    let read = limited
-        .read_until(b'\n', &mut raw)
-        .await
-        .map_err(LineError::Fatal)?;
-    if read == 0 {
-        return Ok(0);
-    }
-    if raw.len() > MAX_REQUEST_LINE_BYTES {
-        return Err(LineError::Invalid("line exceeds the maximum request size"));
-    }
-    match String::from_utf8(raw) {
-        Ok(text) => {
-            out.push_str(&text);
-            Ok(read)
-        }
-        Err(_) => Err(LineError::Invalid("line is not valid UTF-8")),
-    }
-}
+#[cfg(test)]
+mod tests;
