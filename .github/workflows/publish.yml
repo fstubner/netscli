@@ -8,11 +8,13 @@ name: Publish to package managers
 #
 # Triggers:
 #   - On `workflow_dispatch` with a tag input. The canonical path:
-#     publish-release.yml dispatches this after promoting a draft, and it
-#     is also how you re-run a specific job after a transient failure.
+#     publish-release.yml dispatches this after promoting a draft whose
+#     assets it has already checked, and it is also how you re-run a
+#     specific job after a transient failure.
 #   - On `release: published`, still honoured for a release promoted by
-#     hand. Note that promoting by hand races release-drafter -- see
-#     publish-release.yml for why that path is no longer recommended.
+#     hand. Note that promoting by hand races release-drafter, and skips
+#     the build and the asset check -- see publish-release.yml for why that
+#     path is no longer recommended.
 
 on:
   release:
@@ -83,12 +85,14 @@ env:
 jobs:
   # Every job below sets `timeout-minutes`; GitHub's default is 360.
   #
-  # These are sized differently from ci.yml, and the reason matters. These
-  # jobs fire on `release: published` at the same moment release.yml starts
-  # building, so a publish job legitimately spends most of its life *waiting*
-  # for the asset it needs. `wait_for_asset` in scripts/release/lib.sh bounds
-  # that itself: 30 polls at 30s, so 15 minutes, and then it fails with a
-  # message naming the URL that never appeared.
+  # These are sized differently from ci.yml, and the reason matters. On the
+  # canonical path every asset is on the release before this workflow
+  # starts, and the waits below pass at once. A release promoted by hand
+  # can start these jobs before all its assets are there, and then a job
+  # spends most of its life *waiting* for the asset it needs.
+  # `wait_for_asset` in scripts/release/lib.sh bounds that itself: 30 polls
+  # at 30s, so 15 minutes, and then it fails with a message naming the URL
+  # that never appeared.
   #
   # That graceful failure is worth protecting. A job timeout below ~15
   # minutes would pre-empt it and replace a clear explanation with an opaque

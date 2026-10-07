@@ -1,46 +1,113 @@
 name: Release
 
+# Builds every release asset and attaches it to the DRAFT release for a tag.
+#
+# publish-release.yml calls this while the release is still a draft, waits
+# for it, checks the assets, and only then makes the release public. It
+# used to be the other way round: the release went public first and was
+# built afterwards. v0.3.4 had no Windows installer and no latest.json for
+# 1 h 38 min after it was published, and in that window install.ps1, the
+# in-app updater and every package manager that had already published
+# pointed at files that did not exist. v0.3.3's Windows files were 1 h 06
+# min late.
+#
+# There is deliberately no `release: published` trigger any more. Promoting
+# the draft is the last step, after this has finished, and a build started
+# by it would replace a public release's assets with new builds, whose
+# digests no longer match what the package managers just published.
+#
+# `workflow_dispatch` stays, for rebuilding a draft's assets by hand. The
+# `guard` job refuses a release that is already public, for the same
+# reason.
 on:
-  release:
-    # `published` fires when a draft transitions to public. `created` only
-    # fires on initial draft creation, which happens via release-drafter
-    # (a GITHUB_TOKEN-driven action) so wouldn't trigger us anyway.
-    types: [published]
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Tag of the draft release to build and upload assets for'
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to build and upload assets for (e.g. v0.1.0)'
+        description: 'Tag of the DRAFT release to build and upload assets for (e.g. v0.1.0)'
         required: true
         type: string
 
-# Keyed on the tag, not the ref: `workflow_dispatch` and `release: published`
-# reach the same tag by different refs, and two runs uploading assets for one
-# tag race each other on `softprops/action-gh-release`.
+# Keyed on the tag. Two runs uploading assets for one tag would race each
+# other, and the second would replace half of the first's files.
 #
 # `cancel-in-progress: false` deliberately, unlike ci.yml/site.yml. A cancelled
-# matrix leg leaves the release with some assets uploaded and some missing,
-# and publish.yml is meanwhile polling for exactly the assets that will now
-# never arrive. Queueing a duplicate run is harmless — it rebuilds and
-# re-uploads the same files.
+# matrix leg leaves the draft with some assets uploaded and some missing.
+# Nothing public depends on a draft, but a queued duplicate costs only time:
+# it rebuilds and re-uploads every file with --clobber.
 concurrency:
-  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  group: release-${{ inputs.tag }}
   cancel-in-progress: false
 
+# `inputs` carries the tag on both triggers.
+env:
+  TAG: ${{ inputs.tag }}
+
 jobs:
+  # Every job below needs this one, so nothing builds, signs or uploads
+  # unless the tag is well formed, the run is on the default branch, and the
+  # release is still a draft.
+  #
+  # The default branch, because the `release-signing` environment the
+  # signing jobs use allows deployments from `main` and `v*` tags only. A run
+  # from anywhere else would build for 15 minutes and then be refused at the
+  # first signing job.
+  guard:
+    name: Check the release is a draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      # Write, for a read. GitHub shows draft releases only to a token that
+      # can push, so with `contents: read` the draft would look missing.
+      contents: write
+    steps:
+      - name: Refuse a malformed tag, another branch, or a public release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          # The same shape lib.sh's validate_tag accepts. The tag reaches
+          # checkout refs, asset URLs and `gh` arguments below.
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
+            echo "::error::refusing to build malformed tag '$TAG'"
+            exit 1
+          fi
+          if [[ "$GITHUB_REF" != "refs/heads/${DEFAULT_BRANCH}" ]]; then
+            echo "::error::run this from ${DEFAULT_BRANCH}, not ${GITHUB_REF}. The signing jobs may only deploy from ${DEFAULT_BRANCH}."
+            exit 1
+          fi
+          if ! is_draft=$(gh release view "$TAG" --json isDraft --jq '.isDraft' 2>/dev/null); then
+            echo "::error::no release found for ${TAG}. release-drafter makes the draft; run it or draft one by hand."
+            exit 1
+          fi
+          if [[ "$is_draft" != "true" ]]; then
+            echo "::error::${TAG} is already public. Rebuilding would change every digest the package managers have published."
+            exit 1
+          fi
+          echo "${TAG} is a draft; building its assets."
+
   # Both jobs below set `timeout-minutes`; GitHub's default is 360. A stalled
   # `apt-get` once held CI jobs at that default for six hours (see ci.yml),
   # and these run the same system-dependency installs.
   #
-  # A timeout here is safe to recover from: the job uploads assets to an
-  # existing release, so a missed asset is re-uploaded by re-running the job.
-  # Downstream, publish.yml's `wait_for_asset` fails with a clear message
-  # rather than publishing a manifest for something that is not there.
+  # A timeout here is safe to recover from: the job uploads to a release that
+  # is still a draft, so a missing asset is re-uploaded by re-running the job,
+  # and publish-release.yml will not make the release public until every
+  # asset is there.
   #
   # Sized against measured runs: the slowest observed job is the Windows GUI
   # installer at ~7 minutes, so 60 leaves ample room for a cold cache,
   # cross-compilation and bundling while still bounding a genuine hang.
   release:
     name: Build and Release
+    needs: guard
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     permissions:
@@ -121,12 +188,11 @@ jobs:
             build_flags: --features pcap
             pcap: true
     steps:
-      # On workflow_dispatch we need the tag ref explicitly. On release
-      # events the default ref is already the tag.
+      # The tag, explicitly. The run itself is on the default branch.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          ref: ${{ github.event.inputs.tag || github.ref }}
+          ref: ${{ env.TAG }}
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c # stable
@@ -199,9 +265,9 @@ jobs:
       # ever downloads. So the Windows legs upload the unsigned binary as a
       # workflow artifact instead, and `sign-windows` does the rest.
       #
-      # It also means an unsigned .exe is never a release asset, not even
-      # briefly: release.yml runs after the draft has been promoted, so
-      # anything uploaded here is immediately public.
+      # It also means an unsigned .exe is never a release asset, not even on
+      # the draft. A draft can still be published by hand from the web UI,
+      # and whatever it carries at that moment goes public with it.
       - name: Hand the unsigned binary to the signing job
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -214,9 +280,14 @@ jobs:
       # Sigstore keyless signing via the GitHub Actions OIDC token. Produces
       # a .sig and .pem alongside each binary; verifiable by anyone with:
       #   cosign verify-blob --signature <asset>.sig --certificate <asset>.pem \
-      #     --certificate-identity-regexp 'https://github.com/fstubner/netscli/.github/workflows/release\.yml@.*' \
+      #     --certificate-identity-regexp '^https://github\.com/fstubner/netscli/\.github/workflows/release\.yml@refs/(heads/main|tags/v[0-9.]+)$' \
       #     --certificate-oidc-issuer https://token.actions.githubusercontent.com \
       #     <asset>
+      # The identity is this file on main (or, before v0.3.1, on the release
+      # tag), also when publish-release.yml calls it: Fulcio names the called
+      # workflow, not the caller. A looser `release\.yml@.*` would accept a
+      # signature made by this file on any branch anyone with write access
+      # can push.
       - name: Install cosign
         if: runner.os != 'Windows'
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
@@ -279,18 +350,22 @@ jobs:
             --output-certificate "${{ matrix.asset_name }}.pem" \
             "${{ matrix.asset_name }}"
 
+      # `gh release upload`, not softprops/action-gh-release. That action
+      # PATCHes the release on every upload, rewriting its name, body and
+      # draft flag from what it read a moment earlier, and with `draft`
+      # unset it publishes the draft once its files are up. Either is wrong
+      # for a release that must stay a draft until publish-release.yml has
+      # checked every asset. `gh` finds the draft by its tag, uploads, and
+      # touches nothing else. `--clobber` so a re-run replaces its own files.
       - name: Upload Release Asset
         if: runner.os != 'Windows'
-        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
-        with:
-          files: |
-            target/${{ matrix.target }}/release/${{ matrix.asset_name }}
-            target/${{ matrix.target }}/release/${{ matrix.asset_name }}.sha256
-            target/${{ matrix.target }}/release/${{ matrix.asset_name }}.sig
-            target/${{ matrix.target }}/release/${{ matrix.asset_name }}.pem
-          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+        shell: bash
+        working-directory: target/${{ matrix.target }}/release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          ASSET: ${{ matrix.asset_name }}
+        run: gh release upload "$TAG" "$ASSET" "$ASSET.sha256" "$ASSET.sig" "$ASSET.pem" --clobber
 
   # ─── Desktop GUI installers ───────────────────────────────────────────
   # Builds the Tauri 2 desktop app on each native runner. .msi/.dmg/.deb/
@@ -309,11 +384,13 @@ jobs:
   # are out of matrix scope for v0.2.1 to keep CI budget reasonable.
   gui:
     name: Build GUI installer
+    needs: guard
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
-    # For TAURI_SIGNING_PRIVATE_KEY, the in-app updater's signing key. Same
-    # environment as sign-windows, no protection rules, for the same reason:
-    # it scopes the secret rather than gating the job.
+    # For TAURI_SIGNING_PRIVATE_KEY, the in-app updater's signing key, and on
+    # Windows the Certum credentials. Same environment as sign-windows. It
+    # admits deployments from `main` and `v*` tags only, which the `guard`
+    # job checks before anything is built.
     environment: release-signing
     permissions:
       contents: write
@@ -346,7 +423,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          ref: ${{ github.event.inputs.tag || github.ref }}
+          ref: ${{ env.TAG }}
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c # stable
@@ -706,15 +783,15 @@ jobs:
               "$f"
           done
 
+      # `gh`, for the reasons given at the CLI job's upload.
       - name: Upload Release Asset
         if: runner.os != 'Windows'
-        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
-        with:
-          files: |
-            ${{ runner.temp }}/gui-out/${{ matrix.asset_prefix }}.*
-          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+        shell: bash
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          ASSET_PREFIX: ${{ matrix.asset_prefix }}
+        run: gh release upload "$TAG" "${RUNNER_TEMP}/gui-out/${ASSET_PREFIX}".* --clobber
 
   # ─── Authenticode signing for the Windows artifacts ───────────────────
   # Every Windows artifact is signed here, and nowhere else. The two matrix
@@ -733,13 +810,24 @@ jobs:
   # so the runner's OS stops mattering. See scripts/release/sign-windows.sh.
   #
   # `environment: release-signing` scopes the credentials to this job. The
-  # environment deliberately carries no protection rules: a required
-  # reviewer or a branch policy here would stall every release at the point
-  # where the artifacts are half uploaded. It exists to hold the secrets,
-  # not to gate anything.
+  # environment admits deployments from `main` and `v*` tags only, and has
+  # no required reviewers. A reviewer would hold the release at this job,
+  # but on a draft that holds nothing public, so it is possible now that the
+  # release is built before it is published. Not added, because a stolen
+  # maintainer token can approve its own deployment through the API.
+  #
+  # It waits for every build leg but no longer needs them all to succeed.
+  # `!cancelled()` lets it run when a Linux or macOS leg failed. Before, one
+  # failed leg anywhere skipped Windows signing, the step that broke the
+  # last two releases, so its own problems only showed up on the re-run.
+  # Now one attempt reports both, and everything that did build lands on
+  # the draft. The Windows legs are still required: "Check what arrived"
+  # fails unless all three Windows files are here. `guard` must have
+  # passed, or nothing was built and there is nothing to sign.
   sign-windows:
     name: Sign Windows artifacts
-    needs: [release, gui]
+    needs: [guard, release, gui]
+    if: ${{ !cancelled() && needs.guard.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: release-signing
@@ -882,13 +970,13 @@ jobs:
           done
           ls -la
 
+      # `gh`, for the reasons given at the CLI job's upload.
       - name: Upload Release Asset
-        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
-        with:
-          files: ${{ runner.temp }}/win/*
-          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+        shell: bash
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release upload "$TAG" "${RUNNER_TEMP}"/win/* --clobber
 
   # ─── latest.json for the in-app updater ───────────────────────────────
   # Runs once every update file is final and signed: the macOS tarballs and
@@ -900,15 +988,25 @@ jobs:
   # is visible before users meet it -- and once the app ships with a key,
   # it accepts nothing else, so a bad release there would be one every
   # install fails to update to.
+  #
+  # The release is still a draft here, so `gh` downloads through the API
+  # with this job's token. The public download URLs only work once it is
+  # published.
+  #
+  # The `if` replaces the default rather than restating it. GitHub applies a
+  # failure to every job further down a chain of `needs` unless that job
+  # has a condition of its own ("Defining prerequisite jobs" in its docs), so
+  # a failed CLI leg, which sign-windows is allowed to outlive, would skip
+  # this job as well. latest.json depends on the GUI legs and sign-windows,
+  # and on nothing else.
   updater-manifest:
     name: Publish latest.json
     needs: [gui, sign-windows]
+    if: ${{ !cancelled() && needs.gui.result == 'success' && needs.sign-windows.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
       contents: write
-    env:
-      TAG: ${{ github.event.inputs.tag || github.ref_name }}
     steps:
       # Default branch for the script, as elsewhere. The public key is read
       # from the tag below, because that is the one the shipped app holds.

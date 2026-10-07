@@ -162,6 +162,14 @@ jobs:
       # reach, so its test answers in the API's place.
       - name: test Store submission script
         run: bash scripts/release/msstore-submit_test.sh
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+      # The last check before a release goes public, and the builder of the
+      # in-app updater's latest.json. Both run only during a release, and a
+      # mistake in the first one would let an incomplete release out.
+      - name: test release asset and updater manifest checks
+        run: node --test scripts/release/*.test.mjs
       - name: PSScriptAnalyzer install.ps1
         shell: pwsh
         # Write-Host is intentional here (colored installer UX output, which
