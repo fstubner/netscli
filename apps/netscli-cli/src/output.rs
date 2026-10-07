@@ -64,9 +64,29 @@ pub(crate) fn print_structured<T: Serialize + ?Sized>(
     // An empty CSV or Markdown table means nothing was found; print nothing
     // rather than a blank line.
     if !text.is_empty() {
-        println!("{text}");
+        emit(&text)?;
     }
     Ok(())
+}
+
+/// Print one block of output, as `println!` does, except that a reader that
+/// has gone away ends the output instead of panicking.
+///
+/// `netscli scan ... --json | head` closes the pipe after ten lines. That is
+/// the reader saying it has seen enough, not a fault, and `println!` turned it
+/// into a panic message and exit code 101. This stops quietly with 0, as other
+/// command-line tools do. Any other write error is still an error.
+///
+/// Used where the output can be large. The few-line prints elsewhere fit in a
+/// pipe's buffer, so a reader that leaves early never reaches them.
+pub(crate) fn emit(text: &str) -> Result<()> {
+    use std::io::{ErrorKind, Write};
+
+    let mut stdout = std::io::stdout().lock();
+    match writeln!(stdout, "{text}").and_then(|()| stdout.flush()) {
+        Err(error) if error.kind() == ErrorKind::BrokenPipe => std::process::exit(0),
+        other => Ok(other?),
+    }
 }
 
 /// Refuse to write over a file that is already there, unless `force`.

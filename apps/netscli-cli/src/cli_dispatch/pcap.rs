@@ -2,7 +2,9 @@ use super::CommandContext;
 use crate::args::ListOutput;
 use crate::cli_formatter::CliFormatter;
 use crate::commands;
-use crate::output::{ensure_not_overwritten, list_output_format, print_structured, OutputFormat};
+use crate::output::{
+    emit, ensure_not_overwritten, list_output_format, print_structured, OutputFormat,
+};
 use anyhow::Result;
 
 #[allow(clippy::too_many_arguments)]
@@ -50,9 +52,7 @@ pub(super) async fn run(
             OutputFormat::Csv | OutputFormat::Markdown => {
                 print_structured(format, &parsed.packets)?
             }
-            OutputFormat::Text => {
-                println!("{}", CliFormatter::format_pcap_parse_result(&parsed));
-            }
+            OutputFormat::Text => emit(&CliFormatter::format_pcap_parse_result(&parsed))?,
         }
         return Ok(());
     }

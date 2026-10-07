@@ -2,7 +2,7 @@ use super::CommandContext;
 use crate::args::ListOutput;
 use crate::cli_formatter::CliFormatter;
 use crate::commands;
-use crate::output::{list_output_format, output_format, print_structured, OutputFormat};
+use crate::output::{emit, list_output_format, output_format, print_structured, OutputFormat};
 use anyhow::Result;
 use netscli_core::{parse_ports_checked, Host, PortResult, SweepEntry};
 use serde::Serialize;
@@ -23,12 +23,12 @@ pub(super) async fn run_discover(
         OutputFormat::Json | OutputFormat::Yaml | OutputFormat::Csv | OutputFormat::Markdown => {
             print_structured(format, &hosts)?
         }
-        OutputFormat::Text => {
-            println!(
-                "{}",
-                CliFormatter::format_discover_result(&hosts, &subnet_str, start, ctx.local_addr)
-            );
-        }
+        OutputFormat::Text => emit(&CliFormatter::format_discover_result(
+            &hosts,
+            &subnet_str,
+            start,
+            ctx.local_addr,
+        ))?,
     }
     Ok(())
 }
@@ -54,17 +54,12 @@ pub(super) async fn run_scan(
             // `status`, so callers that want only open ports still can.
             print_structured(format, &results)?;
         }
-        OutputFormat::Text => {
-            println!(
-                "{}",
-                CliFormatter::format_scan_result(
-                    &results,
-                    &target_label(host, ip),
-                    start,
-                    ctx.local_addr
-                )
-            );
-        }
+        OutputFormat::Text => emit(&CliFormatter::format_scan_result(
+            &results,
+            &target_label(host, ip),
+            start,
+            ctx.local_addr,
+        ))?,
     }
     Ok(())
 }
@@ -96,12 +91,11 @@ pub(super) async fn run_inspect(
         OutputFormat::Json | OutputFormat::Yaml | OutputFormat::Csv | OutputFormat::Markdown => {
             print_structured(format, &data)?
         }
-        OutputFormat::Text => {
-            println!(
-                "{}",
-                CliFormatter::format_inspect_result(&data, start, ctx.local_addr)
-            );
-        }
+        OutputFormat::Text => emit(&CliFormatter::format_inspect_result(
+            &data,
+            start,
+            ctx.local_addr,
+        ))?,
     }
     Ok(())
 }
@@ -123,12 +117,12 @@ pub(super) async fn run_sweep(
         OutputFormat::Csv | OutputFormat::Markdown => {
             print_structured(format, &sweep_table_rows(&results))?
         }
-        OutputFormat::Text => {
-            println!(
-                "{}",
-                CliFormatter::format_sweep_result(&results, &subnet_str, start, ctx.local_addr)
-            );
-        }
+        OutputFormat::Text => emit(&CliFormatter::format_sweep_result(
+            &results,
+            &subnet_str,
+            start,
+            ctx.local_addr,
+        ))?,
     }
     Ok(())
 }
