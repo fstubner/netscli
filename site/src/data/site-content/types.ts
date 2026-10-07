@@ -24,7 +24,8 @@ export interface Meta {
   /** What the share image shows, for the `twitter:image:alt` tag. Every
    *  page's card uses the same asset, so one description covers them all. */
   ogImageAlt: string;
-  /** Favicon + apple-touch-icon. */
+  /** The favicon, an SVG. The layout emits one `rel="icon"` link for it and
+   *  no apple-touch-icon. */
   faviconPath: string;
   themeColor: string;
 }

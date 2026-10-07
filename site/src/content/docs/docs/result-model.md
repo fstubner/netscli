@@ -70,7 +70,8 @@ netscli discover --json | jq '.[].ip'
 ```
 
 `sweep` returns a different shape. Each entry pairs a whole host object with
-the ports found open on it, so the host fields are one level down:
+the ports found open on it, so the host fields are one level down. The sample is
+trimmed to a few fields of each:
 
 ```json
 [

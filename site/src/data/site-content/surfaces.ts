@@ -10,7 +10,7 @@ export const surfaces: SurfaceCard[] = [
   {
     title: 'Desktop app',
     body:
-      'The desktop app is where you compare results side by side. Tabs keep several investigations open at once, and every result is sortable, filterable, and exportable, with the full history kept as you go.',
+      'The desktop app is where you compare results side by side. Tabs keep several investigations open at once, and every result is sortable, filterable, and exportable. Your last 20 runs are kept so you can reopen them.',
     image: {
       src: '/gui-scan.png',
       webp: '/gui-scan.webp',
@@ -28,7 +28,7 @@ export const surfaces: SurfaceCard[] = [
       src: '/assets/tui-discover.png',
       webp: '/assets/tui-discover.webp',
       alt:
-        'netscli terminal UI running /discover with demo hostnames, vendors, and response times',
+        'The NetsCLI terminal UI running /discover, listing hosts with their device IDs, vendors and hostnames, with local interface activity along the bottom',
       width: 1640,
       height: 930,
     },
@@ -37,7 +37,7 @@ export const surfaces: SurfaceCard[] = [
   {
     title: 'Command line',
     body:
-      'Use the CLI for repeatable diagnostics and automation. Network operations take <code>--json</code> and <code>--yaml</code>, and lists also <code>--csv</code> and <code>--md</code>, so scripts and other tools can consume the same data the desktop app displays.',
+      'Use the CLI for repeatable diagnostics and automation. Network operations take <code>--json</code> and <code>--yaml</code>, and lists also <code>--csv</code> and <code>--md</code>, so scripts and other tools can consume the same data the desktop app displays. The sample output is trimmed to a few fields.',
     // `--resolve` on the discover line is load-bearing, not decoration.
     // `hostname` is only populated when the flag is passed (core's
     // discover.rs guards the reverse-lookup pass on it), so without it this

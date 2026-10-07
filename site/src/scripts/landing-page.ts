@@ -104,15 +104,22 @@ export function initLandingPage(repo: string, cratesIoCrate?: string, npmPackage
         // downloads" beside a package installed daily. Nothing is better
         // than a number that is wrong in the direction that matters.
         if (total === 0) return;
-        // "total" is a claim about both sources, so only make it once both
-        // have reported. Measured on this page: "Downloads: 178 total" with
+        // The label names the sources it counts instead of saying "total": a
+        // product can ship on npm without setting `npmPackage` (this site does),
+        // and "total" then claimed more than it measured. Naming the sources is
+        // still a claim that all of them are in, so only make it once all have
+        // reported. Measured on this page: "Downloads: 178 total" with
         // only GitHub in, then "Downloads: 2,635 total" once crates.io
         // landed -- same label, same page, a fifteenfold difference. Until
-        // both are in, the number is a lower bound and now says so.
+        // all are in, the number is a lower bound and now says so.
         const complete = githubSettled && cratesSettled && npmSettled
           && githubDownloads !== null
           && (!cratesIoCrate || cratesDownloads !== null)
           && (!npmPackage || npmDownloads !== null);
+        const counted = ["GitHub releases", cratesIoCrate && "crates.io", npmPackage && "npm"]
+          .filter(Boolean)
+          .join(", ")
+          .replace(/, ([^,]*)$/, " and $1");
         const el = document.getElementById("downloads");
         if (el) {
           // fmtDownloads already appends "+" above 1000; don't double it.
@@ -120,8 +127,8 @@ export function initLandingPage(repo: string, cratesIoCrate?: string, npmPackage
           const text = complete || shown.endsWith("+") ? shown : `${shown}+`;
           el.textContent = `${text} ${total === 1 ? "download" : "downloads"}`;
           el.dataset.totalDownloads = complete
-            ? `Downloads: ${fmt(total)} total`
-            : `Downloads: ${fmt(total)} so far; one source has not reported`;
+            ? `Downloads: ${fmt(total)} from ${counted}`
+            : `Downloads: ${fmt(total)} so far. One source has not reported.`;
           el.setAttribute("aria-label", el.dataset.totalDownloads);
           el.hidden = false;
         }

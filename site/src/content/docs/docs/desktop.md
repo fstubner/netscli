@@ -8,7 +8,7 @@ head:
 
 NetsCLI Desktop is the interactive interface for reviewing network results. It is built for users who want tables, filters, row details, history, exports, and multiple operation tabs open at once.
 
-<img src="/assets/gui-scan.png" width="2000" height="1125" alt="Port scan results in NetsCLI Desktop, with the details pane open below the table showing the banner and raw response for the selected row" />
+<img src="/assets/gui-scan.png" width="2000" height="1125" alt="Port scan results in NetsCLI Desktop, with a Version column and the details pane open below the table showing the banner for the selected row" />
 
 *Port scan. The details pane carries the banner, headers and raw response for the selected row.*
 
@@ -109,7 +109,7 @@ The pane can be collapsed, resized, or expanded to fill the content area.
 
 ## History and exports
 
-History records recent operations so you can reopen or repeat work. If history persistence is enabled, command history and result snapshots survive app restarts.
+History keeps your last 20 runs, with their results, so you can reopen or repeat them. Very large results are skipped. The history survives app restarts. To stop keeping it, turn off **Save History** in Settings, which also clears the runs already saved.
 
 Export options:
 
@@ -133,11 +133,12 @@ Settings control:
 - Network interface used for local status indicators.
 - Address family preference for the selected interface display.
 - Traffic unit and precision display.
+- MCP server setup, which gives you the config to paste into your MCP client, or the command to install `netscli` first when the app cannot find it.
 
 ## Updates
 
 When the app opens, it checks GitHub for a newer release. If there is one, a
-notice appears in the corner. The check fetches one small file and nothing else. You can turn it off under **Settings → Release Notifications**.
+notice appears in the corner. The check is one small request. Installs that can update themselves fetch a small file from the release downloads, and the rest ask GitHub's API for the latest release. Nothing else is fetched. You can turn it off under **Settings → Release Notifications**.
 
 Where the app can update itself, the notice opens a dialog with the new version's release notes and three choices, **Install and restart**, **Later** or **Skip this version**. Nothing downloads until you choose to install. The
 update is checked against NetsCLI's signing key before it is installed. On
