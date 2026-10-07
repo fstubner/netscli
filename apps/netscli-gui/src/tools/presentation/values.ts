@@ -24,12 +24,25 @@ export function numberOrUndefined(value?: string): number | undefined {
  * `\r` and tab are in the trigger set because both can carry a value onto a
  * fresh line or cell where it would lead again.
  */
-/** A control character other than the tab, CR and LF a CSV cell can carry.
- *  Unicode Cc, U+0000-U+001F and U+007F-U+009F, which is Rust's `is_control`. */
+/** A character a CSV cell must not carry as is: a control character other
+ *  than the tab, CR and LF a cell can carry, or a bidi or zero-width one that
+ *  reorders or hides text. The same set as `is_unsafe_for_display` in
+ *  netscli-core (crates/netscli-core/src/common/terminal.rs), which the CLI's
+ *  CSV export uses; testdata/csv-escape.json holds both to it. */
 function isDefusedControl(char: string): boolean {
   if (char === '\t' || char === '\r' || char === '\n') return false;
   const code = char.codePointAt(0) ?? 0;
-  return code <= 0x1f || (code >= 0x7f && code <= 0x9f);
+  return (
+    code <= 0x1f ||
+    (code >= 0x7f && code <= 0x9f) ||
+    code === 0x061c ||
+    (code >= 0x200b && code <= 0x200f) ||
+    code === 0x2028 ||
+    code === 0x2029 ||
+    (code >= 0x202a && code <= 0x202e) ||
+    (code >= 0x2060 && code <= 0x206f) ||
+    code === 0xfeff
+  );
 }
 
 /** A finite decimal number, as Rust's `str::parse::<f64>` accepts it. */
