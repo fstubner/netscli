@@ -4,6 +4,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use serde::{Deserialize, Serialize};
 use tauri_plugin_dialog::DialogExt;
 
+use super::dialog;
+
 const SAVE_SETTINGS_FILE: &str = "gui-save-settings.json";
 const LEGACY_CAPTURE_SETTINGS_FILE: &str = "gui-capture-settings.json";
 
@@ -29,15 +31,16 @@ pub(crate) fn set_file_save_ask_each_time(
 }
 
 #[tauri::command]
-pub(crate) fn choose_file_save_default_directory(
+pub(crate) async fn choose_file_save_default_directory(
     app: tauri::AppHandle,
 ) -> Result<FileSavePreferences, String> {
-    let selected = app
+    let picker = app
         .dialog()
         .file()
         .set_title("Choose NetsCLI Save Folder")
-        .set_can_create_directories(true)
-        .blocking_pick_folder()
+        .set_can_create_directories(true);
+    let selected = dialog::ask(|done| picker.pick_folder(done))
+        .await
         .ok_or_else(|| "Folder selection cancelled".to_string())?;
 
     let path = selected
