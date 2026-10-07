@@ -16,8 +16,9 @@ pub struct DnsRecord {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[cfg_attr(feature = "ts", ts(optional))]
     pub ttl_seconds: Option<u32>,
-    /// Resolver path used for this answer, for example "system" or
-    /// "public_fallback".
+    /// Resolver that answered. Always "system". Results saved by 0.3.4 and
+    /// earlier may say "public_fallback", from a public DNS fallback that
+    /// has since been removed.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[cfg_attr(feature = "ts", ts(optional))]
     pub resolver_source: Option<String>,

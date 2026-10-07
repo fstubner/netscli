@@ -138,6 +138,19 @@ its heading and collects entries. The date and the link go on with the tag.
   Captures now create a new file and refuse a name that is taken, symlinks
   included, and without `outputFile` each capture gets a new name.
 
+- **DNS lookups no longer go to Cloudflare behind your back.** When your own
+  DNS servers could not answer a lookup, including when a name simply had no
+  records of the type asked for, NetsCLI asked Cloudflare's public resolver
+  (1.1.1.1) the same question. That sent names you looked up to a third
+  party, unencrypted and without saying so, and the privacy page said the
+  opposite. It affected `dns` and every command that turns a host name into
+  an address, in the CLI, the terminal UI, the desktop app and the MCP
+  server. Lookups now go only to the DNS servers your computer is set up to
+  use. Some home routers refuse record types other than A and AAAA, and `dns`
+  now reports that refusal instead of quietly asking someone else.
+  `NETSCLI_DNS_FALLBACK` no longer does anything. The privacy page now says
+  what 0.3.4 and earlier did.
+
 ## [0.3.4] - 2026-10-04
 
 ### Added
