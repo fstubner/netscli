@@ -70,6 +70,15 @@ permissions:
 # version regardless of trigger.
 env:
   TAG: ${{ github.event.inputs.tag || github.ref_name }}
+  # Komac, which writes the winget manifests and opens the pull request in
+  # the two winget jobs. Pinned to one release binary AND its SHA-256,
+  # because that binary is handed WINGET_TOKEN. The digest is the
+  # komac-2.16.0-x86_64-pc-windows-msvc.exe line of the SHA256SUMS file on
+  # https://github.com/russellbanks/Komac/releases/tag/v2.16.0, and the
+  # GitHub API's own digest for that asset agrees. Bump both lines together,
+  # from the same two sources.
+  KOMAC_VERSION: 2.16.0
+  KOMAC_SHA256: bdc45baf028f750da7519cc8a5f2eab5dfef46dfe88650eeb0d0a9bf51446e4f
 
 jobs:
   # Every job below sets `timeout-minutes`; GitHub's default is 360.
@@ -240,25 +249,37 @@ jobs:
         run: bash scripts/release/publish-scoop.sh "$TAG"
 
   # ─── Winget (microsoft/winget-pkgs) ────────────────────────────────
-  # Forks microsoft/winget-pkgs under the user's account, generates a
-  # 0.X.Y/ manifest folder from the release, opens a PR. Moderator
-  # approval lands it on the public catalog.
+  # Komac reads the package's latest manifests from microsoft/winget-pkgs,
+  # writes the new version's from the release's installer, and opens a PR
+  # from the token owner's fork. Moderator approval lands it on the public
+  # catalog.
+  #
+  # This used to be vedantmgoyal9/winget-releaser, and its SHA pin did not
+  # pin what got the token. At the pinned commit the action installs
+  # `cargo-bins/cargo-binstall@main`, a moving branch, uses it to install
+  # whichever `komac` is newest, and hands that binary WINGET_TOKEN, a
+  # classic PAT that can write to every repository its owner can. The steps
+  # below do what the action did -- install Komac, `komac update --submit`,
+  # `komac cleanup --only-merged` -- with Komac pinned to one binary and its
+  # digest (KOMAC_* at the top of this file), and the token in the
+  # environment of the two steps that use it and of nothing else.
+  #
+  # Re-running it does not open a second PR. Komac looks for an existing PR
+  # for the same package and version first, and in CI it stops there rather
+  # than asking (src/commands/utils/mod.rs, `prompt_existing_pull_request`,
+  # at v2.16.0).
   winget:
     name: Winget
     if: inputs.only == '' || inputs.only == 'winget'
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
-      # The `winget-releaser` action fetches the release's asset list
-      # via the GitHub API and bails fast if the matching .exe is not
-      # present yet. Both publish.yml and release.yml fire on
-      # `release: published`, so without polling here we race
-      # release.yml's Windows runner: in v0.2.5's run the action ran
-      # at ~1m45s but the .exe didn't land until ~7m later, giving
-      # the empty-`--urls` failure that needed a manual rerun. Poll
-      # the .sha256 sidecar (uploaded last in the matrix; ~600 bytes,
-      # cheap to HEAD) before invoking. Modeled on the AUR job's
-      # equivalent step further down.
+      # The release's assets exist before publish-release.yml makes it
+      # public, so on that path this passes at once. It is kept for a release
+      # promoted by hand while its build is still running, which is what
+      # v0.2.5 hit: the job ran at ~1m45s, the .exe landed ~7m later, and
+      # the submission failed. Polls the .sha256 sidecar, ~600 bytes and
+      # cheap to HEAD, as the AUR job's `verified_sha` does.
       - name: Wait for Windows CLI release asset
         shell: bash
         env:
@@ -279,15 +300,9 @@ jobs:
           exit 1
 
       # `version` is the PackageVersion that lands in the catalog, and it must
-      # not carry the tag's `v`. The action strips it only when the input is
-      # empty -- its own source reads
-      #
-      #   If ('' -eq '${{ inputs.version }}') { tag_name -replace '^v' }
-      #   Else                                { inputs.version }
-      #
-      # -- so passing `${{ env.TAG }}` opted out of the stripping and would
-      # have submitted `v0.3.1` beside the existing `0.3.0`. Winget sorts
-      # versions naturally, so the two do not compare as an upgrade.
+      # not carry the tag's `v`. Komac takes it exactly as given, so passing
+      # the tag would submit `v0.3.1` beside the existing `0.3.0`. Winget
+      # sorts versions naturally, so the two do not compare as an upgrade.
       - name: Resolve PackageVersion (tag without the leading v)
         id: pkg
         shell: bash
@@ -316,20 +331,44 @@ jobs:
           echo "→ PackageVersion ${version}"
           echo "version=${version}" >> "$GITHUB_OUTPUT"
 
+      # No token here. This step only downloads, and the download has to
+      # match the pinned digest before anything runs it.
+      - name: Install Komac
+        shell: pwsh
+        run: |
+          $url = "https://github.com/russellbanks/Komac/releases/download/v$env:KOMAC_VERSION/komac-$env:KOMAC_VERSION-x86_64-pc-windows-msvc.exe"
+          $komac = Join-Path $env:RUNNER_TEMP 'komac.exe'
+          Invoke-WebRequest -Uri $url -OutFile $komac
+          $got = (Get-FileHash -Algorithm SHA256 -LiteralPath $komac).Hash.ToLowerInvariant()
+          if ($got -ne $env:KOMAC_SHA256) {
+            Write-Error "komac.exe digest $got, expected $env:KOMAC_SHA256"
+            exit 1
+          }
+          & $komac --version
+          "KOMAC=$komac" >> $env:GITHUB_ENV
+
+      # Komac reads the token from GITHUB_TOKEN, so it never reaches a
+      # command line. It downloads the installer from the URL itself and
+      # hashes it, which is what the manifest's InstallerSha256 comes from.
       - name: Submit netscli to microsoft/winget-pkgs
-        uses: vedantmgoyal9/winget-releaser@4ffc7888bffd451b357355dc214d43bb9f23917e # v2
-        with:
-          identifier: fstubner.netscli
-          version: ${{ steps.pkg.outputs.version }}
-          # `release-tag` defaults to
-          # `github.event.release.tag_name || github.ref_name`, and on a
-          # `workflow_dispatch` the first is null and the second is the branch
-          # the run was dispatched from. The action would then ask the API for
-          # a release tagged `main` and fail -- on precisely the re-run path
-          # this workflow's header offers for recovering a failed publish.
-          release-tag: ${{ env.TAG }}
-          installers-regex: 'netscli-windows-x86_64\.exe$'
-          token: ${{ secrets.WINGET_TOKEN }}
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.WINGET_TOKEN }}
+          VERSION: ${{ steps.pkg.outputs.version }}
+        run: |
+          $url = "https://github.com/fstubner/netscli/releases/download/$env:TAG/netscli-windows-x86_64.exe"
+          & $env:KOMAC update fstubner.netscli --version $env:VERSION --urls $url --submit
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      # What the action did after submitting: delete the fork's branches whose
+      # PRs have merged, so the fork does not collect one per release.
+      - name: Delete merged branches from the winget-pkgs fork
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.WINGET_TOKEN }}
+        run: |
+          & $env:KOMAC cleanup --only-merged --all
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
   # ─── AUR (netscli-bin) ─────────────────────────────────────────────
   # Pre-step computes SHA256s from release assets and renders a fresh
@@ -502,14 +541,9 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
-      # Same wait-then-submit pattern as the CLI Winget job above. The
-      # GUI .msi takes longer to build than the CLI .exe (Tauri bundle
-      # + WiX compose), so this poll matters even more here.
-      #
-      # This used to warn that the job would fail until winget-pkgs had
-      # accepted a first version of `fstubner.netscli.gui`, since the action
-      # looks for an existing package directory before doing anything. That
-      # was resolved when PR #368471 landed 0.2.6; the directory exists.
+      # Same wait-then-submit pattern as the CLI Winget job above. `komac
+      # update` only updates a package winget-pkgs already has, which
+      # `fstubner.netscli.gui` has been since PR #368471 landed 0.2.6.
       - name: Wait for Windows GUI release asset
         shell: bash
         env:
@@ -529,9 +563,8 @@ jobs:
           echo "asset never appeared after 15 minutes" >&2
           exit 1
 
-      # Same two corrections as the CLI winget job above: strip the `v` from
-      # the PackageVersion, and name the release tag explicitly so a
-      # `workflow_dispatch` re-run does not look for a release tagged `main`.
+      # Same correction as the CLI winget job above: no `v` in the
+      # PackageVersion.
       - name: Resolve PackageVersion (tag without the leading v)
         id: pkg
         shell: bash
@@ -560,14 +593,38 @@ jobs:
           echo "→ PackageVersion ${version}"
           echo "version=${version}" >> "$GITHUB_OUTPUT"
 
+      # The same three steps as the CLI winget job above, for the MSI.
+      - name: Install Komac
+        shell: pwsh
+        run: |
+          $url = "https://github.com/russellbanks/Komac/releases/download/v$env:KOMAC_VERSION/komac-$env:KOMAC_VERSION-x86_64-pc-windows-msvc.exe"
+          $komac = Join-Path $env:RUNNER_TEMP 'komac.exe'
+          Invoke-WebRequest -Uri $url -OutFile $komac
+          $got = (Get-FileHash -Algorithm SHA256 -LiteralPath $komac).Hash.ToLowerInvariant()
+          if ($got -ne $env:KOMAC_SHA256) {
+            Write-Error "komac.exe digest $got, expected $env:KOMAC_SHA256"
+            exit 1
+          }
+          & $komac --version
+          "KOMAC=$komac" >> $env:GITHUB_ENV
+
       - name: Submit netscli-gui to microsoft/winget-pkgs
-        uses: vedantmgoyal9/winget-releaser@4ffc7888bffd451b357355dc214d43bb9f23917e # v2
-        with:
-          identifier: fstubner.netscli.gui
-          version: ${{ steps.pkg.outputs.version }}
-          release-tag: ${{ env.TAG }}
-          installers-regex: 'netscli-gui-windows-x86_64\.msi$'
-          token: ${{ secrets.WINGET_TOKEN }}
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.WINGET_TOKEN }}
+          VERSION: ${{ steps.pkg.outputs.version }}
+        run: |
+          $url = "https://github.com/fstubner/netscli/releases/download/$env:TAG/netscli-gui-windows-x86_64.msi"
+          & $env:KOMAC update fstubner.netscli.gui --version $env:VERSION --urls $url --submit
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Delete merged branches from the winget-pkgs fork
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.WINGET_TOKEN }}
+        run: |
+          & $env:KOMAC cleanup --only-merged --all
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
   # ─── AUR (netscli-gui-bin) ─────────────────────────────────────────
   # Sibling to the aur job above. Same SSH key + same render-then-push
