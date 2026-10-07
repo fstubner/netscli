@@ -251,10 +251,9 @@ mod tests {
     use super::*;
 
     /// The target is passed to the tool as an argument, so one that starts
-    /// with a dash (or a slash, for Windows' `tracert`) is a flag to it. Run
-    /// without the check, `-d` is accepted by `tracert` as "do not resolve
-    /// names" and `--help` prints its usage, both as a successful trace of
-    /// nothing, which is what these asserted against before the check existed.
+    /// with a dash (or a slash, for Windows' `tracert`) is a flag to it. Without
+    /// the check, `trace_route("-d")` came back `Ok`, carrying the tool's
+    /// complaint that it had no target and its usage text.
     #[tokio::test]
     async fn a_target_that_looks_like_an_option_is_refused_before_the_tool_runs() {
         for host in ["-d", "--help", "-S", "/d", "/?", "   -d", ""] {

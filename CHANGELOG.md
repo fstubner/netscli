@@ -111,6 +111,13 @@ its heading and collects entries. The date and the link go on with the tag.
   printed included. The output is now decoded leniently, so the odd character
   shows as a replacement mark and the trace completes.
 
+- **A trace refuses a target that the trace tool would read as an option.**
+  The target goes to `tracert`, `traceroute` or `tracepath` as a plain
+  argument, so `netscli trace -- -d` handed the tool a flag. A target that is
+  empty or starts with `-` or `/` now gets an error before anything runs. A
+  host name or an address never starts with either, and Windows' `tracert`
+  reads a leading `/` as an option too.
+
 - **File dialogs in the desktop app no longer hold up the window.** Open
   Result Bundle, Choose Folder and the Save dialog for exports waited for the
   dialog on the thread that draws the window, which the dialog library says
