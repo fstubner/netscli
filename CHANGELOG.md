@@ -399,6 +399,13 @@ its heading and collects entries. The date and the link go on with the tag.
     once, a very long device table could drop devices that were there.
   - The example in the `netscli-core` README compiles.
 
+- **Scans on macOS no longer start at the edge of the open-file limit.**
+  Each probe in flight holds a socket, and the default of 256 at once equals
+  macOS's default limit on open files, so a busy scan could fail connects for
+  lack of a file handle and report them as filtered. NetsCLI now raises its
+  own soft limit, up to what the system allows, before a scan starts. Linux
+  gets the same, where the default limit is usually 1024.
+
 ### Security
 
 - **Four open advisories cleared, all in build tooling.** `source-map-js`
