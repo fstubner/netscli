@@ -28,7 +28,7 @@ export const surfaces: SurfaceCard[] = [
       src: '/assets/tui-discover.png',
       webp: '/assets/tui-discover.webp',
       alt:
-        'netscli terminal UI running /discover with demo hostnames, vendors, and response times',
+        'The NetsCLI terminal UI running /discover, listing hosts with their device IDs, vendors and hostnames, with local interface activity along the bottom',
       width: 1640,
       height: 930,
     },
