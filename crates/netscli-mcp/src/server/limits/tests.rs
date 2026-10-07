@@ -48,6 +48,35 @@ fn multibyte_banners_are_not_split_mid_character() {
 }
 
 #[test]
+fn remote_text_in_http_replies_and_mdns_records_is_capped_too() {
+    // The `Server` header was cut to 256 characters in `banner` and returned
+    // whole beside it in `http.headers`.
+    let long = "X".repeat(5000);
+    let mut value = json!({
+        "ports": [{
+            "banner": long,
+            "http": {
+                "status_line": format!("HTTP/1.1 200 {long}"),
+                "headers": [{ "name": "Server", "value": long }],
+            },
+        }],
+        "services": [{
+            "full_name": format!("{long}._http._tcp.local."),
+            "hostname": format!("{long}.local."),
+            "properties": { "note": long },
+        }],
+    });
+    cap_remote_text(&mut value);
+
+    let encoded = serde_json::to_string(&value).unwrap();
+    assert!(
+        !encoded.contains(&"X".repeat(MAX_BANNER_CHARS + 1)),
+        "remote text survived uncapped: {encoded}"
+    );
+    assert_eq!(value["ports"][0]["http"]["headers"][0]["name"], "Server");
+}
+
+#[test]
 fn an_oversized_array_is_truncated_and_says_so() {
     let items: Vec<Value> = (0..40_000)
         .map(|i| json!({ "port": i, "service": "x".repeat(64) }))

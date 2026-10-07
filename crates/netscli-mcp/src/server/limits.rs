@@ -13,7 +13,8 @@
 //!
 //! - `raw` is dropped. It is the full probe response, it exists for the
 //!   GUI's detail pane, and no model needs 4 KB of it.
-//! - `banner` is truncated to something identifying rather than expansive.
+//! - `banner` and other remote text are truncated to something identifying
+//!   rather than expansive.
 //! - The whole response is capped, and says so when it truncates.
 //!
 //! Without these, `scan_ports` against a host that answers on every port
@@ -32,7 +33,13 @@ const MAX_BANNER_CHARS: usize = 256;
 const MAX_RESULT_BYTES: usize = 1024 * 1024;
 
 /// Keys whose values are remote bytes rather than netscli's own findings.
-const REMOTE_TEXT_KEYS: &[&str] = &["banner", "hex_preview", "info"];
+const REMOTE_TEXT_KEYS: &[&str] = &["banner", "hex_preview", "info", "hostname", "full_name"];
+
+/// Keys whose whole value is remote text, every string under them capped
+/// like a banner: an HTTP reply's status line and headers, and an mDNS
+/// service's TXT properties. The `Server` header was cut short in `banner`
+/// and returned whole beside it in `http.headers`.
+const REMOTE_TEXT_TREES: &[&str] = &["http", "properties"];
 
 /// Room kept for the fields that say an object was cut.
 const TRUNCATION_NOTE_BYTES: usize = 512;
@@ -62,11 +69,22 @@ pub(super) fn cap_remote_text(value: &mut Value) {
                     if let Value::String(text) = entry {
                         truncate_chars(text, MAX_BANNER_CHARS);
                     }
+                } else if REMOTE_TEXT_TREES.contains(&key.as_str()) {
+                    cap_every_string(entry);
                 } else {
                     cap_remote_text(entry);
                 }
             }
         }
+        _ => {}
+    }
+}
+
+fn cap_every_string(value: &mut Value) {
+    match value {
+        Value::String(text) => truncate_chars(text, MAX_BANNER_CHARS),
+        Value::Array(items) => items.iter_mut().for_each(cap_every_string),
+        Value::Object(map) => map.values_mut().for_each(cap_every_string),
         _ => {}
     }
 }
