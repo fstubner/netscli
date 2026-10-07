@@ -8,6 +8,8 @@ use ratatui_textarea::{CursorMove, TextArea};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 mod config_ui;
+#[cfg(test)]
+mod hardening_tests;
 mod interaction;
 mod render;
 #[cfg(test)]
