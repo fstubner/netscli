@@ -6,6 +6,15 @@ import { downloadText } from './toolExecution';
 
 export const RESULT_BUNDLE_SCHEMA = 'netscli.result.v1';
 
+/**
+ * Written first in a CSV file so Excel reads it as UTF-8. Excel takes the
+ * encoding from this mark, and on Windows a file without one is read in the
+ * legacy code page, so a name like "Felix’s iPhone" (the apostrophe is three
+ * bytes in UTF-8) turns into "Felixâ€™s iPhone". Only what is saved to a file
+ * gets it. The command line's CSV is for pipes and has none.
+ */
+const CSV_BYTE_ORDER_MARK = '\uFEFF';
+
 export interface ResultBundle {
   schema: typeof RESULT_BUNDLE_SCHEMA;
   exportedAt: string;
@@ -41,7 +50,7 @@ export function exportCurrentResult(
   exportText(
     `netscli-${activeTab.kind}-${stamp}.csv`,
     'text/csv',
-    serializeRowsAsCsv(columns, rows),
+    CSV_BYTE_ORDER_MARK + serializeRowsAsCsv(columns, rows),
     'Exported CSV',
     onSuccess,
     onError,
@@ -122,7 +131,7 @@ export function exportSelectedRows(
   exportText(
     `netscli-${activeTab.kind}-selected-${stamp}.csv`,
     'text/csv',
-    serializeRowsAsCsv(columns, selectedRows),
+    CSV_BYTE_ORDER_MARK + serializeRowsAsCsv(columns, selectedRows),
     fallback,
     onSuccess,
     onError,

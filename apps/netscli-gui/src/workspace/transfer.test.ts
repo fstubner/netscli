@@ -1,6 +1,18 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { parseResultBundle, RESULT_BUNDLE_SCHEMA } from './transfer';
+import type { ResultColumn, ResultRow, WorkspaceTab } from '../tools/types';
+import { createTab } from '../tools/registry';
+import { downloadText } from './toolExecution';
+import {
+  exportCurrentResult,
+  exportSelectedRows,
+  parseResultBundle,
+  RESULT_BUNDLE_SCHEMA,
+} from './transfer';
+
+vi.mock('./toolExecution', () => ({
+  downloadText: vi.fn(() => Promise.resolve('saved')),
+}));
 
 function bundle(overrides: Record<string, unknown> = {}) {
   return {
@@ -70,5 +82,44 @@ describe('parseResultBundle', () => {
     expect(() => parseResultBundle(bundle({ kind: 'pcap', result: { kind: 'pcap', data: {} } }))).toThrow(
       /pcap data must include packets/i,
     );
+  });
+});
+
+// Excel decides a file's encoding from a byte-order mark, and reads a UTF-8
+// CSV without one in the legacy code page, so a device named "Felix’s iPhone"
+// came out as "Felixâ€™s iPhone". Only files get the mark: the JSON exports
+// are for programs, where a mark in front of the text is a parse error.
+describe('CSV export', () => {
+  const BOM = String.fromCharCode(0xfeff);
+  const columns: ResultColumn[] = [{ key: 'name', label: 'Name' }];
+  const rows: ResultRow[] = [
+    { id: 'a', kind: 'mdns', data: { name: 'Felix’s iPhone' }, raw: {}, searchText: '' },
+  ];
+  const tab = { ...createTab('mdns'), result: { kind: 'mdns', data: [] } } as WorkspaceTab;
+
+  async function savedContent(save: (done: () => void) => void): Promise<string> {
+    vi.mocked(downloadText).mockClear();
+    await new Promise<void>((resolve) => save(resolve));
+    return vi.mocked(downloadText).mock.calls[0][2];
+  }
+
+  it('starts a saved CSV with a UTF-8 byte-order mark', async () => {
+    const all = await savedContent((done) =>
+      exportCurrentResult(tab, columns, rows, 'csv', done, done),
+    );
+    expect(all).toBe(`${BOM}Name\nFelix’s iPhone`);
+
+    const selected = await savedContent((done) =>
+      exportSelectedRows(tab, columns, rows, 'csv', done, done),
+    );
+    expect(selected).toBe(`${BOM}Name\nFelix’s iPhone`);
+  });
+
+  it('leaves JSON without one', async () => {
+    const json = await savedContent((done) =>
+      exportCurrentResult(tab, columns, rows, 'json', done, done),
+    );
+    expect(json.startsWith(BOM)).toBe(false);
+    expect(() => JSON.parse(json)).not.toThrow();
   });
 });
