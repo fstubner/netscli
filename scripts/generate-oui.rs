@@ -127,13 +127,23 @@ fn parse_wireshark_manuf(
             continue;
         }
 
-        let parts: Vec<&str> = line.split_whitespace().collect();
-        if parts.len() < 2 {
+        // Fields are tab-separated: prefix, a short name of at most 12
+        // characters, then the full name when there is one. Splitting on any
+        // whitespace and joining the rest glued the two names together, so a
+        // vendor read "IntegratedTe Integrated Technical Vision Ltd". Take the
+        // full name, and fall back to the short one only when it is the whole
+        // entry. Older files put the full name in a trailing `#` comment.
+        let mut fields = line.split('\t').map(str::trim);
+        let prefix_raw = fields.next().unwrap_or_default();
+        let short = fields.next().unwrap_or_default();
+        let long = fields
+            .next()
+            .map(|f| f.trim_start_matches('#').trim())
+            .unwrap_or_default();
+        let vendor = if long.is_empty() { short } else { long }.to_string();
+        if prefix_raw.is_empty() || vendor.is_empty() {
             continue;
         }
-
-        let prefix_raw = parts[0];
-        let vendor = parts[1..].join(" ");
         let hex: String = prefix_raw
             .split('/')
             .next()
@@ -246,4 +256,34 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_wireshark_manuf;
+    use flate2::write::GzEncoder;
+    use flate2::Compression;
+    use std::io::Write;
+
+    fn gz(text: &str) -> Vec<u8> {
+        let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+        encoder.write_all(text.as_bytes()).unwrap();
+        encoder.finish().unwrap()
+    }
+
+    #[test]
+    fn manuf_entries_keep_one_name() {
+        let map = parse_wireshark_manuf(&gz(concat!(
+            "# a comment line\n",
+            "00:00:01\tXerox\tXerox Corporation\n",
+            "0A:35:F2\tIntegratedTe\tIntegrated Technical Vision Ltd\n",
+            "0A:2A:33\tDigistor\n",
+            "00:11:22\tOldStyle\t# Old Style Networks\n",
+        )))
+        .unwrap();
+        assert_eq!(map["00:00:01"], "Xerox Corporation");
+        assert_eq!(map["0A:35:F2"], "Integrated Technical Vision Ltd");
+        assert_eq!(map["0A:2A:33"], "Digistor");
+        assert_eq!(map["00:11:22"], "Old Style Networks");
+    }
 }
