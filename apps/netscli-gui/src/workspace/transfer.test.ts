@@ -51,6 +51,21 @@ describe('parseResultBundle', () => {
     expect(() => parseResultBundle(bundle({ result: { kind: 'scan', data: [] } }))).not.toThrow();
   });
 
+  // An array of objects passes every shape check, and then `buildRows` read
+  // `service.addresses.join` during render and the window went to the crash
+  // screen. Opening a shared bundle must not be able to do that.
+  it('rejects data the screen could not draw', () => {
+    const service = { service_type: '_http._tcp', hostname: 'a.local', port: 80, full_name: 'a' };
+    expect(() =>
+      parseResultBundle(bundle({ kind: 'mdns', result: { kind: 'mdns', data: [service] } })),
+    ).toThrow(/mdns is missing fields/i);
+
+    const whole = { ...service, addresses: ['192.168.1.5'] };
+    expect(() =>
+      parseResultBundle(bundle({ kind: 'mdns', result: { kind: 'mdns', data: [whole] } })),
+    ).not.toThrow();
+  });
+
   it('rejects pcap data without packets', () => {
     expect(() => parseResultBundle(bundle({ kind: 'pcap', result: { kind: 'pcap', data: {} } }))).toThrow(
       /pcap data must include packets/i,

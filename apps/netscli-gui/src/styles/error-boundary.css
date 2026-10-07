@@ -4,15 +4,18 @@
    shell rather than styling anything inside it, and results.css was at its
    size cap with a note asking for exactly this kind of split. */
 
-/* Replaces the entire window when a render throws, so it carries its own
-   background rather than inheriting one from a shell that is no longer
-   mounted. */
+/* Replaces the entire window when a render throws. CrashScreen wraps it in a
+   `.container`, which is what supplies the colour tokens used below, and puts
+   the window frame above it, so it fills the rest of the window and scrolls
+   rather than being 100vh tall. */
 .error-boundary {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 12px;
   align-items: flex-start;
-  min-height: 100vh;
+  min-height: 0;
+  overflow: auto;
   padding: 32px;
   color: var(--text-primary);
   background: var(--bg-body);
