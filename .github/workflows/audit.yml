@@ -50,8 +50,8 @@ jobs:
   audit:
     name: cargo audit
     runs-on: ubuntu-latest
-    # A cold run compiles cargo-audit, a few minutes; GitHub's default
-    # would let a stalled one run for six hours.
+    # GitHub's default would let a stalled run go on for six hours. 30
+    # leaves room for a cold cache, which compiles cargo-audit first.
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

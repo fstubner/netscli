@@ -55,8 +55,8 @@ jobs:
   #
   # The default branch, because the `release-signing` environment the
   # signing jobs use allows deployments from `main` and `v*` tags only. A run
-  # from anywhere else would build for 15 minutes and then be refused at the
-  # first signing job.
+  # from anywhere else would build and then be refused at its first signing
+  # job.
   guard:
     name: Check the release is a draft
     runs-on: ubuntu-latest

@@ -78,7 +78,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Everything that can be wrong before spending 40 minutes on a build.
+  # Everything that can be wrong before the build starts.
   prepare:
     name: Check the tag and the draft
     runs-on: ubuntu-latest
@@ -121,7 +121,7 @@ jobs:
 
           # The signing jobs use the release-signing environment, which only
           # admits deployments from main and v* tags. From any other branch
-          # the build would run for a quarter of an hour and then be refused.
+          # the build would run and then be refused at its first signing job.
           if [[ "$GITHUB_REF" != "refs/heads/${DEFAULT_BRANCH}" ]]; then
             echo "::error::dispatch this from ${DEFAULT_BRANCH}, not ${GITHUB_REF}."
             exit 1

@@ -10,9 +10,9 @@ name: Publish preflight
 # most likely way to reach that state: the secrets here were last set on
 # 2026-05-03 and GitHub PATs commonly carry a 90-day expiry.
 #
-# The signing credentials fail earlier and more expensively: a wrong updater
-# key or password is found by the bundler, a quarter of an hour into the
-# release build. The `signing` job finds it in a minute.
+# The signing credentials fail later and more expensively. A wrong updater
+# key or password is found by the bundler, partway through the release
+# build. The `signing` job finds it before a release is started.
 #
 # Every request below is a read. Nothing is created, forked, pushed or
 # tagged. Run it before publishing a release, from main: the `signing` job
