@@ -48,7 +48,7 @@ export const faq: FaqItem[] = [
   {
     group: 'Interfaces and integrations',
     q: 'Can I use NetsCLI with Claude Code, Cursor, or another AI agent?',
-    a: 'Yes. Running `netscli serve` starts a Model Context Protocol (MCP) server over stdio. It exposes structured local-network tools for host discovery, port scanning, ping, DNS, ARP, host inspection, network sweep, interface listing, and mDNS discovery. Packet-capture builds can also expose capture tools. Packet capture uses a job-style flow for long-running work. Start the capture, poll status, then fetch the result.',
+    a: 'Yes. Running netscli serve starts a Model Context Protocol (MCP) server over stdio. It exposes structured local-network tools for host discovery, port scanning, ping, DNS, ARP, host inspection, network sweep, interface listing, and mDNS discovery. Packet-capture builds can also expose capture tools. Packet capture uses a job-style flow for long-running work. Start the capture, poll status, then fetch the result.',
     aHtml:
       'Yes. Running <code>netscli serve</code> starts a Model Context Protocol (MCP) server over stdio. It exposes structured local-network tools for host discovery, port scanning, ping, DNS, ARP, host inspection, network sweep, interface listing, and mDNS discovery. Packet-capture builds can also expose capture tools. Packet capture uses a job-style flow for long-running work. Start the capture, poll status, then fetch the result.',
   },
@@ -95,7 +95,7 @@ export const faq: FaqItem[] = [
   {
     group: 'Network workflows',
     q: 'How do I find devices on my home network with NetsCLI?',
-    a: 'Run `netscli discover` from a machine on the network, or pass a subnet explicitly with `netscli discover <subnet>`. NetsCLI probes the range, then adds reverse DNS, ARP cache data, MAC addresses, and the device maker when the operating system has that information available.',
+    a: 'Run netscli discover from a machine on the network, or pass a subnet explicitly, as in netscli discover 192.168.1.0/24. NetsCLI probes the range, then adds reverse DNS, ARP cache data, MAC addresses, and the device maker when the operating system has that information available.',
     aHtml: `
       <p>Run discovery from any machine on the network:</p>
       <div class="faq-command-list" aria-label="Discovery commands">
@@ -108,7 +108,7 @@ export const faq: FaqItem[] = [
   {
     group: 'Install and updates',
     q: 'Is NetsCLI a free network scanner for Windows, macOS, or Linux?',
-    a: 'Yes. NetsCLI is MIT-licensed and free for personal, open-source, and commercial use. Windows users can install the CLI/TUI with `winget install netscli` and the desktop app with `winget install netscli-gui`. macOS and Linux users can install through the script, Homebrew, Cargo, or packaged release artifacts.',
+    a: 'Yes. NetsCLI is MIT-licensed and free for personal, open-source, and commercial use. Windows users can install the CLI/TUI with winget install netscli and the desktop app with winget install netscli-gui. macOS and Linux users can install through the script, Homebrew, Cargo, or packaged release artifacts.',
     // The Scoop row is two lines (the \n inside its <code>), for the reason
     // given in install.ts. `.faq-command code` keeps line breaks, and its copy
     // button copies both lines.
