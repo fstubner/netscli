@@ -450,8 +450,14 @@ jobs:
             libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev \
             librsvg2-dev libsoup-3.0-dev libjavascriptcoregtk-4.1-dev
 
+      # `--ignore-scripts`: this job later hands the updater key and, on
+      # Windows, the Certum credentials to tools from node_modules, so no
+      # package gets to run code while it is being installed. The lockfile
+      # has two install scripts, edgedriver (the end-to-end suite's driver
+      # download) and fsevents (an optional macOS file watcher), and the
+      # build needs neither.
       - name: npm ci
-        run: npm ci
+        run: npm ci --ignore-scripts
         working-directory: apps/netscli-gui
 
       # The trailing `-- --locked` is forwarded by the Tauri CLI to cargo, so
@@ -540,12 +546,35 @@ jobs:
       # Only the macOS signatures survive as-is. The AppImage is repacked
       # below and the MSI is Authenticode-signed in sign-windows, and both
       # change the bytes, so those two are signed again after that.
-      - name: tauri build
+      #
+      # Two steps, which is all `tauri build` is: compile, then bundle
+      # (crates/tauri-cli/src/build.rs at tauri-cli-v2.12.1 calls the same
+      # bundle function `tauri bundle` does). Split, so that the step which
+      # compiles every Rust dependency's build scripts and proc macros and
+      # runs `beforeBuildCommand` (tsc and Vite) has no secret in its
+      # environment. The keys are needed only by the bundler, which signs
+      # the update files and, through signCommand, the Windows executable.
+      #
+      # Both steps take the same --config files, so the app compiled here
+      # embeds the same configuration a single `tauri build` would.
+      #
+      # A step boundary is not a sandbox: code run by the first step could
+      # leave something behind for the second. What it removes is the
+      # simplest case, a dependency reading credentials out of its own
+      # environment while it builds.
+      - name: tauri build (compile only, no secrets)
         run: >-
-          npm run tauri -- build --target ${{ matrix.target }}
+          npm run tauri -- build --no-bundle --target ${{ matrix.target }}
           --config src-tauri/tauri.release.conf.json
           ${{ runner.os == 'Windows' && format('--config {0}', env.NETSCLI_SIGN_CONFIG) || '' }}
           -- --locked
+        working-directory: apps/netscli-gui
+
+      - name: tauri bundle (installers and their signatures)
+        run: >-
+          npm run tauri -- bundle --target ${{ matrix.target }}
+          --config src-tauri/tauri.release.conf.json
+          ${{ runner.os == 'Windows' && format('--config {0}', env.NETSCLI_SIGN_CONFIG) || '' }}
         working-directory: apps/netscli-gui
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
