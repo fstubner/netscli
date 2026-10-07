@@ -37,11 +37,11 @@ pub struct ExportRequest {
 }
 
 pub fn parse_export_command(input: &str) -> Result<ExportRequest> {
-    // Use shell-words so paths with spaces work when quoted:
+    // Quotes keep a path with spaces together:
     //   /export --output "C:\Users\Me\My Scans\out.md"
-    // Plain whitespace-split would have made this impossible.
-    let parts = shell_words::split(input)
-        .map_err(|e| anyhow::anyhow!("Could not parse /export arguments: {e}"))?;
+    // Backslashes are not escapes. See `tui_args` for why.
+    let parts = crate::tui_args::split_args(input)
+        .map_err(|e| anyhow::anyhow!("Could not read /export arguments: {e}"))?;
     let mut format = ExportFormat::Markdown;
     let mut output: Option<PathBuf> = None;
 
@@ -53,7 +53,7 @@ pub fn parse_export_command(input: &str) -> Result<ExportRequest> {
                 let Some(path) = parts.get(i + 1) else {
                     anyhow::bail!("Missing value for --output");
                 };
-                output = Some(PathBuf::from(path));
+                output = Some(expand_home(path));
                 i += 2;
             }
             t if t.starts_with('-') => {
@@ -71,6 +71,20 @@ pub fn parse_export_command(input: &str) -> Result<ExportRequest> {
     }
 
     Ok(ExportRequest { format, output })
+}
+
+/// A leading `~` means the home directory. A shell does that for you, and
+/// this is not a shell, so `~/scans/out.md` made a folder literally named
+/// `~` in the working directory.
+fn expand_home(path: &str) -> PathBuf {
+    if let Some(rest) = path.strip_prefix('~') {
+        if rest.is_empty() || rest.starts_with(['/', '\\']) {
+            if let Some(home) = home_dir() {
+                return home.join(rest.trim_start_matches(['/', '\\']));
+            }
+        }
+    }
+    PathBuf::from(path)
 }
 
 pub fn export_session(history: &[HistoryEntry], req: &ExportRequest) -> Result<PathBuf> {
@@ -207,41 +221,4 @@ fn render_json(history: &[HistoryEntry]) -> Result<String> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use ratatui::text::Line;
-
-    fn done(command: &str, output: Vec<Line<'static>>) -> HistoryEntry {
-        HistoryEntry {
-            command: command.to_string(),
-            output,
-            state: EntryState::Done,
-        }
-    }
-
-    #[test]
-    fn a_markdown_export_carries_no_escape_sequences() {
-        // An mDNS name or a TXT value a remote host chose, as the TUI stores
-        // it. ESC here would run when the file is printed to a terminal.
-        let history = vec![done(
-            "/mdns",
-            vec![Line::from(
-                "evil\u{1b}[31m\u{1b}]52;c;ZWNobw==\u{7}  [10.0.0.9]",
-            )],
-        )];
-        let md = render_markdown(&history);
-        assert!(!md.contains('\u{1b}'), "ESC reached the file: {md:?}");
-        assert!(!md.contains('\u{7}'), "BEL reached the file: {md:?}");
-        assert!(md.contains("evil.[31m"), "the name vanished: {md:?}");
-    }
-
-    #[test]
-    fn a_markdown_export_carries_no_bidi_overrides() {
-        let history = vec![done(
-            "/dns example.com",
-            vec![Line::from("v=spf1 \u{202E}ssap\u{200B}")],
-        )];
-        let md = render_markdown(&history);
-        assert!(!md.contains('\u{202E}') && !md.contains('\u{200B}'));
-    }
-}
+mod tests;

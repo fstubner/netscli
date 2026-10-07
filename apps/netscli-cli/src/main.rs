@@ -10,6 +10,7 @@ mod private_fs;
 mod setup;
 mod trace;
 mod tui;
+mod tui_args;
 mod tui_export;
 mod tui_formatter;
 mod tui_settings;
