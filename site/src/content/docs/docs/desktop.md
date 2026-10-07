@@ -8,7 +8,7 @@ head:
 
 NetsCLI Desktop is the interactive interface for reviewing network results. It is built for users who want tables, filters, row details, history, exports, and multiple operation tabs open at once.
 
-<img src="/assets/gui-scan.png" width="2000" height="1125" alt="Port scan results in NetsCLI Desktop, with the details pane open below the table showing the banner and raw response for the selected row" />
+<img src="/assets/gui-scan.png" width="2000" height="1125" alt="Port scan results in NetsCLI Desktop, with a Version column and the details pane open below the table showing the banner for the selected row" />
 
 *Port scan. The details pane carries the banner, headers and raw response for the selected row.*
 
