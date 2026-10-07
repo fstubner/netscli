@@ -65,6 +65,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
       - id: filter
         shell: bash
@@ -108,6 +109,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           # 22, matching pages.yml / release.yml / site.yml / site-preview.yml.
@@ -139,6 +142,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       # install.sh is user-facing; the release/ scripts hold GH_TOKEN and
       # push to three package registries. Both are worth linting, and
       # neither is exercised by any other job.
@@ -182,6 +187,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       # libpcap-dev: netscli-core pcap feature. GTK/WebKit: netscli-gui
       # (Tauri 2) — clippy --all-targets compiles the Tauri shell, which
       # won't link without these even when we only intend to lint Rust.
@@ -247,6 +254,8 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       # Linux needs libpcap for netscli-core's pcap feature and GTK/WebKit
       # for netscli-gui (Tauri 2). `cargo test --all` compiles the whole
@@ -350,6 +359,8 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           # 22 — see the note on the maintainability job. This one is also
@@ -406,6 +417,8 @@ jobs:
         os: ${{ github.event_name == 'pull_request' && fromJSON('["ubuntu-latest"]') || fromJSON('["ubuntu-latest", "windows-latest", "macos-latest"]') }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Install system dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -459,6 +472,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Install system dependencies
         run: |
           # `|| true` so a broken third-party apt index cannot fail this job;

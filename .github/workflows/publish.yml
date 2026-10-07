@@ -103,6 +103,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           ref: ${{ env.TAG }}
 
       - name: Install Rust
@@ -171,6 +172,7 @@ jobs:
       # published `netscli-win32-x64` again from the frozen copy.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           ref: ${{ github.event.repository.default_branch }}
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -214,6 +216,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           ref: ${{ env.TAG }}
       - name: Update fstubner/homebrew-tap
         env:
@@ -229,6 +232,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           ref: ${{ env.TAG }}
       - name: Update fstubner/scoop-bucket
         env:
@@ -339,6 +343,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           ref: ${{ env.TAG }}
 
       # The tag reaches a `sed` replacement in the render step below, and
@@ -450,6 +455,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           ref: ${{ env.TAG }}
       - name: Update fstubner/homebrew-tap (Cask)
         env:
@@ -468,6 +474,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           ref: ${{ env.TAG }}
       - name: Update fstubner/scoop-bucket (GUI)
         env:
@@ -573,6 +580,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           ref: ${{ env.TAG }}
 
       # Same reasoning as the CLI AUR job: the tag reaches an inline `sed`
@@ -682,6 +690,7 @@ jobs:
       # the binaries come from the release.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           ref: ${{ github.event.repository.default_branch }}
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -728,6 +737,7 @@ jobs:
       # script and the server.json template, not anything that ships.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           ref: ${{ github.event.repository.default_branch }}
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
