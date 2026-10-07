@@ -49,6 +49,22 @@ fn a_command_that_runs_and_fails_exits_1() {
 }
 
 #[test]
+fn mcp_service_install_installs_nothing_and_exits_1() {
+    let out = netscli(&["mcp-service", "--install"]);
+    assert_eq!(out.status.code(), Some(1));
+    assert!(out.stdout.is_empty(), "nothing is printed as a result");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("https://netscli.com/docs/mcp/"), "{stderr}");
+}
+
+#[test]
+fn mcp_service_without_a_flag_is_a_usage_error() {
+    // It used to print a usage line and exit 0.
+    assert_eq!(code(&["mcp-service"]), 2);
+    assert_eq!(code(&["mcp-service", "--install", "--uninstall"]), 2);
+}
+
+#[test]
 fn commands_that_succeed_exit_0() {
     assert_eq!(code(&["--version"]), 0);
     assert_eq!(code(&["--help"]), 0);

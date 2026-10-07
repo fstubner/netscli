@@ -136,18 +136,16 @@ pub(crate) async fn run_command(command: &Commands, ctx: CommandContext<'_>) -> 
             netscli_mcp::run_server().await?;
         }
         Commands::McpService {
-            install,
-            uninstall,
-            status,
+            install, uninstall, ..
         } => {
+            // clap requires exactly one of the three flags, so --status is
+            // what is left when the other two are not set.
             if *install {
                 mcp_service::install_service()?;
             } else if *uninstall {
                 mcp_service::uninstall_service()?;
-            } else if *status {
-                mcp_service::show_status()?;
             } else {
-                println!("Use --install, --uninstall, or --status");
+                mcp_service::show_status()?;
             }
         }
     }

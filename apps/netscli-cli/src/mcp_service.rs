@@ -1,183 +1,125 @@
-use anyhow::{anyhow, Result};
+//! What is left of `netscli mcp-service`.
+//!
+//! It used to write a systemd user unit that ran `netscli serve`. That could
+//! never work. `serve` speaks MCP over stdin and stdout and stops when stdin
+//! closes, and systemd starts a service with stdin on /dev/null. So the
+//! process exited at once, and `Restart=always` started it again every five
+//! seconds for as long as the unit was enabled. An MCP client starts the
+//! server itself, which is what the setup docs describe.
+//!
+//! So `--install` writes nothing and says why. `--uninstall` and `--status`
+//! stay for the unit that earlier versions left behind. Every version wrote it
+//! on every OS, so they look for it on every OS, including Windows and macOS,
+//! where nothing could ever have read it.
+
+use anyhow::{anyhow, bail, Result};
 use dirs::home_dir;
 use std::fs;
-use std::path::PathBuf;
-use std::process::Command;
+use std::path::{Path, PathBuf};
 
-const SYSTEMD_USER_DIR: &str = ".config/systemd/user";
+const UNIT_NAME: &str = "netscli-mcp.service";
 
 fn service_file_path() -> Result<PathBuf> {
     let home = home_dir().ok_or_else(|| anyhow!("Could not determine home directory"))?;
-    Ok(home.join(SYSTEMD_USER_DIR).join("netscli-mcp.service"))
+    Ok(home
+        .join(".config")
+        .join("systemd")
+        .join("user")
+        .join(UNIT_NAME))
 }
 
-fn get_binary_path() -> Result<String> {
-    // Prefer the path of the currently running binary: if the user ran
-    // `netscli mcp-service --install`, that's exactly the binary they want
-    // systemd to launch. Falls back to `which` in PATH, then a generic path.
-    if let Ok(exe) = std::env::current_exe() {
-        if let Some(s) = exe.to_str() {
-            return Ok(s.to_string());
-        }
-    }
-
-    let output = Command::new("which").arg("netscli").output()?;
-    if output.status.success() {
-        let path = String::from_utf8(output.stdout)?.trim().to_string();
-        if !path.is_empty() {
-            return Ok(path);
-        }
-    }
-
-    Ok("/usr/local/bin/netscli".to_string())
-}
-
-/// Generate the systemd unit file content for a given binary path.
-///
-/// Extracted as a pure function so the exact format (quoting, env vars,
-/// install target) can be covered by unit tests without needing a live
-/// systemd instance.
-pub(crate) fn render_service_unit(binary_path: &str) -> String {
-    // Quote the binary path so spaces in the install location don't break
-    // systemd's shell-like argument splitting. Set `RUST_LOG=info` so the
-    // new tracing output lands in the journal at a useful level by default.
-    format!(
-        r#"[Unit]
-Description=NetsCLI MCP Server
-After=network.target
-
-[Service]
-Type=simple
-ExecStart="{binary_path}" serve
-Restart=always
-RestartSec=5
-StandardOutput=journal
-StandardError=journal
-Environment=RUST_LOG=info
-
-[Install]
-WantedBy=default.target
-"#
+/// `--install` is kept so that a script or a habit gets an answer, not a
+/// "no such flag". The answer is an error: nothing was installed.
+pub fn install_service() -> Result<()> {
+    bail!(
+        "`netscli mcp-service --install` no longer installs anything.\n\
+         \n\
+         `netscli serve` speaks MCP over stdin and stdout, so the MCP client has to start it. \
+         A systemd service starts it with no input, and it exits at once and restarts every 5 seconds.\n\
+         \n\
+         Add netscli to your MCP client's configuration instead. The setup guide is at \
+         https://netscli.com/docs/mcp/\n\
+         \n\
+         To remove a unit that an earlier version installed, run `netscli mcp-service --uninstall`."
     )
 }
 
-pub fn install_service() -> Result<()> {
-    let service_path = service_file_path()?;
-    let binary_path = get_binary_path()?;
-
-    // Ensure directory exists
-    if let Some(parent) = service_path.parent() {
-        fs::create_dir_all(parent)?;
+/// Delete the unit file, and report whether there was one.
+fn remove_unit_file(path: &Path) -> Result<bool> {
+    if !path.exists() {
+        return Ok(false);
     }
-
-    let service_content = render_service_unit(&binary_path);
-
-    fs::write(&service_path, service_content)?;
-    println!("✅ Service file created at: {}", service_path.display());
-    println!("\n📋 Next steps:");
-    println!("  1. Reload systemd: systemctl --user daemon-reload");
-    println!("  2. Enable service: systemctl --user enable netscli-mcp.service");
-    println!("  3. Start service: systemctl --user start netscli-mcp.service");
-    println!("  4. Check status: systemctl --user status netscli-mcp.service");
-
-    Ok(())
+    fs::remove_file(path)?;
+    Ok(true)
 }
 
 pub fn uninstall_service() -> Result<()> {
     let service_path = service_file_path()?;
 
-    if service_path.exists() {
-        // Stop and disable first
-        let _ = Command::new("systemctl")
-            .args(["--user", "stop", "netscli-mcp.service"])
-            .output();
-        let _ = Command::new("systemctl")
-            .args(["--user", "disable", "netscli-mcp.service"])
-            .output();
-
-        fs::remove_file(&service_path)?;
-        println!("✅ Service file removed: {}", service_path.display());
-    } else {
-        println!("ℹ️  Service file not found: {}", service_path.display());
+    // Stop and disable first, where systemd is. The file is removed on every
+    // OS, because earlier versions wrote it on every OS.
+    #[cfg(target_os = "linux")]
+    {
+        if service_path.exists() {
+            for action in ["stop", "disable"] {
+                let _ = std::process::Command::new("systemctl")
+                    .args(["--user", action, UNIT_NAME])
+                    .output();
+            }
+        }
     }
 
+    if remove_unit_file(&service_path)? {
+        println!("Removed {}", service_path.display());
+    } else {
+        println!("No unit file at {}", service_path.display());
+    }
     Ok(())
 }
 
 pub fn show_status() -> Result<()> {
     let service_path = service_file_path()?;
 
-    println!("Service file: {}", service_path.display());
+    println!("Unit file: {}", service_path.display());
     if service_path.exists() {
-        println!("Status: ✅ Installed");
-
-        // Try to get systemd status
-        let output = Command::new("systemctl")
-            .args(["--user", "status", "netscli-mcp.service", "--no-pager"])
-            .output();
-
-        if let Ok(out) = output {
-            if out.status.success() {
-                println!("\nSystemd status:");
-                println!("{}", String::from_utf8_lossy(&out.stdout));
-            } else {
-                println!("\n⚠️  Service may not be enabled/started yet.");
-                println!("   Run: systemctl --user enable netscli-mcp.service");
-                println!("   Run: systemctl --user start netscli-mcp.service");
-            }
-        }
+        println!(
+            "Present. An earlier version of netscli installed it. It cannot run a useful server. \
+             Remove it with `netscli mcp-service --uninstall`."
+        );
     } else {
-        println!("Status: ❌ Not installed");
-        println!("\n💡 Run `netscli mcp-service --install` to create the service file.");
+        println!("Not present. There is nothing to remove.");
     }
-
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
-    use super::render_service_unit;
+    use super::*;
 
     #[test]
-    fn unit_file_contains_required_sections() {
-        let unit = render_service_unit("/usr/local/bin/netscli");
-        assert!(unit.contains("[Unit]"));
-        assert!(unit.contains("[Service]"));
-        assert!(unit.contains("[Install]"));
-        assert!(unit.contains("WantedBy=default.target"));
-    }
-
-    #[test]
-    fn unit_file_quotes_binary_path() {
-        // Paths with spaces must round-trip through systemd's ExecStart
-        // parser. The double-quoted form is the canonical way.
-        let unit = render_service_unit("/home/a b/.cargo/bin/netscli");
+    fn install_installs_nothing_and_says_where_to_go_instead() {
+        let err = install_service().expect_err("--install must not succeed");
+        let message = err.to_string();
+        assert!(message.contains("no longer installs anything"), "{message}");
         assert!(
-            unit.contains(r#"ExecStart="/home/a b/.cargo/bin/netscli" serve"#),
-            "expected quoted path with `serve` arg, got:\n{unit}"
+            message.contains("https://netscli.com/docs/mcp/"),
+            "{message}"
         );
+        assert!(message.contains("--uninstall"), "{message}");
     }
 
     #[test]
-    fn unit_file_sets_rust_log_env() {
-        let unit = render_service_unit("/usr/local/bin/netscli");
-        assert!(
-            unit.contains("Environment=RUST_LOG=info"),
-            "expected RUST_LOG=info so tracing output is visible in the journal"
-        );
-    }
+    fn a_leftover_unit_file_is_removed_and_a_second_run_finds_none() {
+        let dir = std::env::temp_dir().join(format!("netscli-unit-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        let unit = dir.join(UNIT_NAME);
+        fs::write(&unit, "[Service]\nExecStart=netscli serve\n").unwrap();
 
-    #[test]
-    fn unit_file_restart_policy() {
-        let unit = render_service_unit("/usr/local/bin/netscli");
-        assert!(unit.contains("Restart=always"));
-        assert!(unit.contains("RestartSec=5"));
-    }
+        assert!(remove_unit_file(&unit).unwrap());
+        assert!(!unit.exists());
+        assert!(!remove_unit_file(&unit).unwrap());
 
-    #[test]
-    fn unit_file_journal_logging() {
-        let unit = render_service_unit("/usr/local/bin/netscli");
-        assert!(unit.contains("StandardOutput=journal"));
-        assert!(unit.contains("StandardError=journal"));
+        fs::remove_dir_all(&dir).unwrap();
     }
 }

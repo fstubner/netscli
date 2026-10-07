@@ -305,17 +305,27 @@ pub enum Commands {
     #[command(name = "man")]
     Man,
 
-    /// Manage MCP server auto-start (systemd service)
+    /// Remove the systemd unit that netscli 0.3.4 and earlier installed
+    ///
+    /// `netscli serve` speaks MCP over stdin and stdout, so the MCP client has
+    /// to start it. Run as a service it gets no input and exits at once, which
+    /// is why this no longer installs a unit. See https://netscli.com/docs/mcp/
+    #[command(group(
+        clap::ArgGroup::new("mcp_service_action")
+            .args(["install", "uninstall", "status"])
+            .required(true)
+            .multiple(false)
+    ))]
     McpService {
-        /// Generate systemd user service file
+        /// Explain why there is no longer a service to install
         #[arg(long)]
         install: bool,
 
-        /// Remove systemd user service file
+        /// Remove the systemd user unit an earlier version installed
         #[arg(long)]
         uninstall: bool,
 
-        /// Show service status
+        /// Show whether such a unit is still there
         #[arg(long)]
         status: bool,
     },
