@@ -15,6 +15,7 @@
 mod dns;
 mod host;
 mod network;
+mod parse;
 mod pcap;
 mod scan;
 
@@ -31,7 +32,25 @@ pub async fn handle_command(
     progress: Option<watch::Sender<String>>,
 ) -> Vec<Line<'static>> {
     let mut out = Vec::new();
-    let parts: Vec<&str> = input.split_whitespace().collect();
+    // `/pcap` takes a BPF filter, which has spaces in it, so it alone reads
+    // quotes. Every other command is plain words.
+    let quoted;
+    let parts: Vec<&str> = if input.split_whitespace().next() == Some("/pcap") {
+        match crate::tui_args::split_args(&input) {
+            Ok(words) => {
+                quoted = words;
+                quoted.iter().map(String::as_str).collect()
+            }
+            Err(e) => {
+                out.push(Formatter::format_error(&format!(
+                    "Could not read the command: {e}"
+                )));
+                return out;
+            }
+        }
+    } else {
+        input.split_whitespace().collect()
+    };
     if parts.is_empty() {
         return out;
     }
@@ -82,4 +101,41 @@ pub async fn handle_command(
         }
     }
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use netscli_core::OpsConfig;
+
+    /// What a command prints, as one string. Every case here is refused
+    /// before anything touches the network.
+    async fn run(input: &str) -> String {
+        let ops = Ops::new(OpsConfig::default());
+        let lines = handle_command(input.to_string(), &ops, None, None, None).await;
+        lines
+            .iter()
+            .map(|line| line.to_string())
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    #[tokio::test]
+    async fn commands_say_what_they_could_not_read() {
+        // These each used to carry on with a default, or show something else.
+        assert!(run("/ping 127.0.0.1 abc").await.contains("Invalid count"));
+        assert!(run("/discover 10.0.0.0/24 192.168.0.0/24")
+            .await
+            .contains("Unexpected argument"));
+        assert!(run("/mdns --timeout abc")
+            .await
+            .contains("Invalid --timeout"));
+        assert!(run("/arp add 10.0.0.5").await.contains("Usage: /arp"));
+    }
+
+    #[tokio::test]
+    async fn pcap_reads_quotes_and_says_when_one_is_never_closed() {
+        let said = run(r#"/pcap eth0 --filter "tcp port 80"#).await;
+        assert!(said.contains("Could not read the command"), "{said}");
+    }
 }
