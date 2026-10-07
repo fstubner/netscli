@@ -4,8 +4,8 @@ Issues and pull requests are welcome.
 
 ## Prerequisites
 
-Rust, at the version pinned in `rust-toolchain.toml`. The desktop app also
-needs Node.js 22 or newer. `.nvmrc` pins 22, which is what CI runs.
+You need Rust at the version pinned in `rust-toolchain.toml`. The desktop app
+also needs Node.js 22 or newer. `.nvmrc` pins 22, which is what CI runs.
 
 On Linux, `cargo test --all` and `cargo clippy --all-targets` compile the
 desktop app's Tauri crate as well, and it will not link without the GTK and
