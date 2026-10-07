@@ -84,7 +84,7 @@ a moment in time.
 ## Constraints
 
 - **Rust**, at the version in `rust-toolchain.toml`, one workspace, crates
-  versioned together but not inheriting a workspace version — each manifest
+  versioned together but not inheriting a workspace version. Each manifest
   carries its own, and a release has to touch all of them plus
   `package.json` and `tauri.conf.json`. See `docs/PUBLISHING.md`.
 - **Privilege boundaries are real and platform-specific.** Raw ICMP needs
