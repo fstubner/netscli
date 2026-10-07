@@ -38,11 +38,13 @@ jobs:
   changes:
     name: Detect site changes
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       site: ${{ steps.filter.outputs.site }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
       - id: filter
         shell: bash
@@ -75,8 +77,11 @@ jobs:
     needs: changes
     if: needs.changes.outputs.site == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
@@ -122,12 +127,14 @@ jobs:
     needs: [changes, maintainability]
     if: needs.changes.outputs.site == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: site
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           # Tags, not just the tip. `check:changelog` asks git which versions
           # are actually tagged so it can catch a changelog entry dated before
           # its release exists -- and with the default `fetch-depth: 1` there
@@ -204,6 +211,7 @@ jobs:
       - maintainability
       - build
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Verify no upstream job failed
         shell: bash

@@ -29,14 +29,24 @@ tags=$(gh release list --repo "${repo}" --exclude-drafts --exclude-pre-releases 
 staged=0
 for tag in ${tags}; do
   [ "${staged}" -lt "${count}" ] || break
-  dir="${dist}/download/${tag}"
-  mkdir -p "${dir}"
-  if ! gh release download "${tag}" --repo "${repo}" --dir "${dir}" \
-      --pattern "${asset}" --pattern "${asset}.sha256" 2>/dev/null; then
+  # Ask which assets the release has, rather than read a failed download as
+  # "this release has no MSI". That used to hide every other failure too:
+  # with the error output thrown away, a network or API error skipped the
+  # newest release, the job staged older ones and passed, and the Store's
+  # URL for the newest went missing with nothing failing.
+  names=$(gh release view "${tag}" --repo "${repo}" --json assets --jq '.assets[].name')
+  if ! grep -qxF "${asset}" <<<"${names}"; then
     echo "${tag}: no ${asset}, skipped"
-    rm -rf "${dir}"
     continue
   fi
+  if ! grep -qxF "${asset}.sha256" <<<"${names}"; then
+    echo "${tag}: has ${asset} but no ${asset}.sha256 to check it against" >&2
+    exit 1
+  fi
+  dir="${dist}/download/${tag}"
+  mkdir -p "${dir}"
+  gh release download "${tag}" --repo "${repo}" --dir "${dir}" \
+    --pattern "${asset}" --pattern "${asset}.sha256"
   (cd "${dir}" && sha256sum --check --status "${asset}.sha256") || {
     echo "${tag}: ${asset} does not match its published checksum" >&2
     exit 1

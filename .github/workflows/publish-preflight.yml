@@ -1,6 +1,7 @@
 name: Publish preflight
 
-# Checks the five publishing credentials WITHOUT publishing anything.
+# Checks the five publishing credentials and the four signing credentials
+# WITHOUT publishing anything.
 #
 # publish.yml pushes to each registry the moment that job succeeds, AUR has no
 # review step, and its own concurrency note says a run that dies halfway
@@ -9,8 +10,14 @@ name: Publish preflight
 # most likely way to reach that state: the secrets here were last set on
 # 2026-05-03 and GitHub PATs commonly carry a 90-day expiry.
 #
+# The signing credentials fail later and more expensively. A wrong updater
+# key or password is found by the bundler, partway through the release
+# build. The `signing` job finds it before a release is started.
+#
 # Every request below is a read. Nothing is created, forked, pushed or
-# tagged. Run it before publishing a release.
+# tagged. Run it before publishing a release, from main. The `signing` job
+# uses the release-signing environment, which deploys from main only (its
+# settings, see docs/RELEASE.md).
 #
 # No secret value is ever echoed. The checks report HTTP status codes and
 # exit codes only, so a failure says which credential is bad without
@@ -137,25 +144,37 @@ jobs:
           check_gh_repo "SCOOP_BUCKET_TOKEN" "$SCOOP_BUCKET_TOKEN" "fstubner/scoop-bucket"
 
           # ---- winget -----------------------------------------------------
-          # Nobody has push on microsoft/winget-pkgs; the action forks and
-          # opens a PR. So validity is what matters, and the fork is reported
-          # for information -- its absence is fine, the action creates it.
-          code=$(curl -sS -o /dev/null -w '%{http_code}' \
+          # Nobody has push on microsoft/winget-pkgs; Komac forks it under
+          # the token's owner and opens a PR from there. So validity and
+          # scope are what matter, and the fork is reported for information
+          # -- its absence is fine, Komac creates it.
+          #
+          # Scope, because a token with `public_repo` alone authenticates
+          # fine here and then fails mid-release when Komac creates its
+          # branch ("does not have the correct permissions to execute
+          # CreateRef"). docs/RELEASE.md says why `workflow` is needed. A
+          # classic token reports its scopes in X-OAuth-Scopes, and only the
+          # header names are printed, never the token.
+          headers=$(curl -sS -D - -o /dev/null \
             -H "Authorization: Bearer ${WINGET_TOKEN}" -H 'Accept: application/vnd.github+json' \
-            https://api.github.com/user || echo 000)
+            https://api.github.com/user || true)
+          code=$(printf '%s' "$headers" | awk 'NR==1 {print $2}')
+          scopes=$(printf '%s' "$headers" | tr -d '\r' | awk -F': ' 'tolower($1)=="x-oauth-scopes" {print $2}')
           if [ "$code" = "200" ]; then
             login=$(curl -sS -H "Authorization: Bearer ${WINGET_TOKEN}" \
               -H 'Accept: application/vnd.github+json' https://api.github.com/user | jq -r '.login')
             fork=$(curl -sS -o /dev/null -w '%{http_code}' \
               -H "Authorization: Bearer ${WINGET_TOKEN}" -H 'Accept: application/vnd.github+json' \
               "https://api.github.com/repos/${login}/winget-pkgs" || echo 000)
-            if [ "$fork" = "200" ]; then
-              record "WINGET_TOKEN" "microsoft/winget-pkgs" 0 "valid, fork present"
+            if ! printf '%s' "$scopes" | tr ',' '\n' | sed 's/^ *//' | grep -qx 'workflow'; then
+              record "WINGET_TOKEN" "microsoft/winget-pkgs" 1 "valid for ${login}, but scopes are '${scopes:-none}', no workflow"
+            elif [ "$fork" = "200" ]; then
+              record "WINGET_TOKEN" "microsoft/winget-pkgs" 0 "valid for ${login}, fork present"
             else
-              record "WINGET_TOKEN" "microsoft/winget-pkgs" 0 "valid, no fork yet (created on publish)"
+              record "WINGET_TOKEN" "microsoft/winget-pkgs" 0 "valid for ${login}, no fork yet (created on publish)"
             fi
           else
-            record "WINGET_TOKEN" "microsoft/winget-pkgs" 1 "token rejected (HTTP $code)"
+            record "WINGET_TOKEN" "microsoft/winget-pkgs" 1 "token rejected (HTTP ${code:-000})"
           fi
 
           # ---- AUR --------------------------------------------------------
@@ -187,4 +206,106 @@ jobs:
             summary "**$failures credential(s) need attention before publishing.**"
             exit 1
           fi
-          summary "All five credentials are good. Safe to publish."
+          summary "All five publishing credentials are good."
+
+  # The four secrets in the release-signing environment. Only the jobs that
+  # sign can read them, so this job names the environment too.
+  signing:
+    name: Check signing credentials
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: release-signing
+    steps:
+      # For the app's public key (tauri.conf.json) and the Tauri CLI version
+      # the desktop app locks, both read from the branch being released.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # No secret in this step. The CLI is installed the way sign-windows
+      # installs it, without running any package's install scripts, before
+      # the next step hands it the updater key.
+      - name: Install the Tauri CLI and minisign
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./apps/netscli-gui/package-lock.json').packages['node_modules/@tauri-apps/cli'].version")"
+          npm install --prefix "${RUNNER_TEMP}/tauri-cli" --no-save --no-audit --no-fund --ignore-scripts "@tauri-apps/cli@${version}"
+          sudo apt-get update -qq || true
+          sudo apt-get install -y -qq minisign
+
+      - name: Check all four credentials
+        env:
+          CERTUM_EMAIL: ${{ secrets.CERTUM_EMAIL }}
+          CERTUM_OTP: ${{ secrets.CERTUM_OTP }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -uo pipefail   # NOT -e, as in the job above.
+          failures=0
+          summary() { echo "$1" >> "$GITHUB_STEP_SUMMARY"; echo "$1"; }
+          record() { # name, check, ok(0/1), detail
+            if [ "$3" = "0" ]; then
+              summary "| $1 | $2 | ✅ $4 |"
+            else
+              summary "| $1 | $2 | ❌ $4 |"
+              failures=$((failures + 1))
+            fi
+          }
+          summary ""
+          summary "| Credential | Check | Result |"
+          summary "| --- | --- | --- |"
+
+          # ---- Certum -----------------------------------------------------
+          # Present and the right shape only. A real check means signing
+          # something, which logs in to Certum's cloud service, and that
+          # belongs to the release. The shapes are what sign-windows.sh
+          # accepts: an e-mail address, and a base32 TOTP seed or an
+          # otpauth:// URI.
+          if [[ "$CERTUM_EMAIL" =~ ^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$ ]]; then
+            record "CERTUM_EMAIL" "set, an e-mail address" 0 "ok"
+          else
+            record "CERTUM_EMAIL" "set, an e-mail address" 1 "missing or not an address"
+          fi
+          if [[ "$CERTUM_OTP" == otpauth://* || "$CERTUM_OTP" =~ ^[A-Za-z2-7=[:space:]]{16,}$ ]]; then
+            record "CERTUM_OTP" "set, a TOTP seed or otpauth:// URI" 0 "ok"
+          else
+            record "CERTUM_OTP" "set, a TOTP seed or otpauth:// URI" 1 "missing or not a TOTP seed"
+          fi
+
+          # ---- updater key ------------------------------------------------
+          # Signs a scratch file the way the release does, then verifies the
+          # signature against the public key the app embeds. That catches a
+          # wrong password, a key that is not a Tauri key, and a key that is
+          # not the one every installed app trusts -- the one mistake a
+          # release cannot recover from, because the app accepts nothing
+          # else. The CLI's own output stays unprinted.
+          name="TAURI_SIGNING_PRIVATE_KEY + _PASSWORD"
+          check="signs, verified against the app's public key"
+          if [ -z "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+            record "$name" "$check" 1 "key not set"
+          else
+            scratch="$(mktemp -d)"
+            printf 'netscli publish preflight\n' > "${scratch}/probe"
+            if ! node -p "require('./apps/netscli-gui/src-tauri/tauri.conf.json').plugins.updater.pubkey" \
+                | base64 -d > "${scratch}/app.pub" || [ ! -s "${scratch}/app.pub" ]; then
+              record "$name" "$check" 1 "could not read the app's public key from tauri.conf.json"
+            elif ! "${RUNNER_TEMP}/tauri-cli/node_modules/.bin/tauri" signer sign --app-version 0.0.0 \
+                "${scratch}/probe" >/dev/null 2>&1; then
+              record "$name" "$check" 1 "cannot sign: wrong password, or not a Tauri key"
+            elif base64 -d "${scratch}/probe.sig" > "${scratch}/probe.minisig" &&
+                minisign -Vm "${scratch}/probe" -p "${scratch}/app.pub" -x "${scratch}/probe.minisig" -q; then
+              record "$name" "$check" 0 "ok"
+            else
+              record "$name" "$check" 1 "signs, but NOT with the key the app trusts"
+            fi
+            rm -rf "$scratch"
+          fi
+
+          summary ""
+          if [ "$failures" -gt 0 ]; then
+            summary "**$failures signing credential(s) need attention before publishing.**"
+            exit 1
+          fi
+          summary "All four signing credentials are good."

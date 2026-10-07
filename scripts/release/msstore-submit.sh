@@ -24,9 +24,20 @@
 #   MSSTORE_SELLER_ID MSSTORE_PRODUCT_ID
 set -euo pipefail
 
+# shellcheck source=scripts/release/lib.sh
+. "$(dirname "$0")/lib.sh"
+
 tag="${1:?usage: msstore-submit.sh <tag>}"
+# The tag goes into the package URL the Store is told to fetch.
+validate_tag "$tag"
 : "${MSSTORE_TENANT_ID:?}" "${MSSTORE_CLIENT_ID:?}" "${MSSTORE_CLIENT_SECRET:?}"
 : "${MSSTORE_SELLER_ID:?}" "${MSSTORE_PRODUCT_ID:?}"
+
+# The client secret and the access token never go on a curl command line,
+# where any process on the runner can read them: the secret goes to curl on
+# stdin, and the token in a header file only this user can read.
+work="$(mktemp -d)"
+trap 'rm -rf "$work"' EXIT
 
 api="https://api.store.microsoft.com/submission/v1/product/${MSSTORE_PRODUCT_ID}"
 package_url="https://netscli.com/download/${tag}/netscli-gui-windows-x86_64.msi"
@@ -38,22 +49,25 @@ if [ "${status}" != "200" ]; then
   exit 1
 fi
 
-token=$(curl -sf "https://login.microsoftonline.com/${MSSTORE_TENANT_ID}/oauth2/v2.0/token" \
+# `client_secret@-` reads the value from stdin; printf is a shell builtin,
+# so the secret is not on its command line either.
+token=$(printf '%s' "${MSSTORE_CLIENT_SECRET}" | curl -sf "https://login.microsoftonline.com/${MSSTORE_TENANT_ID}/oauth2/v2.0/token" \
   --data-urlencode "grant_type=client_credentials" \
   --data-urlencode "client_id=${MSSTORE_CLIENT_ID}" \
-  --data-urlencode "client_secret=${MSSTORE_CLIENT_SECRET}" \
+  --data-urlencode "client_secret@-" \
   --data-urlencode "scope=https://api.store.microsoft.com/.default" | jq -r '.access_token')
 if [ -z "${token}" ] || [ "${token}" = "null" ]; then
   echo "No token from Entra. Check the MSSTORE_* secrets, and whether the client secret has expired." >&2
   exit 1
 fi
+(umask 077 && printf 'Authorization: Bearer %s\n' "${token}" >"${work}/auth-header")
 
 # Every API answer carries isSuccess and errors. Print the errors and stop on
 # a failure, otherwise print the body for the caller.
 call() {
   local method="$1" path="$2" response
   local args=(-s -X "${method}" "${api}${path}"
-    -H "Authorization: Bearer ${token}"
+    -H "@${work}/auth-header"
     -H "X-Seller-Account-Id: ${MSSTORE_SELLER_ID}"
     -H "Content-Type: application/json")
   if [ -n "${3:-}" ]; then args+=(--data "$3"); fi

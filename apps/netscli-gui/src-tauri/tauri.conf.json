@@ -40,6 +40,7 @@
       "endpoints": [
         "https://github.com/fstubner/netscli/releases/latest/download/latest.json"
       ],
+      "requireSignedVersion": true,
       "windows": {
         "installMode": "passive"
       }
