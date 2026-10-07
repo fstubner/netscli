@@ -78,6 +78,7 @@ Exact method signatures can change as operations gain richer structured data. Pr
 | `dns` | Record lookup and reverse lookup behavior. |
 | `mdns` | Local mDNS/DNS-SD service discovery behind the `mdns` feature. |
 | `arp` | Local neighbor cache and MAC vendor enrichment. |
+| `oui` | MAC vendor lookup from an IEEE list embedded in the crate. Set `NETSCLI_OUI_PATH` to a `.json` or `.json.gz` file to use a newer or filtered list instead. |
 | `stats` | Local interface traffic counters. |
 | `pcap` | Optional capture execution and packet parsing behind the `pcap` feature. |
 | `db` | SQLite persistence for host records and scan history. |
