@@ -79,8 +79,8 @@ netscli arp                          # ARP table with vendor lookup
 netscli interfaces
 ```
 
-Every non-interactive command takes `--json` or `--yaml`, so results pipe
-straight into `jq`, and the ones that return a list also take `--csv` and
+Every command that returns a result takes `--json` or `--yaml`, so results
+pipe straight into `jq`, and the ones that return a list also take `--csv` and
 `--md`.
 
 Run `netscli` with no arguments for the terminal UI: slash commands with
@@ -103,6 +103,12 @@ Full command reference: **[CLI](https://netscli.com/docs/cli/)** ·
 }
 ```
 
+That form needs netscli installed. To skip the install, use `npx` as the
+command (`"command": "npx", "args": ["-y", "netscli", "serve"]`), or open an
+`.mcpb` bundle from the
+[latest release](https://github.com/fstubner/netscli/releases/latest) in a
+client that supports them.
+
 Nine tools by default: discover, scan, ping, DNS, ARP, inspect, sweep,
 interfaces and mDNS. Packet-capture builds add four more. Details and the
 full schemas are in the **[MCP guide](https://netscli.com/docs/mcp/)**.
@@ -117,6 +123,7 @@ full schemas are in the **[MCP guide](https://netscli.com/docs/mcp/)**.
 | [Terminal UI](https://netscli.com/docs/tui/) | Slash commands and session behaviour |
 | [Desktop app](https://netscli.com/docs/desktop/) | Tabs, filters, exports |
 | [MCP server](https://netscli.com/docs/mcp/) | Tools, schemas, agent setup |
+| [Interface coverage](https://netscli.com/docs/interface-coverage/) | Which capabilities each interface exposes |
 | [Operations](https://netscli.com/docs/operations/) | What each scan actually does |
 | [Result model](https://netscli.com/docs/result-model/) | Shape of the JSON and YAML output |
 | [Packet capture](https://netscli.com/docs/packet-capture/) | Requirements and the pcap builds |
@@ -130,4 +137,4 @@ dev loop, packet-capture builds and the repository layout are all in
 
 ## License
 
-MIT
+MIT. See [LICENSE](LICENSE).
