@@ -160,7 +160,10 @@ export const heroCommands: HeroCommands = {
     script: INSTALL_SH_COMMAND,
   },
   linux: {
-    packageManager: 'yay -S netscli-bin',
+    // Homebrew, not `yay -S netscli-bin`. The AUR package is for Arch only, and
+    // this row is shown to every Linux visitor. The install tabs list it last
+    // for the same reason (install.ts).
+    packageManager: 'brew tap fstubner/tap && brew install netscli',
     script: INSTALL_SH_COMMAND,
   },
 };
