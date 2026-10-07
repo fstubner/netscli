@@ -180,6 +180,14 @@
   animation: spin 0.9s linear infinite;
 }
 
+/* The ring that does not turn still marks the tab as busy. The progress bar
+   already stops for this setting; the spinner did not. */
+@media (prefers-reduced-motion: reduce) {
+  .tab-spinner {
+    animation: none;
+  }
+}
+
 .add-tab-group {
   flex: 0 0 auto;
   position: relative;
