@@ -170,7 +170,7 @@ jobs:
       # mistake in the first one would let an incomplete release out.
       - name: test release asset and updater manifest checks
         run: node --test scripts/release/*.test.mjs
-      - name: PSScriptAnalyzer install.ps1
+      - name: PSScriptAnalyzer install.ps1 and the release scripts
         shell: pwsh
         # Write-Host is intentional here (colored installer UX output, which
         # Write-Output can't do); the empty catch blocks are documented
@@ -178,10 +178,19 @@ jobs:
         # and BOM-less UTF-8 is the existing, working file encoding. None of
         # these are correctness bugs, so they're excluded rather than
         # rewriting a working installer for style alone.
+        #
+        # scripts/release/*.ps1 too. sign-windows-pe.ps1 and
+        # check-msi-signed.ps1 run only during a release, inside the Windows
+        # GUI build, and a failure in the first is what left v0.3.4 without
+        # Windows files for 1 h 38 min. Linting is the part of that path CI
+        # can reach without the signing credentials.
         run: |
           Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
-          $results = Invoke-ScriptAnalyzer -Path scripts/install.ps1 -Severity Warning,Error `
-            -ExcludeRule PSAvoidUsingWriteHost, PSAvoidUsingEmptyCatchBlock, PSUseBOMForUnicodeEncodedFile
+          $paths = @('scripts/install.ps1') + @(Get-ChildItem scripts/release/*.ps1 | ForEach-Object FullName)
+          $results = @($paths | ForEach-Object {
+            Invoke-ScriptAnalyzer -Path $_ -Severity Warning,Error `
+              -ExcludeRule PSAvoidUsingWriteHost, PSAvoidUsingEmptyCatchBlock, PSUseBOMForUnicodeEncodedFile
+          })
           $results | Format-Table -AutoSize
           if ($results.Count -gt 0) { exit 1 }
 
