@@ -10,11 +10,14 @@ they do not *inherit* it. Each crate sets its own, and the GUI carries
 further copies in `package.json` and `tauri.conf.json`. See
 `docs/PUBLISHING.md` for the full list of files a bump has to touch.
 
-A version heading carries a date, and a link, only once its release is
-published. Both are claims about the outside world, and the website reads
-them. It printed "24 Aug 2026" for 0.3.1 for four days on the strength of a
-date written here when the notes were drafted. An in-flight version keeps
-its heading and collects entries. The date and the link go on with the tag.
+A version heading gets its date and its link in a commit of their own, once
+the version's tag is pushed. The date is the day the release is meant to go
+out, and it moves if the release slips. Neither says the release is
+published. 0.3.1 was dated here when its notes were drafted, before it was
+even tagged, and the website showed it as released for four days. So the
+website now asks GitHub which releases are published, and labels any other
+version "Not yet released" whatever its heading says. An in-flight version
+keeps a bare heading and collects entries.
 
 ## [0.3.5] - 2026-10-06
 
