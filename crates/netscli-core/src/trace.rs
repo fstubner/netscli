@@ -31,6 +31,7 @@ pub async fn trace_route(
     resolve: bool,
     progress: Option<watch::Sender<String>>,
 ) -> Result<TraceResult> {
+    ensure_not_an_option(host)?;
     let max_hops = max_hops.clamp(1, 255);
 
     #[cfg(windows)]
@@ -70,6 +71,31 @@ pub async fn trace_route(
 
         Err(last_err.unwrap_or_else(|| Error::unsupported("trace tool unavailable")))
     }
+}
+
+/// Refuse a target that the trace tool would read as one of its own options.
+///
+/// The target is handed to `tracert`, `traceroute` or `tracepath` as a plain
+/// argument, so `-d` or `--help` is a flag and not a host, and so is `/d` for
+/// Windows' `tracert`, which takes `/` options as well as `-` ones
+/// (`tracert /d /h 1 127.0.0.1` runs as `-d -h 1`). A host name or an address
+/// never starts with either character, so refusing is exact. It is also the
+/// only fix that works everywhere, because Windows' `tracert` has no `--` to
+/// end its options ("-- is not a valid command option").
+///
+/// The command line passes the target through as given, so
+/// `netscli trace -- -d` reached the tool as a flag.
+fn ensure_not_an_option(host: &str) -> Result<()> {
+    let target = host.trim_start();
+    if target.is_empty() {
+        return Err(Error::invalid_input("trace target is empty"));
+    }
+    if target.starts_with(['-', '/']) {
+        return Err(Error::invalid_input(format!(
+            "trace target {host:?} looks like a command-line option, not a host"
+        )));
+    }
+    Ok(())
 }
 
 #[cfg(windows)]
@@ -223,6 +249,37 @@ fn is_not_found(err: &Error) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The target is passed to the tool as an argument, so one that starts
+    /// with a dash (or a slash, for Windows' `tracert`) is a flag to it. Run
+    /// without the check, `-d` is accepted by `tracert` as "do not resolve
+    /// names" and `--help` prints its usage, both as a successful trace of
+    /// nothing, which is what these asserted against before the check existed.
+    #[tokio::test]
+    async fn a_target_that_looks_like_an_option_is_refused_before_the_tool_runs() {
+        for host in ["-d", "--help", "-S", "/d", "/?", "   -d", ""] {
+            let outcome = trace_route(host, 3, false, None).await;
+            assert!(
+                matches!(outcome, Err(Error::InvalidInput(_))),
+                "{host:?} should be refused, got {outcome:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn ordinary_targets_are_not_mistaken_for_options() {
+        for host in [
+            "example.com",
+            "192.168.1.1",
+            "::1",
+            "fe80::1%12",
+            "_dmarc.example.com",
+            "münchen.example",
+            "router-1.local.",
+        ] {
+            assert!(ensure_not_an_option(host).is_ok(), "{host:?}");
+        }
+    }
 
     /// Output that is not UTF-8 must not end the trace.
     ///
