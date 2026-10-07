@@ -25,7 +25,6 @@ impl InputRuntime {
             if let Some(at) = self.exit_confirmed_at {
                 if at.elapsed() >= Duration::from_secs(3) {
                     app.confirm_exit = false;
-                    app.set_status("ready");
                     self.exit_confirmed_at = None;
                 }
             } else {
@@ -71,7 +70,6 @@ impl InputRuntime {
         let is_exit_key = key.code == KeyCode::Esc || is_ctrl_c;
         if app.confirm_exit && !is_exit_key {
             app.confirm_exit = false;
-            app.set_status("ready");
             self.exit_confirmed_at = None;
         }
 
@@ -188,7 +186,6 @@ impl InputRuntime {
             true
         } else {
             app.confirm_exit = true;
-            app.set_status("Press Esc or Ctrl+C again to exit");
             self.exit_confirmed_at = Some(Instant::now());
             false
         }
@@ -243,7 +240,6 @@ impl InputRuntime {
 
     fn enter_config(&mut self, app: &mut TuiApp<'_>) {
         app.confirm_exit = false;
-        app.set_status("ready");
         app.enter_config();
         Self::clear_input_state(app);
     }
@@ -254,7 +250,6 @@ impl InputRuntime {
             .and_then(|req| crate::tui_export::export_session(&snapshot, &req));
 
         app.confirm_exit = false;
-        app.set_status("ready");
         app.push_command(input.clone());
         Self::remember_command(app, &input);
         Self::clear_input_state(app);
@@ -279,7 +274,6 @@ impl InputRuntime {
     ) {
         app.confirm_exit = false;
         app.running = true;
-        app.set_status("Running...");
         app.push_command(input.clone());
         Self::remember_command(app, &input);
         Self::clear_input_state(app);

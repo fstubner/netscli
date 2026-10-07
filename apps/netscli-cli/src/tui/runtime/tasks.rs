@@ -53,7 +53,6 @@ impl TaskRuntime {
             ))]),
         }
         app.running = false;
-        app.set_status("ready");
         self.clear();
     }
 
@@ -69,7 +68,6 @@ impl TaskRuntime {
                 }
             }
             app.running = false;
-            app.set_status("ready");
             self.progress_rx = None;
             return;
         }
@@ -78,7 +76,6 @@ impl TaskRuntime {
             handle.abort();
             let _ = handle.await;
             app.running = false;
-            app.set_status("cancelled");
             app.finish_current(vec![Formatter::format_notice("Operation cancelled")]);
             self.progress_rx = None;
         }

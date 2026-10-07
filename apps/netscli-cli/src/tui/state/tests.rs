@@ -300,14 +300,3 @@ fn the_host_label_asks_the_system_before_the_environment() {
     );
     assert_eq!(host_label(None, None, None), "n/a");
 }
-
-#[test]
-fn status_setter_updates_message() {
-    let mut app = TuiApp::new();
-    app.set_status("Running...");
-    assert!(
-        app.status.contains("Running"),
-        "expected status to contain 'Running', got '{}'",
-        app.status
-    );
-}

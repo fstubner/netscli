@@ -195,8 +195,4 @@ impl<'a> TuiApp<'a> {
     pub fn reset_history_nav(&mut self) {
         self.history_nav = None;
     }
-
-    pub fn set_status(&mut self, msg: impl Into<String>) {
-        self.status = msg.into();
-    }
 }
