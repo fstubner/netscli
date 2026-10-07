@@ -9,10 +9,10 @@ use crate::error::{Error, Result};
 /// Process creation flag that stops a console program opening a window.
 ///
 /// The installed desktop app is a GUI-subsystem process with no console, so a
-/// console tool it starts gets a new one, and on Windows 11 that is a visible
-/// Windows Terminal window titled with the tool's path, open for as long as the
-/// trace runs. The CLI and TUI have a console to inherit and are unaffected.
-/// Same flag, and same reason, as `arp/platform/command.rs`.
+/// console tool it starts gets a new one. With Windows Terminal as the default
+/// terminal that is a visible window titled with the tool's path, open for as
+/// long as the trace runs. The CLI and TUI start the tool from a console of
+/// their own. Same flag, and same reason, as `arp/platform/command.rs`.
 #[cfg(windows)]
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
@@ -191,13 +191,14 @@ async fn run_command_streaming(
 /// One line of the tool's output, with anything that is not UTF-8 replaced.
 ///
 /// `tracert` translates its messages and writes them in the console's OEM code
-/// page, so on a German, French or Russian Windows a timed-out hop prints
-/// bytes that are not valid UTF-8 ("Zeitüberschreitung" is `Zeit\x81berschreitung`
-/// in code page 850). Reading lines as strict UTF-8 turned the first of those
-/// into "trace stdout read failed" and discarded the whole trace, including the
-/// hops already printed. The hop number and the timings are plain ASCII, so a
-/// replacement character in the free text after them costs nothing that
-/// matters. `ping -a` in `dns/reverse.rs` is decoded the same way.
+/// page, so on a Windows set to a language with accented letters a timed-out
+/// hop can print bytes that are not valid UTF-8 ("Zeitüberschreitung" is
+/// `Zeit\x81berschreitung` in code page 850). Reading lines as strict UTF-8
+/// turned the first of those into "trace stdout read failed" and discarded the
+/// whole trace, including the hops already printed. The hop number and the
+/// timings are plain ASCII, so a replacement character in the free text after
+/// them costs nothing that matters. `ping -a` in `dns/reverse.rs` is decoded
+/// the same way.
 fn decode_line(bytes: &[u8]) -> String {
     String::from_utf8_lossy(bytes).trim_end().to_string()
 }
@@ -225,12 +226,12 @@ mod tests {
 
     /// Output that is not UTF-8 must not end the trace.
     ///
-    /// This is what a localized Windows `tracert` writes for a timed-out hop,
-    /// and it is the only way to reach the failure: the English output this
-    /// code was written against is plain ASCII, so nothing else in the suite
-    /// (or on an English CI runner) can fail here. A real child process is
-    /// used rather than a byte slice because the strict read happened in the
-    /// select loop, around the pipe.
+    /// This is the kind of line a `tracert` in another language can write for a
+    /// timed-out hop, and it is the only way to reach the failure: the English
+    /// output this code was written against is plain ASCII, so nothing else in
+    /// the suite (or on an English CI runner) can fail here. A real child
+    /// process is used rather than a byte slice because the strict read
+    /// happened in the select loop, around the pipe.
     #[tokio::test]
     async fn output_that_is_not_utf8_does_not_abort_the_trace() {
         let dir = tempfile::tempdir().expect("temp dir");

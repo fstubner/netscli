@@ -36,7 +36,7 @@ mod tests {
     /// The wait must leave the thread it runs on free.
     ///
     /// The plugin's own `blocking_*` calls park the calling thread on a channel,
-    /// which is what froze the window when these commands were plain `fn`s. A
+    /// and when these commands were plain `fn`s that thread was the main one. A
     /// current-thread runtime makes the difference visible: a second task has
     /// to get time while `ask` waits for a dialog answered from another thread,
     /// the way the plugin answers.

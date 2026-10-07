@@ -93,8 +93,8 @@ async fn reverse_lookup_windows_ping(ip: IpAddr, timeout_ms: u64) -> Option<Stri
     }
 
     // Keeps `ping` from opening a console window. The desktop app has no
-    // console, so without this every lookup in a Discover or Sweep shows a
-    // Windows Terminal window for as long as `ping` runs. See `trace.rs`.
+    // console, so without this every lookup in a Discover or Sweep opens one
+    // for as long as `ping` runs. See `trace.rs`.
     const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
     let ip_s = ip.to_string();
