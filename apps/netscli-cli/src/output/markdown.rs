@@ -43,7 +43,8 @@ fn render(rows: &[Row]) -> String {
 /// ASCII punctuation and which renders as the character itself. `<` and `>`
 /// are among them, so a host cannot inject HTML. A table row is one line:
 /// line breaks become `<br>`, added after escaping so it is the only tag, and
-/// tabs become spaces. Other control characters become `.`, as in CSV.
+/// tabs become spaces. Other control characters, and the bidi and zero-width
+/// ones, become `.`, as in CSV.
 fn escape(cell: &str) -> String {
     let cleaned = defuse_controls(cell, &['\t', '\r', '\n']);
     let mut out = String::with_capacity(cleaned.len());
@@ -136,5 +137,13 @@ mod tests {
     #[test]
     fn a_host_cannot_send_escape_sequences_to_the_terminal() {
         assert_eq!(escape("\u{1b}[31mred"), ".\\[31mred");
+    }
+
+    #[test]
+    fn a_host_cannot_reorder_or_hide_text() {
+        // GitHub renders a bidi override, so a pasted table is as exposed as
+        // a terminal.
+        assert_eq!(escape("invoice\u{202E}fdp.exe"), "invoice.fdp.exe");
+        assert_eq!(escape("a\u{200B}b"), "a.b");
     }
 }

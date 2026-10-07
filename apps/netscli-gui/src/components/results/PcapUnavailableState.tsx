@@ -11,7 +11,7 @@ export function PcapUnavailableState({ capability }: { capability: PcapCapabilit
   const buildWithoutPcap = !capability.compiled || capability.message?.includes("built without feature 'pcap'");
   const title = buildWithoutPcap ? 'Packet Capture is not included in this build' : 'Packet Capture needs a capture driver';
   const body = buildWithoutPcap
-    ? 'Use a PCAP-enabled NetsCLI Desktop build. On Windows, Npcap is also required before captures can run.'
+    ? 'The published desktop installers are built without packet capture, so this needs a build made from source with the pcap feature. The setup docs list the options. On Windows, Npcap is also required before captures can run.'
     : 'Install Npcap on Windows, or libpcap on Linux/macOS, then restart NetsCLI and open Packet Capture again.';
 
   return (

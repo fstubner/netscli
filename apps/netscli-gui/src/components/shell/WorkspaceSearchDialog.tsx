@@ -42,6 +42,12 @@ type SearchItem =
       entry: HistoryEntry;
     };
 
+const LISTBOX_ID = 'workspace-search-listbox';
+
+/** By position rather than from the item's own id, which can hold spaces, and
+ *  an id reference cannot. */
+const optionId = (index: number) => `workspace-search-option-${index}`;
+
 export function WorkspaceSearchDialog({
   history,
   tabs,
@@ -56,7 +62,8 @@ export function WorkspaceSearchDialog({
   const [activeIndex, setActiveIndex] = useState(0);
   const items = useMemo(() => searchItemsFor(tabs, history), [history, tabs]);
   const matches = useMemo(() => filterItems(items, query).slice(0, 40), [items, query]);
-  const activeItem = matches[Math.min(activeIndex, Math.max(0, matches.length - 1))];
+  const activeOption = Math.min(activeIndex, Math.max(0, matches.length - 1));
+  const activeItem = matches[activeOption];
 
   useModalFocus({ dialogRef, onClose });
 
@@ -128,13 +135,22 @@ export function WorkspaceSearchDialog({
       >
         <div className="workspace-search-input">
           <Search size={15} />
+          {/* Focus stays here while the arrow keys move through the results, so
+              a screen reader is told which result is current through
+              `aria-activedescendant`. Without it the highlighted row changed
+              and nothing was announced. */}
           <input
+            aria-activedescendant={activeItem ? optionId(activeOption) : undefined}
+            aria-autocomplete="list"
+            aria-controls={LISTBOX_ID}
+            aria-expanded={matches.length > 0}
             aria-label="Search workspace"
             autoCapitalize="off"
             autoCorrect="off"
             autoFocus
             data-testid="workspace-search-input"
             placeholder="Search tabs, results, and history"
+            role="combobox"
             spellCheck={false}
             value={query}
             onChange={(event) => {
@@ -147,7 +163,7 @@ export function WorkspaceSearchDialog({
           </button>
         </div>
 
-        <div className="workspace-search-results" ref={resultsRef} role="listbox">
+        <div className="workspace-search-results" id={LISTBOX_ID} ref={resultsRef} role="listbox">
           {matches.length === 0 ? (
             <span className="workspace-search-empty">No workspace matches.</span>
           ) : (
@@ -155,6 +171,7 @@ export function WorkspaceSearchDialog({
               <button
                 aria-selected={item === activeItem}
                 className={item === activeItem ? 'active' : ''}
+                id={optionId(index)}
                 key={item.id}
                 role="option"
                 type="button"

@@ -2,7 +2,7 @@ use super::*;
 use ratatui::backend::TestBackend;
 use ratatui::Terminal;
 
-fn render_to_lines(app: &mut TuiApp<'_>, width: u16, height: u16) -> Vec<String> {
+pub(super) fn render_to_lines(app: &mut TuiApp<'_>, width: u16, height: u16) -> Vec<String> {
     let backend = TestBackend::new(width, height);
     let mut terminal = Terminal::new(backend).expect("terminal");
     app.draw(&mut terminal).expect("draw");
@@ -57,7 +57,7 @@ fn input_prompt_renders_in_short_terminal() {
 
 /// Convenience: type `input` as text into the app's textarea so we
 /// can inspect suggestion and autocomplete behavior without a pty.
-fn type_text(app: &mut TuiApp<'_>, input: &str) {
+pub(super) fn type_text(app: &mut TuiApp<'_>, input: &str) {
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
     for ch in input.chars() {
         app.input
@@ -213,15 +213,4 @@ fn empty_suggestions_does_not_panic_on_tab() {
     app.apply_tab_completion();
     app.suggestions.clear();
     app.apply_tab_completion();
-}
-
-#[test]
-fn status_setter_updates_message() {
-    let mut app = TuiApp::new();
-    app.set_status("Running...");
-    assert!(
-        app.status.contains("Running"),
-        "expected status to contain 'Running', got '{}'",
-        app.status
-    );
 }

@@ -4,8 +4,15 @@ use ipnetwork::IpNetwork;
 
 use super::constants::DEFAULT_SUBNET;
 
-#[cfg(not(windows))]
 pub fn detect_default_ipv4_subnet() -> Option<Ipv4Net> {
+    // `.trunc()` drops the host bits, so this is the network address.
+    default_interface_ipv4().map(|net| net.trunc())
+}
+
+/// This host's IPv4 address on the preferred interface, with that
+/// network's prefix length.
+#[cfg(not(windows))]
+fn default_interface_ipv4() -> Option<Ipv4Net> {
     // Prefer non-tunnel interfaces (vpn/wireguard adapters often sort first
     // on laptops, and scanning the VPN subnet is almost never what the user
     // wants). We iterate ALL qualifying interfaces and return the first one
@@ -21,9 +28,7 @@ pub fn detect_default_ipv4_subnet() -> Option<Ipv4Net> {
         for ip in iface.ips {
             if let IpNetwork::V4(v4) = ip {
                 if let Ok(net) = Ipv4Net::new(v4.ip(), v4.prefix()) {
-                    // `.trunc()` drops any host bits so we return the network
-                    // address regardless of whether the interface IP is a host.
-                    return Some(net.trunc());
+                    return Some(net);
                 }
             }
         }
@@ -46,9 +51,12 @@ fn interface_preference_rank(name: &str) -> u8 {
     }
 }
 
+/// This host's IPv4 address on the first adapter that is up with a
+/// network-shaped prefix, with that network's prefix length.
 #[cfg(windows)]
-pub fn detect_default_ipv4_subnet() -> Option<Ipv4Net> {
+fn default_interface_ipv4() -> Option<Ipv4Net> {
     use ipconfig::{IfType, OperStatus};
+    use std::net::IpAddr;
 
     let adapters = ipconfig::get_adapters().ok()?;
     for adapter in adapters {
@@ -59,7 +67,17 @@ pub fn detect_default_ipv4_subnet() -> Option<Ipv4Net> {
             continue;
         }
         if let Some(net) = pick_ipv4_subnet_from_prefixes(adapter.prefixes()) {
-            return Some(net);
+            // The prefix list gives the network. This host's own address on
+            // it is among the adapter's addresses.
+            let host = adapter
+                .ip_addresses()
+                .iter()
+                .find_map(|ip| match ip {
+                    IpAddr::V4(v4) if net.contains(v4) => Some(*v4),
+                    _ => None,
+                })
+                .unwrap_or(net.network());
+            return Ipv4Net::new(host, net.prefix_len()).ok();
         }
     }
 
@@ -146,9 +164,10 @@ pub fn detect_default_ipv4_addr() -> Option<std::net::Ipv4Addr> {
 const NARROWED_DEFAULT_PREFIX: u8 = 24;
 
 pub fn default_ipv4_subnet_string() -> String {
-    let Some(net) = detect_default_ipv4_subnet() else {
+    let Some(interface) = default_interface_ipv4() else {
         return DEFAULT_SUBNET.to_string();
     };
+    let net = interface.trunc();
 
     // An interface legitimately carrying a /8 -- a 10.0.0.0/8 corporate
     // network, or Docker -- produced a default that the /16 cap then
@@ -158,11 +177,13 @@ pub fn default_ipv4_subnet_string() -> String {
     if net.prefix_len() >= 16 {
         return format!("{}/{}", net.network(), net.prefix_len());
     }
-    match detect_default_ipv4_addr()
-        .and_then(|addr| Ipv4Net::new(addr, NARROWED_DEFAULT_PREFIX).ok())
-    {
-        Some(narrowed) => format!("{}/{}", narrowed.network(), narrowed.prefix_len()),
-        None => DEFAULT_SUBNET.to_string(),
+    // Around this host's address on that same interface. The address used to
+    // come from `detect_default_ipv4_addr`, which picks an interface by a
+    // different rule: the first one up, which may be a tunnel, or have no
+    // IPv4 address and fall back to 192.168.1.0/24.
+    match Ipv4Net::new(interface.addr(), NARROWED_DEFAULT_PREFIX) {
+        Ok(narrowed) => format!("{}/{}", narrowed.network(), narrowed.prefix_len()),
+        Err(_) => DEFAULT_SUBNET.to_string(),
     }
 }
 

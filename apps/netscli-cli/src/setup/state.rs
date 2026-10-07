@@ -15,6 +15,11 @@ pub struct SetupState {
 pub struct DependencyStatus {
     pub name: String,
     pub installed: bool,
+    /// Whether this build cannot do its job without it. `doctor` exits 1 when
+    /// one of these is missing. State files from before this field existed
+    /// read as false.
+    #[serde(default)]
+    pub required: bool,
     pub details: Option<String>,
 }
 

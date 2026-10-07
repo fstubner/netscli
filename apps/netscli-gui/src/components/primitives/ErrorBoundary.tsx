@@ -1,5 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 
+import { CrashScreen } from '../shell/CrashScreen';
+
 /**
  * Last line of defence against a render throw blanking the window.
  *
@@ -40,18 +42,6 @@ export class ErrorBoundary extends Component<Props, State> {
     const { error } = this.state;
     if (!error) return this.props.children;
 
-    return (
-      <div className="error-boundary" role="alert" data-testid="error-boundary">
-        <h1>Something went wrong</h1>
-        <p>
-          The window stopped rendering and could not recover. Reloading starts a fresh session; any
-          results still open will be lost.
-        </p>
-        <pre className="error-boundary-detail">{error.message}</pre>
-        <button type="button" onClick={() => window.location.reload()}>
-          Reload
-        </button>
-      </div>
-    );
+    return <CrashScreen error={error} />;
   }
 }

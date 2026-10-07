@@ -98,3 +98,60 @@ fn is_in_allowed_save_root(path: &Path) -> Result<bool, String> {
 
     Ok(false)
 }
+
+// What the renderer may ask the OS to open or reveal. These stop at the checks
+// that need nothing but the file and the registry; the save-folder check reads
+// the user's real settings and creates the default folder, which a test
+// should not do.
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn temp_file(tag: &str, name: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!(
+            "netscli-artifact-test-{}-{tag}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join(name);
+        std::fs::write(&path, "x").unwrap();
+        path
+    }
+
+    #[test]
+    fn only_the_kinds_the_app_writes_can_be_opened() {
+        for name in ["a.pcap", "a.json", "a.csv", "a.txt", "A.CSV"] {
+            assert!(has_supported_artifact_extension(Path::new(name)), "{name}");
+        }
+        for name in ["a.exe", "a.ps1", "a.lnk", "a.html", "a"] {
+            assert!(!has_supported_artifact_extension(Path::new(name)), "{name}");
+        }
+    }
+
+    #[test]
+    fn an_empty_missing_or_wrong_kind_of_path_is_refused() {
+        let registry = ArtifactRegistry::default();
+        assert!(validate_saved_artifact_path("  ", &registry).is_err());
+        assert!(validate_saved_artifact_path("definitely/not/here.csv", &registry).is_err());
+
+        let exe = temp_file("exe", "tool.exe");
+        let err = validate_saved_artifact_path(exe.to_str().unwrap(), &registry).unwrap_err();
+        assert!(err.contains("not supported"), "{err}");
+
+        let dir = exe.parent().unwrap();
+        let err = validate_saved_artifact_path(dir.to_str().unwrap(), &registry).unwrap_err();
+        assert!(err.contains("must be a file"), "{err}");
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn a_file_this_session_wrote_is_accepted() {
+        let registry = ArtifactRegistry::default();
+        let file = temp_file("registered", "scan.csv");
+        registry.register(&file).unwrap();
+
+        let accepted = validate_saved_artifact_path(file.to_str().unwrap(), &registry).unwrap();
+        assert_eq!(accepted, std::fs::canonicalize(&file).unwrap());
+        std::fs::remove_dir_all(file.parent().unwrap()).unwrap();
+    }
+}

@@ -262,11 +262,31 @@ pub(super) async fn op_discover_mdns(
         .timeout_ms
         .unwrap_or(3000)
         .clamp(100, netscli_core::MAX_MDNS_TIMEOUT_MS);
-    let service_types = p.service_types.unwrap_or_default();
+    let service_types = service_types_to_browse(p.service_types)?;
     let ops = netscli_core::Ops::default();
     ops.discover_mdns(&service_types, std::time::Duration::from_millis(timeout_ms))
         .await
         .map_err(|e| RpcError::ToolError(e.to_string()))
+}
+
+/// Most service types one `discover_mdns` call browses. Each is its own
+/// multicast query, repeated for the whole window, so an unbounded list was
+/// a burst of queries on the LAN, and a repeated type was browsed twice.
+#[cfg(feature = "mdns")]
+const MAX_MDNS_SERVICE_TYPES: usize = 32;
+
+#[cfg(feature = "mdns")]
+fn service_types_to_browse(requested: Option<Vec<String>>) -> Result<Vec<String>, RpcError> {
+    let mut types = requested.unwrap_or_default();
+    types.sort_unstable();
+    types.dedup();
+    if types.len() > MAX_MDNS_SERVICE_TYPES {
+        return Err(RpcError::InvalidParams(format!(
+            "too many service_types: {} (max {MAX_MDNS_SERVICE_TYPES})",
+            types.len()
+        )));
+    }
+    Ok(types)
 }
 
 #[cfg(test)]

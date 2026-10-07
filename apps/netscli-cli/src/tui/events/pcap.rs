@@ -1,4 +1,6 @@
 #[cfg(feature = "pcap")]
+use super::parse::{parse_pcap, PcapArgs};
+#[cfg(feature = "pcap")]
 use crate::commands;
 use crate::tui_formatter::Formatter;
 use netscli_core::{Database, Ops, PcapCancelToken};
@@ -38,88 +40,20 @@ pub(super) async fn handle(
         let _ = tx.send("Press Esc or Ctrl+C to stop capture.".to_string());
     }
 
-    let mut check = false;
-    let mut interface: Option<String> = None;
-    let mut filter: Option<String> = None;
-    let mut duration: Option<u64> = None;
-    let mut output: Option<String> = None;
-    let mut max_packets: Option<usize> = None;
-
-    let mut i = 1usize;
-    while i < parts.len() {
-        match parts[i] {
-            "--check" => {
-                check = true;
-                i += 1;
-            }
-            "-i" | "--interface" => {
-                let Some(value) = parts.get(i + 1) else {
-                    out.push(Formatter::format_error("Missing value for --interface"));
-                    return out;
-                };
-                interface = Some((*value).to_string());
-                i += 2;
-            }
-            "--filter" => {
-                let Some(value) = parts.get(i + 1) else {
-                    out.push(Formatter::format_error("Missing value for --filter"));
-                    return out;
-                };
-                filter = Some((*value).to_string());
-                i += 2;
-            }
-            "--duration" => {
-                let Some(value) = parts.get(i + 1) else {
-                    out.push(Formatter::format_error("Missing value for --duration"));
-                    return out;
-                };
-                duration = match value.parse::<u64>() {
-                    Ok(v) => Some(v),
-                    Err(_) => {
-                        out.push(Formatter::format_error(
-                            "Invalid --duration (expected seconds)",
-                        ));
-                        return out;
-                    }
-                };
-                i += 2;
-            }
-            "--output" => {
-                let Some(value) = parts.get(i + 1) else {
-                    out.push(Formatter::format_error("Missing value for --output"));
-                    return out;
-                };
-                output = Some((*value).to_string());
-                i += 2;
-            }
-            "--max-packets" => {
-                let Some(value) = parts.get(i + 1) else {
-                    out.push(Formatter::format_error("Missing value for --max-packets"));
-                    return out;
-                };
-                max_packets = match value.parse::<usize>() {
-                    Ok(v) => Some(v),
-                    Err(_) => {
-                        out.push(Formatter::format_error(
-                            "Invalid --max-packets (expected integer)",
-                        ));
-                        return out;
-                    }
-                };
-                i += 2;
-            }
-            tok if tok.starts_with('-') => {
-                out.push(Formatter::format_error(&format!("Unknown flag: {tok}")));
-                return out;
-            }
-            tok => {
-                if interface.is_none() {
-                    interface = Some(tok.to_string());
-                }
-                i += 1;
-            }
+    let PcapArgs {
+        check,
+        interface,
+        filter,
+        duration,
+        output,
+        max_packets,
+    } = match parse_pcap(parts) {
+        Ok(args) => args,
+        Err(message) => {
+            out.push(Formatter::format_error(&message));
+            return out;
         }
-    }
+    };
 
     if check || interface.is_none() {
         // Device enumeration is a blocking syscall on every platform, and

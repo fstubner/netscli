@@ -26,7 +26,7 @@ pub(super) const COMMAND_DEFS: &[CommandDef] = &[
     CommandDef {
         cmd: "/discover",
         desc: "Discover hosts on network",
-        args: "[subnet]",
+        args: "[subnet] [--resolve]",
     },
     CommandDef {
         cmd: "/scan",
@@ -41,7 +41,7 @@ pub(super) const COMMAND_DEFS: &[CommandDef] = &[
     CommandDef {
         cmd: "/sweep",
         desc: "Sweep network (discover + scan)",
-        args: "[subnet] [ports] [--no-resolve]",
+        args: "[subnet] [ports] [--resolve]",
     },
     CommandDef {
         cmd: "/dns",
@@ -65,8 +65,8 @@ pub(super) const COMMAND_DEFS: &[CommandDef] = &[
     },
     CommandDef {
         cmd: "/arp",
-        desc: "Show ARP table",
-        args: "",
+        desc: "Show or change the ARP table",
+        args: "[add <ip> <mac> | del <ip> | clear]",
     },
     CommandDef {
         cmd: "/interfaces",
@@ -91,7 +91,7 @@ pub(super) const COMMAND_DEFS: &[CommandDef] = &[
     CommandDef {
         cmd: "/pcap",
         desc: "Packet capture (requires privileges)",
-        args: "[--check] <iface> [--filter <expr>] [--duration <secs>] [--output <file>] [--max-packets <n>]",
+        args: "[--check] <iface> [--filter \"<expr>\"] [--duration <secs>] [--output <file>] [--max-packets <n>]",
     },
     CommandDef {
         cmd: "/help",
@@ -110,7 +110,7 @@ pub(super) const COMMAND_DEFS: &[CommandDef] = &[
     CommandDef {
         cmd: "/discover",
         desc: "Discover hosts on network",
-        args: "[subnet]",
+        args: "[subnet] [--resolve]",
     },
     CommandDef {
         cmd: "/scan",
@@ -125,7 +125,7 @@ pub(super) const COMMAND_DEFS: &[CommandDef] = &[
     CommandDef {
         cmd: "/sweep",
         desc: "Sweep network (discover + scan)",
-        args: "[subnet] [ports] [--no-resolve]",
+        args: "[subnet] [ports] [--resolve]",
     },
     CommandDef {
         cmd: "/dns",
@@ -149,8 +149,8 @@ pub(super) const COMMAND_DEFS: &[CommandDef] = &[
     },
     CommandDef {
         cmd: "/arp",
-        desc: "Show ARP table",
-        args: "",
+        desc: "Show or change the ARP table",
+        args: "[add <ip> <mac> | del <ip> | clear]",
     },
     CommandDef {
         cmd: "/interfaces",

@@ -97,7 +97,7 @@ Inspect combines:
 - Optional checked ports and open-port count.
 - Raw result data for troubleshooting.
 
-If no ports are supplied, Inspect is a host-only check. If ports are supplied, the port table uses the same status model as `scan`.
+With no ports supplied, Inspect checks 22, 80 and 443, as `scan` does. The port table uses the same status model as `scan`.
 
 ### OS hint
 
@@ -146,6 +146,8 @@ netscli ping 192.168.1.1 --count 4
 
 The result summarizes sent packets, received packets, packet loss, and RTT values. Raw ICMP may require elevated permissions on some platforms. Without them, NetsCLI checks reachability with a TCP connection instead.
 
+The CLI exits 1 when no reply came back at all, so a script can test for it. See [Exit codes](/docs/cli/#exit-codes).
+
 ## Trace route
 
 Use `trace` to inspect route hops to a host.
@@ -156,6 +158,8 @@ netscli trace 1.1.1.1 --max-hops 30
 
 On Windows, NetsCLI runs the platform `tracert` command. On Unix-like systems, it tries `traceroute` and then `tracepath` when available. Some hops may time out because routers often deprioritize or block TTL-expired replies.
 
+The CLI exits 1 when that tool fails, for example on a name it cannot resolve. A route that ends without an answer from the last hop is not a failure.
+
 ## DNS, Reverse DNS, and mDNS
 
 Use `dns` for normal record lookup:
@@ -165,6 +169,8 @@ netscli dns netscli.com --record ALL --json
 ```
 
 `ALL` asks for the supported record types. Some record families can fail while others succeed. Treat those as partial results unless every lookup fails.
+
+Lookups go only to the DNS servers your computer is set up to use, the same ones `nslookup` asks. Some home routers refuse record types other than A and AAAA. When that happens, `dns` reports the refusal and does not ask anyone else.
 
 Use `reverse` when you already have an IP address:
 
@@ -203,5 +209,7 @@ Packet capture is optional and requires a build with packet-capture support plus
 ```bash
 netscli pcap --interface "Eth 2.5G" --duration 5 --max-packets 1000
 ```
+
+The CLI writes the capture to `capture.pcap` in the current folder unless you give `--output`. It will not replace a file that is already there unless you add `--force`.
 
 NetsCLI can summarize captured packets into practical rows with number, time, source, destination, protocol, length, and info. It is not a Wireshark replacement, but it gives enough structure to inspect small captures from the CLI or desktop app.
