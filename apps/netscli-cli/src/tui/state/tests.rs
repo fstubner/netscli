@@ -287,6 +287,21 @@ fn stored_output_has_remote_text_cleaned() {
 }
 
 #[test]
+fn the_host_label_asks_the_system_before_the_environment() {
+    let name = |s: &str| Some(s.to_string());
+    // zsh does not export HOSTNAME, so the system's answer is the one to use.
+    assert_eq!(host_label(name("MacBook"), None, None), "macbook");
+    assert_eq!(host_label(name("Real"), name("stale"), name("OLD")), "real");
+    // Only when the system will not say do the variables count.
+    assert_eq!(host_label(None, name("Box"), name("BOX2")), "box");
+    assert_eq!(
+        host_label(name(""), None, name("WORKSTATION")),
+        "workstation"
+    );
+    assert_eq!(host_label(None, None, None), "n/a");
+}
+
+#[test]
 fn status_setter_updates_message() {
     let mut app = TuiApp::new();
     app.set_status("Running...");

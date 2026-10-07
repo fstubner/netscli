@@ -33,6 +33,9 @@ mac_address = "1.1.8"
 shell-words = "1.1"
 dialoguer = "0.12"
 unicode-width = "0.2"
+# Already in the build through netscli-core. This crate asks it for the
+# machine's host name.
+sysinfo = "0.39"
 
 [features]
 default = []
