@@ -7,6 +7,7 @@ import { ResultTable } from '../results/ResultTable';
 import { WarningStrip, warningMessageFor } from '../results/WarningStrip';
 import { ToolForm } from '../tools/ToolForm';
 import { CommandStrip } from './CommandStrip';
+import { RunAnnouncer } from './RunAnnouncer';
 import type { ResultCellContext, ToolCapabilityMap, ToolKind } from '../../tools/types';
 import type { PcapCapability } from '../../types/netscli';
 import type { WorkspaceModel } from '../../workspace/types';
@@ -38,6 +39,7 @@ export function WorkspaceView({
 
   return (
     <main className="workspace">
+      <RunAnnouncer tab={activeTab} />
       {activeTab ? (
         <>
           <section className="active-form">
@@ -49,7 +51,11 @@ export function WorkspaceView({
             />
           </section>
 
-          {activeTab.error && <div className="error-strip">{activeTab.error}</div>}
+          {activeTab.error && (
+            <div className="error-strip" role="alert">
+              {activeTab.error}
+            </div>
+          )}
           {showWarning && warningKey ? (
             <WarningStrip
               message={warningMessage ?? ''}
