@@ -8,8 +8,9 @@ build and a served site. Written from the shipped app; each step below was obser
 than intended. Where a step depends on privileges or the local network, the
 condition is stated so a failure can be attributed correctly.
 
-The CLI, TUI and MCP surfaces have no walkthrough: they are exercised by
-`docs/` and by their own tests, and neither has states a person navigates.
+The CLI, TUI and MCP surfaces have no walkthrough. They are covered by the
+docs on netscli.com and by their own tests, and none of them has states a
+person navigates.
 
 ---
 
@@ -132,8 +133,12 @@ exercising deliberately.
 
 Recorded so an acceptance pass does not report them as new:
 
-- The end-to-end suite (`npm run test:tauri-render`) runs only locally, never
-  on hosted CI, because it builds and drives the real app.
+- The end-to-end suite (`npm run test:tauri-render`) only passes locally, on a
+  Windows machine that is not elevated, because it builds and drives the real
+  app. It does not run on pull requests. The weekly run on a hosted runner
+  (`gui-render.yml`) failed on each of its last three scheduled runs, up to
+  2026-10-06, and the workflow's header puts that down to hosted runners being
+  elevated.
 - Selenium's native `.click()` does not register as a React click against
   the attached WebView2 session; a DOM `.click()` does. A menu item that
   appears dead under the harness may be working for a user, and vice versa —
@@ -179,18 +184,24 @@ person and states plainly what the tool does serves both.
 
 ### A. Evaluate — "what is this, and is it for me?"
 
-1. **Land.** The hero states what NetsCLI is in one line, with the current
-   release, star count and download total beside it. Each of those three is
-   hidden until GitHub confirms it, so an unauthenticated rate limit shows
+1. **Land.** The hero states what NetsCLI is in one line, under a badge that
+   lists the platforms. A line beneath holds the star count, the download
+   total and a "View source" link. Once GitHub confirms the latest release
+   the badge reads `vX.Y.Z · What changed →` and links to the changelog. The
+   star count, the download total and the version are each hidden until
+   their source confirms them, so an unauthenticated rate limit shows
    nothing rather than something wrong.
 2. **Scan the surfaces section** (`#surfaces`) — desktop app, terminal UI,
    CLI, MCP server — and recognise which one is yours.
-3. **Reach the FAQ** (`#faq`), 13 questions in 4 groups: what it is, install
+3. **Compare it with what you use now** (`#compare`). A feature table
+   against nmap, Angry IP Scanner and Advanced IP Scanner, dated, with a link
+   to open an issue if a cell is wrong.
+4. **Reach the FAQ** (`#faq`), 13 questions in 5 groups: what it is, install
    and updates, interfaces and integrations, network workflows, limits and
    dependencies. These carry the comparison questions people actually search
    for ("alternative to Angry IP Scanner", "replace nmap").
-4. **Leave for the source** if that is the decision — the GitHub link is in
-   the top nav and in the hero.
+5. **Leave for the source** if that is the decision. The GitHub link is in
+   the top nav, and the hero has a "View source" link.
 
 ### B. Install — "give me the command"
 
@@ -211,7 +222,8 @@ person and states plainly what the tool does serves both.
 1. **Enter the docs**, from the nav or a search engine landing on a deep
    page. Either is a first page, so every page has to stand alone.
 2. **Orient**: left sidebar for the section list, right rail for the
-   contents of this page, breadcrumb for where you are.
+   contents of this page. On narrow screens the rail becomes an "On this
+   page" bar under the title.
 3. **Search** (`Ctrl K`, or the button on narrow screens) when the nav does
    not have the word you are thinking of.
 4. **Follow an anchor** to a heading, and share that link.
@@ -222,8 +234,9 @@ person and states plainly what the tool does serves both.
 1. **Open the changelog**, from the nav or from a version number.
 2. **Read the newest release first**; each entry says what changed and why
    it matters, with install, compatibility or security notes called out.
-3. **Tell released from unreleased.** An entry with no published release
-   behind it is labelled and is not linked, because a link would 404.
+3. **Tell released from unreleased.** An entry whose release is not
+   published is labelled "Not yet released" and is not linked, because there
+   is nothing to read or download behind it yet.
 
 ### E. Recover — "that link was wrong"
 
@@ -246,7 +259,7 @@ historically broken:
 | State | What should happen |
 | --- | --- |
 | **First paint, no JavaScript** | Every page's content is in the HTML, including the changelog entries. Nothing says "Loading". |
-| **GitHub unreachable or rate-limited** | Hero metrics stay hidden; the changelog still lists every release from the repo's own file, unlinked and marked not-yet-released. Nothing shows a stale or invented number. |
+| **GitHub unreachable or rate-limited** | Hero metrics stay hidden and the badge keeps its platform list. The changelog still lists every release from the repo's own file, unlinked, with the dates written there. Nothing is labelled "Not yet released", because nothing has confirmed which entries are unreleased. Nothing shows a stale or invented number. |
 | **A version in the changelog with no release** | Labelled "Not yet released", and deliberately not linked. |
 | **Search index unavailable** | The dialog says so in its own voice, rather than appearing empty or hanging. |
 | **Theme: dark, light, or following the system** | All three are selectable and all three are legible; the control shows which is active. |
@@ -257,30 +270,21 @@ historically broken:
 ## Known gaps
 
 Recorded so an acceptance pass reports what is new rather than what is
-already known. All were measured on a served production build.
+already known. The list was re-checked on 2026-10-07 against a production
+build of main (0.3.5) at 1440px and 375px, and what no longer reproduced was
+taken out.
 
-- **Page padding is asymmetric.** At 1440px a docs page leaves 29px to the
-  left of the sidebar and 92px to the right of the contents rail.
-- **The two narrow-screen header controls do not match.** Search is
-  `rgba(17,22,29,0.9)` with a `rgba(140,149,166,0.24)` border; the menu
-  toggle is `rgba(255,255,255,0.035)` with a `rgba(255,255,255,0.1)` border.
-  Same size, same radius, different surface.
-- **The install section is dense** — 45 copy controls on one page — and the
-  relative prominence of package manager, script and direct download has not
-  been decided deliberately.
-- **Typography scale is unreviewed** and reads large at desktop widths.
-- **The coverage matrix states capabilities as Yes/No** where several rows
-  are not applicable rather than absent, and it treats the CLI, TUI and MCP
-  as fully separate when they share one binary and one core.
-- **Mobile search layout**: the clear control and the cancel affordance
-  compete, and the results panel does not extend to the bottom of the
-  viewport.
-- **Anchor links jump the page** rather than moving to the heading quietly.
-- **The sidebar's active marker shifts** when a different item is hovered.
-- **Breadcrumb separators sit low** relative to their text.
-- **The theme control's focus ring is drawn incorrectly**, and its dropdown
-  is unstyled.
+- **Page padding is asymmetric.** At 1440px, with no scrollbar, a docs page
+  starts its sidebar at the left edge of the window and stops the contents
+  rail 29px before the right edge.
+- **Hovering a sidebar item draws the same green marker as the current
+  page**, so two items look current at once.
+- **Mobile search layout.** At 375px the Cancel button sits against the
+  right edge of the input and below its centre line. This was checked on a
+  build with no search index, so the results list itself was not seen.
+- **Typography scale is unreviewed** and reads large at desktop widths. Not
+  re-checked.
 
 No `design-direction.md` covers this surface: that document scopes itself to
 the desktop app. Until one exists, "does this look right" has no written
-answer here, and that is the root of most of the list above.
+answer here, and that is the root of the list above.
