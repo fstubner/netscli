@@ -176,6 +176,13 @@
   white-space: nowrap;
 }
 
+/* The one persistent toast is the update notice, which can carry a sentence
+   saying why this install cannot update itself. Cutting that off at the first
+   line would hide the part that matters. */
+.toast.persistent .toast-message {
+  white-space: normal;
+}
+
 .toast-action {
   color: var(--mint);
   font-size: 12px;

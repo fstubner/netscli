@@ -29,12 +29,12 @@ export function useWorkspaceToast(options: WorkspaceOptions) {
     setToast(null);
   }
 
-  function showUpdateToast(version: string, url: string, opensUpdateDialog = false) {
+  function showUpdateToast(version: string, url: string, opensUpdateDialog = false, note?: string) {
     if (!isAllowedExternalUrl(url)) return;
 
     setToast({
       id: generateId('toast'),
-      message: `Update available: v${version}`,
+      message: note ? `Update available: v${version}. ${note}` : `Update available: v${version}`,
       kind: 'update',
       persistent: true,
       actionUrl: url,
