@@ -109,7 +109,7 @@ The pane can be collapsed, resized, or expanded to fill the content area.
 
 ## History and exports
 
-History records recent operations so you can reopen or repeat work. If history persistence is enabled, command history and result snapshots survive app restarts.
+History keeps your last 20 runs, with their results, so you can reopen or repeat them. Very large results are skipped. The history survives app restarts. To stop keeping it, turn off **Save History** in Settings, which also clears the runs already saved.
 
 Export options:
 

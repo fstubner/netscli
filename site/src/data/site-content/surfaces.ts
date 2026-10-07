@@ -10,7 +10,7 @@ export const surfaces: SurfaceCard[] = [
   {
     title: 'Desktop app',
     body:
-      'The desktop app is where you compare results side by side. Tabs keep several investigations open at once, and every result is sortable, filterable, and exportable, with the full history kept as you go.',
+      'The desktop app is where you compare results side by side. Tabs keep several investigations open at once, and every result is sortable, filterable, and exportable. Your last 20 runs are kept so you can reopen them.',
     image: {
       src: '/gui-scan.png',
       webp: '/gui-scan.webp',
