@@ -124,18 +124,20 @@ async fn run_command_streaming(
         .ok_or_else(|| Error::Other("failed to capture stderr".to_string()))?;
 
     let mut out_lines: Vec<String> = Vec::new();
-    let mut stdout_lines = BufReader::new(stdout).lines();
-    let mut stderr_lines = BufReader::new(stderr).lines();
+    // `split` rather than `lines`: `lines` fails on the first byte that is not
+    // UTF-8, and that error ended the whole trace. See `decode_line`.
+    let mut stdout_lines = BufReader::new(stdout).split(b'\n');
+    let mut stderr_lines = BufReader::new(stderr).split(b'\n');
     let mut stdout_done = false;
     let mut stderr_done = false;
     let mut status: Option<std::process::ExitStatus> = None;
 
     while !(stdout_done && stderr_done && status.is_some()) {
         tokio::select! {
-            line = stdout_lines.next_line(), if !stdout_done => {
+            line = stdout_lines.next_segment(), if !stdout_done => {
                 match line.map_err(|e| Error::Other(format!("trace stdout read failed: {e}")))? {
                     Some(line) => {
-                        let trimmed = line.trim_end().to_string();
+                        let trimmed = decode_line(&line);
                         if let Some(tx) = progress.as_ref() {
                             if let Some(hop) = trimmed.split_whitespace().next().and_then(|t| t.parse::<u32>().ok()) {
                                 let _ = tx.send(format!(
@@ -149,10 +151,10 @@ async fn run_command_streaming(
                     None => stdout_done = true,
                 }
             }
-            line = stderr_lines.next_line(), if !stderr_done => {
+            line = stderr_lines.next_segment(), if !stderr_done => {
                 match line.map_err(|e| Error::Other(format!("trace stderr read failed: {e}")))? {
                     Some(line) => {
-                        let trimmed = line.trim_end().to_string();
+                        let trimmed = decode_line(&line);
                         if !trimmed.is_empty() {
                             out_lines.push(trimmed);
                         }
@@ -174,6 +176,20 @@ async fn run_command_streaming(
     })
 }
 
+/// One line of the tool's output, with anything that is not UTF-8 replaced.
+///
+/// `tracert` translates its messages and writes them in the console's OEM code
+/// page, so on a German, French or Russian Windows a timed-out hop prints
+/// bytes that are not valid UTF-8 ("Zeitüberschreitung" is `Zeit\x81berschreitung`
+/// in code page 850). Reading lines as strict UTF-8 turned the first of those
+/// into "trace stdout read failed" and discarded the whole trace, including the
+/// hops already printed. The hop number and the timings are plain ASCII, so a
+/// replacement character in the free text after them costs nothing that
+/// matters. `ping -a` in `dns/reverse.rs` is decoded the same way.
+fn decode_line(bytes: &[u8]) -> String {
+    String::from_utf8_lossy(bytes).trim_end().to_string()
+}
+
 fn args_max_hops(args: &[String]) -> Option<u32> {
     for i in 0..args.len().saturating_sub(1) {
         if (args[i] == "-h" || args[i] == "-m") && args[i + 1].parse::<u32>().is_ok() {
@@ -188,5 +204,62 @@ fn is_not_found(err: &Error) -> bool {
     match err {
         Error::Other(message) => message.contains("os error 2") || message.contains("not found"),
         _ => false,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Output that is not UTF-8 must not end the trace.
+    ///
+    /// This is what a localized Windows `tracert` writes for a timed-out hop,
+    /// and it is the only way to reach the failure: the English output this
+    /// code was written against is plain ASCII, so nothing else in the suite
+    /// (or on an English CI runner) can fail here. A real child process is
+    /// used rather than a byte slice because the strict read happened in the
+    /// select loop, around the pipe.
+    #[tokio::test]
+    async fn output_that_is_not_utf8_does_not_abort_the_trace() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let file = dir.path().join("tracert.txt");
+        // 0x81 is "ü" in code page 850 and cannot appear in UTF-8 on its own.
+        std::fs::write(
+            &file,
+            b"  1    <1 ms    <1 ms    <1 ms  192.168.0.1\r\n  2     *        *        *     Zeit\x81berschreitung der Anforderung.\r\n\r\nTrace complete.\r\n",
+        )
+        .expect("write fixture");
+        let path = file.display().to_string();
+
+        // Both print the file's bytes unchanged.
+        #[cfg(windows)]
+        let (tool, args) = ("cmd", vec!["/c".to_string(), "type".to_string(), path]);
+        #[cfg(not(windows))]
+        let (tool, args) = ("cat", vec![path]);
+
+        let result = run_command_streaming(tool, &args, "192.168.0.1", None)
+            .await
+            .expect("a trace whose output is not UTF-8 still completes");
+
+        assert_eq!(result.exit_code, Some(0));
+        assert_eq!(
+            result.lines.first().map(String::as_str),
+            Some("  1    <1 ms    <1 ms    <1 ms  192.168.0.1"),
+            "the hops printed before the odd byte are kept"
+        );
+        let timed_out = result
+            .lines
+            .iter()
+            .find(|line| line.trim_start().starts_with("2 "))
+            .expect("the hop with the odd byte is kept too");
+        assert!(
+            timed_out.contains("Zeit\u{FFFD}berschreitung"),
+            "the odd byte becomes a replacement character: {timed_out:?}"
+        );
+        assert_eq!(
+            result.lines.last().map(String::as_str),
+            Some("Trace complete."),
+            "and so are the lines after it"
+        );
     }
 }
