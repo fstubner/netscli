@@ -6,6 +6,7 @@ use crate::output::{list_output_format, output_format, print_structured, OutputF
 use anyhow::Result;
 use netscli_core::{parse_ports_checked, Host, PortResult, SweepEntry};
 use serde::Serialize;
+use std::net::IpAddr;
 use std::time::Instant;
 
 pub(super) async fn run_discover(
@@ -42,7 +43,7 @@ pub(super) async fn run_scan(
     let format = list_output_format(flags)?;
     let start = Instant::now();
     let ports = parse_ports_checked(ports.as_deref())?;
-    let results = commands::run_scan(ctx.ops, ctx.db, host, ports, udp).await?;
+    let (ip, results) = commands::run_scan(ctx.ops, ctx.db, host, ports, udp).await?;
     match format {
         OutputFormat::Json | OutputFormat::Yaml | OutputFormat::Csv | OutputFormat::Markdown => {
             // Every port, not just the open ones. Filtering here made "all
@@ -56,11 +57,28 @@ pub(super) async fn run_scan(
         OutputFormat::Text => {
             println!(
                 "{}",
-                CliFormatter::format_scan_result(&results, host, start, ctx.local_addr)
+                CliFormatter::format_scan_result(
+                    &results,
+                    &target_label(host, ip),
+                    start,
+                    ctx.local_addr
+                )
             );
         }
     }
     Ok(())
+}
+
+/// The target as the text header names it. A name can have several addresses,
+/// and the scan used the first, so the header says which. Two runs against a
+/// round-robin or CDN name could otherwise have scanned different machines
+/// with nothing to show it. An address the user typed is not said twice.
+fn target_label(host: &str, ip: IpAddr) -> String {
+    if host.parse::<IpAddr>().is_ok() {
+        host.to_string()
+    } else {
+        format!("{host} ({ip})")
+    }
 }
 
 pub(super) async fn run_inspect(
@@ -181,6 +199,19 @@ mod tests {
             raw: None,
             error: None,
         }
+    }
+
+    #[test]
+    fn a_scanned_name_is_shown_with_the_address_that_was_scanned() {
+        let ip: IpAddr = "93.184.216.34".parse().unwrap();
+        assert_eq!(
+            target_label("example.com", ip),
+            "example.com (93.184.216.34)"
+        );
+        // An address that was typed is not repeated.
+        assert_eq!(target_label("93.184.216.34", ip), "93.184.216.34");
+        let v6: IpAddr = "::1".parse().unwrap();
+        assert_eq!(target_label("::1", v6), "::1");
     }
 
     #[test]
