@@ -10,11 +10,14 @@ they do not *inherit* it. Each crate sets its own, and the GUI carries
 further copies in `package.json` and `tauri.conf.json`. See
 `docs/PUBLISHING.md` for the full list of files a bump has to touch.
 
-A version heading carries a date, and a link, only once its release is
-published. Both are claims about the outside world, and the website reads
-them. It printed "24 Aug 2026" for 0.3.1 for four days on the strength of a
-date written here when the notes were drafted. An in-flight version keeps
-its heading and collects entries. The date and the link go on with the tag.
+A version heading gets its date and its link in a commit of their own, once
+the version's tag is pushed. The date is the day the release is meant to go
+out, and it moves if the release slips. Neither says the release is
+published. 0.3.1 was dated here when its notes were drafted, before it was
+even tagged, and the website showed it as released for four days. So the
+website now asks GitHub which releases are published, and labels any other
+version "Not yet released" whatever its heading says. An in-flight version
+keeps a bare heading and collects entries.
 
 ## [0.3.5] - 2026-10-06
 
@@ -135,6 +138,17 @@ its heading and collects entries. The date and the link go on with the tag.
   told people to use a PCAP-enabled desktop build, which reads as a download
   that does not exist. It now says the published installers are built without
   packet capture and that it needs a build made from source.
+
+- **A release goes public only once every file is in it.** Each release used
+  to go public first and receive its files afterwards, and until they
+  arrived the Windows one-line installer and the desktop app's update check
+  found nothing to download. For 0.3.4 the Windows files and the update
+  manifest arrived 1 h 38 min after the release went public. Releases are now built as
+  drafts, checked file by file, and published last.
+
+- **The MCP bundles come with checksums and signatures.** The `.mcpb` files
+  were the only release files that carry a program and had no `.sha256`,
+  `.sig` or `.pem`. They now have all three, like every other file.
 
 ### Fixed
 
@@ -406,6 +420,11 @@ its heading and collects entries. The date and the link go on with the tag.
   own soft limit, up to what the system allows, before a scan starts. Linux
   gets the same, where the default limit is usually 1024.
 
+- **The Windows one-line installer no longer closes PowerShell when it
+  fails.** Run as `iwr ... | iex`, the installer's `exit` ended the
+  PowerShell session itself, so the window closed and took the error message
+  with it. It now stops with an error and leaves the window open.
+
 ### Security
 
 - **Four open advisories cleared, all in build tooling.** `source-map-js`
@@ -436,6 +455,20 @@ its heading and collects entries. The date and the link go on with the tag.
   now reports that refusal instead of quietly asking someone else.
   `NETSCLI_DNS_FALLBACK` no longer does anything. The privacy page now says
   what 0.3.4 and earlier did.
+
+- **The install scripts check signatures, not only checksums.** A checksum
+  from the same release proves a download is intact, not who built it.
+  `install.ps1` now refuses a `netscli.exe` whose Authenticode signature is
+  not valid or not the project's, and `install.sh` checks the Sigstore
+  signature when `cosign` is installed. Both say what they checked.
+  `install.sh` also downloads over HTTPS only, redirects included, and a
+  download cut short runs nothing.
+
+- **The desktop app installs an update only if its signature names the
+  version.** The update manifest itself is not signed, so someone able to
+  edit it could offer an older, validly signed installer under a newer
+  version number. The app now requires each update's signature to carry the
+  version it was made for, and every update file is signed that way.
 
 ## [0.3.4] - 2026-10-04
 

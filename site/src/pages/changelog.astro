@@ -10,6 +10,7 @@ import {
   changelogOgDescription,
   releaseSummaries,
 } from '../data/site-content/changelog';
+import { readPublishedReleases } from '../data/site-content/version';
 
 const { hero, social } = site;
 const title = changelogCopy.heading;
@@ -72,12 +73,38 @@ const parseLocalChangelog = (text: string) => {
 
 const fallbackReleases = parseLocalChangelog(changelogText);
 
+/**
+ * What the HTML may claim about each entry, before any JavaScript runs.
+ *
+ * A dated CHANGELOG.md heading is not a published release: the date goes on
+ * once the tag is pushed, which is before the release goes public. So the
+ * no-script page used to show 0.3.5 with its date while the release was
+ * still a draft. pages.yml now tells the build which releases GitHub lists
+ * as published (site-content/version.ts), and an entry it does not list
+ * loses its date and is labelled "Not yet released", which is what the
+ * client already does once GitHub answers. If pages.yml could not ask, no
+ * entry keeps a date. A build that was not told (local, CI, preview) renders
+ * the dates as written.
+ *
+ * Only the build-time render changes. The client still gets the entries as
+ * written and makes its own call from GitHub's answer.
+ */
+const published = readPublishedReleases();
+const staticReleases =
+  published === undefined
+    ? fallbackReleases
+    : fallbackReleases.map((release) => {
+        if (published.includes(release.tag_name)) return release;
+        const undated = { ...release, published_at: '' };
+        return published.length > 0 ? { ...undated, unreleased: true, confirmedUnreleased: true } : undated;
+      });
+
 // Rendered here, not painted in by script: the entries come from this
 // repository's own CHANGELOG.md, so they are known at build time, and a page
 // whose whole purpose is release notes should not be empty without
 // JavaScript. The client still upgrades this once GitHub confirms which
 // tags are actually released.
-const staticRelease = renderReleaseListHtml(fallbackReleases, hero.sourceUrl.split('/').slice(-2).join('/'), releaseSummaries);
+const staticRelease = renderReleaseListHtml(staticReleases, hero.sourceUrl.split('/').slice(-2).join('/'), releaseSummaries);
 ---
 
 <Page

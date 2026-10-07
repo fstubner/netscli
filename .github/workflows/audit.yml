@@ -42,12 +42,21 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  # The latest release on crates.io when this was set (2026-10-07).
+  CARGO_AUDIT_VERSION: 0.22.2
+
 jobs:
   audit:
     name: cargo audit
     runs-on: ubuntu-latest
+    # GitHub's default would let a stalled run go on for six hours. 30
+    # leaves room for a cold cache, which compiles cargo-audit first.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Install Rust
         # See ci.yml's lint job for why this pin keeps a `# stable` comment
@@ -61,16 +70,21 @@ jobs:
           shared-key: audit
 
       # Cache cargo-audit itself so we don't reinstall every run.
+      #
+      # Keyed on a version pinned here. The key used to be a constant,
+      # `cargo-audit-v1`, and the weekly run keeps a cache warm, so the
+      # binary installed once was never upgraded. Bump CARGO_AUDIT_VERSION
+      # to upgrade; the new key misses and reinstalls.
       - name: Cache cargo-audit
         id: cache-cargo-audit
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cargo/bin/cargo-audit
-          key: cargo-audit-v1
+          key: cargo-audit-${{ env.CARGO_AUDIT_VERSION }}
 
       - name: Install cargo-audit
         if: steps.cache-cargo-audit.outputs.cache-hit != 'true'
-        run: cargo install cargo-audit --locked
+        run: cargo install cargo-audit --version "$CARGO_AUDIT_VERSION" --locked
 
       - name: Run cargo audit
         run: cargo audit
@@ -106,6 +120,8 @@ jobs:
             path: apps/netscli-gui
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:

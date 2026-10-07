@@ -26,10 +26,11 @@ validate_tag() {
 
 # --- Asset availability --------------------------------------------------
 #
-# release.yml and publish.yml both fire on `release: published`, so the
-# publish jobs routinely start before release.yml's matrix has finished
-# uploading. Poll for up to 15 minutes, which covers the slowest matrix
-# entry (Tauri bundle on Windows).
+# publish-release.yml only starts publish.yml once every asset is on the
+# release, so on that path the first probe succeeds. A release promoted by
+# hand may start the publish jobs before all its assets are there, so poll
+# for up to 15 minutes, which covers the slowest matrix entry (Tauri bundle
+# on Windows) if a build is still uploading.
 #
 # Progress goes to stderr, deliberately. `verified_sha` calls this, and every
 # caller of `verified_sha` uses a command substitution — so anything written

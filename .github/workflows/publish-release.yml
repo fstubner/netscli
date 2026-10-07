@@ -1,15 +1,34 @@
 name: Publish release
 
-# Promotes a drafted GitHub release to public.
+# Builds a drafted release, checks it is complete, and only then makes it
+# public and starts the publishing.
 #
-# Publishing does not need a workflow. This one exists to hold a lock.
+#   gh workflow run publish-release.yml -f tag=vX.Y.Z
 #
-# release-drafter rewrites its draft by listing every release, taking the
-# first one whose `draft` is true, and then PATCHing that release by id. It
-# re-checks nothing between the read and the write, and the payload it sends
-# always carries `draft: true` (see `find-previous-releases.ts` and
-# `update-release.ts` at the SHA pinned in release-drafter.yml). Publish
-# inside that gap and the PATCH lands on a release that is no longer a draft.
+# In order, as jobs:
+#
+#   prepare  the tag exists, the release is a draft, and CHANGELOG.md has
+#            the version's section
+#   build    release.yml, called here, builds and signs every asset and
+#            attaches it to the DRAFT
+#   promote  checks the draft carries every asset, writes the notes, makes
+#            the release public, then starts publish.yml (package managers)
+#            and pages.yml (netscli.com and its Store MSI copies)
+#
+# The release used to go public first and be built afterwards. v0.3.4 had
+# no Windows installer and no latest.json for 1 h 38 min after it was
+# published. In that time install.ps1 and the in-app updater found
+# nothing, and the publish jobs that needed the Windows files failed and
+# had to be run again. Now a failed build leaves a draft nobody can see. Fix it and re-run, see
+# docs/RELEASE.md.
+#
+# It also holds a lock. release-drafter rewrites its draft by listing every
+# release, taking the first one whose `draft` is true, and then PATCHing
+# that release by id. It re-checks nothing between the read and the write,
+# and the payload it sends always carries `draft: true` (see
+# `find-previous-releases.ts` and `update-release.ts` at the SHA pinned in
+# release-drafter.yml). Publish inside that gap and the PATCH lands on a
+# release that is no longer a draft.
 #
 # Not theoretical. Drafter run 34597984827 built its payload at 12:15:46.96
 # and logged "Release updated!" at 12:15:47.96; v0.3.1 was published at
@@ -32,34 +51,42 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag of the drafted release to publish (e.g. v0.3.1)'
+        description: 'Tag of the drafted release to build and publish (e.g. v0.3.1)'
         required: true
         type: string
 
-# `contents: write` to flip the draft. `actions: write` to dispatch the two
-# workflows at the end -- nothing here needs more.
+# Each job asks for what it needs.
 permissions:
-  contents: write
-  actions: write
+  contents: read
 
-# Shared with release-drafter.yml. This group is the entire point of the
-# workflow; queueing behind an in-flight drafter run costs about 30 seconds.
+# Shared with release-drafter.yml, and held for the whole run, build
+# included. Draft rewrites wait until the release is public, which is what
+# the lock is for. The one cost is GitHub's rule for a busy group: it keeps
+# one waiting run and cancels the one that was waiting before it. A publish
+# dispatched while a drafter run is in progress waits, and is cancelled if
+# another push to main lands in those ~30 seconds. It is cancelled before
+# it has done anything, so dispatch it again.
 #
 # `cancel-in-progress: false` on BOTH sides, and that pairing is load-bearing
 # rather than cautious. The setting is read from the workflow of the run that
 # joins the group, so a drafter configured to cancel would cancel a publish
-# run already in progress -- leaving the release public with neither
-# release.yml nor publish.yml ever dispatched. Serialising instead costs a
-# few idle seconds.
+# run already in progress -- possibly between making the release public and
+# starting the package managers. Serialising instead costs a few idle
+# seconds.
 concurrency:
   group: release-draft
   cancel-in-progress: false
 
 jobs:
-  publish:
-    name: Promote draft to public
+  # Everything that can be wrong before the build starts.
+  prepare:
+    name: Check the tag and the draft
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
+    permissions:
+      # Write, for reads. GitHub shows a draft release only to a token that
+      # can push, so with `contents: read` the draft would look missing.
+      contents: write
     steps:
       # For scripts/release-notes.mjs and the two files it reads.
       #
@@ -72,13 +99,15 @@ jobs:
       # entirely, which landed after the tag it would first be used for.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           ref: ${{ github.event.repository.default_branch }}
 
-      - name: Promote the draft and start the pipeline
+      - name: Check the tag, the draft and the changelog
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           TAG: ${{ inputs.tag }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         shell: bash
         run: |
           set -euo pipefail
@@ -90,17 +119,111 @@ jobs:
             exit 1
           fi
 
+          # The signing jobs use the release-signing environment, which only
+          # deploys from main (its settings, see docs/RELEASE.md). From any
+          # other branch the build would run and then be refused at its first
+          # signing job.
+          if [[ "$GITHUB_REF" != "refs/heads/${DEFAULT_BRANCH}" ]]; then
+            echo "::error::dispatch this from ${DEFAULT_BRANCH}, not ${GITHUB_REF}."
+            exit 1
+          fi
+
           if ! gh api "repos/${GH_REPO}/git/ref/tags/${TAG}" >/dev/null 2>&1; then
             echo "::error::no tag ${TAG} in this repository -- tag and push it first."
             exit 1
           fi
 
           if ! is_draft=$(gh release view "$TAG" --json isDraft --jq '.isDraft' 2>/dev/null); then
-            echo "::error::no release found for ${TAG}. Draft it first."
+            echo "::error::no release found for ${TAG}. release-drafter makes the draft; run it from the Actions tab."
             exit 1
           fi
           if [[ "$is_draft" != "true" ]]; then
-            echo "::error::${TAG} is already published. Nothing to promote."
+            echo "::error::${TAG} is already published. Nothing to build or promote."
+            exit 1
+          fi
+
+          # Fails when CHANGELOG.md has no section for the version. Checked
+          # here so that it fails before the build rather than after it. The
+          # notes are written for real just before promoting.
+          node scripts/release-notes.mjs "$TAG" > /dev/null
+          echo "${TAG} is a draft with a changelog section; building it."
+
+  # The whole build, as release.yml runs it, against the draft. Its jobs show
+  # up in this run as "Build / ...", and "Re-run failed jobs" here re-runs a
+  # failed leg and everything after it, including `promote`.
+  #
+  # The permissions are the ceiling for every job release.yml runs. The
+  # signing secrets come from the release-signing environment, which those
+  # jobs name themselves, so nothing is passed down.
+  build:
+    name: Build
+    needs: prepare
+    permissions:
+      contents: write
+      id-token: write
+    uses: ./.github/workflows/release.yml
+    with:
+      tag: ${{ inputs.tag }}
+
+  promote:
+    name: Check the assets and publish
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      # `contents: write` to read the draft's assets and flip it. `actions:
+      # write` to start the two workflows at the end.
+      contents: write
+      actions: write
+    steps:
+      # The default branch, for the same reason `prepare` gives.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.repository.default_branch }}
+
+      # The list, the 18 .sha256 files and latest.json are fetched here, and
+      # scripts/release/check-release-assets.mjs decides. It needs every
+      # file, sidecar and signature, every checksum to match the uploaded
+      # file, and a latest.json for this version.
+      - name: Check every asset is on the draft
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ inputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="${RUNNER_TEMP}/assets"
+          mkdir -p "${work}/sidecars"
+          # The draft's id, from the API URL `gh` reports for it. The assets
+          # endpoint carries the digest GitHub computed for each upload.
+          api_url=$(gh release view "$TAG" --json apiUrl --jq '.apiUrl')
+          gh api --paginate "repos/${GH_REPO}/releases/${api_url##*/}/assets?per_page=100" \
+            --jq '.[] | {name, size, digest}' > "${work}/assets.jsonl"
+          # Either download fails when nothing matches. The check below then
+          # reports exactly which files are missing.
+          gh release download "$TAG" --pattern '*.sha256' --dir "${work}/sidecars" || true
+          gh release download "$TAG" --pattern 'latest.json' --dir "${work}" || true
+          node scripts/release/check-release-assets.mjs "$TAG" \
+            "${work}/assets.jsonl" "${work}/sidecars" "${work}/latest.json"
+
+      - name: Promote the draft and start the publishing
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ inputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Only a draft is promoted here. A re-run that finds the release
+          # already public stops, because the run that promoted it may already
+          # have started publish.yml, and a second fan-out would try every
+          # registry again. The message says how to finish by hand.
+          is_draft=$(gh release view "$TAG" --json isDraft --jq '.isDraft')
+          if [[ "$is_draft" != "true" ]]; then
+            echo "::error::${TAG} is already public. If publish.yml or pages.yml did not start, run them by hand: gh workflow run publish.yml -f tag=${TAG} and gh workflow run pages.yml"
             exit 1
           fi
 
@@ -113,12 +236,7 @@ jobs:
           # "merge the changelog, then publish" is the ordinary sequence. On
           # 0.3.2 two PRs landed in that gap and the hand-written overview was
           # gone, with nothing reporting it. Inside the concurrency group this
-          # job already holds, the drafter cannot be mid-rewrite here.
-          #
-          # Failing here stops the publish, which is the right way round: a
-          # release whose notes cannot be built is one whose CHANGELOG section
-          # is missing, and that is worth knowing before it is public rather
-          # than after.
+          # run already holds, the drafter cannot be mid-rewrite here.
           echo "Composing release notes for ${TAG}..."
           node scripts/release-notes.mjs "$TAG" > "${RUNNER_TEMP}/release-notes.md"
           gh release edit "$TAG" --notes-file "${RUNNER_TEMP}/release-notes.md"
@@ -127,33 +245,40 @@ jobs:
           gh release edit "$TAG" --draft=false
 
           # Read it back rather than assume the edit did what it said. This is
-          # the exact failure this workflow exists for, so it is worth one API
-          # call to prove the release is public AND still carries its tag.
+          # the exact failure the lock exists for, so it is worth one API call
+          # to prove the release is public AND still carries its tag.
           after=$(gh release view "$TAG" --json isDraft,tagName --jq '"\(.isDraft) \(.tagName)"')
           if [[ "$after" != "false ${TAG}" ]]; then
-            echo "::error::${TAG} did not survive the promote (isDraft/tagName = ${after}). Check for a concurrent release-drafter run."
+            echo "::error::${TAG} did not survive the promote (isDraft/tagName = ${after}). Check for a concurrent release-drafter run, repair the release by hand, then run publish.yml and pages.yml."
             exit 1
           fi
 
           # `release: published` does NOT fire here -- GitHub suppresses
           # events raised by GITHUB_TOKEN. `workflow_dispatch` is one of its
           # two documented exceptions, so the consumers are started
-          # explicitly instead.
+          # explicitly.
           #
-          # This is more deterministic than the event path it replaces, where
-          # release.yml and publish.yml both fire on `release: published` at
-          # the same instant and race. Order here is deliberate but not
-          # blocking: publish.yml's `wait_for_asset` polls for 15 minutes, so
-          # it tolerates release.yml still building, exactly as before.
-          gh workflow run release.yml -f tag="$TAG"
-          gh workflow run publish.yml -f tag="$TAG"
+          # publish.yml first: it is the one with users waiting on it. Every
+          # asset it needs is already on the release, so its jobs publish
+          # straight away instead of polling for builds.
+          if ! gh workflow run publish.yml -f tag="$TAG"; then
+            echo "::error::${TAG} is public, but publish.yml did not start. Run: gh workflow run publish.yml -f tag=${TAG} and gh workflow run pages.yml"
+            exit 1
+          fi
+          # pages.yml rebuilds netscli.com, which shows the newest published
+          # version, and copies this release's MSI to the address the
+          # Microsoft Store downloads it from. It deploys on pushes to main
+          # too, but nothing in a release pushes to main.
+          if ! gh workflow run pages.yml; then
+            echo "::error::${TAG} is public and publish.yml started, but pages.yml did not. Run: gh workflow run pages.yml"
+            exit 1
+          fi
 
           {
             echo "### Published ${TAG}"
             echo
+            echo "- Every asset was on the draft and checked before it went public."
             echo "- Release is public and still tagged \`${TAG}\`."
-            echo "- Dispatched \`release.yml\` (binaries + GUI installers)."
             echo "- Dispatched \`publish.yml\` (package managers)."
-            echo
-            echo "Watch both in the Actions tab. Assets attach to the release as they build."
+            echo "- Dispatched \`pages.yml\` (netscli.com and the Store's MSI copy)."
           } >> "$GITHUB_STEP_SUMMARY"

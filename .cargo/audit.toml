@@ -15,15 +15,6 @@ ignore = [
 
   # -- Soundness warnings (transitive, not reachable via our usage) -----
 
-  # rand 0.7.3 unsoundness with a custom logger calling rand::rng().
-  # Transitive via Tauri's kuchikiki/selectors path; never invoked with
-  # a custom logger in our binaries.
-  "RUSTSEC-2026-0097",
-
-  # lru IterMut stacked-borrows violation. Transitive via ratatui; we
-  # don't touch IterMut on lru caches in application code.
-  "RUSTSEC-2026-0002",
-
   # glib VariantStrIter Iterator/DoubleEndedIterator unsoundness.
   # Transitive via Tauri 2; upstream Tauri is migrating to GTK4 which
   # replaces this binding stack.
@@ -45,24 +36,9 @@ ignore = [
 
   # -- Unmaintained: other transitive ------------------------------------
 
-  # proc-macro-error: transitive via dialoguer and other proc-macro
-  # consumers. A maintained fork (proc-macro-error2) exists but not every
-  # upstream has migrated. No exploitable surface.
+  # proc-macro-error: transitive via glib-macros and gtk3-macros, the same
+  # Tauri 2 GTK3 stack as above. A maintained fork (proc-macro-error2)
+  # exists but those crates have not migrated. Compile-time only, no
+  # runtime surface.
   "RUSTSEC-2024-0370",
-
-  # paste: unmaintained but still widely used. Transitive via several
-  # crates; a fork exists. No runtime surface beyond compile-time macros.
-  "RUSTSEC-2024-0436",
-
-  # fxhash: transitive. rustc-hash is the maintained replacement but
-  # upstream deps still pin fxhash.
-  "RUSTSEC-2025-0057",
-
-  # unic-* crates: transitive via idna via url via ipnet and hickory.
-  # Unmaintained for years; idna is migrating off the unic- stack.
-  "RUSTSEC-2025-0075", # unic-char-range
-  "RUSTSEC-2025-0080", # unic-common
-  "RUSTSEC-2025-0081", # unic-char-property
-  "RUSTSEC-2025-0098", # unic-ucd-version
-  "RUSTSEC-2025-0100", # unic-ucd-ident
 ]

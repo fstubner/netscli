@@ -65,6 +65,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
       - id: filter
         shell: bash
@@ -108,6 +109,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           # 22, matching pages.yml / release.yml / site.yml / site-preview.yml.
@@ -139,11 +142,18 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       # install.sh is user-facing; the release/ scripts hold GH_TOKEN and
       # push to three package registries. Both are worth linting, and
       # neither is exercised by any other job.
       - name: shellcheck install.sh
-        run: shellcheck scripts/install.sh
+        run: shellcheck scripts/install.sh scripts/install_test.sh
+      # What install.sh checks before it installs, against a fake release:
+      # a wrong checksum or a signature that does not verify must stop it,
+      # and a download cut short must run nothing.
+      - name: test install.sh
+        run: bash scripts/install_test.sh
       - name: shellcheck release scripts
         run: shellcheck scripts/release/*.sh
       # The publish path only executes during a release, so a regression in
@@ -157,7 +167,15 @@ jobs:
       # reach, so its test answers in the API's place.
       - name: test Store submission script
         run: bash scripts/release/msstore-submit_test.sh
-      - name: PSScriptAnalyzer install.ps1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+      # The last check before a release goes public, and the builder of the
+      # in-app updater's latest.json. Both run only during a release, and a
+      # mistake in the first one would let an incomplete release out.
+      - name: test release asset and updater manifest checks
+        run: node --test scripts/release/*.test.mjs
+      - name: PSScriptAnalyzer install.ps1 and the release scripts
         shell: pwsh
         # Write-Host is intentional here (colored installer UX output, which
         # Write-Output can't do); the empty catch blocks are documented
@@ -165,10 +183,19 @@ jobs:
         # and BOM-less UTF-8 is the existing, working file encoding. None of
         # these are correctness bugs, so they're excluded rather than
         # rewriting a working installer for style alone.
+        #
+        # scripts/release/*.ps1 too. sign-windows-pe.ps1 and
+        # check-msi-signed.ps1 run only during a release, inside the Windows
+        # GUI build, and a failure in the first is what left v0.3.4 without
+        # Windows files for 1 h 38 min. Linting is the part of that path CI
+        # can reach without the signing credentials.
         run: |
           Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
-          $results = Invoke-ScriptAnalyzer -Path scripts/install.ps1 -Severity Warning,Error `
-            -ExcludeRule PSAvoidUsingWriteHost, PSAvoidUsingEmptyCatchBlock, PSUseBOMForUnicodeEncodedFile
+          $paths = @('scripts/install.ps1') + @(Get-ChildItem scripts/release/*.ps1 | ForEach-Object FullName)
+          $results = @($paths | ForEach-Object {
+            Invoke-ScriptAnalyzer -Path $_ -Severity Warning,Error `
+              -ExcludeRule PSAvoidUsingWriteHost, PSAvoidUsingEmptyCatchBlock, PSUseBOMForUnicodeEncodedFile
+          })
           $results | Format-Table -AutoSize
           if ($results.Count -gt 0) { exit 1 }
 
@@ -182,6 +209,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       # libpcap-dev: netscli-core pcap feature. GTK/WebKit: netscli-gui
       # (Tauri 2) — clippy --all-targets compiles the Tauri shell, which
       # won't link without these even when we only intend to lint Rust.
@@ -247,6 +276,8 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       # Linux needs libpcap for netscli-core's pcap feature and GTK/WebKit
       # for netscli-gui (Tauri 2). `cargo test --all` compiles the whole
@@ -350,6 +381,8 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           # 22 — see the note on the maintainability job. This one is also
@@ -441,6 +474,8 @@ jobs:
         os: ${{ github.event_name == 'pull_request' && fromJSON('["ubuntu-latest"]') || fromJSON('["ubuntu-latest", "windows-latest", "macos-latest"]') }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Install system dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -494,6 +529,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Install system dependencies
         run: |
           # `|| true` so a broken third-party apt index cannot fail this job;
@@ -502,7 +539,9 @@ jobs:
           sudo apt-get update || true
           sudo apt-get install -y libpcap-dev pkg-config
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+        # See the pin note on the lint job above. This was the one `uses:` in
+        # the repository still on a moving ref.
+        uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c # stable
         with:
           toolchain: "1.96.0"
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2

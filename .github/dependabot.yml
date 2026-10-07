@@ -97,6 +97,29 @@ updates:
           - "@astrojs/*"
           - "@astrojs/starlight"
 
+  # The MCP smoke test drives `netscli serve` with the official MCP SDK
+  # client, so it is a pinned npm project of its own. Its SDK version is the
+  # thing worth keeping current: the test exists because clients built on
+  # that SDK are the ones that dropped our replies.
+  - package-ecosystem: npm
+    directory: "/scripts/mcp-smoke"
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - javascript
+      - scripts
+    groups:
+      mcp-smoke:
+        patterns:
+          - "*"
+
+  # packaging/npm/netscli/package.json is deliberately absent. It is a
+  # template: its version and its five optionalDependencies are @@VERSION@@
+  # placeholders that publish-npm.sh fills in, and the packages it names are
+  # this project's own, published by the same job.
+
   # scripts/ has its own Cargo project.
   - package-ecosystem: cargo
     directory: "/scripts"
@@ -112,6 +135,20 @@ updates:
         update-types:
           - patch
           - minor
+
+  # scripts/linux-check.Dockerfile, the local Linux check image. Its only
+  # dependency is the rust base image, which is pinned to the toolchain in
+  # rust-toolchain.toml, so a PR here means a new Rust release is out. Bump
+  # rust-toolchain.toml, Cargo.toml's rust-version and the workflows'
+  # `toolchain:` inputs in the same change, or close it.
+  - package-ecosystem: docker
+    directory: "/scripts"
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 1
+    labels:
+      - dependencies
+      - scripts
 
   # GitHub Actions workflow pins.
   - package-ecosystem: github-actions

@@ -7,20 +7,32 @@ name: Deploy GitHub Pages
 # mid review, because auto-deploying on every main merge had shipped that
 # redesign to netscli.com once before it was ready. The redesign shipped on
 # 2026-09-13, so the condition is gone and deploys are automatic again.
-# `workflow_dispatch` stays alongside it, for redeploying without a commit.
+# `workflow_dispatch` stays alongside it, for redeploying without a commit,
+# and publish-release.yml dispatches it after every release, so the site
+# names the new version and serves its Store MSI.
 #
 # The `paths:` list below is copied from site.yml rather than written as
 # `['site/**']`, because the build reads four files from outside site/:
 # CHANGELOG.md (changelog.astro imports it with ?raw), scripts/install.ps1
 # and scripts/install.sh (served at /install.ps1 and /install.sh), and
-# apps/netscli-gui/package.json (site-content/version.ts reads the version
-# from it). A site/**-only filter would leave changes to those four built
-# but never deployed -- the site would render a stale changelog or version
-# with nothing failing to say so.
+# apps/netscli-gui/package.json (site-content/version.ts falls back to its
+# version in builds that are not told which releases are published). A
+# site/**-only filter would leave changes to those four built but never
+# deployed -- the site would render a stale changelog with nothing failing
+# to say so.
 #
 # That makes this the same list in four places: here, site.yml's push
 # filter, site.yml's `changes` job grep, and site-preview.yml's two
 # filters. Keep them in step; YAML has no variable to share them.
+#
+# Three jobs, so that each holds only what it needs:
+#
+#   build   npm ci and astro build, with a read-only token. This is where
+#           644 packages and their install scripts run.
+#   stage   no npm at all. Checks the built install scripts are this
+#           commit's, adds the Store MSIs and checks their signatures,
+#           then hands the site to Pages.
+#   deploy  the only job with `pages: write` and `id-token: write`.
 #
 # Prerequisite: in the repo Settings → Pages, set "Source" to
 # "GitHub Actions" (NOT "Deploy from a branch"). This workflow expects
@@ -39,10 +51,9 @@ on:
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
+# Each job asks for what it needs.
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 # Only one deploy in flight at a time; if a newer push comes in while we're
 # mid-deploy, queue it and skip the one in progress.
@@ -53,20 +64,114 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # Tags, for `check:changelog` below. It asks git which versions
+          # are tagged, and with the default `fetch-depth: 1` there are
+          # none to ask about.
+          fetch-depth: 0
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           # Astro 6 requires Node >=22.12. Pinning to 22 (active LTS).
           node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: site/package-lock.json
+
+      # The site presents the newest PUBLISHED release as the current
+      # version, and labels every newer CHANGELOG.md entry "Not yet
+      # released". Nothing in the repository can say which versions are
+      # published: on main a version is bumped, tagged and dated before its
+      # release goes public, which is how netscli.com showed the draft 0.3.5
+      # as current. GitHub can, so it is asked here and the answer goes to
+      # the build in NETSCLI_PUBLISHED_RELEASES
+      # (site/src/data/site-content/version.ts).
+      #
+      # If GitHub cannot be asked, the variable is set but empty. The build
+      # then names no current version and dates no changelog entry, rather
+      # than guess, and this step warns.
+      - name: Ask GitHub which releases are published
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+          # Drafts are invisible to this read-only token anyway; the filter
+          # says so. The newest 100 releases are plenty for the newest one
+          # and the eight the changelog page shows.
+          if tags=$(gh api "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
+              --jq '[.[] | select(.draft | not) | .tag_name] | join(" ")'); then
+            echo "Published releases: ${tags}"
+          else
+            tags=""
+            echo "::warning::Could not list the published releases, so this build names no current version and dates no changelog entry."
+          fi
+          echo "NETSCLI_PUBLISHED_RELEASES=${tags}" >> "$GITHUB_ENV"
+
       - name: npm ci
         run: npm ci
         working-directory: site
       - name: astro build
         run: npm run build
         working-directory: site
+
+      # The page that is about to go live dates only published releases.
+      # Run here, with the same NETSCLI_PUBLISHED_RELEASES, because this is
+      # the build that ships. site.yml runs the same check on every pull
+      # request, without the variable.
+      - name: Changelog dates
+        run: npm run check:changelog
+        working-directory: site
+
+      - name: Hand the built site to the staging job
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: site-dist
+          path: site/dist
+          include-hidden-files: true
+          retention-days: 1
+          if-no-files-found: error
+
+  stage:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      # For the two install scripts and the staging script, read from this
+      # commit by a job that never ran npm.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Collect the built site
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: site-dist
+          path: site/dist
+
+      # netscli.com/install.sh and /install.ps1 are what the site's
+      # one-liners pipe into a shell. The build generates them from
+      # scripts/install.*, in the job that ran 644 packages' code, so this
+      # job requires them to be byte for byte what this commit holds.
+      #
+      # It also refuses a download/ directory it did not make. Only the
+      # staging step below writes there, and what it writes is checked.
+      - name: Check the install scripts are this commit's
+        run: |
+          set -euo pipefail
+          for script in install.sh install.ps1; do
+            if ! cmp -s "scripts/${script}" "site/dist/${script}"; then
+              echo "::error::site/dist/${script} is not scripts/${script} at ${GITHUB_SHA}. Refusing to deploy an install script this repository did not write."
+              exit 1
+            fi
+          done
+          if [ -e site/dist/download ]; then
+            echo "::error::the build produced site/dist/download, which only the Store staging step should write."
+            exit 1
+          fi
+          echo "install.sh and install.ps1 match this commit."
+
       # The Microsoft Store takes the desktop MSI by URL and refuses one that
       # redirects, which every GitHub release download does. So the last
       # few releases' MSIs are served from this site, checked against their
@@ -75,19 +180,62 @@ jobs:
         run: bash scripts/release/stage-store-downloads.sh site/dist 3
         env:
           GH_TOKEN: ${{ github.token }}
-      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      # The checksum above comes from the same release as the MSI, so it
+      # proves the copy is intact, not who made it. Installers are
+      # Authenticode-signed from v0.3.3 on, so for those this checks the
+      # signature the way sign-windows checks it before upload, and that the
+      # signer is the project's certificate. Older releases' installers were
+      # never signed and are staged as they are, which is how they were
+      # published.
+      - name: Check each staged installer's signature
+        run: |
+          set -euo pipefail
+          sudo apt-get update || true
+          sudo apt-get install -y osslsigncode
+          ca=/etc/ssl/certs/ca-certificates.crt
+          shopt -s nullglob
+          msis=(site/dist/download/*/netscli-gui-windows-x86_64.msi)
+          [ ${#msis[@]} -gt 0 ] || { echo "::error::no staged installer to check"; exit 1; }
+          for msi in "${msis[@]}"; do
+            tag="$(basename "$(dirname "$msi")")"
+            if [ "$(printf '%s\n' v0.3.3 "$tag" | sort -V | head -n 1)" != "v0.3.3" ]; then
+              echo "${msi}: ${tag} predates Authenticode signing, not checked"
+              continue
+            fi
+            if ! out=$(osslsigncode verify -CAfile "$ca" -TSA-CAfile "$ca" "$msi" 2>&1); then
+              echo "$out"
+              echo "::error::${msi} has no valid signature"
+              exit 1
+            fi
+            # osslsigncode prints the signer as
+            # "Subject: /C=IE/.../CN=Open Source Developer Felix Stubner",
+            # as in the v0.3.3 sign-windows log.
+            if ! grep -qF 'CN=Open Source Developer Felix Stubner' <<<"$out"; then
+              echo "$out"
+              echo "::error::${msi} is signed, but not by the project's certificate"
+              exit 1
+            fi
+            echo "${msi}: signed by the project's certificate"
+          done
+
       - name: Upload site/dist/
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: site/dist
 
   deploy:
-    needs: build
+    needs: stage
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

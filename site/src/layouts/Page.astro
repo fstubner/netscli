@@ -53,7 +53,9 @@ const softwareApp = {
   applicationCategory: 'DeveloperApplication',
   applicationSubCategory: 'NetworkingApplication',
   operatingSystem: 'Windows, macOS, Linux',
-  softwareVersion: version,
+  // The newest published release (site-content/version.ts). Left out,
+  // rather than guessed, when the build could not ask GitHub.
+  ...(version ? { softwareVersion: version } : {}),
   license: 'https://opensource.org/licenses/MIT',
   programmingLanguage: 'Rust',
   codeRepository: site.hero.sourceUrl,
