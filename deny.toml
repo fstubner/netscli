@@ -1,0 +1,44 @@
+# cargo-deny, for the license check only: `cargo deny check licenses`, which
+# ci.yml runs. Advisories are cargo-audit's job (audit.yml), so no other
+# check is configured here.
+#
+# Every crate in the dependency tree is checked, dev and build dependencies
+# included, for every target. That is stricter than what ships, and simpler
+# to reason about than a list that depends on which binary is being built.
+
+[graph]
+# pcap included, which the -pcap release builds turn on.
+all-features = true
+
+[licenses]
+# Permissive licenses, allowed for any crate.
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "Unicode-3.0",
+]
+confidence-threshold = 0.8
+
+# The rest are allowed only for the crates that use them today, so a new
+# dependency under one of these licenses fails the check until someone has
+# looked at it. THIRD-PARTY-NOTICES.txt carries the texts for what ships.
+exceptions = [
+    # MPL-2.0 is file-level copyleft. These are used unmodified, and the
+    # notices say where their source is.
+    { allow = ["MPL-2.0"], crate = "option-ext" },
+    { allow = ["MPL-2.0"], crate = "cssparser" },
+    { allow = ["MPL-2.0"], crate = "cssparser-macros" },
+    { allow = ["MPL-2.0"], crate = "selectors" },
+    { allow = ["MPL-2.0"], crate = "dtoa-short" },
+    # Mozilla's CA certificate list, as data.
+    { allow = ["CDLA-Permissive-2.0"], crate = "webpki-roots" },
+    { allow = ["CDLA-Permissive-2.0"], crate = "webpki-root-certs" },
+]
+
+# The workspace's own crates are MIT, which the allow list covers anyway.
+[licenses.private]
+ignore = true
