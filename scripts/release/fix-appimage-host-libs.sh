@@ -23,6 +23,9 @@
 # is not being consulted on this path. So the AppImage is corrected after it
 # is built, which is the first point this repository controls.
 #
+# While the image is open it also writes the licenses of the libraries it
+# still bundles into it. See appimage-lib-notices.sh.
+#
 # Usage: fix-appimage-host-libs.sh <path-to-.AppImage>
 #
 # Repacks in place. Idempotent: re-running on an already-fixed image removes
@@ -105,6 +108,10 @@ for lib in "${HOST_LIBS[@]}"; do
 done
 echo "removed $removed of ${#HOST_LIBS[@]} libraries"
 
+# The image is open here anyway, and this is the last point before it is
+# signed. What is left in usr/lib is what ships, so its licenses go in now.
+bash "$(dirname "$0")/appimage-lib-notices.sh" "$appdir"
+
 out="$workdir/repacked.AppImage"
 ARCH=x86_64 "$tool" "$appdir" "$out" >/dev/null 2>&1 || {
   echo "error: appimagetool failed to repack" >&2
@@ -126,6 +133,10 @@ for lib in "${HOST_LIBS[@]}"; do
 done
 if [ ${#still_there[@]} -gt 0 ]; then
   echo "error: still bundled after repack: ${still_there[*]}" >&2
+  exit 1
+fi
+if [ ! -s "$verify/squashfs-root/usr/share/doc/netscli-bundled-libraries/LIBRARIES.txt" ]; then
+  echo "error: repacked image has no list of its bundled libraries" >&2
   exit 1
 fi
 if [ ! -x "$verify/squashfs-root/AppRun" ]; then
