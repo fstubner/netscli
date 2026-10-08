@@ -1,0 +1,26 @@
+Licenses, by how many crates use each:
+
+{{#each overview}}
+  {{{name}}} ({{id}}): {{count}}
+{{/each}}
+
+Crates that ship the same license text share one copy of it, listed under the
+crates that use it. The source of every crate is published on crates.io at the
+address given for it, and most also name the repository they are developed in.
+{{#each licenses}}
+
+================================================================================
+{{{name}}} ({{id}})
+================================================================================
+
+Used by:
+{{#each used_by}}
+  {{crate.name}} {{crate.version}}
+    https://crates.io/crates/{{crate.name}}/{{crate.version}}
+{{#if crate.repository}}
+    {{crate.repository}}
+{{/if}}
+{{/each}}
+
+{{{text}}}
+{{/each}}
