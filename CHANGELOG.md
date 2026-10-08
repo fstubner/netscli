@@ -38,6 +38,15 @@ keeps a bare heading and collects entries.
   stops the scan, instead of it running to the end and holding one of the
   server's sixteen request slots.
 
+- **Every download now carries the licenses of the open source code inside
+  it.** `netscli licenses` prints them, and the desktop app shows them from a
+  Third-party licenses button in its About dialog. The same notices are a
+  file on each GitHub release and in the npm packages. The Linux AppImage
+  bundles GTK, WebKitGTK and other system libraries, so it now includes their
+  licenses too and says where Ubuntu publishes their source. CI rebuilds the
+  notices and checks the license of every dependency, so a new one cannot
+  arrive under a license nobody has looked at.
+
 ### Changed
 
 - **History is off unless you set `NETSCLI_HISTORY=1`.** Every `discover`,
