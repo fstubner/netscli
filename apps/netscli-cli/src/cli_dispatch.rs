@@ -85,9 +85,10 @@ pub(crate) async fn run_command(command: &Commands, ctx: CommandContext<'_>) -> 
         Commands::Dns {
             host,
             record,
+            server,
             format,
         } => {
-            dns::run_lookup(ctx, host, record, *format).await?;
+            dns::run_lookup(ctx, host, record, *server, *format).await?;
         }
         Commands::Reverse { ip, format } => {
             dns::run_reverse(ctx, ip, format.json, format.yaml).await?;

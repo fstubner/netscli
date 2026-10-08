@@ -1,10 +1,12 @@
 use hickory_resolver::lookup::Lookup;
 use hickory_resolver::proto::rr::{RData, RecordType};
+use hickory_resolver::TokioResolver;
+use std::net::IpAddr;
 use std::time::Duration;
 use tokio::time::timeout;
 
 use super::records::{normalize_value, ALL_RECORD_TYPES};
-use super::resolver::shared_resolver;
+use super::resolver::{resolver_for_server, shared_resolver};
 use super::types::DnsRecord;
 use crate::error::{Error, Result};
 
@@ -13,7 +15,32 @@ pub async fn lookup_record_timeout(
     record_type: RecordType,
     timeout_ms: u64,
 ) -> Result<Vec<DnsRecord>> {
-    let response = lookup_system(host, record_type, timeout_ms).await?;
+    lookup_record_via(host, record_type, timeout_ms, None).await
+}
+
+/// [`lookup_record_timeout`], asking `server` instead of the system's DNS
+/// servers when one is given.
+pub async fn lookup_record_via(
+    host: &str,
+    record_type: RecordType,
+    timeout_ms: u64,
+    server: Option<IpAddr>,
+) -> Result<Vec<DnsRecord>> {
+    let owned = server.map(resolver_for_server).transpose()?;
+    lookup_record_with(host, record_type, timeout_ms, owned.as_ref()).await
+}
+
+async fn lookup_record_with(
+    host: &str,
+    record_type: RecordType,
+    timeout_ms: u64,
+    server: Option<&TokioResolver>,
+) -> Result<Vec<DnsRecord>> {
+    let source = if server.is_some() { "server" } else { "system" };
+    let response = match server {
+        Some(resolver) => lookup_on(resolver, host, record_type, timeout_ms).await?,
+        None => lookup_system(host, record_type, timeout_ms).await?,
+    };
 
     // hickory 0.26 dropped `Lookup::record_iter()` in favor of explicit
     // `.answers()` / `.authorities()` / `.additionals()` slice accessors.
@@ -28,7 +55,7 @@ pub async fn lookup_record_timeout(
             value: normalize_value(&record.data.to_string()),
             name: Some(normalize_value(&record.name.to_string())),
             ttl_seconds: Some(record.ttl),
-            resolver_source: Some("system".to_string()),
+            resolver_source: Some(source.to_string()),
         });
     }
     Ok(records)
@@ -49,11 +76,23 @@ pub async fn lookup_record_timeout(
 /// `Ok(records)` — only a total failure with zero records surfaces the
 /// last error.
 pub async fn lookup_all_records_timeout(host: &str, timeout_ms: u64) -> Result<Vec<DnsRecord>> {
+    lookup_all_records_via(host, timeout_ms, None).await
+}
+
+/// [`lookup_all_records_timeout`], asking `server` instead of the system's
+/// DNS servers when one is given.
+pub async fn lookup_all_records_via(
+    host: &str,
+    timeout_ms: u64,
+    server: Option<IpAddr>,
+) -> Result<Vec<DnsRecord>> {
+    // One resolver for all ten record types, not one per type.
+    let owned = server.map(resolver_for_server).transpose()?;
     let mut records = Vec::new();
     let mut last_err: Option<Error> = None;
 
     for record_type in ALL_RECORD_TYPES {
-        match lookup_record_timeout(host, *record_type, timeout_ms).await {
+        match lookup_record_with(host, *record_type, timeout_ms, owned.as_ref()).await {
             Ok(mut found) => records.append(&mut found),
             Err(e) => last_err = Some(e),
         }
@@ -107,7 +146,15 @@ pub async fn resolve_aaaa_timeout(host: &str, timeout_ms: u64) -> Result<Vec<Str
 /// One lookup against the system resolver. See `resolver::shared_resolver` for
 /// why there is no other.
 async fn lookup_system(host: &str, record_type: RecordType, timeout_ms: u64) -> Result<Lookup> {
-    let resolver = shared_resolver()?;
+    lookup_on(shared_resolver()?, host, record_type, timeout_ms).await
+}
+
+async fn lookup_on(
+    resolver: &TokioResolver,
+    host: &str,
+    record_type: RecordType,
+    timeout_ms: u64,
+) -> Result<Lookup> {
     match timeout(
         Duration::from_millis(timeout_ms),
         resolver.lookup(host, record_type),

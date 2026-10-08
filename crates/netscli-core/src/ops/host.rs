@@ -66,9 +66,20 @@ impl Ops {
         host: &str,
         record: Option<String>,
     ) -> Result<Vec<crate::dns::DnsRecord>> {
+        self.dns_lookup_via(host, record, None).await
+    }
+
+    /// [`Ops::dns_lookup`], asking `server` instead of the system's DNS servers
+    /// when one is given.
+    pub async fn dns_lookup_via(
+        &self,
+        host: &str,
+        record: Option<String>,
+        server: Option<IpAddr>,
+    ) -> Result<Vec<crate::dns::DnsRecord>> {
         let record = record.map(|r| r.trim().to_uppercase());
         if record.as_deref().is_none() || matches!(record.as_deref(), Some("ALL" | "ANY")) {
-            return crate::dns::lookup_all_records_timeout(host, self.cfg.dns_timeout_ms).await;
+            return crate::dns::lookup_all_records_via(host, self.cfg.dns_timeout_ms, server).await;
         }
 
         let record = record.unwrap_or_else(|| "A".to_string());
@@ -78,7 +89,7 @@ impl Ops {
             )));
         };
 
-        crate::dns::lookup_record_timeout(host, parsed, self.cfg.dns_timeout_ms).await
+        crate::dns::lookup_record_via(host, parsed, self.cfg.dns_timeout_ms, server).await
     }
 }
 

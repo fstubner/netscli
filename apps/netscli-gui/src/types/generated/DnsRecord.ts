@@ -19,8 +19,9 @@ name?: string,
  */
 ttl_seconds?: number, 
 /**
- * Resolver that answered. Always "system". Results saved by 0.3.4 and
- * earlier may say "public_fallback", from a public DNS fallback that
- * has since been removed.
+ * Resolver that answered: "system" for the computer's own DNS
+ * servers, or "server" for one the user named. Results saved by 0.3.4
+ * and earlier may say "public_fallback", from a public DNS fallback
+ * that has since been removed.
  */
 resolver_source?: string, };

@@ -14,6 +14,7 @@ pub(super) async fn handle_lookup(
     // or a positional second token all work regardless of order.
     let mut host: Option<String> = None;
     let mut record: Option<String> = None;
+    let mut server: Option<std::net::IpAddr> = None;
     let mut i = 1;
     let mut parse_err: Option<String> = None;
     while i < parts.len() {
@@ -29,6 +30,28 @@ pub(super) async fn handle_lookup(
                 }
                 None => {
                     parse_err = Some("--record requires a value".to_string());
+                    break;
+                }
+            }
+        } else if tok == "--server" || tok.starts_with("--server=") {
+            let value = match tok.strip_prefix("--server=") {
+                Some(value) => {
+                    i += 1;
+                    Some(value)
+                }
+                None => {
+                    i += 2;
+                    parts.get(i - 1).copied()
+                }
+            };
+            match value.map(str::parse::<std::net::IpAddr>) {
+                Some(Ok(ip)) => server = Some(ip),
+                Some(Err(_)) => {
+                    parse_err = Some("--server takes an IP address".to_string());
+                    break;
+                }
+                None => {
+                    parse_err = Some("--server requires a value".to_string());
                     break;
                 }
             }
@@ -50,10 +73,10 @@ pub(super) async fn handle_lookup(
 
     if let Some(err) = parse_err {
         out.push(Formatter::format_error(&format!(
-            "{err}. Usage: /dns <host> [--record <type>|ALL]"
+            "{err}. Usage: /dns <host> [--record <type>|ALL] [--server <ip>]"
         )));
     } else if let Some(host) = host {
-        match commands::run_dns(ops, db, &host, record.clone()).await {
+        match commands::run_dns(ops, db, &host, record.clone(), server).await {
             Ok(records) => {
                 out.extend(Formatter::format_dns_results(
                     &host,
@@ -65,7 +88,7 @@ pub(super) async fn handle_lookup(
         }
     } else {
         out.push(Formatter::format_error(
-            "Usage: /dns <host> [--record <type>|ALL]",
+            "Usage: /dns <host> [--record <type>|ALL] [--server <ip>]",
         ));
     }
     out

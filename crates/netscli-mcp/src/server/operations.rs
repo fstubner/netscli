@@ -4,7 +4,7 @@ use super::schemas::{
     clamp_concurrency, clamp_timeout_ms, normalize_ports, validate_subnet, DiscoverParams,
     DnsParams, PingHostParams, ScanParams, SweepParams,
 };
-use super::targets::ensure_host_allowed;
+use super::targets::{ensure_host_allowed, ensure_ip_allowed};
 
 // NOTE: Hostname/IP resolution is shared in netscli-core (`netscli_core::resolve_host_ip`).
 
@@ -234,8 +234,21 @@ pub(super) async fn op_dns_lookup(
             )));
         }
     }
+    // A named server is a destination the client chose, so it is held to
+    // the same target policy as a scan: local unless the operator allowed
+    // public targets.
+    let server = match p.server.as_deref() {
+        Some(raw) => {
+            let ip: std::net::IpAddr = raw.trim().parse().map_err(|_| {
+                RpcError::InvalidParams(format!("server must be an IP address: {raw}"))
+            })?;
+            ensure_ip_allowed(ip, raw)?;
+            Some(ip)
+        }
+        None => None,
+    };
     let ops = netscli_core::Ops::default();
-    ops.dns_lookup(&p.host, p.record_type)
+    ops.dns_lookup_via(&p.host, p.record_type, server)
         .await
         .map_err(|e| RpcError::ToolError(e.to_string()))
 }

@@ -160,8 +160,9 @@ pub async fn run_dns(
     db: Option<&Database>,
     host: &str,
     record: Option<String>,
+    server: Option<std::net::IpAddr>,
 ) -> Result<Vec<netscli_core::dns::DnsRecord>> {
-    let records = ops.dns_lookup(host, record).await?;
+    let records = ops.dns_lookup_via(host, record, server).await?;
     if let Some(db) = db {
         db_add_scan_history_safe(db, "dns", 0, &records).await;
     }

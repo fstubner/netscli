@@ -114,6 +114,9 @@ export const TOOL_CONFIG: Record<ToolKind, ToolConfig> = {
         compact: true,
         options: ['ALL', 'A', 'AAAA', 'CNAME', 'MX', 'NS', 'TXT', 'SRV', 'PTR', 'SOA', 'CAA'],
       },
+      // Optional. Empty asks the system's own DNS servers, which is the
+      // only place a lookup goes unless you name another here.
+      { key: 'server', label: 'Server', placeholder: 'system', compact: true },
     ],
   },
   reverse: {
@@ -193,7 +196,7 @@ export const DEFAULT_FORM: Record<ToolKind, Record<string, string>> = {
   ping: { host: '127.0.0.1', count: '4' },
   trace: { host: '1.1.1.1', max_hops: '30', resolve: 'Off' },
   discover: { subnet: '' },
-  dns: { host: 'netscli.com', record: 'ALL' },
+  dns: { host: 'netscli.com', record: 'ALL', server: '' },
   reverse: { ip: '127.0.0.1' },
   inspect: { host: '127.0.0.1', ports: DEFAULT_PORTS },
   sweep: { subnet: '', ports: DEFAULT_PORTS },

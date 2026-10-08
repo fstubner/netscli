@@ -23,6 +23,13 @@ keeps a bare heading and collects entries.
 
 ### Added
 
+- **DNS lookups can ask a server you name.** `netscli dns --server <ip>`,
+  `/dns ... --server <ip>` in the terminal UI, a Server field in the desktop
+  app's DNS tool and a `server` parameter on the MCP server's `dns_lookup`
+  send the lookup to that DNS server instead of the system's. It replaces
+  the public fallback this release removes with something you choose. The
+  MCP server holds the named server to the same target policy as a scan.
+
 - **The terminal UI honours `NO_COLOR`, and the CLI honours `TERM=dumb` and
   `CLICOLOR_FORCE`.** The CLI's tables already went plain for `NO_COLOR` and
   for output that is not a terminal. The terminal UI ignored `NO_COLOR` and

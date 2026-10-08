@@ -192,7 +192,7 @@ The CLI exposes shared network operations plus command-line maintenance workflow
 | `sweep` | Discover hosts and scan selected ports across them. |
 | `ping` | Measure reachability and packet loss. |
 | `trace` | Show route hops to a host. |
-| `dns` | Query DNS records. |
+| `dns` | Query DNS records. `--server <ip>` asks that DNS server instead of the system's. |
 | `reverse` | Reverse lookup an IP address. |
 | `mdns` | Discover local mDNS/DNS-SD service announcements. |
 | `interfaces` | List local network interfaces. |

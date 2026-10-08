@@ -124,6 +124,8 @@ pub(super) struct DnsParams {
     pub(super) host: String,
     #[serde(rename = "type")]
     pub(super) record_type: Option<String>,
+    /// A DNS server to ask instead of the system's, as an IP address.
+    pub(super) server: Option<String>,
 }
 
 #[derive(Deserialize)]
