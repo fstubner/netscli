@@ -95,6 +95,13 @@ trap 'rm -rf "$STAGING"' EXIT
 
 echo "Staging npm packages for ${TAG} in ${STAGING}"
 
+# The third-party license notices go into every package, since each platform
+# package carries a binary. Taken from the release rather than this checkout,
+# which is the default branch: the release's copy is the one built from the
+# same tag as the binaries.
+NOTICES="${STAGING}/THIRD-PARTY-NOTICES.txt"
+curl -fsSL "${BASE}/THIRD-PARTY-NOTICES.txt" -o "${NOTICES}"
+
 published_names=()
 
 for entry in "${PLATFORMS[@]}"; do
@@ -122,6 +129,7 @@ for entry in "${PLATFORMS[@]}"; do
     echo "       got      ${local_sha}" >&2
     exit 1
   fi
+  cp "${NOTICES}" "${STAGING}/${pkg}/THIRD-PARTY-NOTICES.txt"
 
   cat > "${STAGING}/${pkg}/package.json" <<EOF
 {
@@ -137,7 +145,7 @@ for entry in "${PLATFORMS[@]}"; do
   "author": "Felix Stubner",
   "os": ["${os}"],
   "cpu": ["${cpu}"],
-  "files": ["${exe}", "README.md"],
+  "files": ["${exe}", "README.md", "THIRD-PARTY-NOTICES.txt"],
   "preferUnplugged": true
 }
 EOF
@@ -171,6 +179,7 @@ done
 mkdir -p "${STAGING}/netscli/bin"
 cp "${TEMPLATE_DIR}/bin/netscli.js" "${STAGING}/netscli/bin/netscli.js"
 cp "${TEMPLATE_DIR}/README.md" "${STAGING}/netscli/README.md"
+cp "${NOTICES}" "${STAGING}/netscli/THIRD-PARTY-NOTICES.txt"
 sed "s/@@VERSION@@/${VERSION}/g" "${TEMPLATE_DIR}/package.json" > "${STAGING}/netscli/package.json"
 
 if grep -q '@@' "${STAGING}/netscli/package.json"; then

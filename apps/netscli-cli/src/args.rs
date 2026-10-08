@@ -323,6 +323,9 @@ pub enum Commands {
     #[command(name = "man")]
     Man,
 
+    /// Print the licenses of the open source code built into netscli
+    Licenses,
+
     /// Remove the systemd unit that netscli 0.3.4 and earlier installed
     ///
     /// `netscli serve` speaks MCP over stdin and stdout, so the MCP client has

@@ -15,7 +15,7 @@ use commands::{
     get_network_stats, inspect_host_cmd, list_interfaces, list_monitorable_interfaces,
     mdns_capability, open_pcap_file, open_result_bundle, open_saved_artifact, pcap_capability,
     ping_host, reveal_saved_artifact, reverse_dns_lookup, save_result_bundle, scan_ports,
-    set_file_save_ask_each_time, sweep_network, trace_route_cmd,
+    set_file_save_ask_each_time, sweep_network, third_party_notices, trace_route_cmd,
 };
 use netscli_core::NetworkMonitor;
 use state::{ArtifactRegistry, OperationManager};
@@ -86,6 +86,7 @@ fn main() {
             list_monitorable_interfaces,
             get_default_interface,
             detect_netscli_cli,
+            third_party_notices,
             render_mode::report_first_paint,
             updates::update_install_support
         ])

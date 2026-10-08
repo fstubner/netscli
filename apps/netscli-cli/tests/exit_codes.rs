@@ -69,4 +69,5 @@ fn commands_that_succeed_exit_0() {
     assert_eq!(code(&["--version"]), 0);
     assert_eq!(code(&["--help"]), 0);
     assert_eq!(code(&["completions", "bash"]), 0);
+    assert_eq!(code(&["licenses"]), 0);
 }

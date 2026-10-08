@@ -4,3 +4,6 @@
 # Let git handle line endings for other files
 * text=auto
 
+
+# Generated, and compared byte for byte in CI
+THIRD-PARTY-NOTICES.txt text eol=lf

@@ -125,3 +125,44 @@
   color: var(--mint);
   background: var(--bg-selected);
 }
+
+/* Third-party licenses, opened from the About dialog. The same frame, wider,
+   with the notices scrolling inside it rather than past the window. */
+.licenses-dialog {
+  position: relative;
+  width: min(720px, calc(100vw - 32px));
+  height: min(640px, calc(100vh - 64px));
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 14px;
+  padding: 24px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated);
+  box-shadow: 0 24px 70px var(--shadow);
+}
+
+.licenses-dialog h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.licenses-text {
+  min-height: 0;
+  overflow: auto;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.licenses-status {
+  margin: 0;
+  color: var(--text-secondary);
+}

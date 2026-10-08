@@ -222,3 +222,8 @@ export interface CliDetection {
 export async function detectNetscliCli(): Promise<CliDetection> {
   return invoke<CliDetection>('detect_netscli_cli');
 }
+
+/** The license notices installed with the app, read from its resources. */
+export async function getThirdPartyNotices(): Promise<string> {
+  return invoke<string>('third_party_notices');
+}

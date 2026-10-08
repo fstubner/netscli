@@ -1,0 +1,33 @@
+# cargo-about configuration for THIRD-PARTY-NOTICES.txt. Regenerate with
+# `node scripts/third-party-notices.mjs`, which passes the features each
+# shipped binary is built with.
+#
+# Order matters. Where a crate offers a choice ("MIT OR Apache-2.0") the
+# first license listed here that it offers is the one used. MIT comes first
+# because each crate's MIT text is a few lines, which halves the file.
+accepted = [
+    "MIT",
+    "Apache-2.0",
+    "ISC",
+    "BSD-3-Clause",
+    "Zlib",
+    "Unicode-3.0",
+    "CDLA-Permissive-2.0",
+    "MPL-2.0",
+]
+
+# What release.yml builds for. A crate that only compiles for some other
+# platform is not in any file we ship.
+targets = [
+    "x86_64-unknown-linux-gnu",
+    "x86_64-unknown-linux-musl",
+    "aarch64-unknown-linux-gnu",
+    "x86_64-pc-windows-msvc",
+    "x86_64-apple-darwin",
+    "aarch64-apple-darwin",
+]
+
+# Build scripts and their dependencies run at build time and are not part
+# of the binary. Dev-dependencies are only for tests.
+ignore-build-dependencies = true
+ignore-dev-dependencies = true

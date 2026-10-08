@@ -14,7 +14,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { test } from 'node:test';
 
-import { ARTIFACTS, SIDECARS, checkReleaseAssets, unexpectedAssets } from './check-release-assets.mjs';
+import { ARTIFACTS, NOTICES, SIDECARS, checkReleaseAssets, unexpectedAssets } from './check-release-assets.mjs';
 import { UPDATE_ASSETS } from './updater-manifest.mjs';
 
 const TAG = 'v0.3.5';
@@ -34,6 +34,7 @@ function completeDraft() {
     sidecars[`${artifact}.sha256`] = `${digest}  ${artifact}\n`;
   }
   assets.push({ name: 'latest.json', size: 2048, digest: `sha256:${digestOf('latest')}` });
+  assets.push({ name: NOTICES, size: 487619, digest: `sha256:${digestOf('notices')}` });
   const platforms = {};
   for (const [key, asset] of Object.entries(UPDATE_ASSETS)) {
     platforms[key] = {
@@ -93,6 +94,10 @@ test('a sidecar that holds no digest fails it', () => {
   const draft = completeDraft();
   draft.sidecars['netscli-linux-aarch64.sha256'] = '\n';
   assert.deepEqual(checkReleaseAssets(draft), ['netscli-linux-aarch64.sha256 holds no SHA-256 digest']);
+});
+
+test('missing third-party notices fail it', () => {
+  assert.deepEqual(checkReleaseAssets(without(completeDraft(), NOTICES)), [`${NOTICES} is missing`]);
 });
 
 test('a missing latest.json fails it', () => {
