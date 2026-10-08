@@ -159,6 +159,9 @@ pub(crate) async fn run_command(command: &Commands, ctx: CommandContext<'_>) -> 
         Commands::Man => {
             docs::print_man::<Cli>()?;
         }
+        Commands::Licenses => {
+            docs::print_licenses()?;
+        }
         Commands::McpServe => serve_then_exit().await,
         Commands::McpService {
             install, uninstall, ..
