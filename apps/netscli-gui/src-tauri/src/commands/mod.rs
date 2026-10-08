@@ -1,6 +1,7 @@
 mod files;
 mod mcp;
 mod monitor;
+mod notices;
 mod operations;
 
 pub(crate) use files::{
@@ -10,6 +11,7 @@ pub(crate) use files::{
 };
 pub(crate) use mcp::detect_netscli_cli;
 pub(crate) use monitor::{get_default_interface, get_network_stats, list_monitorable_interfaces};
+pub(crate) use notices::third_party_notices;
 pub(crate) use operations::{
     cancel_operation, capture_pcap, clear_arp_table, discover_mdns, discover_network, dns_lookup,
     get_arp_table, inspect_host_cmd, list_interfaces, mdns_capability, open_pcap_file,

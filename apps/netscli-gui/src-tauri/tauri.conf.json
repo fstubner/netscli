@@ -58,7 +58,8 @@
       "icons/icon.ico"
     ],
     "resources": {
-      "../../../crates/netscli-core/data/oui.min.json.gz": "data/oui.min.json.gz"
+      "../../../crates/netscli-core/data/oui.min.json.gz": "data/oui.min.json.gz",
+      "../../../THIRD-PARTY-NOTICES.txt": "THIRD-PARTY-NOTICES.txt"
     },
     "macOS": {
       "signingIdentity": "-"

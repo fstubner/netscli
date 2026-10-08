@@ -1,8 +1,9 @@
-import { useRef } from 'react';
-import { ExternalLink, Scale, User, X } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { ExternalLink, FileText, Scale, User, X } from 'lucide-react';
 
 import { openAllowedExternalUrl } from '../../services/externalLinks';
 import { useModalFocus } from '../primitives/focus';
+import { LicensesDialog } from './LicensesDialog';
 
 interface AboutDialogProps {
   appVersion: string;
@@ -11,13 +12,18 @@ interface AboutDialogProps {
 
 export function AboutDialog({ appVersion, onClose }: AboutDialogProps) {
   const dialogRef = useRef<HTMLElement | null>(null);
-  useModalFocus({ dialogRef, onClose });
+  const [licensesOpen, setLicensesOpen] = useState(false);
+  // Off while the licenses stand in for this dialog, so Escape there goes
+  // back to About rather than closing both.
+  useModalFocus({ dialogRef, enabled: !licensesOpen, onClose });
 
   function openProjectUrl(url: string) {
     // Nothing on screen owns this failure, so it goes to the console rather
     // than nowhere. The ungated toast is not reachable from here.
     openAllowedExternalUrl(url).catch((error: unknown) => console.error('Opening the link failed', error));
   }
+
+  if (licensesOpen) return <LicensesDialog onClose={() => setLicensesOpen(false)} />;
 
   return (
     <div className="about-overlay" role="presentation" onMouseDown={onClose}>
@@ -67,6 +73,10 @@ export function AboutDialog({ appVersion, onClose }: AboutDialogProps) {
           <button onClick={() => openProjectUrl('https://github.com/fstubner/netscli#readme')}>
             <ExternalLink size={14} />
             README
+          </button>
+          <button onClick={() => setLicensesOpen(true)}>
+            <FileText size={14} />
+            Third-party licenses
           </button>
         </div>
       </section>
