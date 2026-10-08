@@ -59,6 +59,7 @@ pub struct UdpScanner {
 
 impl UdpScanner {
     pub fn new(concurrency: usize) -> Self {
+        crate::common::raise_open_file_limit();
         let concurrency = concurrency.clamp(1, crate::MAX_CONCURRENCY);
         Self {
             semaphore: Arc::new(Semaphore::new(concurrency)),

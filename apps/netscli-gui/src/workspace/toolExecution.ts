@@ -163,11 +163,12 @@ function serviceTypes(value: string | undefined): string[] | undefined {
 async function executeDns(tab: WorkspaceTab, opId: string, isCurrent: () => boolean): Promise<ToolResult> {
   const host = tab.form.host.trim();
   const record = tab.form.record?.trim().toUpperCase();
+  const server = tab.form.server?.trim() || undefined;
 
   if (record && record !== 'ALL') {
     return {
       kind: 'dns',
-      data: await netscli.dnsLookup(host, record, opId),
+      data: await netscli.dnsLookup(host, record, opId, server),
     };
   }
 
@@ -181,7 +182,7 @@ async function executeDns(tab: WorkspaceTab, opId: string, isCurrent: () => bool
   for (const recordType of DNS_ALL_RECORDS) {
     if (!isCurrent()) throw new Error('Operation cancelled');
     try {
-      data.push(...await netscli.dnsLookup(host, recordType, opId));
+      data.push(...await netscli.dnsLookup(host, recordType, opId, server));
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (/cancelled/i.test(message)) throw error;

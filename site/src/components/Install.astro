@@ -85,6 +85,18 @@ const groups = [
                           </div>
                           {e.command ? (
                             <div class="alt-cmd">{e.command}</div>
+                          ) : e.storeHref ? (
+                            /* Microsoft's badge files, unmodified, served from
+                               this site so a visitor's browser does not call
+                               Microsoft. Two images, one per theme: the light
+                               badge on the dark page and the dark one on the
+                               light page, each hidden in the other theme. */
+                            <div class="alt-action">
+                              <a class="store-badge" href={e.storeHref} rel="noopener">
+                                <img class="store-badge-for-dark" src="/assets/microsoft-store-badge-light.svg" width="161" height="44" alt="Get it from Microsoft" />
+                                <img class="store-badge-for-light" src="/assets/microsoft-store-badge-dark.svg" width="161" height="44" alt="Get it from Microsoft" />
+                              </a>
+                            </div>
                           ) : (
                             <div class="alt-action">
                               <a class="alt-cmd install-download" href={e.href} download>
@@ -296,6 +308,11 @@ html[data-theme='light'] #install .reco{
  * in, while the package-manager rows above it check a hash. The green was pointing at the
  * wrong option. It reads as one route among several now, and keeps the
  * accent for hover and focus so it is still obviously a control. */
+.store-badge{display:inline-block;line-height:0;border-radius:4px}
+.store-badge img{height:40px;width:auto}
+.store-badge:focus-visible{outline:2px solid var(--ui-accent);outline-offset:2px}
+html[data-theme='light'] .store-badge-for-dark,
+html:not([data-theme='light']) .store-badge-for-light{display:none}
 a.install-download{
   display:inline-flex;
   align-items:center;

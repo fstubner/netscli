@@ -154,6 +154,10 @@ pub enum Commands {
         #[arg(long)]
         record: Option<String>,
 
+        /// Ask this DNS server (an IP address) instead of the ones the system uses
+        #[arg(long, value_name = "IP")]
+        server: Option<std::net::IpAddr>,
+
         #[command(flatten)]
         format: ListOutput,
     },

@@ -35,6 +35,9 @@ The desktop app is distributed separately:
 winget install netscli-gui
 ```
 
+It is also in the [Microsoft Store](https://apps.microsoft.com/detail/xpfg556rr6b76z),
+which installs the same signed `.msi`.
+
 If a short name ever matches more than one package, use the full
 identifiers, `fstubner.netscli` and `fstubner.netscli.gui`.
 
@@ -261,12 +264,12 @@ and the signature is tied to the exact run that built it. Each of those assets s
 cosign verify-blob \
   --signature netscli-linux-x86_64.sig \
   --certificate netscli-linux-x86_64.pem \
-  --certificate-identity-regexp 'https://github.com/fstubner/netscli/.github/workflows/release\.yml@.*' \
+  --certificate-identity-regexp '^https://github\.com/fstubner/netscli/\.github/workflows/release\.yml@refs/(heads/main|tags/v[0-9.]+)$' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
   netscli-linux-x86_64
 ```
 
-Substitute the asset name you downloaded. The same command works for the desktop `.msi`, `.dmg`, `.deb` and `.AppImage`. It needs the [cosign
+Substitute the asset name you downloaded. The same command works for the desktop `.msi`, `.dmg`, `.deb` and `.AppImage`. The identity is pinned to the release workflow on `main` (or a release tag, for releases before 0.3.1), so a signature made by that file on any other branch does not pass. The `.mcpb` bundles are signed by the publishing workflow instead, so for those replace `release\.yml` with `publish\.yml`. It needs the [cosign
 CLI](https://docs.sigstore.dev/cosign/system_config/installation/). A pass
 confirms the asset was built and signed by this repository's release workflow
 and has not been altered since.

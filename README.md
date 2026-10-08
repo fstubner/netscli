@@ -61,6 +61,10 @@ winget install netscli-gui    # desktop app
 cargo install netscli
 ```
 
+On Windows the desktop app is also in the Microsoft Store:
+
+<a href="https://apps.microsoft.com/detail/xpfg556rr6b76z"><img src="site/public/assets/microsoft-store-badge-dark.svg" alt="Get it from Microsoft" height="40" /></a>
+
 Desktop installers for Windows, macOS and Linux are attached to every
 [release](https://github.com/fstubner/netscli/releases/latest).
 

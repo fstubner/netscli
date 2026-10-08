@@ -9,10 +9,11 @@ pub(super) async fn run_lookup(
     ctx: CommandContext<'_>,
     host: &str,
     record: &Option<String>,
+    server: Option<std::net::IpAddr>,
     flags: ListOutput,
 ) -> Result<()> {
     let format = list_output_format(flags)?;
-    let records = commands::run_dns(ctx.ops, ctx.db, host, record.clone()).await?;
+    let records = commands::run_dns(ctx.ops, ctx.db, host, record.clone(), server).await?;
     match format {
         OutputFormat::Json | OutputFormat::Yaml | OutputFormat::Csv | OutputFormat::Markdown => {
             print_structured(format, &records)?;

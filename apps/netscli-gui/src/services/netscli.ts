@@ -97,8 +97,9 @@ export async function dnsLookup(
   host: string,
   record?: string,
   op_id?: string,
+  server?: string,
 ): Promise<DnsRecord[]> {
-  return invoke<DnsRecord[]>('dns_lookup', { opId: op_id, host, record });
+  return invoke<DnsRecord[]>('dns_lookup', { opId: op_id, host, record, server: server || undefined });
 }
 
 export async function discoverMdns(

@@ -77,6 +77,10 @@ pub fn tools_list() -> serde_json::Value {
                         "type": "string",
                         "description": "Record type. Omit, or pass ALL, for every type.",
                         "enum": ["A", "AAAA", "CNAME", "MX", "NS", "TXT", "SRV", "PTR", "SOA", "CAA", "ALL", "ANY"]
+                    },
+                    "server": {
+                        "type": "string",
+                        "description": "IP address of a DNS server to ask instead of the system's own. Held to the same target policy as a scan."
                     }
                 },
                 "required": ["host"]

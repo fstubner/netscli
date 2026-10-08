@@ -9,6 +9,9 @@ export const installCopy: SectionCopy = {
 
 const RELEASE_DOWNLOAD = 'https://github.com/fstubner/netscli/releases/latest/download';
 
+/** The desktop app's Microsoft Store listing (product XPFG556RR6B76Z). */
+export const MICROSOFT_STORE_URL = 'https://apps.microsoft.com/detail/xpfg556rr6b76z';
+
 /** Shown on the direct .dmg rows and on the Homebrew cask.
  *
  *  The cask too: Homebrew quarantines what a cask downloads, and 5.0
@@ -52,6 +55,10 @@ export const installByPlatform: Record<Platform, PlatformInstall> = {
       {
         label: 'Winget',
         command: 'winget install netscli-gui',
+      },
+      {
+        label: 'Microsoft Store',
+        storeHref: MICROSOFT_STORE_URL,
       },
       {
         // Two lines for the same reason as the CLI entry above.

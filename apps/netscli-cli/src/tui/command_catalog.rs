@@ -46,7 +46,7 @@ pub(super) const COMMAND_DEFS: &[CommandDef] = &[
     CommandDef {
         cmd: "/dns",
         desc: "DNS lookup",
-        args: "<host> [--record <type>|ALL]",
+        args: "<host> [--record <type>|ALL] [--server <ip>]",
     },
     CommandDef {
         cmd: "/reverse",
@@ -130,7 +130,7 @@ pub(super) const COMMAND_DEFS: &[CommandDef] = &[
     CommandDef {
         cmd: "/dns",
         desc: "DNS lookup",
-        args: "<host> [--record <type>|ALL]",
+        args: "<host> [--record <type>|ALL] [--server <ip>]",
     },
     CommandDef {
         cmd: "/reverse",

@@ -81,7 +81,7 @@ there is nothing to look at until a client connects.
 | `discover_network` | Discover reachable hosts on a subnet. |
 | `scan_ports` | Scan TCP ports on a host, or UDP services with `udp: true`. Returns open ports only unless `include_closed` is true. |
 | `ping_host` | Check reachability and latency. |
-| `dns_lookup` | Query DNS records. |
+| `dns_lookup` | Query DNS records. `server` asks a DNS server you name instead of the system's, held to the same target policy as a scan. |
 | `get_arp_table` | Read the local ARP neighbor cache. |
 | `inspect_host` | Build a host profile with reachability, DNS, MAC address and maker, an OS hint, and ports. |
 | `sweep_network` | Discover hosts and scan selected ports. |

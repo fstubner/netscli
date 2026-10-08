@@ -96,6 +96,22 @@
     {
       "in": "",
       "out": ""
+    },
+    {
+      "in": "admin\u202egnp.exe",
+      "out": "admin.gnp.exe"
+    },
+    {
+      "in": "pay\u200bpal",
+      "out": "pay.pal"
+    },
+    {
+      "in": "\ufeffname",
+      "out": ".name"
+    },
+    {
+      "in": "a\u2066b\u2069c",
+      "out": "a.b.c"
     }
   ]
 }

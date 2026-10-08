@@ -81,12 +81,22 @@ pub(crate) async fn dns_lookup(
     op_id: Option<String>,
     host: String,
     record: Option<String>,
+    server: Option<String>,
     manager: tauri::State<'_, OperationManager>,
 ) -> JsonResult {
+    // Parsed before the operation starts, so a typo is an error and never a
+    // lookup that quietly goes to the system's servers instead.
+    let server = match server.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+        Some(raw) => Some(
+            raw.parse::<std::net::IpAddr>()
+                .map_err(|_| format!("Server must be an IP address, not '{raw}'."))?,
+        ),
+        None => None,
+    };
     run_json_operation(op_id, manager, None, move || async move {
         let ops = Ops::default();
         let res = ops
-            .dns_lookup(&host, record)
+            .dns_lookup_via(&host, record, server)
             .await
             .map_err(|e| e.to_string())?;
         serde_json::to_value(res).map_err(|e| e.to_string())

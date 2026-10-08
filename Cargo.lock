@@ -3201,6 +3201,7 @@ dependencies = [
  "ipconfig",
  "ipnet",
  "ipnetwork",
+ "libc",
  "mac_address",
  "mdns-sd",
  "once_cell",

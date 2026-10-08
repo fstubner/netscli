@@ -23,6 +23,13 @@ keeps a bare heading and collects entries.
 
 ### Added
 
+- **DNS lookups can ask a server you name.** `netscli dns --server <ip>`,
+  `/dns ... --server <ip>` in the terminal UI, a Server field in the desktop
+  app's DNS tool and a `server` parameter on the MCP server's `dns_lookup`
+  send the lookup to that DNS server instead of the system's. It replaces
+  the public fallback this release removes with something you choose. The
+  MCP server holds the named server to the same target policy as a scan.
+
 - **The terminal UI honours `NO_COLOR`, and the CLI honours `TERM=dumb` and
   `CLICOLOR_FORCE`.** The CLI's tables already went plain for `NO_COLOR` and
   for output that is not a terminal. The terminal UI ignored `NO_COLOR` and
@@ -412,6 +419,13 @@ keeps a bare heading and collects entries.
   - Windows discovery re-checks at most 64 devices at once. Checked all at
     once, a very long device table could drop devices that were there.
   - The example in the `netscli-core` README compiles.
+
+- **Scans on macOS no longer start at the edge of the open-file limit.**
+  Each probe in flight holds a socket, and the default of 256 at once equals
+  macOS's default limit on open files, so a busy scan could fail connects for
+  lack of a file handle and report them as filtered. NetsCLI now raises its
+  own soft limit, up to what the system allows, before a scan starts. Linux
+  gets the same, where the default limit is usually 1024.
 
 - **The Windows one-line installer no longer closes PowerShell when it
   fails.** Run as `iwr ... | iex`, the installer's `exit` ended the

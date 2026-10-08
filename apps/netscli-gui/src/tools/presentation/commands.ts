@@ -63,7 +63,7 @@ export function buildCommand(tab: WorkspaceTab): string {
     }
     case 'dns': {
       const record = flag('--record', form.record === 'ALL' ? '' : form.record);
-      return `netscli dns ${arg(form.host) || '<host>'}${record} --json`;
+      return `netscli dns ${arg(form.host) || '<host>'}${record}${flag('--server', form.server)} --json`;
     }
     case 'reverse':
       return `netscli reverse ${arg(form.ip) || '<ip>'} --json`;

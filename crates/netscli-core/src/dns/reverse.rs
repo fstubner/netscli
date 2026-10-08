@@ -78,7 +78,7 @@ pub async fn reverse_lookup_best_effort_timeout(ip: IpAddr, timeout_ms: u64) -> 
 /// handle `None`.
 pub(crate) fn normalize_hostname(name: String) -> Option<String> {
     let name = name.trim().trim_end_matches('.').trim();
-    if name.is_empty() || name.chars().any(char::is_control) {
+    if name.is_empty() || name.chars().any(crate::common::is_unsafe_for_display) {
         None
     } else {
         Some(name.to_string())
