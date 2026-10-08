@@ -23,7 +23,8 @@
  * that replaced a file but failed to replace its sidecar would otherwise
  * publish a checksum that every installer then rejects. And latest.json is
  * there, announces this version, points every platform at this tag, and
- * carries signatures bound to this version, as the app requires.
+ * carries signatures bound to this version, as the app requires. And the
+ * third-party license notices are there and not empty.
  *
  * What it does not check is whether the signatures verify. sign-windows
  * checks every Authenticode signature with osslsigncode, and the
@@ -66,6 +67,10 @@ export const ARTIFACTS = [
 
 export const SIDECARS = ['.sha256', '.sig', '.pem'];
 
+/** The license notices for everything above. A text file from the tag, so
+ *  it has no build and no sidecars. */
+export const NOTICES = 'THIRD-PARTY-NOTICES.txt';
+
 const HEX64 = /^[0-9a-f]{64}$/;
 
 /** The problems with a draft, as sentences. Empty means it can go public. */
@@ -98,6 +103,10 @@ export function checkReleaseAssets({ tag, assets, sidecars, latest }) {
       problems.push(`${artifact}.sha256 says ${claimed}, but the uploaded file is ${actual}`);
     }
   }
+
+  const notices = byName.get(NOTICES);
+  if (!notices) problems.push(`${NOTICES} is missing`);
+  else if (!(notices.size > 0)) problems.push(`${NOTICES} is empty`);
 
   if (!byName.has('latest.json')) {
     problems.push('latest.json is missing');
@@ -137,6 +146,7 @@ export function checkReleaseAssets({ tag, assets, sidecars, latest }) {
 export function unexpectedAssets(assets) {
   const expected = new Set([
     'latest.json',
+    NOTICES,
     ...ARTIFACTS.flatMap((artifact) => [artifact, ...SIDECARS.map((suffix) => `${artifact}${suffix}`)]),
   ]);
   return assets.map((asset) => asset.name).filter((name) => !expected.has(name));
@@ -185,6 +195,6 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     process.exit(1);
   }
   console.log(
-    `${tag}: all ${ARTIFACTS.length} files, their checksums and signatures, and latest.json are on the draft.`,
+    `${tag}: all ${ARTIFACTS.length} files, their checksums and signatures, latest.json and the notices are on the draft.`,
   );
 }

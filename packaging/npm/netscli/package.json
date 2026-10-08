@@ -28,7 +28,8 @@
   },
   "files": [
     "bin/netscli.js",
-    "README.md"
+    "README.md",
+    "THIRD-PARTY-NOTICES.txt"
   ],
   "engines": {
     "node": ">=18"

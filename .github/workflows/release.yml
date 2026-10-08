@@ -367,6 +367,31 @@ jobs:
           ASSET: ${{ matrix.asset_name }}
         run: gh release upload "$TAG" "$ASSET" "$ASSET.sha256" "$ASSET.sig" "$ASSET.pem" --clobber
 
+  # ─── Third-party notices ──────────────────────────────────────────────
+  # The licenses of everything built into the CLI and the desktop app, from
+  # the tag. The raw CLI binaries have no archive to carry it in, so it ships
+  # beside them, and publish-npm.sh puts this copy into the npm packages.
+  # It is committed and checked against the lockfiles in CI, so there is
+  # nothing to build here and no signature beyond the release's own.
+  notices:
+    name: Attach third-party notices
+    needs: guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ env.TAG }}
+      # `gh`, for the reasons given at the CLI job's upload.
+      - name: Upload Release Asset
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release upload "$TAG" THIRD-PARTY-NOTICES.txt --clobber
+
   # ─── Desktop GUI installers ───────────────────────────────────────────
   # Builds the Tauri 2 desktop app on each native runner. .msi/.dmg/.deb/
   # .AppImage outputs from `tauri.conf.json:bundle.targets = "all"` get
