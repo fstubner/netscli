@@ -25,8 +25,8 @@
     "visual:check": "node ./scripts/visual-snapshot.mjs check"
   },
   "dependencies": {
-    "@astrojs/starlight": "^0.42.5",
-    "astro": "^7.3.5"
+    "@astrojs/starlight": "^0.42.6",
+    "astro": "^7.3.8"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
