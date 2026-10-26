@@ -25,11 +25,11 @@
     "visual:check": "node ./scripts/visual-snapshot.mjs check"
   },
   "dependencies": {
-    "@astrojs/starlight": "^0.42.5",
-    "astro": "^7.3.5"
+    "@astrojs/starlight": "^0.42.6",
+    "astro": "^7.4.2"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.10",
+    "@astrojs/check": "^0.9.12",
     "@axe-core/cli": "^4.13.0",
     "chromedriver": "^154.0.1",
     "lighthouse": "^13.5.0",
